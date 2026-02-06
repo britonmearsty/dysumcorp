@@ -1,0 +1,18 @@
+{
+  "buildCommand": "prisma generate && next build",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "BETTER_AUTH_SECRET": "@better_auth_secret",
+    "BETTER_AUTH_URL": "@better_auth_url",
+    "NEXT_PUBLIC_BETTER_AUTH_URL": "@next_public_better_auth_url",
+    "GOOGLE_CLIENT_ID": "@google_client_id",
+    "GOOGLE_CLIENT_SECRET": "@google_client_secret",
+    "DROPBOX_CLIENT_ID": "@dropbox_client_id",
+    "DROPBOX_CLIENT_SECRET": "@dropbox_client_secret",
+    "CREEM_API_KEY": "@creem_api_key",
+    "CREEM_WEBHOOK_SECRET": "@creem_webhook_secret"
+  }
+}
