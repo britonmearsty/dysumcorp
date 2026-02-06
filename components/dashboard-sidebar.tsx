@@ -36,6 +36,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "OVERVIEW", href: "/dashboard", icon: Home },
   { label: "PORTALS", href: "/dashboard/portals", icon: LayoutGrid },
+  { label: "FILES", href: "/dashboard/files", icon: FileText },
   { label: "ASSETS", href: "/dashboard/assets", icon: Package },
   { label: "CLIENTS", href: "/dashboard/clients", icon: UserCircle },
   { label: "STORAGE", href: "/dashboard/storage", icon: Database },

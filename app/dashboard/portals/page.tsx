@@ -1,40 +1,183 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Plus, Trash2, ExternalLink, FileText } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+interface Portal {
+  id: string;
+  name: string;
+  slug: string;
+  customDomain: string | null;
+  whiteLabeled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  _count: {
+    files: number;
+  };
+}
+
 export default function PortalsPage() {
-  const portals = [
-    { id: 1, name: "Customer Portal", status: "Active", users: 1250, lastUpdated: "2 hours ago" },
-    { id: 2, name: "Partner Portal", status: "Active", users: 340, lastUpdated: "1 day ago" },
-    { id: 3, name: "Vendor Portal", status: "Maintenance", users: 89, lastUpdated: "3 days ago" },
-    { id: 4, name: "Admin Portal", status: "Active", users: 45, lastUpdated: "5 hours ago" },
-  ];
+  const router = useRouter();
+  const [portals, setPortals] = useState<Portal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPortals();
+  }, []);
+
+  const fetchPortals = async () => {
+    try {
+      const response = await fetch("/api/portals");
+      if (response.ok) {
+        const data = await response.json();
+        setPortals(data.portals);
+      }
+    } catch (error) {
+      console.error("Failed to fetch portals:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeleting(id);
+    try {
+      const response = await fetch(`/api/portals/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setPortals(portals.filter((p) => p.id !== id));
+      } else {
+        alert("Failed to delete portal");
+      }
+    } catch (error) {
+      console.error("Failed to delete portal:", error);
+      alert("Failed to delete portal");
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins} minutes ago`;
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold font-mono">Portals</h1>
+          <p className="text-muted-foreground mt-2">Loading your portals...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold font-mono">Portals</h1>
-        <p className="text-muted-foreground mt-2">Manage your portal instances</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold font-mono">Portals</h1>
+          <p className="text-muted-foreground mt-2">Manage your client portals</p>
+        </div>
+        <Link href="/dashboard/portals/create">
+          <Button className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono">
+            <Plus className="w-4 h-4 mr-2" />
+            CREATE PORTAL
+          </Button>
+        </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {portals.map((portal) => (
-          <div key={portal.id} className="border rounded-lg p-6 hover:border-[#FF6B2C] transition-colors">
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="font-mono font-semibold text-lg">{portal.name}</h3>
-              <span className={`text-xs px-2 py-1 rounded ${portal.status === "Active" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-                {portal.status}
-              </span>
-            </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Active Users</span>
-                <span className="font-mono font-medium">{portal.users}</span>
+      {portals.length === 0 ? (
+        <div className="border rounded-lg p-12 text-center">
+          <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="font-mono font-semibold text-lg mb-2">No portals yet</h3>
+          <p className="text-muted-foreground font-mono text-sm mb-6">
+            Create your first client portal to start collecting files securely
+          </p>
+          <Link href="/dashboard/portals/create">
+            <Button className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono">
+              <Plus className="w-4 h-4 mr-2" />
+              CREATE YOUR FIRST PORTAL
+            </Button>
+          </Link>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {portals.map((portal) => (
+            <div
+              key={portal.id}
+              className="border rounded-lg p-6 hover:border-[#FF6B2C] transition-colors"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h3 className="font-mono font-semibold text-lg mb-1">{portal.name}</h3>
+                  <p className="text-xs text-muted-foreground font-mono">/{portal.slug}</p>
+                  {portal.customDomain && (
+                    <p className="text-xs text-[#FF6B2C] font-mono mt-1">
+                      {portal.customDomain}
+                    </p>
+                  )}
+                </div>
+                {portal.whiteLabeled && (
+                  <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
+                    White-labeled
+                  </span>
+                )}
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Last Updated</span>
-                <span className="font-mono">{portal.lastUpdated}</span>
+              <div className="space-y-2 text-sm mb-4">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Files</span>
+                  <span className="font-mono font-medium">{portal._count.files}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Last Updated</span>
+                  <span className="font-mono">{formatDate(portal.updatedAt)}</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 rounded-none font-mono"
+                  onClick={() => router.push(`/portal/${portal.slug}`)}
+                >
+                  <ExternalLink className="w-4 h-4 mr-1" />
+                  VIEW
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-none font-mono text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => handleDelete(portal.id, portal.name)}
+                  disabled={deleting === portal.id}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -87,10 +87,37 @@ export default function CreatePortalPage() {
     }
   };
 
-  const handleSubmit = () => {
-    console.log("Portal Data:", formData);
-    // Add your API call here
-    router.push("/dashboard/portals");
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch("/api/portals/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.portalName,
+          slug: formData.portalUrl,
+          customDomain: formData.customDomain || null,
+          whiteLabeled: false, // Can be extended based on plan
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.upgrade) {
+          alert(`${data.error}\n\nPlease upgrade your plan to continue.`);
+          router.push("/dashboard/billing");
+        } else {
+          alert(data.error || "Failed to create portal");
+        }
+        return;
+      }
+
+      alert("Portal created successfully!");
+      router.push("/dashboard/portals");
+    } catch (error) {
+      console.error("Failed to create portal:", error);
+      alert("Failed to create portal. Please try again.");
+    }
   };
 
   const updateFormData = (field: string, value: any) => {
@@ -226,7 +253,7 @@ export default function CreatePortalPage() {
                   placeholder="Brief description of this portal..."
                   value={formData.description}
                   onChange={(e) => updateFormData("description", e.target.value)}
-                  className="w-full min-h-[100px] px-3 py-2 border border-input bg-background font-mono text-sm"
+                  className="w-full min-h-[100px] px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#FF6B2C] focus:ring-2 focus:ring-[#FF6B2C]/20 hover:border-muted-foreground/50 transition-colors"
                 />
               </div>
             </div>
@@ -364,7 +391,7 @@ export default function CreatePortalPage() {
                   id="storageProvider"
                   value={formData.storageProvider}
                   onChange={(e) => updateFormData("storageProvider", e.target.value)}
-                  className="w-full px-3 py-2 border border-input bg-background font-mono text-sm"
+                  className="w-full px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#FF6B2C] focus:ring-2 focus:ring-[#FF6B2C]/20 hover:border-muted-foreground/50 transition-colors"
                 >
                   <option value="local">Local Storage</option>
                   <option value="s3">Amazon S3</option>
@@ -457,7 +484,7 @@ export default function CreatePortalPage() {
                   id="accessType"
                   value={formData.accessType}
                   onChange={(e) => updateFormData("accessType", e.target.value)}
-                  className="w-full px-3 py-2 border border-input bg-background font-mono text-sm"
+                  className="w-full px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#FF6B2C] focus:ring-2 focus:ring-[#FF6B2C]/20 hover:border-muted-foreground/50 transition-colors"
                 >
                   <option value="password">Password Protected</option>
                   <option value="link">Secure Link Only</option>
@@ -566,7 +593,7 @@ export default function CreatePortalPage() {
                   placeholder="Enter a welcome message for your clients..."
                   value={formData.welcomeMessage}
                   onChange={(e) => updateFormData("welcomeMessage", e.target.value)}
-                  className="w-full min-h-[120px] px-3 py-2 border border-input bg-background font-mono text-sm"
+                  className="w-full min-h-[120px] px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#FF6B2C] focus:ring-2 focus:ring-[#FF6B2C]/20 hover:border-muted-foreground/50 transition-colors"
                 />
                 <p className="text-xs text-muted-foreground font-mono">
                   This message will be displayed when clients first access the portal
@@ -580,7 +607,7 @@ export default function CreatePortalPage() {
                   placeholder="Automatic reply when files are uploaded..."
                   value={formData.autoReplyMessage}
                   onChange={(e) => updateFormData("autoReplyMessage", e.target.value)}
-                  className="w-full min-h-[100px] px-3 py-2 border border-input bg-background font-mono text-sm"
+                  className="w-full min-h-[100px] px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#FF6B2C] focus:ring-2 focus:ring-[#FF6B2C]/20 hover:border-muted-foreground/50 transition-colors"
                 />
               </div>
 

@@ -25,6 +25,11 @@ model User {
   accounts        Account[]
   creemCustomerId String?
   hadTrial        Boolean?  @default(false)
+  subscriptionPlan String?  @default("free")
+  subscriptionStatus String? @default("active")
+  portals         Portal[]
+  teamMembers     TeamMember[]
+  ownedTeams      Team[]    @relation("TeamOwner")
 
   @@map("user")
 }
@@ -91,4 +96,81 @@ model Creem_subscription {
   cancelAtPeriodEnd   Boolean?  @default(false)
 
   @@map("creem_subscription")
+}
+
+model Portal {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  customDomain    String?  @unique
+  whiteLabeled    Boolean  @default(false)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  files           File[]
+  
+  @@index([userId])
+  @@map("portal")
+}
+
+model File {
+  id              String   @id @default(cuid())
+  name            String
+  size            BigInt   // Size in bytes
+  mimeType        String
+  storageUrl      String
+  portalId        String
+  portal          Portal   @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  uploadedAt      DateTime @default(now())
+  expiresAt       DateTime?
+  passwordHash    String?
+  downloads       Int      @default(0)
+  
+  @@index([portalId])
+  @@map("file")
+}
+
+model Team {
+  id              String       @id @default(cuid())
+  name            String
+  ownerId         String
+  owner           User         @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members         TeamMember[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  @@index([ownerId])
+  @@map("team")
+}
+
+model TeamMember {
+  id              String   @id @default(cuid())
+  teamId          String
+  team            Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role            String   @default("member") // member, admin
+  invitedAt       DateTime @default(now())
+  joinedAt        DateTime?
+  
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+  @@map("team_member")
+}
+
+model UsageTracking {
+  id              String   @id @default(cuid())
+  userId          String
+  month           String   // Format: YYYY-MM
+  storageUsed     BigInt   @default(0) // Bytes
+  portalsCreated  Int      @default(0)
+  filesUploaded   Int      @default(0)
+  bandwidth       BigInt   @default(0) // Bytes transferred
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([userId, month])
+  @@index([userId])
+  @@map("usage_tracking")
 }
