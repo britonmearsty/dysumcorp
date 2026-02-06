@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { useSession, signOut } from "@/lib/auth-client";
 import {
   Home,
   BarChart3,
@@ -23,13 +24,13 @@ import {
   HelpCircle,
   UsersRound,
   Crown,
+  LogOut,
 } from "lucide-react";
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  isPremium?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -38,12 +39,85 @@ const navItems: NavItem[] = [
   { label: "ASSETS", href: "/dashboard/assets", icon: Package },
   { label: "CLIENTS", href: "/dashboard/clients", icon: UserCircle },
   { label: "STORAGE", href: "/dashboard/storage", icon: Database },
-  { label: "PREMIUM", href: "/dashboard/premium", icon: Crown, isPremium: true },
   { label: "BILLING", href: "/dashboard/billing", icon: CreditCard },
   { label: "SUPPORT", href: "/dashboard/support", icon: HelpCircle },
   { label: "TEAMS", href: "/dashboard/teams", icon: UsersRound },
   { label: "SETTINGS", href: "/dashboard/settings", icon: Settings },
 ];
+
+function UserAccountSection({ onClose }: { onClose: () => void }) {
+  const { data: session, isPending } = useSession();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await signOut();
+    onClose();
+  };
+
+  if (isPending) {
+    return (
+      <div className="px-3 py-2 animate-pulse">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-muted" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 bg-muted rounded w-24" />
+            <div className="h-2 bg-muted rounded w-32" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const user = session?.user;
+  const initials = user?.name
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || user?.email?.[0]?.toUpperCase() || "U";
+
+  return (
+    <div className="px-3 space-y-2">
+      <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50">
+        {user?.image ? (
+          <Image
+            src={user.image}
+            alt={user.name || "User"}
+            width={40}
+            height={40}
+            className="rounded-full"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-[#FF6B2C]/10 flex items-center justify-center">
+            <span className="text-[#FF6B2C] text-sm font-mono font-bold">
+              {initials}
+            </span>
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-mono font-medium truncate">
+            {user?.name || "User"}
+          </p>
+          <p className="text-xs text-muted-foreground font-mono truncate">
+            {user?.email || "No email"}
+          </p>
+        </div>
+      </div>
+
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full justify-start gap-2 font-mono"
+        onClick={handleLogout}
+        disabled={isLoggingOut}
+      >
+        <LogOut className="h-4 w-4" />
+        {isLoggingOut ? "Logging out..." : "Logout"}
+      </Button>
+    </div>
+  );
+}
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -112,27 +186,45 @@ export function DashboardSidebar() {
                 >
                   <Icon className="h-5 w-5" />
                   <span>{item.label}</span>
-                  {item.isPremium && (
-                    <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
-                      PRO
-                    </span>
-                  )}
                 </Link>
               );
             })}
           </nav>
 
-          {/* User section */}
-          <div className="px-3 py-4 border-t border-border">
-            <div className="flex items-center gap-3 px-3 py-2">
-              <div className="w-8 h-8 rounded-full bg-[#FF6B2C]/10 flex items-center justify-center">
-                <span className="text-[#FF6B2C] text-sm font-mono font-bold">U</span>
+          {/* Premium Banner and User section */}
+          <div className="px-3 py-4 border-t border-border space-y-3">
+            {/* Premium Banner */}
+            <Link
+              href="/dashboard/premium"
+              onClick={() => setIsMobileOpen(false)}
+              className="block mx-3 p-4 rounded-lg bg-gradient-to-br from-yellow-500/20 via-orange-500/20 to-red-500/20 border-2 border-yellow-500/30 hover:border-yellow-500/50 transition-all hover:scale-[1.02] group"
+            >
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-yellow-500/20 group-hover:bg-yellow-500/30 transition-colors">
+                  <Crown className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-sm font-bold font-mono text-yellow-700 dark:text-yellow-300">
+                      GO PREMIUM
+                    </h3>
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-500 text-white font-mono font-bold">
+                      PRO
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Unlock advanced features and unlimited access
+                  </p>
+                  <div className="mt-2 flex items-center gap-1 text-xs font-mono font-semibold text-yellow-700 dark:text-yellow-300">
+                    <span>Learn more</span>
+                    <span className="group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-mono font-medium truncate">User Account</p>
-                <p className="text-xs text-muted-foreground font-mono truncate">View profile</p>
-              </div>
-            </div>
+            </Link>
+
+            {/* User Account Info */}
+            <UserAccountSection onClose={() => setIsMobileOpen(false)} />
           </div>
         </div>
       </aside>

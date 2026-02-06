@@ -12,6 +12,9 @@ export async function DELETE(req: NextRequest) {
 
     // Delete user account using better-auth
     await auth.api.deleteUser({
+      body: {
+        token: session.session.token,
+      },
       headers: req.headers,
     });
 
