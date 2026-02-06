@@ -167,7 +167,7 @@ export function DashboardSidebar() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-hide">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -197,7 +197,7 @@ export function DashboardSidebar() {
             <Link
               href="/dashboard/premium"
               onClick={() => setIsMobileOpen(false)}
-              className="block mx-3 p-4 rounded-lg bg-gradient-to-br from-yellow-500/20 via-orange-500/20 to-red-500/20 border-2 border-yellow-500/30 hover:border-yellow-500/50 transition-all hover:scale-[1.02] group"
+              className="block mx-3 p-4 rounded-lg bg-gradient-to-br from-yellow-500/20 via-orange-500/20 to-red-500/20 border-2 border-yellow-500/30 hover:border-yellow-500/50 transition-colors group"
             >
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-yellow-500/20 group-hover:bg-yellow-500/30 transition-colors">
