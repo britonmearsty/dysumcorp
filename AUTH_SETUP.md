@@ -14,22 +14,40 @@
 
 ### 1. Set up OAuth credentials
 
-#### Google OAuth Setup
+#### Google OAuth Setup (with Drive Access)
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select an existing one
-3. Enable the Google+ API
-4. Go to "Credentials" → "Create Credentials" → "OAuth 2.0 Client ID"
-5. Set application type to "Web application"
-6. Add authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
-7. Copy the Client ID and Client Secret to your `.env` file
+3. Enable the following APIs:
+   - Google+ API
+   - Google Drive API
+4. Configure OAuth consent screen and add scopes:
+   - `.../auth/userinfo.email`
+   - `.../auth/userinfo.profile`
+   - `.../auth/drive.file`
+   - `.../auth/drive.appdata`
+5. Go to "Credentials" → "Create Credentials" → "OAuth 2.0 Client ID"
+6. Set application type to "Web application"
+7. Add authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
+8. Copy the Client ID and Client Secret to your `.env` file
 
-#### Dropbox OAuth Setup
+**Note:** Users will be asked to grant permissions to read/write files in Google Drive.
+
+#### Dropbox OAuth Setup (with File Access)
 1. Go to [Dropbox App Console](https://www.dropbox.com/developers/apps)
 2. Click "Create app"
 3. Choose "Scoped access" and "Full Dropbox" access
 4. Name your app
-5. In app settings, add redirect URI: `http://localhost:3000/api/auth/callback/dropbox`
-6. Copy the App key and App secret to your `.env` file
+5. In the **Permissions** tab, enable these scopes:
+   - `account_info.read`
+   - `files.metadata.write`
+   - `files.metadata.read`
+   - `files.content.write`
+   - `files.content.read`
+6. Click **Submit** to save permissions
+7. In app settings, add redirect URI: `http://localhost:3000/api/auth/callback/dropbox`
+8. Copy the App key and App secret to your `.env` file
+
+**Note:** Users will be asked to grant permissions to read/write files in Dropbox.
 
 ### 2. Configure environment variables
 
