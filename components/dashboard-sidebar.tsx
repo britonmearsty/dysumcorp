@@ -191,39 +191,8 @@ export function DashboardSidebar() {
             })}
           </nav>
 
-          {/* Premium Banner and User section */}
-          <div className="px-3 py-4 border-t border-border space-y-3">
-            {/* Premium Banner */}
-            <Link
-              href="/dashboard/premium"
-              onClick={() => setIsMobileOpen(false)}
-              className="block mx-3 p-4 rounded-lg bg-gradient-to-br from-yellow-500/20 via-orange-500/20 to-red-500/20 border-2 border-yellow-500/30 hover:border-yellow-500/50 transition-colors group"
-            >
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-yellow-500/20 group-hover:bg-yellow-500/30 transition-colors">
-                  <Crown className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-bold font-mono text-yellow-700 dark:text-yellow-300">
-                      GO PREMIUM
-                    </h3>
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-500 text-white font-mono font-bold">
-                      PRO
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Unlock advanced features and unlimited access
-                  </p>
-                  <div className="mt-2 flex items-center gap-1 text-xs font-mono font-semibold text-yellow-700 dark:text-yellow-300">
-                    <span>Learn more</span>
-                    <span className="group-hover:translate-x-1 transition-transform">→</span>
-                  </div>
-                </div>
-              </div>
-            </Link>
-
-            {/* User Account Info */}
+          {/* User section */}
+          <div className="px-3 py-4 border-t border-border">
             <UserAccountSection onClose={() => setIsMobileOpen(false)} />
           </div>
         </div>

@@ -26,3 +26,5 @@ export async function checkUserSubscription(userId: string) {
     }
   );
 }
+
+export { auth };
