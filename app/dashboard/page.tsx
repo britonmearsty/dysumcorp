@@ -4,28 +4,104 @@ import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { FolderOpen, FileText, Clock, Plus, Upload, Share2, ExternalLink, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+
+interface Portal {
+  id: string;
+  name: string;
+  clientName?: string;
+  createdAt: string;
+  _count?: {
+    files: number;
+  };
+}
+
+interface FileData {
+  id: string;
+  name: string;
+  uploadedAt: string;
+  portal: {
+    name: string;
+  };
+}
 
 export default function DashboardPage() {
   const { data: session } = useSession();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    activePortals: 0,
+    totalFilesReceived: 0,
+    recentActivityCount: 0,
+  });
+  const [activePortalsList, setActivePortalsList] = useState<Portal[]>([]);
+  const [recentActivities, setRecentActivities] = useState<FileData[]>([]);
 
-  // Mock data - replace with real data from your API
-  const activePortals = [
-    { id: 1, name: "Acme Corp Portal", client: "Acme Corporation", filesReceived: 12, lastActivity: "2 hours ago", status: "active" },
-    { id: 2, name: "TechStart Portal", client: "TechStart Inc", filesReceived: 8, lastActivity: "5 hours ago", status: "active" },
-    { id: 3, name: "Global Solutions", client: "Global Solutions Ltd", filesReceived: 15, lastActivity: "1 day ago", status: "active" },
-  ];
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [portalsRes, filesRes] = await Promise.all([
+          fetch("/api/portals"),
+          fetch("/api/files")
+        ]);
 
-  const recentActivities = [
-    { action: "File uploaded", portal: "Acme Corp Portal", file: "Contract_2024.pdf", time: "2 hours ago", type: "upload" },
-    { action: "Portal accessed", portal: "TechStart Portal", file: "Client logged in", time: "3 hours ago", type: "access" },
-    { action: "File uploaded", portal: "Global Solutions", file: "Invoice_Jan.xlsx", time: "5 hours ago", type: "upload" },
-    { action: "Portal created", portal: "New Client Portal", file: "Setup completed", time: "1 day ago", type: "create" },
-    { action: "File uploaded", portal: "Acme Corp Portal", file: "Report_Q1.pdf", time: "1 day ago", type: "upload" },
-  ];
+        if (portalsRes.ok && filesRes.ok) {
+          const portalsData = await portalsRes.json();
+          const filesData = await filesRes.json();
 
-  const totalActivePortals = activePortals.length;
-  const totalFilesReceived = activePortals.reduce((sum, portal) => sum + portal.filesReceived, 0);
-  const recentActivityCount = recentActivities.filter(a => a.time.includes("hours")).length;
+          const portals = portalsData.portals || [];
+          const files = filesData.files || [];
+
+          // Calculate stats
+          const fileCount = portals.reduce((acc: number, p: any) => acc + (p._count?.files || 0), 0);
+
+          // Get recent files (last 24h)
+          const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+          const recentFiles = files.filter((f: any) => new Date(f.uploadedAt) > oneDayAgo);
+
+          setStats({
+            activePortals: portals.length,
+            totalFilesReceived: fileCount,
+            recentActivityCount: recentFiles.length
+          });
+
+          setActivePortalsList(portals.slice(0, 5));
+          setRecentActivities(files.slice(0, 5));
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (session) {
+      fetchData();
+    }
+  }, [session]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    // Return relative time if under 24h, else date
+    const diff = Date.now() - date.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+
+    if (hours < 1) return "Just now";
+    if (hours < 24) return `${hours} hours ago`;
+    return date.toLocaleDateString();
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-8 animate-pulse">
+        <div className="h-8 w-48 bg-muted rounded"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="h-32 bg-muted rounded"></div>
+          <div className="h-32 bg-muted rounded"></div>
+          <div className="h-32 bg-muted rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -43,7 +119,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-mono text-muted-foreground">ACTIVE PORTALS</p>
-              <p className="text-3xl font-mono font-bold mt-2">{totalActivePortals}</p>
+              <p className="text-3xl font-mono font-bold mt-2">{stats.activePortals}</p>
               <p className="text-xs font-mono text-muted-foreground mt-1">Currently running</p>
             </div>
             <div className="w-12 h-12 bg-[#FF6B2C]/10 flex items-center justify-center">
@@ -56,7 +132,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-mono text-muted-foreground">FILES RECEIVED</p>
-              <p className="text-3xl font-mono font-bold mt-2">{totalFilesReceived}</p>
+              <p className="text-3xl font-mono font-bold mt-2">{stats.totalFilesReceived}</p>
               <p className="text-xs font-mono text-muted-foreground mt-1">Across all portals</p>
             </div>
             <div className="w-12 h-12 bg-[#FF6B2C]/10 flex items-center justify-center">
@@ -68,9 +144,9 @@ export default function DashboardPage() {
         <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-mono text-muted-foreground">RECENT ACTIVITY</p>
-              <p className="text-3xl font-mono font-bold mt-2">{recentActivityCount}</p>
-              <p className="text-xs font-mono text-muted-foreground mt-1">In the last 24 hours</p>
+              <p className="text-sm font-mono text-muted-foreground">RECENT FILES</p>
+              <p className="text-3xl font-mono font-bold mt-2">{stats.recentActivityCount}</p>
+              <p className="text-xs font-mono text-muted-foreground mt-1">Uploaded in last 24h</p>
             </div>
             <div className="w-12 h-12 bg-[#FF6B2C]/10 flex items-center justify-center">
               <TrendingUp className="h-6 w-6 text-[#FF6B2C]" />
@@ -92,34 +168,38 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="space-y-4">
-            {activePortals.map((portal) => (
-              <div key={portal.id} className="border border-border p-4 hover:border-[#FF6B2C]/50 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-mono font-bold">{portal.name}</h3>
-                      <span className="px-2 py-0.5 bg-green-500/10 text-green-500 text-xs font-mono border border-green-500/20">
-                        ACTIVE
-                      </span>
-                    </div>
-                    <p className="text-sm font-mono text-muted-foreground mt-1">{portal.client}</p>
-                    <div className="flex items-center gap-4 mt-3">
-                      <div className="flex items-center gap-1 text-sm font-mono">
-                        <FileText className="w-4 h-4 text-[#FF6B2C]" />
-                        <span>{portal.filesReceived} files</span>
+            {activePortalsList.length === 0 ? (
+              <p className="text-muted-foreground font-mono">No active portals found.</p>
+            ) : (
+              activePortalsList.map((portal) => (
+                <div key={portal.id} className="border border-border p-4 hover:border-[#FF6B2C]/50 transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-mono font-bold">{portal.name}</h3>
+                        <span className="px-2 py-0.5 bg-green-500/10 text-green-500 text-xs font-mono border border-green-500/20">
+                          ACTIVE
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1 text-sm font-mono text-muted-foreground">
-                        <Clock className="w-4 h-4" />
-                        <span>{portal.lastActivity}</span>
+                      <p className="text-sm font-mono text-muted-foreground mt-1">
+                        Created {new Date(portal.createdAt).toLocaleDateString()}
+                      </p>
+                      <div className="flex items-center gap-4 mt-3">
+                        <div className="flex items-center gap-1 text-sm font-mono">
+                          <FileText className="w-4 h-4 text-[#FF6B2C]" />
+                          <span>{portal._count?.files || 0} files</span>
+                        </div>
                       </div>
                     </div>
+                    <Link href={`/dashboard/portals/${portal.id}`}>
+                      <Button variant="outline" size="sm" className="rounded-none font-mono">
+                        MANAGE
+                      </Button>
+                    </Link>
                   </div>
-                  <Button variant="outline" size="sm" className="rounded-none font-mono">
-                    OPEN
-                  </Button>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -127,52 +207,50 @@ export default function DashboardPage() {
         <div className="border border-border bg-background p-6">
           <h2 className="text-xl font-mono font-bold mb-6">QUICK ACTIONS</h2>
           <div className="space-y-3">
-            <Link href="/dashboard/portals">
+            <Link href="/dashboard/portals/create">
               <Button className="w-full rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono justify-start">
                 <Plus className="mr-2 w-4 h-4" />
                 CREATE NEW PORTAL
               </Button>
             </Link>
-            <Link href="/dashboard/storage">
+            <Link href="/dashboard/files">
               <Button variant="outline" className="w-full rounded-none font-mono border-2 justify-start">
                 <Upload className="mr-2 w-4 h-4" />
-                UPLOAD FILES
+                MANAGE FILES
               </Button>
             </Link>
-            <Link href="/dashboard/clients">
+            <Link href="/dashboard/teams">
               <Button variant="outline" className="w-full rounded-none font-mono border-2 justify-start">
                 <Share2 className="mr-2 w-4 h-4" />
-                INVITE CLIENT
+                MANAGE TEAM
               </Button>
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Recent Activity */}
+      {/* Recent Activity (Files) */}
       <div className="border border-border bg-background p-6">
-        <h2 className="text-xl font-mono font-bold mb-6">RECENT ACTIVITY</h2>
+        <h2 className="text-xl font-mono font-bold mb-6">RECENT UPLOADS</h2>
         <div className="space-y-3">
-          {recentActivities.map((activity, index) => (
-            <div key={index} className="flex items-center justify-between py-3 border-b border-border last:border-0 hover:bg-muted/30 transition-colors px-2">
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 flex items-center justify-center ${
-                  activity.type === 'upload' ? 'bg-blue-500/10' :
-                  activity.type === 'access' ? 'bg-green-500/10' :
-                  'bg-purple-500/10'
-                }`}>
-                  {activity.type === 'upload' ? <Upload className="w-5 h-5 text-blue-500" /> :
-                   activity.type === 'access' ? <ExternalLink className="w-5 h-5 text-green-500" /> :
-                   <Plus className="w-5 h-5 text-purple-500" />}
+          {recentActivities.length === 0 ? (
+            <p className="text-muted-foreground font-mono">No recent uploads.</p>
+          ) : (
+            recentActivities.map((file, index) => (
+              <div key={index} className="flex items-center justify-between py-3 border-b border-border last:border-0 hover:bg-muted/30 transition-colors px-2">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 flex items-center justify-center bg-blue-500/10">
+                    <Upload className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="font-mono font-medium">File uploaded</p>
+                    <p className="text-sm font-mono text-muted-foreground">{file.portal.name} • {file.name}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-mono font-medium">{activity.action}</p>
-                  <p className="text-sm font-mono text-muted-foreground">{activity.portal} • {activity.file}</p>
-                </div>
+                <p className="text-sm font-mono text-muted-foreground">{formatDate(file.uploadedAt)}</p>
               </div>
-              <p className="text-sm font-mono text-muted-foreground">{activity.time}</p>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>

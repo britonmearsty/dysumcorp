@@ -64,16 +64,12 @@ export async function POST(request: NextRequest) {
 
         try {
           if (accessToken) {
-            // Convert file to buffer
-            const arrayBuffer = await file.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-
-            // Upload to cloud storage
+            // Upload to cloud storage directly with the File object (Blob)
             if (provider === "google") {
               const result = await uploadToGoogleDrive(
                 accessToken,
                 `${portal.name}/${file.name}`,
-                buffer,
+                file, // Pass File object directly
                 file.type || "application/octet-stream"
               );
               storageUrl = result.webViewLink || result.id;
@@ -82,7 +78,7 @@ export async function POST(request: NextRequest) {
               const result = await uploadToDropbox(
                 accessToken,
                 `/${portal.name}/${file.name}`,
-                buffer
+                file // Pass File object directly
               );
               storageUrl = result.id;
               actualSize = result.size ? Number(result.size) : file.size;

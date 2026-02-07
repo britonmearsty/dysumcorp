@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
@@ -10,10 +11,38 @@ const prisma = new PrismaClient({ adapter });
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    // 1. Get raw text for signature verification
+    const rawBody = await req.text();
+
+    // 2. Verify signature
+    const signature = req.headers.get("creem-signature");
+    const secret = process.env.CREEM_WEBHOOK_SECRET;
+
+    if (!secret) {
+      console.error("CREEM_WEBHOOK_SECRET is not set");
+      return NextResponse.json(
+        { error: "Configuration error" },
+        { status: 500 },
+      );
+    }
+
+    if (!signature) {
+      return NextResponse.json({ error: "Missing signature" }, { status: 401 });
+    }
+
+    const hmac = crypto.createHmac("sha256", secret);
+    const digest = hmac.update(rawBody).digest("hex");
+
+    if (signature !== digest) {
+      console.error("Invalid webhook signature");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
+
+    // 3. Parse JSON
+    const body = JSON.parse(rawBody);
     const event = body.type;
 
-    console.log("Creem webhook received:", event, body);
+    console.log("Creem webhook received:", event, body.id); // Log ID instead of full body for brevity
 
     switch (event) {
       case "subscription.created":
@@ -42,16 +71,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Webhook error:", error);
-    return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Webhook handler failed" },
+      { status: 500 },
+    );
   }
 }
 
 async function handleSubscriptionActive(data: any) {
   const { customer, product, subscription } = data;
-  
+
   // Find the plan based on product ID
   const plan = getPlanByCreemProductId(product.id);
-  
+
   if (!plan) {
     console.error("Unknown product ID:", product.id);
     return;
@@ -87,7 +119,7 @@ async function handleSubscriptionInactive(data: any) {
 
 async function handlePaymentSucceeded(data: any) {
   const { customer } = data;
-  
+
   await prisma.user.updateMany({
     where: { email: customer.email },
     data: {
@@ -100,7 +132,7 @@ async function handlePaymentSucceeded(data: any) {
 
 async function handlePaymentFailed(data: any) {
   const { customer } = data;
-  
+
   await prisma.user.updateMany({
     where: { email: customer.email },
     data: {

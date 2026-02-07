@@ -160,7 +160,7 @@ export async function getValidToken(
 export async function uploadToGoogleDrive(
   accessToken: string,
   fileName: string,
-  fileContent: Buffer | string,
+  fileContent: Buffer | string | Blob | File,
   mimeType: string = "text/plain"
 ): Promise<FileMetadata> {
   const boundary = "-------314159265358979323846";
@@ -172,14 +172,18 @@ export async function uploadToGoogleDrive(
     mimeType: mimeType,
   };
 
-  const multipartRequestBody =
-    delimiter +
-    "Content-Type: application/json\r\n\r\n" +
-    JSON.stringify(metadata) +
-    delimiter +
-    `Content-Type: ${mimeType}\r\n\r\n` +
-    fileContent +
-    closeDelimiter;
+  // Construct multipart body using Blob to avoid loading file into string/memory
+  // We need to combine: delimiter + metadata + delimiter + fileContent + closeDelimiter
+
+  const multipartBody = new Blob([
+    delimiter,
+    "Content-Type: application/json\r\n\r\n",
+    JSON.stringify(metadata),
+    delimiter,
+    `Content-Type: ${mimeType}\r\n\r\n`,
+    fileContent as BlobPart, // Cast to BlobPart to silence TS error regarding Buffer
+    closeDelimiter
+  ]);
 
   const response = await fetch(
     "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,size,mimeType,modifiedTime,webViewLink",
@@ -189,7 +193,7 @@ export async function uploadToGoogleDrive(
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": `multipart/related; boundary=${boundary}`,
       },
-      body: multipartRequestBody,
+      body: multipartBody,
     }
   );
 
@@ -280,12 +284,10 @@ export async function deleteFromGoogleDrive(
 export async function uploadToDropbox(
   accessToken: string,
   filePath: string,
-  fileContent: Buffer | string
+  fileContent: Buffer | string | Blob | File
 ): Promise<FileMetadata> {
-  // Convert Buffer to Uint8Array for fetch API compatibility
-  const body = typeof fileContent === "string" 
-    ? fileContent 
-    : new Uint8Array(fileContent);
+  // Use the content directly if it's a Blob/File/Buffer/string that fetch accepts
+  // Dropbox requires 'application/octet-stream' for the upload body
 
   const response = await fetch("https://content.dropboxapi.com/2/files/upload", {
     method: "POST",
@@ -299,7 +301,7 @@ export async function uploadToDropbox(
       }),
       "Content-Type": "application/octet-stream",
     },
-    body: body,
+    body: fileContent as BodyInit,
   });
 
   if (!response.ok) {

@@ -57,8 +57,8 @@ export const siteConfig = {
     },
   ],
   links: {
-    login: "/login",
-    signup: "/signup",
+    login: "/auth",
+    signup: "/auth",
     dashboard: "/dashboard",
   },
 };
