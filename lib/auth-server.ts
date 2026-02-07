@@ -19,7 +19,7 @@ export async function checkUserSubscription(userId: string) {
   return await checkSubscriptionAccess(
     {
       apiKey: process.env.CREEM_API_KEY!,
-      testMode: true, // Set to false in production
+      testMode: process.env.NODE_ENV === "development", // Automatically switch based on environment
     },
     {
       database: auth.options.database,

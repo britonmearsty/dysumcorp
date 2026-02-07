@@ -42,17 +42,40 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create Creem checkout session
-    // Note: This is a simplified version. You'll need to implement the actual Creem checkout API
-    const checkoutUrl = `https://checkout.creem.io/checkout?product=${productId}&customer=${session.user.email}&success_url=${encodeURIComponent(
-      `${process.env.BETTER_AUTH_URL}/dashboard/billing?success=true`,
-    )}&cancel_url=${encodeURIComponent(
-      `${process.env.BETTER_AUTH_URL}/dashboard/billing?canceled=true`,
-    )}`;
+    // Use Better Auth Creem plugin to create checkout
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/auth/creem/create-checkout`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: request.headers.get("cookie") || "",
+        },
+        body: JSON.stringify({
+          productId,
+          successUrl: `${process.env.BETTER_AUTH_URL}/dashboard/billing?success=true`,
+          cancelUrl: `${process.env.BETTER_AUTH_URL}/dashboard/billing?canceled=true`,
+          metadata: {
+            planId,
+            billingCycle,
+            userId: session.user.id,
+          },
+        }),
+      },
+    );
+
+    const checkoutData = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: checkoutData.error || "Failed to create checkout" },
+        { status: response.status },
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      checkoutUrl,
+      checkoutUrl: checkoutData.url,
       productId,
       planId,
       billingCycle,
