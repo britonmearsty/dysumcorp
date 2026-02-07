@@ -52,7 +52,7 @@ export const auth = betterAuth({
     creem({
       apiKey: process.env.CREEM_API_KEY!,
       webhookSecret: process.env.CREEM_WEBHOOK_SECRET,
-      testMode: true, // Set to false in production
+      testMode: process.env.NODE_ENV === "development", // Automatically switch based on environment
       defaultSuccessUrl: "/dashboard",
       persistSubscriptions: true, // Enable database persistence
       onGrantAccess: async ({ reason, product, customer, metadata }) => {
