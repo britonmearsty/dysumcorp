@@ -12,6 +12,7 @@ import {
 import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
+import { Lock, AlertTriangle, Check, X } from "lucide-react";
 
 import {
   PRICING_PLANS,
@@ -21,7 +22,6 @@ import {
 } from "@/config/pricing";
 
 // Import static icons for paywall modal
-import { Lock, AlertTriangle, Check, X } from "lucide-react";
 
 interface PaywallModalProps {
   isOpen: boolean;

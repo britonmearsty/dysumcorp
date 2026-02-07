@@ -42,6 +42,15 @@ export async function POST(request: Request) {
       );
     }
 
+    // Debug logging
+    console.log("Checkout request:", {
+      productId,
+      planId,
+      billingCycle,
+      betterAuthUrl: process.env.NEXT_PUBLIC_BETTER_AUTH_URL,
+      userId: session.user.id,
+    });
+
     // Use Better Auth Creem plugin to create checkout
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/auth/creem/create-checkout`,
@@ -64,7 +73,21 @@ export async function POST(request: Request) {
       },
     );
 
-    const checkoutData = await response.json();
+    const responseText = await response.text();
+
+    console.log("Creem API response:", {
+      status: response.status,
+      statusText: response.statusText,
+      body: responseText,
+    });
+
+    let checkoutData;
+
+    try {
+      checkoutData = JSON.parse(responseText);
+    } catch {
+      checkoutData = { error: "Invalid JSON response", raw: responseText };
+    }
 
     if (!response.ok) {
       return NextResponse.json(

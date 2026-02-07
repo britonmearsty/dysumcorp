@@ -56,8 +56,10 @@ export default function TeamsPage() {
 
     try {
       const response = await fetch("/api/limits/team-members");
+
       if (response.ok) {
         const data = await response.json();
+
         setUserPlan(data.planType);
       }
     } catch (error) {
@@ -152,6 +154,7 @@ export default function TeamsPage() {
   const handleAddMember = async () => {
     if (!newMemberEmail.trim() || !selectedTeam) {
       alert("Please enter a member email");
+
       return;
     }
 
@@ -168,6 +171,7 @@ export default function TeamsPage() {
           data.reason || "You've reached your team member limit.",
           "team",
         );
+
         return;
       }
     } catch (error) {
@@ -187,6 +191,7 @@ export default function TeamsPage() {
           limitCheck.reason || "You've reached your team member limit.",
           "team",
         );
+
         return;
       }
     } catch (error) {

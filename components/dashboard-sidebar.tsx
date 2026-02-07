@@ -12,7 +12,6 @@ import { useSession, signOut } from "@/lib/auth-client";
 // Animated Icons
 import { HomeIcon } from "@/components/ui/home";
 import { BlocksIcon } from "@/components/ui/blocks";
-import { FileTextIcon } from "@/components/ui/file-text";
 import { BoxIcon } from "@/components/ui/box";
 import { UserIcon } from "@/components/ui/user";
 import { GaugeIcon } from "@/components/ui/gauge";
@@ -33,7 +32,6 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "OVERVIEW", href: "/dashboard", icon: HomeIcon },
   { label: "PORTALS", href: "/dashboard/portals", icon: BlocksIcon },
-  { label: "FILES", href: "/dashboard/files", icon: FileTextIcon },
   { label: "ASSETS", href: "/dashboard/assets", icon: BoxIcon },
   { label: "CLIENTS", href: "/dashboard/clients", icon: UserIcon },
   { label: "STORAGE", href: "/dashboard/storage", icon: GaugeIcon },
@@ -144,14 +142,14 @@ export function DashboardSidebar() {
       {isMobileOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          role="button"
+          tabIndex={0}
           onClick={() => setIsMobileOpen(false)}
           onKeyDown={(e) => {
             if (e.key === "Escape") {
               setIsMobileOpen(false);
             }
           }}
-          role="button"
-          tabIndex={0}
         />
       )}
 

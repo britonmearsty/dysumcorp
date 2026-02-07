@@ -12,9 +12,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const planType = await getUserPlanType(userId);
+
     return NextResponse.json({ planType });
   } catch (error) {
     console.error("Failed to get user plan:", error);
+
     return NextResponse.json(
       { error: "Failed to get user plan" },
       { status: 500 },
@@ -49,6 +51,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Failed to check plan limit:", error);
+
     return NextResponse.json(
       { error: "Failed to check plan limit" },
       { status: 500 },

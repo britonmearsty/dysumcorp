@@ -1,86 +1,498 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  FileText,
+  Download,
+  Trash2,
+  Search,
+  Filter,
+  Calendar,
+  HardDrive,
+  ExternalLink,
+  Cloud,
+  Database,
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { CustomDropdown } from "@/components/ui/custom-dropdown";
+
+interface File {
+  id: string;
+  name: string;
+  size: string;
+  mimeType: string;
+  storageUrl: string;
+  uploadedAt: string;
+  downloads: number;
+  portal: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+}
+
 export default function AssetsPage() {
-  const assets = [
-    {
-      id: 1,
-      name: "Server Cluster A",
-      type: "Infrastructure",
-      value: "$45,000",
-      status: "Operational",
+  const [files, setFiles] = useState<File[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterPortal, setFilterPortal] = useState<string>("all");
+  const [filterStorage, setFilterStorage] = useState<string>("all");
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchFiles();
+  }, []);
+
+  const fetchFiles = async () => {
+    try {
+      const response = await fetch("/api/files");
+
+      if (response.ok) {
+        const data = await response.json();
+
+        setFiles(data.files);
+      }
+    } catch (error) {
+      console.error("Failed to fetch files:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${name}"? This action cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    setDeleting(id);
+    try {
+      const response = await fetch(`/api/files/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setFiles(files.filter((f) => f.id !== id));
+      } else {
+        alert("Failed to delete file");
+      }
+    } catch (error) {
+      console.error("Failed to delete file:", error);
+      alert("Failed to delete file");
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const handleDownload = async (file: File) => {
+    try {
+      // Always download via API to handle both cloud and local files
+      const response = await fetch(`/api/files/${file.id}/download`);
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert("Failed to download file");
+      }
+    } catch (error) {
+      console.error("Failed to download file:", error);
+      alert("Failed to download file");
+    }
+  };
+
+  const getStorageType = (storageUrl: string): string => {
+    if (
+      storageUrl.includes("drive.google.com") ||
+      storageUrl.includes("googleapis.com")
+    ) {
+      return "google";
+    }
+    if (
+      storageUrl.includes("dropbox.com") ||
+      storageUrl.includes("dl.dropboxusercontent.com")
+    ) {
+      return "dropbox";
+    }
+    if (storageUrl.startsWith("http")) {
+      return "other";
+    }
+
+    return "local";
+  };
+
+  const formatFileSize = (bytes: string) => {
+    const size = Number(bytes);
+
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
+    if (size < 1024 * 1024 * 1024)
+      return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+
+    return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.startsWith("image/")) return "🖼️";
+    if (mimeType.startsWith("video/")) return "🎥";
+    if (mimeType.startsWith("audio/")) return "🎵";
+    if (mimeType.includes("pdf")) return "📄";
+    if (mimeType.includes("word") || mimeType.includes("document")) return "📝";
+    if (mimeType.includes("sheet") || mimeType.includes("excel")) return "📊";
+    if (mimeType.includes("presentation") || mimeType.includes("powerpoint"))
+      return "📽️";
+    if (
+      mimeType.includes("zip") ||
+      mimeType.includes("rar") ||
+      mimeType.includes("archive")
+    )
+      return "📦";
+
+    return "📎";
+  };
+
+  const getStorageIcon = (storageType: string) => {
+    switch (storageType) {
+      case "google":
+        return <Cloud className="w-4 h-4 text-blue-500" />;
+      case "dropbox":
+        return <Cloud className="w-4 h-4 text-blue-600" />;
+      case "local":
+        return <HardDrive className="w-4 h-4 text-gray-500" />;
+      default:
+        return <Database className="w-4 h-4 text-muted-foreground" />;
+    }
+  };
+
+  const getStorageLabel = (storageType: string) => {
+    switch (storageType) {
+      case "google":
+        return "Google Drive";
+      case "dropbox":
+        return "Dropbox";
+      case "local":
+        return "Local";
+      default:
+        return "Other";
+    }
+  };
+
+  const filteredFiles = files.filter((file) => {
+    const matchesSearch = file.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesPortal =
+      filterPortal === "all" || file.portal.id === filterPortal;
+    const storageType = getStorageType(file.storageUrl);
+    const matchesStorage =
+      filterStorage === "all" || storageType === filterStorage;
+
+    return matchesSearch && matchesPortal && matchesStorage;
+  });
+
+  const uniquePortals = Array.from(new Set(files.map((f) => f.portal.id))).map(
+    (id) => {
+      const file = files.find((f) => f.portal.id === id);
+
+      return file?.portal;
     },
-    {
-      id: 2,
-      name: "Database Primary",
-      type: "Database",
-      value: "$28,000",
-      status: "Operational",
-    },
-    {
-      id: 3,
-      name: "CDN Network",
-      type: "Network",
-      value: "$15,000",
-      status: "Operational",
-    },
-    {
-      id: 4,
-      name: "Backup Storage",
-      type: "Storage",
-      value: "$12,000",
-      status: "Maintenance",
-    },
-    {
-      id: 5,
-      name: "Load Balancer",
-      type: "Infrastructure",
-      value: "$8,500",
-      status: "Operational",
-    },
-    {
-      id: 6,
-      name: "API Gateway",
-      type: "Software",
-      value: "$6,200",
-      status: "Operational",
-    },
-  ];
+  );
+
+  const totalSize = files.reduce((acc, file) => acc + Number(file.size), 0);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold font-mono">Assets</h1>
+          <p className="text-muted-foreground mt-2">Loading your files...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold font-mono">Assets</h1>
-        <p className="text-muted-foreground mt-2">
-          Track and manage your digital assets
-        </p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold font-mono">Assets</h1>
+          <p className="text-muted-foreground mt-2">
+            Manage all uploaded files
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground font-mono">
+              Total Storage
+            </p>
+            <p className="text-lg font-mono font-bold">
+              {formatFileSize(totalSize.toString())}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-muted">
-            <tr>
-              <th className="text-left p-4 font-mono text-sm">Asset Name</th>
-              <th className="text-left p-4 font-mono text-sm">Type</th>
-              <th className="text-left p-4 font-mono text-sm">Value</th>
-              <th className="text-left p-4 font-mono text-sm">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {assets.map((asset) => (
-              <tr key={asset.id} className="border-t hover:bg-muted/50">
-                <td className="p-4 font-medium">{asset.name}</td>
-                <td className="p-4 text-muted-foreground">{asset.type}</td>
-                <td className="p-4 font-mono">{asset.value}</td>
-                <td className="p-4">
-                  <span
-                    className={`text-xs px-2 py-1 rounded ${asset.status === "Operational" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}
-                  >
-                    {asset.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Stats */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <FileText className="w-8 h-8 text-[#FF6B2C]" />
+            <div>
+              <p className="text-sm text-muted-foreground font-mono">
+                Total Files
+              </p>
+              <p className="text-2xl font-mono font-bold">{files.length}</p>
+            </div>
+          </div>
+        </div>
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <HardDrive className="w-8 h-8 text-[#FF6B2C]" />
+            <div>
+              <p className="text-sm text-muted-foreground font-mono">
+                Storage Used
+              </p>
+              <p className="text-2xl font-mono font-bold">
+                {formatFileSize(totalSize.toString())}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <Download className="w-8 h-8 text-[#FF6B2C]" />
+            <div>
+              <p className="text-sm text-muted-foreground font-mono">
+                Total Downloads
+              </p>
+              <p className="text-2xl font-mono font-bold">
+                {files.reduce((acc, f) => acc + f.downloads, 0)}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            className="pl-10 rounded-none font-mono"
+            placeholder="Search files..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <CustomDropdown
+              className="w-48"
+              options={[
+                { value: "all", label: "All Portals" },
+                ...uniquePortals.map((portal) => ({
+                  value: portal?.id || "",
+                  label: portal?.name || "",
+                })),
+              ]}
+              placeholder="Select portal"
+              value={filterPortal}
+              onChange={setFilterPortal}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Database className="w-4 h-4 text-muted-foreground" />
+            <CustomDropdown
+              className="w-48"
+              options={[
+                {
+                  value: "all",
+                  label: "All Storage",
+                  icon: <Database className="w-4 h-4" />,
+                },
+                {
+                  value: "google",
+                  label: "Google Drive",
+                  icon: <Cloud className="w-4 h-4 text-blue-500" />,
+                },
+                {
+                  value: "dropbox",
+                  label: "Dropbox",
+                  icon: <Cloud className="w-4 h-4 text-blue-600" />,
+                },
+                {
+                  value: "local",
+                  label: "Local Storage",
+                  icon: <HardDrive className="w-4 h-4 text-gray-500" />,
+                },
+              ]}
+              placeholder="Select storage"
+              value={filterStorage}
+              onChange={setFilterStorage}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Files List */}
+      {filteredFiles.length === 0 ? (
+        <div className="border rounded-lg p-12 text-center">
+          <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="font-mono font-semibold text-lg mb-2">
+            {searchQuery || filterPortal !== "all"
+              ? "No files found"
+              : "No files yet"}
+          </h3>
+          <p className="text-muted-foreground font-mono text-sm">
+            {searchQuery || filterPortal !== "all"
+              ? "Try adjusting your search or filters"
+              : "Files uploaded to your portals will appear here"}
+          </p>
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted/30 border-b">
+                <tr>
+                  <th className="text-left p-4 font-mono text-sm font-semibold">
+                    File
+                  </th>
+                  <th className="text-left p-4 font-mono text-sm font-semibold">
+                    Portal
+                  </th>
+                  <th className="text-left p-4 font-mono text-sm font-semibold">
+                    Storage
+                  </th>
+                  <th className="text-left p-4 font-mono text-sm font-semibold">
+                    Size
+                  </th>
+                  <th className="text-left p-4 font-mono text-sm font-semibold">
+                    Uploaded
+                  </th>
+                  <th className="text-left p-4 font-mono text-sm font-semibold">
+                    Downloads
+                  </th>
+                  <th className="text-right p-4 font-mono text-sm font-semibold">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredFiles.map((file) => (
+                  <tr
+                    key={file.id}
+                    className="border-b hover:bg-muted/20 transition-colors"
+                  >
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">
+                          {getFileIcon(file.mimeType)}
+                        </span>
+                        <div>
+                          <p className="font-mono font-medium">{file.name}</p>
+                          <p className="text-xs text-muted-foreground font-mono">
+                            {file.mimeType}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm">
+                          {file.portal.name}
+                        </span>
+                        <a
+                          className="text-[#FF6B2C] hover:text-[#FF6B2C]/80"
+                          href={`/portal/${file.portal.slug}`}
+                          rel="noopener noreferrer"
+                          target="_blank"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        {getStorageIcon(getStorageType(file.storageUrl))}
+                        <span className="font-mono text-sm">
+                          {getStorageLabel(getStorageType(file.storageUrl))}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span className="font-mono text-sm">
+                        {formatFileSize(file.size)}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-mono text-sm">
+                          {formatDate(file.uploadedAt)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span className="font-mono text-sm">
+                        {file.downloads}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          className="rounded-none font-mono"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDownload(file)}
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          className="rounded-none font-mono text-red-600 hover:text-red-700 hover:bg-red-50"
+                          disabled={deleting === file.id}
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDelete(file.id, file.name)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

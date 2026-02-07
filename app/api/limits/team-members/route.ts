@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { checkTeamMemberLimit, getUserPlanType } from "@/lib/plan-limits";
 import { authClient } from "@/lib/auth-client";
 
 export async function GET(request: NextRequest) {
   try {
     const session = await authClient.getSession();
+
     if (!session?.data?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -22,6 +24,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error checking team member limit:", error);
+
     return NextResponse.json(
       { error: "Failed to check team member limit" },
       { status: 500 },

@@ -41,8 +41,10 @@ export default function PortalsPage() {
 
     try {
       const response = await fetch("/api/limits/portals");
+
       if (response.ok) {
         const data = await response.json();
+
         setUserPlan(data.planType);
       }
     } catch (error) {
@@ -108,6 +110,7 @@ export default function PortalsPage() {
           data.reason || "You've reached your portal limit.",
           "pro",
         );
+
         return;
       }
 

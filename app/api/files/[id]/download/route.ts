@@ -52,43 +52,40 @@ export async function GET(
       data: { downloads: { increment: 1 } },
     });
 
-    // If it's a cloud storage URL, redirect to it
+    // If it's a cloud storage URL, download from it instead of redirecting
     if (file.storageUrl.startsWith("http")) {
-      return NextResponse.redirect(file.storageUrl);
-    }
+      try {
+        let buffer: Buffer | null = null;
 
-    // Try to download from cloud storage
-    try {
-      let buffer: Buffer | null = null;
+        // Try Google Drive first
+        const googleToken = await getValidToken(session.user.id, "google");
 
-      // Try Google Drive first
-      const googleToken = await getValidToken(session.user.id, "google");
+        if (googleToken) {
+          const fileId = file.storageUrl.split("/").pop() || file.storageUrl;
 
-      if (googleToken) {
-        const fileId = file.storageUrl.split("/").pop() || file.storageUrl;
-
-        buffer = await downloadFromGoogleDrive(googleToken, fileId);
-      }
-
-      // Try Dropbox if Google Drive failed
-      if (!buffer) {
-        const dropboxToken = await getValidToken(session.user.id, "dropbox");
-
-        if (dropboxToken) {
-          buffer = await downloadFromDropbox(dropboxToken, file.storageUrl);
+          buffer = await downloadFromGoogleDrive(googleToken, fileId);
         }
-      }
 
-      if (buffer) {
-        return new NextResponse(buffer, {
-          headers: {
-            "Content-Type": file.mimeType,
-            "Content-Disposition": `attachment; filename="${file.name}"`,
-          },
-        });
+        // Try Dropbox if Google Drive failed
+        if (!buffer) {
+          const dropboxToken = await getValidToken(session.user.id, "dropbox");
+
+          if (dropboxToken) {
+            buffer = await downloadFromDropbox(dropboxToken, file.storageUrl);
+          }
+        }
+
+        if (buffer) {
+          return new NextResponse(buffer, {
+            headers: {
+              "Content-Type": file.mimeType,
+              "Content-Disposition": `attachment; filename="${file.name}"`,
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Failed to download from cloud storage:", error);
       }
-    } catch (error) {
-      console.error("Failed to download from cloud storage:", error);
     }
 
     // If all else fails, return error
