@@ -53,8 +53,8 @@ export async function POST(request: Request) {
         },
         body: JSON.stringify({
           productId,
-          successUrl: `${process.env.BETTER_AUTH_URL}/dashboard/billing?success=true`,
-          cancelUrl: `${process.env.BETTER_AUTH_URL}/dashboard/billing?canceled=true`,
+          successUrl: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/dashboard/billing?success=true`,
+          cancelUrl: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/dashboard/billing?canceled=true`,
           metadata: {
             planId,
             billingCycle,
