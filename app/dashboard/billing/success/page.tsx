@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 
 export default function CheckoutSuccessPage() {
@@ -24,19 +25,20 @@ export default function CheckoutSuccessPage() {
           Subscription Successful!
         </h1>
         <p className="text-muted-foreground font-mono mb-8">
-          Thank you for subscribing. Your account has been upgraded and you now have access to all premium features.
+          Thank you for subscribing. Your account has been upgraded and you now
+          have access to all premium features.
         </p>
         <div className="flex flex-col gap-4">
           <Button
-            onClick={() => router.push("/dashboard")}
             className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+            onClick={() => router.push("/dashboard")}
           >
             GO TO DASHBOARD
           </Button>
           <Button
+            className="rounded-none font-mono"
             variant="outline"
             onClick={() => router.push("/dashboard/billing")}
-            className="rounded-none font-mono"
           >
             VIEW BILLING
           </Button>

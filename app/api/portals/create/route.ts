@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
-import { checkPortalLimit, checkCustomDomainLimit, getUserPlanType, checkFeatureAccess } from "@/lib/plan-limits";
+
+import { auth } from "@/lib/auth-server";
+import { PrismaClient } from "@/lib/generated/prisma/client";
+import {
+  checkPortalLimit,
+  checkCustomDomainLimit,
+  getUserPlanType,
+  checkFeatureAccess,
+} from "@/lib/plan-limits";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -24,14 +30,15 @@ export async function POST(request: Request) {
 
     // Check portal limit
     const portalCheck = await checkPortalLimit(userId, planType);
+
     if (!portalCheck.allowed) {
       return NextResponse.json(
-        { 
+        {
           error: portalCheck.reason,
           upgrade: true,
           currentPlan: planType,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -42,7 +49,7 @@ export async function POST(request: Request) {
     if (!name || !slug) {
       return NextResponse.json(
         { error: "Portal name and slug are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -54,21 +61,22 @@ export async function POST(request: Request) {
     if (existingPortal) {
       return NextResponse.json(
         { error: "Portal slug already exists" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Check custom domain limit if provided
     if (customDomain) {
       const domainCheck = await checkCustomDomainLimit(userId, planType);
+
       if (!domainCheck.allowed) {
         return NextResponse.json(
-          { 
+          {
             error: domainCheck.reason,
             upgrade: true,
             currentPlan: planType,
           },
-          { status: 403 }
+          { status: 403 },
         );
       }
 
@@ -80,7 +88,7 @@ export async function POST(request: Request) {
       if (existingDomain) {
         return NextResponse.json(
           { error: "Custom domain already in use" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -88,12 +96,12 @@ export async function POST(request: Request) {
     // Check white-labeling feature access
     if (whiteLabeled && !checkFeatureAccess(planType, "whiteLabeling")) {
       return NextResponse.json(
-        { 
+        {
           error: "White-labeling is not available on your current plan",
           upgrade: true,
           currentPlan: planType,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -115,9 +123,10 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error creating portal:", error);
+
     return NextResponse.json(
       { error: "Failed to create portal" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

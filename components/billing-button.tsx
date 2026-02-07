@@ -2,13 +2,27 @@
 
 import { useState } from "react";
 import { Button } from "@heroui/button";
+
 import { authClient } from "@/lib/auth-client";
 
 interface BillingButtonProps {
   productId: string;
   label?: string;
-  variant?: "solid" | "bordered" | "light" | "flat" | "faded" | "shadow" | "ghost";
-  color?: "default" | "primary" | "secondary" | "success" | "warning" | "danger";
+  variant?:
+    | "solid"
+    | "bordered"
+    | "light"
+    | "flat"
+    | "faded"
+    | "shadow"
+    | "ghost";
+  color?:
+    | "default"
+    | "primary"
+    | "secondary"
+    | "success"
+    | "warning"
+    | "danger";
   discountCode?: string;
   metadata?: Record<string, any>;
 }
@@ -35,10 +49,11 @@ export function BillingButton({
 
       if (error) {
         console.error("Checkout error:", error);
+
         return;
       }
 
-      if (data && 'url' in data && data.url) {
+      if (data && "url" in data && data.url) {
         window.location.href = data.url;
       }
     } catch (err) {
@@ -51,9 +66,9 @@ export function BillingButton({
   return (
     <Button
       color={color}
+      isLoading={loading}
       variant={variant}
       onPress={handleCheckout}
-      isLoading={loading}
     >
       {label}
     </Button>

@@ -1,20 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { Tabs, Tab } from "@heroui/tabs";
+import { Card, CardBody } from "@heroui/card";
+import { useRouter } from "next/navigation";
+
 import { SubscriptionStatus } from "@/components/subscription-status";
 import { CustomerPortalButton } from "@/components/customer-portal-button";
 import { PricingCard } from "@/components/pricing-card";
 import { UsageDashboard } from "@/components/usage-dashboard";
 import { PRICING_PLANS } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
-import { Tabs, Tab } from "@heroui/tabs";
-import { Card, CardBody } from "@heroui/card";
-import { useRouter } from "next/navigation";
 
 export default function BillingPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
+    "monthly",
+  );
   const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
 
   const handleSubscribe = async (planId: string, isAnnual: boolean) => {
@@ -36,6 +39,7 @@ export default function BillingPage() {
 
       if (!response.ok) {
         alert(data.error || "Failed to create checkout session");
+
         return;
       }
 
@@ -85,8 +89,10 @@ export default function BillingPage() {
           <h2 className="text-xl font-semibold font-mono">Available Plans</h2>
           <Tabs
             selectedKey={billingCycle}
-            onSelectionChange={(key) => setBillingCycle(key as "monthly" | "annual")}
             size="sm"
+            onSelectionChange={(key) =>
+              setBillingCycle(key as "monthly" | "annual")
+            }
           >
             <Tab key="monthly" title="Monthly" />
             <Tab key="annual" title="Annual (Save 20%)" />
@@ -97,9 +103,9 @@ export default function BillingPage() {
           {Object.values(PRICING_PLANS).map((plan) => (
             <PricingCard
               key={plan.id}
-              plan={plan}
               billingCycle={billingCycle}
               currentPlan={currentPlan}
+              plan={plan}
               onSubscribe={handleSubscribe}
             />
           ))}
@@ -111,7 +117,8 @@ export default function BillingPage() {
         <CardBody>
           <h2 className="font-mono font-semibold text-xl mb-2">Need Help?</h2>
           <p className="text-sm text-default-500 mb-4">
-            Use the Customer Portal to manage your subscription, update payment methods, and view invoice history.
+            Use the Customer Portal to manage your subscription, update payment
+            methods, and view invoice history.
           </p>
           <CustomerPortalButton label="Open Customer Portal" variant="flat" />
         </CardBody>

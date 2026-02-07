@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+
+import { auth } from "@/lib/auth-server";
+import { PrismaClient } from "@/lib/generated/prisma/client";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -37,8 +38,13 @@ export async function GET(request: Request) {
       },
     });
 
-    const storageUsedBytes = files.reduce((acc: number, file: any) => acc + Number(file.size), 0);
-    const storageUsed = Number((storageUsedBytes / (1024 * 1024 * 1024)).toFixed(2)); // Convert to GB
+    const storageUsedBytes = files.reduce(
+      (acc: number, file: any) => acc + Number(file.size),
+      0,
+    );
+    const storageUsed = Number(
+      (storageUsedBytes / (1024 * 1024 * 1024)).toFixed(2),
+    ); // Convert to GB
 
     // Get team members count (teams where user is owner)
     const teams = await prisma.team.findMany({
@@ -48,7 +54,9 @@ export async function GET(request: Request) {
       },
     });
 
-    const teamMembersUsed = teams.reduce((acc: number, team: any) => acc + team.members.length, 0) + 1; // +1 for owner
+    const teamMembersUsed =
+      teams.reduce((acc: number, team: any) => acc + team.members.length, 0) +
+      1; // +1 for owner
 
     // Get custom domains count
     const customDomainsUsed = await prisma.portal.count({
@@ -68,9 +76,10 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Error fetching usage:", error);
+
     return NextResponse.json(
       { error: "Failed to fetch usage data" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

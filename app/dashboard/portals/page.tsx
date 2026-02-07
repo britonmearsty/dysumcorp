@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Plus, Trash2, ExternalLink, FileText } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
 
 interface Portal {
   id: string;
@@ -32,8 +33,10 @@ export default function PortalsPage() {
   const fetchPortals = async () => {
     try {
       const response = await fetch("/api/portals");
+
       if (response.ok) {
         const data = await response.json();
+
         setPortals(data.portals);
       }
     } catch (error) {
@@ -44,7 +47,11 @@ export default function PortalsPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${name}"? This action cannot be undone.`,
+      )
+    ) {
       return;
     }
 
@@ -78,6 +85,7 @@ export default function PortalsPage() {
     if (diffMins < 60) return `${diffMins} minutes ago`;
     if (diffHours < 24) return `${diffHours} hours ago`;
     if (diffDays < 7) return `${diffDays} days ago`;
+
     return date.toLocaleDateString();
   };
 
@@ -97,7 +105,9 @@ export default function PortalsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold font-mono">Portals</h1>
-          <p className="text-muted-foreground mt-2">Manage your client portals</p>
+          <p className="text-muted-foreground mt-2">
+            Manage your client portals
+          </p>
         </div>
         <Link href="/dashboard/portals/create">
           <Button className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono">
@@ -110,7 +120,9 @@ export default function PortalsPage() {
       {portals.length === 0 ? (
         <div className="border rounded-lg p-12 text-center">
           <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="font-mono font-semibold text-lg mb-2">No portals yet</h3>
+          <h3 className="font-mono font-semibold text-lg mb-2">
+            No portals yet
+          </h3>
           <p className="text-muted-foreground font-mono text-sm mb-6">
             Create your first client portal to start collecting files securely
           </p>
@@ -130,8 +142,12 @@ export default function PortalsPage() {
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h3 className="font-mono font-semibold text-lg mb-1">{portal.name}</h3>
-                  <p className="text-xs text-muted-foreground font-mono">/{portal.slug}</p>
+                  <h3 className="font-mono font-semibold text-lg mb-1">
+                    {portal.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground font-mono">
+                    /{portal.slug}
+                  </p>
                   {portal.customDomain && (
                     <p className="text-xs text-[#FF6B2C] font-mono mt-1">
                       {portal.customDomain}
@@ -147,29 +163,33 @@ export default function PortalsPage() {
               <div className="space-y-2 text-sm mb-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Files</span>
-                  <span className="font-mono font-medium">{portal._count.files}</span>
+                  <span className="font-mono font-medium">
+                    {portal._count.files}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Last Updated</span>
-                  <span className="font-mono">{formatDate(portal.updatedAt)}</span>
+                  <span className="font-mono">
+                    {formatDate(portal.updatedAt)}
+                  </span>
                 </div>
               </div>
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
-                  size="sm"
                   className="flex-1 rounded-none font-mono"
+                  size="sm"
+                  variant="outline"
                   onClick={() => router.push(`/portal/${portal.slug}`)}
                 >
                   <ExternalLink className="w-4 h-4 mr-1" />
                   VIEW
                 </Button>
                 <Button
-                  variant="outline"
-                  size="sm"
                   className="rounded-none font-mono text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => handleDelete(portal.id, portal.name)}
                   disabled={deleting === portal.id}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleDelete(portal.id, portal.name)}
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>

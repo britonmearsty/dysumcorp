@@ -1,27 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { PricingCard } from "@/components/pricing-card";
-import { PRICING_PLANS } from "@/config/pricing";
 import { Tabs, Tab } from "@heroui/tabs";
 import { useRouter } from "next/navigation";
+
+import { PricingCard } from "@/components/pricing-card";
+import { PRICING_PLANS } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
 
 export default function PricingPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
+    "monthly",
+  );
   const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
 
   const handleSubscribe = async (planId: string, isAnnual: boolean) => {
     if (!session?.user) {
       // Redirect to auth if not logged in
       router.push("/auth?redirect=/pricing");
+
       return;
     }
 
     if (planId === "free") {
       router.push("/dashboard");
+
       return;
     }
 
@@ -40,6 +45,7 @@ export default function PricingPage() {
       if (!response.ok) {
         alert(data.error || "Failed to create checkout session");
         router.push("/dashboard/billing");
+
         return;
       }
 
@@ -61,7 +67,8 @@ export default function PricingPage() {
             Simple, Transparent Pricing
           </h1>
           <p className="text-xl text-default-500 max-w-2xl mx-auto">
-            Choose the perfect plan for your needs. Upgrade, downgrade, or cancel anytime.
+            Choose the perfect plan for your needs. Upgrade, downgrade, or
+            cancel anytime.
           </p>
         </div>
 
@@ -69,12 +76,14 @@ export default function PricingPage() {
         <div className="flex justify-center mb-12">
           <Tabs
             selectedKey={billingCycle}
-            onSelectionChange={(key) => setBillingCycle(key as "monthly" | "annual")}
             size="lg"
+            onSelectionChange={(key) =>
+              setBillingCycle(key as "monthly" | "annual")
+            }
           >
             <Tab key="monthly" title="Monthly" />
-            <Tab 
-              key="annual" 
+            <Tab
+              key="annual"
               title={
                 <div className="flex items-center gap-2">
                   Annual
@@ -82,7 +91,7 @@ export default function PricingPage() {
                     Save 20%
                   </span>
                 </div>
-              } 
+              }
             />
           </Tabs>
         </div>
@@ -92,9 +101,9 @@ export default function PricingPage() {
           {Object.values(PRICING_PLANS).map((plan) => (
             <PricingCard
               key={plan.id}
-              plan={plan}
               billingCycle={billingCycle}
               currentPlan={currentPlan}
+              plan={plan}
               onSubscribe={handleSubscribe}
             />
           ))}
@@ -105,52 +114,65 @@ export default function PricingPage() {
           <h2 className="text-3xl font-bold font-mono text-center mb-8">
             Frequently Asked Questions
           </h2>
-          
+
           <div className="space-y-6">
             <div>
-              <h3 className="font-semibold text-lg mb-2">Can I change plans later?</h3>
+              <h3 className="font-semibold text-lg mb-2">
+                Can I change plans later?
+              </h3>
               <p className="text-default-500">
-                Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, 
-                and we'll prorate any charges.
+                Yes! You can upgrade or downgrade your plan at any time. Changes
+                take effect immediately, and we'll prorate any charges.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-lg mb-2">What happens if I exceed my limits?</h3>
+              <h3 className="font-semibold text-lg mb-2">
+                What happens if I exceed my limits?
+              </h3>
               <p className="text-default-500">
-                You'll be notified when approaching your limits. To continue, you'll need to upgrade 
-                your plan or remove some content.
+                You'll be notified when approaching your limits. To continue,
+                you'll need to upgrade your plan or remove some content.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-lg mb-2">Do you offer refunds?</h3>
+              <h3 className="font-semibold text-lg mb-2">
+                Do you offer refunds?
+              </h3>
               <p className="text-default-500">
-                Yes, we offer a 14-day money-back guarantee on all paid plans. No questions asked.
+                Yes, we offer a 14-day money-back guarantee on all paid plans.
+                No questions asked.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-lg mb-2">Can I add more team members?</h3>
+              <h3 className="font-semibold text-lg mb-2">
+                Can I add more team members?
+              </h3>
               <p className="text-default-500">
-                On the Business plan, you can add additional team members for $15/month each. 
-                Enterprise plans include unlimited team members.
+                On the Business plan, you can add additional team members for
+                $15/month each. Enterprise plans include unlimited team members.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-lg mb-2">What payment methods do you accept?</h3>
+              <h3 className="font-semibold text-lg mb-2">
+                What payment methods do you accept?
+              </h3>
               <p className="text-default-500">
-                We accept all major credit cards, debit cards, and support various payment methods 
-                through our payment processor.
+                We accept all major credit cards, debit cards, and support
+                various payment methods through our payment processor.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-lg mb-2">Is there a free trial?</h3>
+              <h3 className="font-semibold text-lg mb-2">
+                Is there a free trial?
+              </h3>
               <p className="text-default-500">
-                Our Free plan is available forever with no credit card required. You can upgrade 
-                to a paid plan anytime to unlock more features.
+                Our Free plan is available forever with no credit card required.
+                You can upgrade to a paid plan anytime to unlock more features.
               </p>
             </div>
           </div>
@@ -162,11 +184,12 @@ export default function PricingPage() {
             Still have questions?
           </h2>
           <p className="text-default-500 mb-6">
-            Our team is here to help. Contact us for custom enterprise solutions.
+            Our team is here to help. Contact us for custom enterprise
+            solutions.
           </p>
           <button
-            onClick={() => router.push("/dashboard/support")}
             className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition"
+            onClick={() => router.push("/dashboard/support")}
           >
             Contact Sales
           </button>

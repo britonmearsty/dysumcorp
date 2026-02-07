@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
+
 import { authClient } from "@/lib/auth-client";
 
 export function SubscriptionStatus() {
@@ -20,6 +21,7 @@ export function SubscriptionStatus() {
     const checkAccess = async () => {
       try {
         const { data } = await authClient.creem.hasAccessGranted();
+
         setStatus(data || null);
       } catch (err) {
         console.error("Failed to check subscription:", err);
@@ -35,7 +37,9 @@ export function SubscriptionStatus() {
     return (
       <Card>
         <CardBody>
-          <p className="text-sm text-default-500">Loading subscription status...</p>
+          <p className="text-sm text-default-500">
+            Loading subscription status...
+          </p>
         </CardBody>
       </Card>
     );
@@ -60,8 +64,8 @@ export function SubscriptionStatus() {
           <span className="text-sm font-medium">Subscription Status</span>
           <Chip
             color={hasAccess ? "success" : "warning"}
-            variant="flat"
             size="sm"
+            variant="flat"
           >
             {hasAccess ? "Active" : "Inactive"}
           </Chip>
@@ -72,9 +76,7 @@ export function SubscriptionStatus() {
           </p>
         )}
         {status.status && (
-          <p className="text-xs text-default-500">
-            Status: {status.status}
-          </p>
+          <p className="text-xs text-default-500">Status: {status.status}</p>
         )}
       </CardBody>
     </Card>

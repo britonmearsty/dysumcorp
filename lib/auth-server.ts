@@ -1,6 +1,7 @@
 import { checkSubscriptionAccess } from "@creem_io/better-auth/server";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+
+import { auth } from "@/lib/auth";
 
 /**
  * Get the current session
@@ -23,7 +24,7 @@ export async function checkUserSubscription(userId: string) {
     {
       database: auth.options.database,
       userId,
-    }
+    },
   );
 }
 

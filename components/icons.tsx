@@ -15,20 +15,20 @@ export const Logo: React.FC<IconSvgProps> = ({
     width={size || width}
     {...props}
   >
-    <rect width="32" height="32" rx="8" fill="currentColor" fillOpacity="0.1" />
+    <rect fill="currentColor" fillOpacity="0.1" height="32" rx="8" width="32" />
     <path
       d="M16 6L16 16M16 16L22 10M16 16L10 10"
       stroke="currentColor"
-      strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2.5"
     />
     <path
       d="M8 20V22C8 23.1046 8.89543 24 10 24H22C23.1046 24 24 23.1046 24 22V20"
       stroke="currentColor"
-      strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2.5"
     />
   </svg>
 );
@@ -213,16 +213,16 @@ export const ShieldCheckIcon: React.FC<IconSvgProps> = ({
     <path
       d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M9 12L11 14L15 10"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -243,23 +243,23 @@ export const UploadCloudIcon: React.FC<IconSvgProps> = ({
     <path
       d="M16 16L12 12L8 16"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M12 12V21"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M20.39 18.39A5 5 0 0018 9H16.74A8 8 0 103 16.3"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -280,24 +280,24 @@ export const FolderLockIcon: React.FC<IconSvgProps> = ({
     <path
       d="M10 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V8C22 6.89543 21.1046 6 20 6H12L10 4Z"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <rect
-      x="9"
-      y="12"
-      width="6"
       height="5"
       rx="1"
       stroke="currentColor"
       strokeWidth="2"
+      width="6"
+      x="9"
+      y="12"
     />
     <path
       d="M10.5 12V10.5C10.5 9.67157 11.1716 9 12 9C12.8284 9 13.5 9.67157 13.5 10.5V12"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -318,9 +318,9 @@ export const ZapIcon: React.FC<IconSvgProps> = ({
     <path
       d="M13 2L3 14H12L11 22L21 10H12L13 2Z"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -341,16 +341,16 @@ export const LinkIcon: React.FC<IconSvgProps> = ({
     <path
       d="M10 13C10.4295 13.5741 10.9774 14.0491 11.6066 14.3929C12.2357 14.7367 12.9315 14.9411 13.6467 14.9923C14.3618 15.0435 15.0796 14.9403 15.7513 14.6897C16.4231 14.4392 17.0331 14.047 17.54 13.54L20.54 10.54C21.4508 9.59695 21.9548 8.33394 21.9434 7.02296C21.932 5.71198 21.4061 4.45791 20.479 3.53088C19.5519 2.60385 18.2979 2.07799 16.9869 2.0666C15.6759 2.05521 14.4129 2.55919 13.47 3.46999L11.75 5.17999"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M14 11C13.5705 10.4259 13.0226 9.95083 12.3935 9.60706C11.7643 9.26329 11.0685 9.05886 10.3534 9.00765C9.63821 8.95643 8.92041 9.05963 8.24866 9.3102C7.5769 9.56077 6.96689 9.95296 6.46002 10.46L3.46002 13.46C2.54923 14.403 2.04525 15.666 2.05664 16.977C2.06803 18.288 2.59389 19.5421 3.52092 20.4691C4.44795 21.3961 5.70202 21.922 7.013 21.9334C8.32398 21.9448 9.58699 21.4408 10.53 20.53L12.24 18.82"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -371,16 +371,16 @@ export const BellIcon: React.FC<IconSvgProps> = ({
     <path
       d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -401,30 +401,30 @@ export const UsersIcon: React.FC<IconSvgProps> = ({
     <path
       d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -445,16 +445,16 @@ export const CheckCircleIcon: React.FC<IconSvgProps> = ({
     <path
       d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.709 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18457 2.99721 7.13633 4.39828 5.49707C5.79935 3.85782 7.69279 2.71538 9.79619 2.24015C11.8996 1.76491 14.1003 1.98234 16.07 2.86"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M22 4L12 14.01L9 11.01"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -473,22 +473,22 @@ export const LockIcon: React.FC<IconSvgProps> = ({
     {...props}
   >
     <rect
-      x="3"
-      y="11"
-      width="18"
       height="11"
       rx="2"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
+      width="18"
+      x="3"
+      y="11"
     />
     <path
       d="M7 11V7C7 5.67392 7.52678 4.40215 8.46447 3.46447C9.40215 2.52678 10.6739 2 12 2C13.3261 2 14.5979 2.52678 15.5355 3.46447C16.4732 4.40215 17 5.67392 17 7V11"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -509,37 +509,37 @@ export const FileTextIcon: React.FC<IconSvgProps> = ({
     <path
       d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M14 2V8H20"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M16 13H8"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M16 17H8"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M10 9H8"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -560,16 +560,16 @@ export const ArrowRightIcon: React.FC<IconSvgProps> = ({
     <path
       d="M5 12H19"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M12 5L19 12L12 19"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -609,16 +609,16 @@ export const ClockIcon: React.FC<IconSvgProps> = ({
       cy="12"
       r="10"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M12 6V12L16 14"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -641,30 +641,30 @@ export const GlobeIcon: React.FC<IconSvgProps> = ({
       cy="12"
       r="10"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M2 12H22"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M12 2C14.5 4.5 15.8 8.1 16 12C15.8 15.9 14.5 19.5 12 22"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     <path
       d="M12 2C9.5 4.5 8.2 8.1 8 12C8.2 15.9 9.5 19.5 12 22"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -686,25 +686,25 @@ export const SparklesIcon: React.FC<IconSvgProps> = ({
       d="M12 3L13.4 8.6L19 10L13.4 11.4L12 17L10.6 11.4L5 10L10.6 8.6L12 3Z"
       fill="currentColor"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.5"
     />
     <path
       d="M19 15L19.8 17.2L22 18L19.8 18.8L19 21L18.2 18.8L16 18L18.2 17.2L19 15Z"
       fill="currentColor"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.5"
     />
     <path
       d="M5 2L5.6 4.4L8 5L5.6 5.6L5 8L4.4 5.6L2 5L4.4 4.4L5 2Z"
       fill="currentColor"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.5"
     />
   </svg>
 );

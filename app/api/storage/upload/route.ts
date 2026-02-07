@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { getSession } from "@/lib/auth-server";
 import {
   getValidToken,
@@ -12,6 +13,7 @@ export async function POST(request: NextRequest) {
   try {
     // Check authentication
     const session = await getSession();
+
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -30,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (!provider || (provider !== "google" && provider !== "dropbox")) {
       return NextResponse.json(
         { error: "Invalid provider. Must be 'google' or 'dropbox'" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -47,16 +49,17 @@ export async function POST(request: NextRequest) {
           currentUsage: storageCheck.current,
           limit: storageCheck.limit,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Get valid access token
     const accessToken = await getValidToken(session.user.id, provider);
+
     if (!accessToken) {
       return NextResponse.json(
         { error: `No ${provider} account connected or token expired` },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -66,12 +69,13 @@ export async function POST(request: NextRequest) {
 
     // Upload to the specified provider
     let result;
+
     if (provider === "google") {
       result = await uploadToGoogleDrive(
         accessToken,
         file.name,
         buffer,
-        file.type || "application/octet-stream"
+        file.type || "application/octet-stream",
       );
     } else {
       result = await uploadToDropbox(accessToken, file.name, buffer);
@@ -84,9 +88,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Storage upload error:", error);
+
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Upload failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

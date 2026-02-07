@@ -1,6 +1,7 @@
 import { Link } from "@heroui/link";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
+
 import { title, subtitle } from "@/components/primitives";
 import { FileTextIcon } from "@/components/icons";
 
@@ -23,11 +24,11 @@ export default function NotFound() {
       </div>
       <Button
         as={Link}
-        href="/"
-        color="primary"
-        variant="solid"
-        size="lg"
         className="mt-4"
+        color="primary"
+        href="/"
+        size="lg"
+        variant="solid"
       >
         Go Back Home
       </Button>

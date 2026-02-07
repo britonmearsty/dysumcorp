@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+
+import { auth } from "@/lib/auth-server";
+import { PrismaClient } from "@/lib/generated/prisma/client";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -11,7 +12,7 @@ const prisma = new PrismaClient({ adapter });
 // DELETE /api/teams/[id] - Delete team
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -43,9 +44,10 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting team:", error);
+
     return NextResponse.json(
       { error: "Failed to delete team" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -53,7 +55,7 @@ export async function DELETE(
 // PATCH /api/teams/[id] - Update team
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -89,9 +91,10 @@ export async function PATCH(
     return NextResponse.json({ success: true, team });
   } catch (error) {
     console.error("Error updating team:", error);
+
     return NextResponse.json(
       { error: "Failed to update team" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

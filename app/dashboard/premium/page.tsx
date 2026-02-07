@@ -1,8 +1,9 @@
-import { checkUserSubscription } from "@/lib/auth-server";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Card, CardBody } from "@heroui/card";
+
+import { auth } from "@/lib/auth";
+import { checkUserSubscription } from "@/lib/auth-server";
 
 export default async function PremiumPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -29,7 +30,9 @@ export default async function PremiumPage() {
       <Card>
         <CardBody className="space-y-4">
           <div>
-            <h2 className="text-xl font-semibold font-mono mb-2">🎉 Welcome Premium User!</h2>
+            <h2 className="text-xl font-semibold font-mono mb-2">
+              🎉 Welcome Premium User!
+            </h2>
             <p className="text-sm text-muted-foreground">
               You have access to all premium features.
             </p>
@@ -38,10 +41,18 @@ export default async function PremiumPage() {
           <div className="border-t pt-4">
             <h3 className="font-semibold mb-2">Your Subscription Details:</h3>
             <ul className="space-y-2 text-sm">
-              <li>Status: <span className="font-mono text-green-600">{status.status}</span></li>
+              <li>
+                Status:{" "}
+                <span className="font-mono text-green-600">
+                  {status.status}
+                </span>
+              </li>
               {status.expiresAt && (
                 <li>
-                  Expires: <span className="font-mono">{new Date(status.expiresAt).toLocaleDateString()}</span>
+                  Expires:{" "}
+                  <span className="font-mono">
+                    {new Date(status.expiresAt).toLocaleDateString()}
+                  </span>
                 </li>
               )}
             </ul>

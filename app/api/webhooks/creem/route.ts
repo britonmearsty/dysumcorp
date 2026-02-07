@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { PrismaClient } from "@/lib/generated/prisma/client";
+
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+
+import { PrismaClient } from "@/lib/generated/prisma/client";
 import { getPlanByCreemProductId } from "@/config/pricing";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
@@ -20,6 +22,7 @@ export async function POST(req: NextRequest) {
 
     if (!secret) {
       console.error("CREEM_WEBHOOK_SECRET is not set");
+
       return NextResponse.json(
         { error: "Configuration error" },
         { status: 500 },
@@ -35,6 +38,7 @@ export async function POST(req: NextRequest) {
 
     if (signature !== digest) {
       console.error("Invalid webhook signature");
+
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
@@ -71,6 +75,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Webhook error:", error);
+
     return NextResponse.json(
       { error: "Webhook handler failed" },
       { status: 500 },
@@ -86,6 +91,7 @@ async function handleSubscriptionActive(data: any) {
 
   if (!plan) {
     console.error("Unknown product ID:", product.id);
+
     return;
   }
 

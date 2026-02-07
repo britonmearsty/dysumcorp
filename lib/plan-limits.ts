@@ -1,6 +1,7 @@
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+
+import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PRICING_PLANS, PlanType } from "@/config/pricing";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
@@ -14,7 +15,10 @@ export interface PlanLimitCheck {
   limit?: number;
 }
 
-export async function checkPortalLimit(userId: string, planType: PlanType): Promise<PlanLimitCheck> {
+export async function checkPortalLimit(
+  userId: string,
+  planType: PlanType,
+): Promise<PlanLimitCheck> {
   const limits = PRICING_PLANS[planType].limits;
   const currentCount = await prisma.portal.count({
     where: { userId },
@@ -35,7 +39,7 @@ export async function checkPortalLimit(userId: string, planType: PlanType): Prom
 export async function checkStorageLimit(
   userId: string,
   planType: PlanType,
-  additionalBytes: number = 0
+  additionalBytes: number = 0,
 ): Promise<PlanLimitCheck> {
   const limits = PRICING_PLANS[planType].limits;
   const limitBytes = limits.storage * 1024 * 1024 * 1024; // Convert GB to bytes
@@ -52,28 +56,31 @@ export async function checkStorageLimit(
     },
   });
 
-  const currentBytes = files.reduce((acc: number, file: any) => acc + Number(file.size), 0);
+  const currentBytes = files.reduce(
+    (acc: number, file: any) => acc + Number(file.size),
+    0,
+  );
   const totalBytes = currentBytes + additionalBytes;
 
   if (totalBytes > limitBytes) {
     return {
       allowed: false,
       reason: `Storage limit exceeded. Your ${planType} plan allows ${limits.storage}GB.`,
-      current: Math.round(currentBytes / (1024 * 1024 * 1024) * 100) / 100,
+      current: Math.round((currentBytes / (1024 * 1024 * 1024)) * 100) / 100,
       limit: limits.storage,
     };
   }
 
   return {
     allowed: true,
-    current: Math.round(currentBytes / (1024 * 1024 * 1024) * 100) / 100,
+    current: Math.round((currentBytes / (1024 * 1024 * 1024)) * 100) / 100,
     limit: limits.storage,
   };
 }
 
 export async function checkTeamMemberLimit(
   userId: string,
-  planType: PlanType
+  planType: PlanType,
 ): Promise<PlanLimitCheck> {
   const limits = PRICING_PLANS[planType].limits;
 
@@ -85,7 +92,8 @@ export async function checkTeamMemberLimit(
     },
   });
 
-  const currentCount = teams.reduce((acc: number, team: any) => acc + team.members.length, 0) + 1; // +1 for owner
+  const currentCount =
+    teams.reduce((acc: number, team: any) => acc + team.members.length, 0) + 1; // +1 for owner
 
   if (currentCount >= limits.teamMembers) {
     return {
@@ -101,7 +109,7 @@ export async function checkTeamMemberLimit(
 
 export async function checkCustomDomainLimit(
   userId: string,
-  planType: PlanType
+  planType: PlanType,
 ): Promise<PlanLimitCheck> {
   const limits = PRICING_PLANS[planType].limits;
 
@@ -135,8 +143,12 @@ export async function checkCustomDomainLimit(
   return { allowed: true, current: currentCount, limit: limits.customDomains };
 }
 
-export function checkFeatureAccess(planType: PlanType, feature: keyof typeof PRICING_PLANS.free.limits): boolean {
+export function checkFeatureAccess(
+  planType: PlanType,
+  feature: keyof typeof PRICING_PLANS.free.limits,
+): boolean {
   const limits = PRICING_PLANS[planType].limits;
+
   return limits[feature] === true;
 }
 

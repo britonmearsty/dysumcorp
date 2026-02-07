@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+
+import { PrismaClient } from "@/lib/generated/prisma/client";
 import {
   getValidToken,
   uploadToGoogleDrive,
@@ -22,15 +23,12 @@ export async function POST(request: NextRequest) {
     if (!portalId) {
       return NextResponse.json(
         { error: "Portal ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (files.length === 0) {
-      return NextResponse.json(
-        { error: "No files provided" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
     // Verify portal exists and get owner info
@@ -70,22 +68,27 @@ export async function POST(request: NextRequest) {
                 accessToken,
                 `${portal.name}/${file.name}`,
                 file, // Pass File object directly
-                file.type || "application/octet-stream"
+                file.type || "application/octet-stream",
               );
+
               storageUrl = result.webViewLink || result.id;
               actualSize = result.size ? Number(result.size) : file.size;
             } else {
               const result = await uploadToDropbox(
                 accessToken,
                 `/${portal.name}/${file.name}`,
-                file // Pass File object directly
+                file, // Pass File object directly
               );
+
               storageUrl = result.id;
               actualSize = result.size ? Number(result.size) : file.size;
             }
           }
         } catch (uploadError) {
-          console.error("Cloud upload failed, using local fallback:", uploadError);
+          console.error(
+            "Cloud upload failed, using local fallback:",
+            uploadError,
+          );
           // Continue with local storage URL
         }
 
@@ -99,7 +102,7 @@ export async function POST(request: NextRequest) {
             portalId: portalId,
           },
         });
-      })
+      }),
     );
 
     return NextResponse.json({
@@ -112,9 +115,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Portal upload error:", error);
-    return NextResponse.json(
-      { error: "Upload failed" },
-      { status: 500 }
-    );
+
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
 }

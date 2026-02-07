@@ -16,20 +16,19 @@ import Image from "next/image";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
-import { Logo } from "@/components/icons";
 import { UserMenu } from "@/components/user-menu";
 
 export const Navbar = () => {
   return (
-    <HeroUINavbar maxWidth="xl" position="sticky" isBordered>
+    <HeroUINavbar isBordered maxWidth="xl" position="sticky">
       <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
         <NavbarBrand as="li" className="gap-3 max-w-fit">
           <NextLink className="flex justify-start items-center gap-2" href="/">
             <Image
-              src="/logo.svg"
               alt="Dysumcorp Logo"
-              width={32}
               height={32}
+              src="/logo.svg"
+              width={32}
             />
             <p className="font-bold text-inherit text-xl">Dysumcorp</p>
           </NextLink>
@@ -74,6 +73,7 @@ export const Navbar = () => {
           {siteConfig.navMenuItems.map((item, index) => (
             <NavbarMenuItem key={`${item}-${index}`}>
               <Link
+                className={item.label === "Sign Up" ? "font-semibold" : ""}
                 color={
                   item.label === "Sign Up"
                     ? "primary"
@@ -83,7 +83,6 @@ export const Navbar = () => {
                 }
                 href={item.href}
                 size="lg"
-                className={item.label === "Sign Up" ? "font-semibold" : ""}
               >
                 {item.label}
               </Link>
@@ -93,22 +92,22 @@ export const Navbar = () => {
         <div className="mx-4 mt-6 flex flex-col gap-3">
           <Button
             as={Link}
+            className="font-medium w-full"
             color="primary"
             href={siteConfig.links.signup}
-            variant="solid"
             radius="full"
             size="lg"
-            className="font-medium w-full"
+            variant="solid"
           >
             Get Started Free
           </Button>
           <Button
             as={Link}
+            className="font-medium w-full"
             href={siteConfig.links.login}
-            variant="bordered"
             radius="full"
             size="lg"
-            className="font-medium w-full"
+            variant="bordered"
           >
             Log in
           </Button>

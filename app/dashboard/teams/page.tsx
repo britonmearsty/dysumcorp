@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Plus, Trash2, UserPlus, X } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, UserPlus, X } from "lucide-react";
 
 interface TeamMember {
   id: string;
@@ -46,8 +47,10 @@ export default function TeamsPage() {
   const fetchTeams = async () => {
     try {
       const response = await fetch("/api/teams");
+
       if (response.ok) {
         const data = await response.json();
+
         setTeams(data.teams);
       }
     } catch (error) {
@@ -60,6 +63,7 @@ export default function TeamsPage() {
   const handleCreateTeam = async () => {
     if (!newTeamName.trim()) {
       alert("Please enter a team name");
+
       return;
     }
 
@@ -75,10 +79,13 @@ export default function TeamsPage() {
 
       if (!response.ok) {
         if (data.upgrade) {
-          alert(`${data.error}\n\nPlease upgrade your plan to add more team members.`);
+          alert(
+            `${data.error}\n\nPlease upgrade your plan to add more team members.`,
+          );
         } else {
           alert(data.error || "Failed to create team");
         }
+
         return;
       }
 
@@ -94,7 +101,11 @@ export default function TeamsPage() {
   };
 
   const handleDeleteTeam = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${name}"? This action cannot be undone.`,
+      )
+    ) {
       return;
     }
 
@@ -120,6 +131,7 @@ export default function TeamsPage() {
   const handleAddMember = async () => {
     if (!newMemberEmail.trim() || !selectedTeam) {
       alert("Please enter a member email");
+
       return;
     }
 
@@ -135,10 +147,13 @@ export default function TeamsPage() {
 
       if (!response.ok) {
         if (data.upgrade) {
-          alert(`${data.error}\n\nPlease upgrade your plan to add more team members.`);
+          alert(
+            `${data.error}\n\nPlease upgrade your plan to add more team members.`,
+          );
         } else {
           alert(data.error || "Failed to add member");
         }
+
         return;
       }
 
@@ -195,11 +210,13 @@ export default function TeamsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold font-mono">Teams</h1>
-          <p className="text-muted-foreground mt-2">Manage your teams and members</p>
+          <p className="text-muted-foreground mt-2">
+            Manage your teams and members
+          </p>
         </div>
         <Button
-          onClick={() => setShowCreateModal(true)}
           className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+          onClick={() => setShowCreateModal(true)}
         >
           <Plus className="w-4 h-4 mr-2" />
           CREATE TEAM
@@ -214,8 +231,8 @@ export default function TeamsPage() {
             Create your first team to start collaborating
           </p>
           <Button
-            onClick={() => setShowCreateModal(true)}
             className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+            onClick={() => setShowCreateModal(true)}
           >
             <Plus className="w-4 h-4 mr-2" />
             CREATE YOUR FIRST TEAM
@@ -230,13 +247,15 @@ export default function TeamsPage() {
                 className="border rounded-lg p-6 hover:border-[#FF6B2C] transition-colors"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="font-mono font-semibold text-lg">{team.name}</h3>
+                  <h3 className="font-mono font-semibold text-lg">
+                    {team.name}
+                  </h3>
                   <Button
-                    variant="outline"
-                    size="sm"
                     className="rounded-none font-mono text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleDeleteTeam(team.id, team.name)}
                     disabled={deleting === team.id}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDeleteTeam(team.id, team.name)}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -244,7 +263,9 @@ export default function TeamsPage() {
                 <div className="space-y-2 text-sm mb-4">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Members</span>
-                    <span className="font-mono font-medium">{team._count.members + 1}</span>
+                    <span className="font-mono font-medium">
+                      {team._count.members + 1}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Created</span>
@@ -254,9 +275,9 @@ export default function TeamsPage() {
                   </div>
                 </div>
                 <Button
-                  variant="outline"
-                  size="sm"
                   className="w-full rounded-none font-mono"
+                  size="sm"
+                  variant="outline"
                   onClick={() => {
                     setSelectedTeam(team);
                     setShowAddMemberModal(true);
@@ -271,7 +292,9 @@ export default function TeamsPage() {
 
           {/* All Team Members */}
           <div className="border rounded-lg p-6">
-            <h2 className="font-mono font-semibold text-xl mb-4">All Team Members</h2>
+            <h2 className="font-mono font-semibold text-xl mb-4">
+              All Team Members
+            </h2>
             <div className="space-y-3">
               {teams.flatMap((team) =>
                 team.members.map((member) => (
@@ -282,14 +305,17 @@ export default function TeamsPage() {
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-[#FF6B2C]/10 flex items-center justify-center">
                         <span className="text-[#FF6B2C] font-mono font-bold">
-                          {member.user.name?.charAt(0) || member.user.email.charAt(0).toUpperCase()}
+                          {member.user.name?.charAt(0) ||
+                            member.user.email.charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div>
                         <p className="font-mono font-medium">
                           {member.user.name || member.user.email}
                         </p>
-                        <p className="text-sm text-muted-foreground">{member.role}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {member.role}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -300,20 +326,21 @@ export default function TeamsPage() {
                         {team.name}
                       </span>
                       <Button
-                        variant="outline"
-                        size="sm"
                         className="rounded-none font-mono text-red-600 hover:text-red-700 hover:bg-red-50"
+                        size="sm"
+                        variant="outline"
                         onClick={() => handleRemoveMember(team.id, member.id)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
-                ))
+                )),
               )}
               {teams.every((t) => t.members.length === 0) && (
                 <p className="text-center text-muted-foreground font-mono text-sm py-8">
-                  No team members yet. Add members to your teams to start collaborating.
+                  No team members yet. Add members to your teams to start
+                  collaborating.
                 </p>
               )}
             </div>
@@ -326,10 +353,12 @@ export default function TeamsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-background border rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-mono font-semibold text-xl">Create New Team</h3>
+              <h3 className="font-mono font-semibold text-xl">
+                Create New Team
+              </h3>
               <Button
-                variant="ghost"
                 size="sm"
+                variant="ghost"
                 onClick={() => setShowCreateModal(false)}
               >
                 <X className="w-4 h-4" />
@@ -337,27 +366,29 @@ export default function TeamsPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="teamName" className="font-mono">Team Name</Label>
+                <Label className="font-mono" htmlFor="teamName">
+                  Team Name
+                </Label>
                 <Input
+                  className="rounded-none font-mono mt-2"
                   id="teamName"
                   placeholder="e.g., Engineering Team"
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
-                  className="rounded-none font-mono mt-2"
                 />
               </div>
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
                   className="flex-1 rounded-none font-mono"
+                  variant="outline"
                   onClick={() => setShowCreateModal(false)}
                 >
                   CANCEL
                 </Button>
                 <Button
                   className="flex-1 rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
-                  onClick={handleCreateTeam}
                   disabled={creating}
+                  onClick={handleCreateTeam}
                 >
                   {creating ? "CREATING..." : "CREATE"}
                 </Button>
@@ -376,8 +407,8 @@ export default function TeamsPage() {
                 Add Member to {selectedTeam.name}
               </h3>
               <Button
-                variant="ghost"
                 size="sm"
+                variant="ghost"
                 onClick={() => {
                   setShowAddMemberModal(false);
                   setSelectedTeam(null);
@@ -388,14 +419,16 @@ export default function TeamsPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="memberEmail" className="font-mono">Member Email</Label>
+                <Label className="font-mono" htmlFor="memberEmail">
+                  Member Email
+                </Label>
                 <Input
+                  className="rounded-none font-mono mt-2"
                   id="memberEmail"
-                  type="email"
                   placeholder="e.g., john@example.com"
+                  type="email"
                   value={newMemberEmail}
                   onChange={(e) => setNewMemberEmail(e.target.value)}
-                  className="rounded-none font-mono mt-2"
                 />
                 <p className="text-xs text-muted-foreground font-mono mt-2">
                   The user must have an account to be added to the team
@@ -403,8 +436,8 @@ export default function TeamsPage() {
               </div>
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
                   className="flex-1 rounded-none font-mono"
+                  variant="outline"
                   onClick={() => {
                     setShowAddMemberModal(false);
                     setSelectedTeam(null);
@@ -414,8 +447,8 @@ export default function TeamsPage() {
                 </Button>
                 <Button
                   className="flex-1 rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
-                  onClick={handleAddMember}
                   disabled={creating}
+                  onClick={handleAddMember}
                 >
                   {creating ? "ADDING..." : "ADD MEMBER"}
                 </Button>

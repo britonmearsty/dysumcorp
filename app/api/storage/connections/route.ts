@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth-server";
 import { headers } from "next/headers";
+
+import { auth } from "@/lib/auth-server";
 import { getStorageTokens } from "@/lib/storage-api";
 
 export async function GET() {
@@ -23,9 +24,10 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error checking storage connections:", error);
+
     return NextResponse.json(
       { error: "Failed to check connections" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

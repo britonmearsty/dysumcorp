@@ -1,6 +1,7 @@
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+
+import { PrismaClient } from "@/lib/generated/prisma/client";
 
 // Create PostgreSQL connection pool
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
@@ -38,7 +39,7 @@ export interface FileMetadata {
  */
 export async function getStorageTokens(
   userId: string,
-  provider: StorageProvider
+  provider: StorageProvider,
 ): Promise<StorageToken | null> {
   const account = await prisma.account.findFirst({
     where: {
@@ -63,7 +64,7 @@ export async function getStorageTokens(
  */
 export async function refreshStorageToken(
   userId: string,
-  provider: StorageProvider
+  provider: StorageProvider,
 ): Promise<string | null> {
   const account = await prisma.account.findFirst({
     where: {
@@ -122,6 +123,7 @@ export async function refreshStorageToken(
     return data.access_token;
   } catch (error) {
     console.error(`Failed to refresh ${provider} token:`, error);
+
     return null;
   }
 }
@@ -131,7 +133,7 @@ export async function refreshStorageToken(
  */
 export async function getValidToken(
   userId: string,
-  provider: StorageProvider
+  provider: StorageProvider,
 ): Promise<string | null> {
   const tokens = await getStorageTokens(userId, provider);
 
@@ -161,7 +163,7 @@ export async function uploadToGoogleDrive(
   accessToken: string,
   fileName: string,
   fileContent: Buffer | string | Blob | File,
-  mimeType: string = "text/plain"
+  mimeType: string = "text/plain",
 ): Promise<FileMetadata> {
   const boundary = "-------314159265358979323846";
   const delimiter = `\r\n--${boundary}\r\n`;
@@ -182,7 +184,7 @@ export async function uploadToGoogleDrive(
     delimiter,
     `Content-Type: ${mimeType}\r\n\r\n`,
     fileContent as BlobPart, // Cast to BlobPart to silence TS error regarding Buffer
-    closeDelimiter
+    closeDelimiter,
   ]);
 
   const response = await fetch(
@@ -194,7 +196,7 @@ export async function uploadToGoogleDrive(
         "Content-Type": `multipart/related; boundary=${boundary}`,
       },
       body: multipartBody,
-    }
+    },
   );
 
   if (!response.ok) {
@@ -209,7 +211,7 @@ export async function uploadToGoogleDrive(
  */
 export async function listGoogleDriveFiles(
   accessToken: string,
-  pageSize: number = 10
+  pageSize: number = 10,
 ): Promise<FileMetadata[]> {
   const response = await fetch(
     `https://www.googleapis.com/drive/v3/files?pageSize=${pageSize}&fields=files(id,name,size,mimeType,modifiedTime,webViewLink)`,
@@ -217,7 +219,7 @@ export async function listGoogleDriveFiles(
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -225,6 +227,7 @@ export async function listGoogleDriveFiles(
   }
 
   const data = await response.json();
+
   return data.files || [];
 }
 
@@ -233,7 +236,7 @@ export async function listGoogleDriveFiles(
  */
 export async function downloadFromGoogleDrive(
   accessToken: string,
-  fileId: string
+  fileId: string,
 ): Promise<Buffer> {
   const response = await fetch(
     `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
@@ -241,7 +244,7 @@ export async function downloadFromGoogleDrive(
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -249,6 +252,7 @@ export async function downloadFromGoogleDrive(
   }
 
   const arrayBuffer = await response.arrayBuffer();
+
   return Buffer.from(arrayBuffer);
 }
 
@@ -257,7 +261,7 @@ export async function downloadFromGoogleDrive(
  */
 export async function deleteFromGoogleDrive(
   accessToken: string,
-  fileId: string
+  fileId: string,
 ): Promise<void> {
   const response = await fetch(
     `https://www.googleapis.com/drive/v3/files/${fileId}`,
@@ -266,7 +270,7 @@ export async function deleteFromGoogleDrive(
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -284,31 +288,35 @@ export async function deleteFromGoogleDrive(
 export async function uploadToDropbox(
   accessToken: string,
   filePath: string,
-  fileContent: Buffer | string | Blob | File
+  fileContent: Buffer | string | Blob | File,
 ): Promise<FileMetadata> {
   // Use the content directly if it's a Blob/File/Buffer/string that fetch accepts
   // Dropbox requires 'application/octet-stream' for the upload body
 
-  const response = await fetch("https://content.dropboxapi.com/2/files/upload", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Dropbox-API-Arg": JSON.stringify({
-        path: filePath.startsWith("/") ? filePath : `/${filePath}`,
-        mode: "add",
-        autorename: true,
-        mute: false,
-      }),
-      "Content-Type": "application/octet-stream",
+  const response = await fetch(
+    "https://content.dropboxapi.com/2/files/upload",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Dropbox-API-Arg": JSON.stringify({
+          path: filePath.startsWith("/") ? filePath : `/${filePath}`,
+          mode: "add",
+          autorename: true,
+          mute: false,
+        }),
+        "Content-Type": "application/octet-stream",
+      },
+      body: fileContent as BodyInit,
     },
-    body: fileContent as BodyInit,
-  });
+  );
 
   if (!response.ok) {
     throw new Error(`Dropbox upload failed: ${response.statusText}`);
   }
 
   const data = await response.json();
+
   return {
     id: data.id,
     name: data.name,
@@ -322,28 +330,32 @@ export async function uploadToDropbox(
  */
 export async function listDropboxFiles(
   accessToken: string,
-  path: string = ""
+  path: string = "",
 ): Promise<FileMetadata[]> {
-  const response = await fetch("https://api.dropboxapi.com/2/files/list_folder", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
+  const response = await fetch(
+    "https://api.dropboxapi.com/2/files/list_folder",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        path: path || "",
+        recursive: false,
+        include_media_info: false,
+        include_deleted: false,
+        include_has_explicit_shared_members: false,
+      }),
     },
-    body: JSON.stringify({
-      path: path || "",
-      recursive: false,
-      include_media_info: false,
-      include_deleted: false,
-      include_has_explicit_shared_members: false,
-    }),
-  });
+  );
 
   if (!response.ok) {
     throw new Error(`Dropbox list failed: ${response.statusText}`);
   }
 
   const data = await response.json();
+
   return (
     data.entries?.map((entry: any) => ({
       id: entry.id,
@@ -359,23 +371,27 @@ export async function listDropboxFiles(
  */
 export async function downloadFromDropbox(
   accessToken: string,
-  filePath: string
+  filePath: string,
 ): Promise<Buffer> {
-  const response = await fetch("https://content.dropboxapi.com/2/files/download", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Dropbox-API-Arg": JSON.stringify({
-        path: filePath.startsWith("/") ? filePath : `/${filePath}`,
-      }),
+  const response = await fetch(
+    "https://content.dropboxapi.com/2/files/download",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Dropbox-API-Arg": JSON.stringify({
+          path: filePath.startsWith("/") ? filePath : `/${filePath}`,
+        }),
+      },
     },
-  });
+  );
 
   if (!response.ok) {
     throw new Error(`Dropbox download failed: ${response.statusText}`);
   }
 
   const arrayBuffer = await response.arrayBuffer();
+
   return Buffer.from(arrayBuffer);
 }
 
@@ -384,7 +400,7 @@ export async function downloadFromDropbox(
  */
 export async function deleteFromDropbox(
   accessToken: string,
-  filePath: string
+  filePath: string,
 ): Promise<void> {
   const response = await fetch("https://api.dropboxapi.com/2/files/delete_v2", {
     method: "POST",

@@ -26,8 +26,9 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { motion, useAnimation, useInView } from "framer-motion";
+
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
 const navigationItems = [
@@ -130,7 +131,8 @@ const pricingPlans = [
     name: "Professional",
     price: "$29",
     period: "per month",
-    description: "For growing accounting firms, law offices, and consulting teams who need advanced features and customization.",
+    description:
+      "For growing accounting firms, law offices, and consulting teams who need advanced features and customization.",
     features: [
       "Unlimited client portals",
       "50 GB encrypted storage",
@@ -250,24 +252,27 @@ export default function Home() {
     <div className="w-full min-h-screen bg-background">
       <header className="sticky top-0 z-50 px-4 md:px-8 lg:px-16 bg-background/80 backdrop-blur-md border-b border-border/40">
         <div className="flex h-16 items-center justify-between max-w-7xl mx-auto">
-          <Link href="/" className="flex items-center gap-2">
+          <Link className="flex items-center gap-2" href="/">
             <div className="flex items-center space-x-2">
               <Image
-                src="/logo.svg"
                 alt="Dysumcorp - Secure Client File Collection Portal"
-                width={40}
                 height={16}
+                src="/logo.svg"
+                width={40}
               />
               <span className="font-mono text-xl font-bold">Dysumcorp</span>
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-8" aria-label="Main navigation">
+          <nav
+            aria-label="Main navigation"
+            className="hidden md:flex items-center space-x-8"
+          >
             {navigationItems.map((item) => (
               <a
                 key={item.title}
-                href={item.href}
                 className="text-sm font-mono text-foreground hover:text-[#FF6B2C] transition-colors"
+                href={item.href}
               >
                 {item.title}
               </a>
@@ -276,16 +281,16 @@ export default function Home() {
 
           <div className="flex items-center space-x-4">
             <Button
-              onClick={handleGetStarted}
-              variant="default"
-              className="rounded-none hidden md:inline-flex bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
               aria-label="Get started with free account"
+              className="rounded-none hidden md:inline-flex bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+              variant="default"
+              onClick={handleGetStarted}
             >
               GET STARTED <ArrowRight className="ml-1 w-4 h-4" />
             </Button>
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
+                <Button className="md:hidden" size="icon" variant="ghost">
                   <Menu className="h-5 w-5" />
                   <span className="sr-only">Toggle menu</span>
                 </Button>
@@ -295,15 +300,15 @@ export default function Home() {
                   {navigationItems.map((item) => (
                     <a
                       key={item.title}
-                      href={item.href}
                       className="text-sm font-mono text-foreground hover:text-[#FF6B2C] transition-colors"
+                      href={item.href}
                     >
                       {item.title}
                     </a>
                   ))}
-                  <Button 
-                    onClick={handleGetStarted}
+                  <Button
                     className="cursor-pointer rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                    onClick={handleGetStarted}
                   >
                     GET STARTED <ArrowRight className="ml-1 w-4 h-4" />
                   </Button>
@@ -315,25 +320,28 @@ export default function Home() {
       </header>
 
       <main>
-        <section className="py-24 px-4 md:px-8 lg:px-16" aria-labelledby="hero-heading">
+        <section
+          aria-labelledby="hero-heading"
+          className="py-24 px-4 md:px-8 lg:px-16"
+        >
           <div className="flex flex-col items-center text-center">
             <motion.h1
+              animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
+              className="relative font-mono text-4xl font-bold sm:text-5xl md:text-6xl lg:text-7xl max-w-4xl mx-auto leading-tight"
               id="hero-heading"
               initial={{ filter: "blur(10px)", opacity: 0, y: 50 }}
-              animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="relative font-mono text-4xl font-bold sm:text-5xl md:text-6xl lg:text-7xl max-w-4xl mx-auto leading-tight"
             >
               {titleWords.map((text, index) => (
                 <motion.span
                   key={index}
-                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
+                  className="inline-block mx-2 md:mx-4"
+                  initial={{ opacity: 0, y: 20 }}
                   transition={{
                     delay: index * 0.15,
                     duration: 0.6,
                   }}
-                  className="inline-block mx-2 md:mx-4"
                 >
                   {text}
                 </motion.span>
@@ -341,36 +349,39 @@ export default function Home() {
             </motion.h1>
 
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.2, duration: 0.6 }}
               className="mx-auto mt-8 max-w-2xl text-xl text-foreground font-mono"
+              initial={{ opacity: 0, y: 20 }}
+              transition={{ delay: 1.2, duration: 0.6 }}
             >
-              Professional branded file collection portals for CPAs, lawyers, and consultants. 
-              Secure client document uploads with bank-level encryption—no client account required.
+              Professional branded file collection portals for CPAs, lawyers,
+              and consultants. Secure client document uploads with bank-level
+              encryption—no client account required.
             </motion.p>
 
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.5, duration: 0.6 }}
               className="mx-auto mt-4 max-w-2xl text-lg text-foreground font-mono"
+              initial={{ opacity: 0, y: 20 }}
+              transition={{ delay: 1.5, duration: 0.6 }}
             >
-              Seamlessly integrate with Google Drive and Dropbox. Client files upload directly 
-              to your cloud storage—organized, secure, and instant.
+              Seamlessly integrate with Google Drive and Dropbox. Client files
+              upload directly to your cloud storage—organized, secure, and
+              instant.
             </motion.p>
 
             <motion.div
-              initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 1.8, duration: 0.6 }}
               className="mt-12 flex flex-wrap justify-center gap-6"
+              initial={{ opacity: 0 }}
+              transition={{ delay: 1.8, duration: 0.6 }}
             >
               {labels.map((feature, index) => (
                 <motion.div
                   key={feature.label}
-                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 px-6"
+                  initial={{ opacity: 0, y: 20 }}
                   transition={{
                     delay: 1.8 + index * 0.15,
                     duration: 0.6,
@@ -378,7 +389,6 @@ export default function Home() {
                     stiffness: 100,
                     damping: 10,
                   }}
-                  className="flex items-center gap-2 px-6"
                 >
                   <feature.icon className="h-5 w-5 text-[#FF6B2C]" />
                   <span className="text-sm font-mono">{feature.label}</span>
@@ -387,8 +397,8 @@ export default function Home() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 20 }}
               transition={{
                 delay: 2.4,
                 duration: 0.6,
@@ -398,9 +408,9 @@ export default function Home() {
               }}
             >
               <Button
-                onClick={handleGetStarted}
-                size="lg"
                 className="cursor-pointer rounded-none mt-12 bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                size="lg"
+                onClick={handleGetStarted}
               >
                 GET STARTED <ArrowRight className="ml-1 w-4 h-4" />
               </Button>
@@ -408,10 +418,11 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="px-4 md:px-8 lg:px-16" ref={ref} id="features">
+        <section ref={ref} className="px-4 md:px-8 lg:px-16" id="features">
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            className="text-center text-4xl font-mono font-bold mb-6"
+            initial={{ opacity: 0, y: 20 }}
             transition={{
               delay: 3.0,
               duration: 0.6,
@@ -419,21 +430,21 @@ export default function Home() {
               stiffness: 100,
               damping: 10,
             }}
-            className="text-center text-4xl font-mono font-bold mb-6"
           >
             Why CPAs, Lawyers & Consultants Choose Our File Collection Portal
           </motion.h2>
           <motion.div
-            initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 3.2, duration: 0.6 }}
             className="grid md:grid-cols-3 max-w-6xl mx-auto"
+            initial={{ opacity: 0 }}
+            transition={{ delay: 3.2, duration: 0.6 }}
           >
             {features.map((feature, index) => (
               <motion.div
                 key={feature.label}
-                initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center text-center p-8 bg-background border"
+                initial={{ opacity: 0, y: 50 }}
                 transition={{
                   delay: 3.2 + index * 0.2,
                   duration: 0.6,
@@ -441,7 +452,6 @@ export default function Home() {
                   stiffness: 100,
                   damping: 10,
                 }}
-                className="flex flex-col items-center text-center p-8 bg-background border"
               >
                 <div className="mb-6 rounded-full bg-[#FF6B2C]/10 p-4">
                   <feature.icon className="h-8 w-8 text-[#FF6B2C]" />
@@ -457,25 +467,29 @@ export default function Home() {
           </motion.div>
         </section>
 
-        <section className="py-24 px-4 md:px-8 lg:px-16 bg-muted/30" id="security">
+        <section
+          className="py-24 px-4 md:px-8 lg:px-16 bg-muted/30"
+          id="security"
+        >
           <div className="max-w-6xl mx-auto">
             <motion.div
+              className="text-center mb-16"
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
               transition={{
                 duration: 0.6,
                 type: "spring",
                 stiffness: 100,
                 damping: 10,
               }}
-              className="text-center mb-16"
+              viewport={{ once: true, amount: 0.2 }}
+              whileInView={{ opacity: 1, y: 0 }}
             >
               <h2 className="text-4xl font-mono font-bold mb-4">
                 How Our Secure File Collection Portal Works
               </h2>
               <p className="text-muted-foreground font-mono text-lg max-w-2xl mx-auto">
-                Set up your branded client file portal in minutes. No technical expertise or IT support required.
+                Set up your branded client file portal in minutes. No technical
+                expertise or IT support required.
               </p>
             </motion.div>
 
@@ -483,9 +497,8 @@ export default function Home() {
               {howItWorksSteps.map((step, index) => (
                 <motion.div
                   key={step.title}
+                  className="relative"
                   initial={{ opacity: 0, y: 50 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
                   transition={{
                     delay: index * 0.2,
                     duration: 0.6,
@@ -493,7 +506,8 @@ export default function Home() {
                     stiffness: 100,
                     damping: 10,
                   }}
-                  className="relative"
+                  viewport={{ once: true, amount: 0.2 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                 >
                   {/* Magic gradient border - always visible */}
                   <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-[#FF6B2C] via-[#FFB347] via-[#FF6B2C] to-[#FF4500] bg-[length:200%_100%] animate-gradient-x" />
@@ -516,8 +530,8 @@ export default function Home() {
                     <div className="hidden md:flex absolute top-1/2 -right-6 -translate-y-1/2 z-10 items-center">
                       <div className="flex items-center gap-0.5">
                         <motion.div
-                          initial={{ opacity: 0, x: -5 }}
                           animate={{ opacity: [0.3, 1, 0.3], x: [0, 3, 0] }}
+                          initial={{ opacity: 0, x: -5 }}
                           transition={{
                             duration: 1.5,
                             repeat: Infinity,
@@ -527,8 +541,8 @@ export default function Home() {
                           <ChevronRight className="h-5 w-5 text-[#FF6B2C]" />
                         </motion.div>
                         <motion.div
-                          initial={{ opacity: 0, x: -5 }}
                           animate={{ opacity: [0.3, 1, 0.3], x: [0, 3, 0] }}
+                          initial={{ opacity: 0, x: -5 }}
                           transition={{
                             duration: 1.5,
                             repeat: Infinity,
@@ -539,8 +553,8 @@ export default function Home() {
                           <ChevronRight className="h-5 w-5 text-[#FF6B2C] -ml-3" />
                         </motion.div>
                         <motion.div
-                          initial={{ opacity: 0, x: -5 }}
                           animate={{ opacity: [0.3, 1, 0.3], x: [0, 3, 0] }}
+                          initial={{ opacity: 0, x: -5 }}
                           transition={{
                             duration: 1.5,
                             repeat: Infinity,
@@ -558,9 +572,8 @@ export default function Home() {
             </div>
 
             <motion.div
+              className="text-center mt-12"
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
               transition={{
                 delay: 0.6,
                 duration: 0.6,
@@ -568,12 +581,13 @@ export default function Home() {
                 stiffness: 100,
                 damping: 10,
               }}
-              className="text-center mt-12"
+              viewport={{ once: true, amount: 0.2 }}
+              whileInView={{ opacity: 1, y: 0 }}
             >
               <Button
-                onClick={handleGetStarted}
-                size="lg"
                 className="cursor-pointer rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                size="lg"
+                onClick={handleGetStarted}
               >
                 START FREE TRIAL <ArrowRight className="ml-1 w-4 h-4" />
               </Button>
@@ -584,22 +598,23 @@ export default function Home() {
         <section className="py-24 px-4 md:px-8 lg:px-16">
           <div className="max-w-6xl mx-auto">
             <motion.div
+              className="text-center mb-16"
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
               transition={{
                 duration: 0.6,
                 type: "spring",
                 stiffness: 100,
                 damping: 10,
               }}
-              className="text-center mb-16"
+              viewport={{ once: true, amount: 0.2 }}
+              whileInView={{ opacity: 1, y: 0 }}
             >
               <h2 className="text-4xl font-mono font-bold mb-4">
                 Complete File Collection & Document Management Features
               </h2>
               <p className="text-muted-foreground font-mono text-lg max-w-2xl mx-auto">
-                Enterprise-grade features designed to streamline your client document collection workflow and boost productivity.
+                Enterprise-grade features designed to streamline your client
+                document collection workflow and boost productivity.
               </p>
             </motion.div>
 
@@ -607,9 +622,8 @@ export default function Home() {
               {bentoFeatures.map((feature, index) => (
                 <motion.div
                   key={feature.title}
+                  className={`group relative overflow-hidden rounded-lg border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors ${feature.className}`}
                   initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
                   transition={{
                     delay: index * 0.1,
                     duration: 0.5,
@@ -617,7 +631,8 @@ export default function Home() {
                     stiffness: 100,
                     damping: 12,
                   }}
-                  className={`group relative overflow-hidden rounded-lg border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors ${feature.className}`}
+                  viewport={{ once: true, amount: 0.2 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                 >
                   <div className="flex flex-col h-full">
                     <div className="mb-4 w-fit rounded-lg bg-[#FF6B2C]/10 p-3">
@@ -637,25 +652,29 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-24 px-4 md:px-8 lg:px-16 bg-muted/30" id="pricing">
+        <section
+          className="py-24 px-4 md:px-8 lg:px-16 bg-muted/30"
+          id="pricing"
+        >
           <div className="max-w-6xl mx-auto">
             <motion.div
+              className="text-center mb-16"
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
               transition={{
                 duration: 0.6,
                 type: "spring",
                 stiffness: 100,
                 damping: 10,
               }}
-              className="text-center mb-16"
+              viewport={{ once: true, amount: 0.2 }}
+              whileInView={{ opacity: 1, y: 0 }}
             >
               <h2 className="text-4xl font-mono font-bold mb-4">
                 Transparent Pricing for Every Professional
               </h2>
               <p className="text-muted-foreground font-mono text-lg max-w-2xl mx-auto">
-                Start with our free plan and scale as you grow. No hidden fees, no credit card required to start.
+                Start with our free plan and scale as you grow. No hidden fees,
+                no credit card required to start.
               </p>
             </motion.div>
 
@@ -663,9 +682,12 @@ export default function Home() {
               {pricingPlans.map((plan, index) => (
                 <motion.div
                   key={plan.name}
+                  className={`relative flex flex-col rounded-lg border p-8 ${
+                    plan.highlighted
+                      ? "border-[#FF6B2C] bg-[#FF6B2C]/5 scale-105 shadow-lg"
+                      : "bg-background"
+                  }`}
                   initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
                   transition={{
                     delay: index * 0.15,
                     duration: 0.5,
@@ -673,11 +695,8 @@ export default function Home() {
                     stiffness: 100,
                     damping: 12,
                   }}
-                  className={`relative flex flex-col rounded-lg border p-8 ${
-                    plan.highlighted
-                      ? "border-[#FF6B2C] bg-[#FF6B2C]/5 scale-105 shadow-lg"
-                      : "bg-background"
-                  }`}
+                  viewport={{ once: true, amount: 0.2 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                 >
                   {plan.highlighted && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#FF6B2C] text-white text-xs font-mono font-bold px-4 py-1 rounded-full">
@@ -712,13 +731,13 @@ export default function Home() {
                     ))}
                   </ul>
                   <Button
-                    onClick={handleGetStarted}
-                    variant={plan.highlighted ? "default" : "outline"}
                     className={`w-full rounded-none font-mono ${
                       plan.highlighted
                         ? "bg-[#FF6B2C] hover:bg-[#FF6B2C]/90"
                         : "border-2 border-foreground hover:bg-foreground hover:text-background"
                     }`}
+                    variant={plan.highlighted ? "default" : "outline"}
+                    onClick={handleGetStarted}
                   >
                     {plan.cta}
                   </Button>
@@ -727,11 +746,11 @@ export default function Home() {
             </div>
 
             <motion.p
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
               className="text-center text-muted-foreground font-mono text-sm mt-12"
+              initial={{ opacity: 0 }}
+              transition={{ delay: 0.5, duration: 0.6 }}
+              viewport={{ once: true, amount: 0.2 }}
+              whileInView={{ opacity: 1 }}
             >
               All plans include SSL encryption, 99.9% uptime SLA, and 24/7
               monitoring.
@@ -742,22 +761,23 @@ export default function Home() {
         <section className="py-24 px-4 md:px-8 lg:px-16" id="about">
           <div className="max-w-6xl mx-auto">
             <motion.div
+              className="text-center mb-16"
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
               transition={{
                 duration: 0.6,
                 type: "spring",
                 stiffness: 100,
                 damping: 10,
               }}
-              className="text-center mb-16"
+              viewport={{ once: true, amount: 0.2 }}
+              whileInView={{ opacity: 1, y: 0 }}
             >
               <h2 className="text-4xl font-mono font-bold mb-4">
                 Trusted by 10,000+ Professionals Worldwide
               </h2>
               <p className="text-muted-foreground font-mono text-lg max-w-2xl mx-auto">
-                See why accounting firms, law offices, and consulting agencies choose our secure file collection platform.
+                See why accounting firms, law offices, and consulting agencies
+                choose our secure file collection platform.
               </p>
             </motion.div>
 
@@ -765,9 +785,8 @@ export default function Home() {
               {testimonials.map((testimonial, index) => (
                 <motion.div
                   key={testimonial.name}
+                  className="relative flex flex-col rounded-lg border bg-background p-8"
                   initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
                   transition={{
                     delay: index * 0.1,
                     duration: 0.5,
@@ -775,7 +794,8 @@ export default function Home() {
                     stiffness: 100,
                     damping: 12,
                   }}
-                  className="relative flex flex-col rounded-lg border bg-background p-8"
+                  viewport={{ once: true, amount: 0.2 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                 >
                   <Quote className="absolute top-6 right-6 h-8 w-8 text-[#FF6B2C]/20" />
                   <div className="flex items-center gap-1 mb-4">
@@ -810,35 +830,36 @@ export default function Home() {
           <div className="max-w-4xl mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
               transition={{
                 duration: 0.6,
                 type: "spring",
                 stiffness: 100,
                 damping: 10,
               }}
+              viewport={{ once: true, amount: 0.2 }}
+              whileInView={{ opacity: 1, y: 0 }}
             >
               <h2 className="text-4xl md:text-5xl font-mono font-bold mb-6 text-white">
                 Start Collecting Client Files Securely Today
               </h2>
               <p className="text-white/90 font-mono text-lg mb-10 max-w-2xl mx-auto">
-                Join 10,000+ CPAs, lawyers, and consultants who have streamlined their document collection workflow. 
-                Start your free account now—no credit card required.
+                Join 10,000+ CPAs, lawyers, and consultants who have streamlined
+                their document collection workflow. Start your free account
+                now—no credit card required.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
-                  onClick={handleGetStarted}
-                  size="lg"
                   className="rounded-none bg-white text-[#FF6B2C] hover:bg-white/90 font-mono"
+                  size="lg"
+                  onClick={handleGetStarted}
                 >
                   GET STARTED FREE <ArrowRight className="ml-1 w-4 h-4" />
                 </Button>
                 <Button
-                  onClick={handleScheduleDemo}
+                  className="rounded-none border-2 border-white text-white hover:bg-white hover:text-[#FF6B2C] font-mono"
                   size="lg"
                   variant="outline"
-                  className="rounded-none border-2 border-white text-white hover:bg-white hover:text-[#FF6B2C] font-mono"
+                  onClick={handleScheduleDemo}
                 >
                   SCHEDULE A DEMO
                 </Button>
@@ -850,28 +871,28 @@ export default function Home() {
 
       {/* JSON-LD Structured Data for SEO */}
       <script
-        type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
-            "name": "Dysumcorp",
-            "applicationCategory": "BusinessApplication",
-            "operatingSystem": "Web",
-            "offers": {
+            name: "Dysumcorp",
+            applicationCategory: "BusinessApplication",
+            operatingSystem: "Web",
+            offers: {
               "@type": "AggregateOffer",
-              "lowPrice": "0",
-              "highPrice": "29",
-              "priceCurrency": "USD",
-              "offerCount": "3"
+              lowPrice: "0",
+              highPrice: "29",
+              priceCurrency: "USD",
+              offerCount: "3",
             },
-            "description": "Professional secure file collection portal for CPAs, lawyers, and consultants. Branded client document upload with bank-level encryption.",
-            "aggregateRating": {
+            description:
+              "Professional secure file collection portal for CPAs, lawyers, and consultants. Branded client document upload with bank-level encryption.",
+            aggregateRating: {
               "@type": "AggregateRating",
-              "ratingValue": "5",
-              "ratingCount": "10000"
+              ratingValue: "5",
+              ratingCount: "10000",
             },
-            "featureList": [
+            featureList: [
               "Custom branded client portals",
               "Bank-level 256-bit encryption",
               "No client login required",
@@ -879,20 +900,21 @@ export default function Home() {
               "Real-time notifications",
               "Team collaboration",
               "Mobile-optimized",
-              "SOC 2 compliance"
-            ]
-          })
+              "SOC 2 compliance",
+            ],
+          }),
         }}
+        type="application/ld+json"
       />
 
       <footer className="border-t border-border/40 py-8 px-4 md:px-8 lg:px-16">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Image
-              src="/logo.svg"
               alt="Dysumcorp Logo"
-              width={32}
               height={12}
+              src="/logo.svg"
+              width={32}
             />
             <span className="font-mono text-sm text-muted-foreground">
               © 2025 Dysumcorp. All rights reserved.
@@ -900,20 +922,20 @@ export default function Home() {
           </div>
           <nav className="flex items-center gap-6">
             <Link
-              href="/terms"
               className="text-sm font-mono text-muted-foreground hover:text-foreground transition-colors"
+              href="/terms"
             >
               Terms & Conditions
             </Link>
             <Link
-              href="/privacy"
               className="text-sm font-mono text-muted-foreground hover:text-foreground transition-colors"
+              href="/privacy"
             >
               Privacy Policy
             </Link>
             <Link
-              href="/contact"
               className="text-sm font-mono text-muted-foreground hover:text-foreground transition-colors"
+              href="/contact"
             >
               Contact
             </Link>

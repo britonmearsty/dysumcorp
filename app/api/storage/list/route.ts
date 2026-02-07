@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { getSession } from "@/lib/auth-server";
 import {
   getValidToken,
@@ -11,6 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     // Check authentication
     const session = await getSession();
+
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -22,21 +24,23 @@ export async function GET(request: NextRequest) {
     if (!provider || (provider !== "google" && provider !== "dropbox")) {
       return NextResponse.json(
         { error: "Invalid provider. Must be 'google' or 'dropbox'" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Get valid access token
     const accessToken = await getValidToken(session.user.id, provider);
+
     if (!accessToken) {
       return NextResponse.json(
         { error: `No ${provider} account connected or token expired` },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // List files from the specified provider
     let files;
+
     if (provider === "google") {
       files = await listGoogleDriveFiles(accessToken);
     } else {
@@ -50,9 +54,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Storage list error:", error);
+
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "List failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

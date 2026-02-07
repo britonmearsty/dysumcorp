@@ -3,47 +3,32 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
+import { MotionIcon } from "motion-icons-react";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 import { useSession, signOut } from "@/lib/auth-client";
-import {
-  Home,
-  BarChart3,
-  FileText,
-  Settings,
-  Users,
-  Folder,
-  Menu,
-  X,
-  LayoutGrid,
-  Package,
-  UserCircle,
-  Database,
-  CreditCard,
-  HelpCircle,
-  UsersRound,
-  Crown,
-  LogOut,
-} from "lucide-react";
+
+import "motion-icons-react/style.css";
 
 interface NavItem {
   label: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  iconName: string;
 }
 
 const navItems: NavItem[] = [
-  { label: "OVERVIEW", href: "/dashboard", icon: Home },
-  { label: "PORTALS", href: "/dashboard/portals", icon: LayoutGrid },
-  { label: "FILES", href: "/dashboard/files", icon: FileText },
-  { label: "ASSETS", href: "/dashboard/assets", icon: Package },
-  { label: "CLIENTS", href: "/dashboard/clients", icon: UserCircle },
-  { label: "STORAGE", href: "/dashboard/storage", icon: Database },
-  { label: "BILLING", href: "/dashboard/billing", icon: CreditCard },
-  { label: "SUPPORT", href: "/dashboard/support", icon: HelpCircle },
-  { label: "TEAMS", href: "/dashboard/teams", icon: UsersRound },
-  { label: "SETTINGS", href: "/dashboard/settings", icon: Settings },
+  { label: "OVERVIEW", href: "/dashboard", iconName: "Home" },
+  { label: "PORTALS", href: "/dashboard/portals", iconName: "LayoutGrid" },
+  { label: "FILES", href: "/dashboard/files", iconName: "FileText" },
+  { label: "ASSETS", href: "/dashboard/assets", iconName: "Package" },
+  { label: "CLIENTS", href: "/dashboard/clients", iconName: "UserCircle" },
+  { label: "STORAGE", href: "/dashboard/storage", iconName: "Database" },
+  { label: "BILLING", href: "/dashboard/billing", iconName: "CreditCard" },
+  { label: "SUPPORT", href: "/dashboard/support", iconName: "HelpCircle" },
+  { label: "TEAMS", href: "/dashboard/teams", iconName: "UsersRound" },
+  { label: "SETTINGS", href: "/dashboard/settings", iconName: "Settings" },
 ];
 
 function UserAccountSection({ onClose }: { onClose: () => void }) {
@@ -71,23 +56,26 @@ function UserAccountSection({ onClose }: { onClose: () => void }) {
   }
 
   const user = session?.user;
-  const initials = user?.name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) || user?.email?.[0]?.toUpperCase() || "U";
+  const initials =
+    user?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) ||
+    user?.email?.[0]?.toUpperCase() ||
+    "U";
 
   return (
     <div className="px-3 space-y-2">
       <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50">
         {user?.image ? (
           <Image
-            src={user.image}
             alt={user.name || "User"}
-            width={40}
-            height={40}
             className="rounded-full"
+            height={40}
+            src={user.image}
+            width={40}
           />
         ) : (
           <div className="w-10 h-10 rounded-full bg-[#FF6B2C]/10 flex items-center justify-center">
@@ -107,13 +95,13 @@ function UserAccountSection({ onClose }: { onClose: () => void }) {
       </div>
 
       <Button
-        variant="outline"
-        size="sm"
         className="w-full justify-start gap-2 font-mono"
-        onClick={handleLogout}
         disabled={isLoggingOut}
+        size="sm"
+        variant="outline"
+        onClick={handleLogout}
       >
-        <LogOut className="h-4 w-4" />
+        <MotionIcon className="h-4 w-4" name="LogOut" />
         {isLoggingOut ? "Logging out..." : "Logout"}
       </Button>
     </div>
@@ -128,15 +116,15 @@ export function DashboardSidebar() {
     <>
       {/* Mobile menu button */}
       <Button
-        variant="ghost"
-        size="icon"
         className="lg:hidden fixed top-4 left-4 z-50"
+        size="icon"
+        variant="ghost"
         onClick={() => setIsMobileOpen(!isMobileOpen)}
       >
         {isMobileOpen ? (
-          <X className="h-6 w-6" />
+          <MotionIcon className="h-6 w-6" name="X" />
         ) : (
-          <Menu className="h-6 w-6" />
+          <MotionIcon className="h-6 w-6" name="Menu" />
         )}
       </Button>
 
@@ -152,17 +140,17 @@ export function DashboardSidebar() {
       <aside
         className={cn(
           "fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-background border-r border-border transition-transform duration-300",
-          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center gap-2 px-6 py-6 border-b border-border">
             <Image
-              src="/logo.svg"
               alt="Dysumcorp Logo"
-              width={32}
               height={32}
+              src="/logo.svg"
+              width={32}
             />
             <span className="font-mono text-xl font-bold">Dysumcorp</span>
           </div>
@@ -170,22 +158,27 @@ export function DashboardSidebar() {
           {/* Navigation */}
           <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-hide">
             {navItems.map((item) => {
-              const Icon = item.icon;
               const isActive = pathname === item.href;
 
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
-                  onClick={() => setIsMobileOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 transition-colors font-mono text-sm rounded-lg relative",
+                    "flex items-center gap-3 px-3 py-2.5 transition-colors font-mono text-sm rounded-lg relative group",
                     isActive
                       ? "bg-[#FF6B2C] text-white font-medium"
-                      : "text-foreground hover:bg-muted hover:text-[#FF6B2C]"
+                      : "text-foreground hover:bg-muted hover:text-[#FF6B2C]",
                   )}
+                  href={item.href}
+                  onClick={() => setIsMobileOpen(false)}
                 >
-                  <Icon className="h-5 w-5" />
+                  <MotionIcon
+                    interactive
+                    animation={isActive ? "pulse" : "none"}
+                    className="h-5 w-5"
+                    name={item.iconName}
+                    trigger="hover"
+                  />
                   <span>{item.label}</span>
                 </Link>
               );

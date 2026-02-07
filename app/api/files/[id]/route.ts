@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+
+import { auth } from "@/lib/auth-server";
+import { PrismaClient } from "@/lib/generated/prisma/client";
 import {
   getValidToken,
-  downloadFromGoogleDrive,
-  downloadFromDropbox,
   deleteFromGoogleDrive,
   deleteFromDropbox,
 } from "@/lib/storage-api";
@@ -18,7 +17,7 @@ const prisma = new PrismaClient({ adapter });
 // DELETE /api/files/[id] - Delete a file
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -48,12 +47,17 @@ export async function DELETE(
     }
 
     // Try to delete from cloud storage if it's a cloud URL
-    if (file.storageUrl.startsWith("http") || file.storageUrl.includes("drive.google.com")) {
+    if (
+      file.storageUrl.startsWith("http") ||
+      file.storageUrl.includes("drive.google.com")
+    ) {
       try {
         const accessToken = await getValidToken(session.user.id, "google");
+
         if (accessToken) {
           // Extract file ID from URL or use storageUrl as ID
           const fileId = file.storageUrl.split("/").pop() || file.storageUrl;
+
           await deleteFromGoogleDrive(accessToken, fileId);
         }
       } catch (error) {
@@ -63,6 +67,7 @@ export async function DELETE(
     } else if (file.storageUrl.includes("dropbox")) {
       try {
         const accessToken = await getValidToken(session.user.id, "dropbox");
+
         if (accessToken) {
           await deleteFromDropbox(accessToken, file.storageUrl);
         }
@@ -80,9 +85,10 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting file:", error);
+
     return NextResponse.json(
       { error: "Failed to delete file" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

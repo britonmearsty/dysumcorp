@@ -2,12 +2,26 @@
 
 import { useState } from "react";
 import { Button } from "@heroui/button";
+
 import { authClient } from "@/lib/auth-client";
 
 interface CustomerPortalButtonProps {
   label?: string;
-  variant?: "solid" | "bordered" | "light" | "flat" | "faded" | "shadow" | "ghost";
-  color?: "default" | "primary" | "secondary" | "success" | "warning" | "danger";
+  variant?:
+    | "solid"
+    | "bordered"
+    | "light"
+    | "flat"
+    | "faded"
+    | "shadow"
+    | "ghost";
+  color?:
+    | "default"
+    | "primary"
+    | "secondary"
+    | "success"
+    | "warning"
+    | "danger";
 }
 
 export function CustomerPortalButton({
@@ -24,10 +38,11 @@ export function CustomerPortalButton({
 
       if (error) {
         console.error("Portal error:", error);
+
         return;
       }
 
-      if (data && 'url' in data && data.url) {
+      if (data && "url" in data && data.url) {
         window.location.href = data.url;
       }
     } catch (err) {
@@ -40,9 +55,9 @@ export function CustomerPortalButton({
   return (
     <Button
       color={color}
+      isLoading={loading}
       variant={variant}
       onPress={handlePortal}
-      isLoading={loading}
     >
       {label}
     </Button>

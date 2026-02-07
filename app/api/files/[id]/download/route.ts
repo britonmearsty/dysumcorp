@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+
+import { auth } from "@/lib/auth-server";
+import { PrismaClient } from "@/lib/generated/prisma/client";
 import {
   getValidToken,
   downloadFromGoogleDrive,
@@ -16,7 +17,7 @@ const prisma = new PrismaClient({ adapter });
 // GET /api/files/[id]/download - Download a file
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -62,14 +63,17 @@ export async function GET(
 
       // Try Google Drive first
       const googleToken = await getValidToken(session.user.id, "google");
+
       if (googleToken) {
         const fileId = file.storageUrl.split("/").pop() || file.storageUrl;
+
         buffer = await downloadFromGoogleDrive(googleToken, fileId);
       }
 
       // Try Dropbox if Google Drive failed
       if (!buffer) {
         const dropboxToken = await getValidToken(session.user.id, "dropbox");
+
         if (dropboxToken) {
           buffer = await downloadFromDropbox(dropboxToken, file.storageUrl);
         }
@@ -90,13 +94,14 @@ export async function GET(
     // If all else fails, return error
     return NextResponse.json(
       { error: "File not available for download" },
-      { status: 404 }
+      { status: 404 },
     );
   } catch (error) {
     console.error("Error downloading file:", error);
+
     return NextResponse.json(
       { error: "Failed to download file" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

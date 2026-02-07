@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ export function StorageUpload() {
   const handleUpload = async () => {
     if (!file) {
       setError("Please select a file");
+
       return;
     }
 
@@ -26,6 +28,7 @@ export function StorageUpload() {
 
     try {
       const formData = new FormData();
+
       formData.append("file", file);
       formData.append("provider", provider);
 
@@ -56,11 +59,11 @@ export function StorageUpload() {
       <div className="space-y-2">
         <Label htmlFor="provider">Storage Provider</Label>
         <select
+          className="w-full p-2 border rounded"
+          disabled={uploading}
           id="provider"
           value={provider}
           onChange={(e) => setProvider(e.target.value as StorageProvider)}
-          className="w-full p-2 border rounded"
-          disabled={uploading}
         >
           <option value="google">Google Drive</option>
           <option value="dropbox">Dropbox</option>
@@ -70,14 +73,14 @@ export function StorageUpload() {
       <div className="space-y-2">
         <Label htmlFor="file">Select File</Label>
         <Input
+          disabled={uploading}
           id="file"
           type="file"
           onChange={(e) => setFile(e.target.files?.[0] || null)}
-          disabled={uploading}
         />
       </div>
 
-      <Button onClick={handleUpload} disabled={!file || uploading}>
+      <Button disabled={!file || uploading} onClick={handleUpload}>
         {uploading ? "Uploading..." : "Upload"}
       </Button>
 

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+
+import { auth } from "@/lib/auth-server";
+import { PrismaClient } from "@/lib/generated/prisma/client";
 import { checkTeamMemberLimit, getUserPlanType } from "@/lib/plan-limits";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
@@ -45,9 +46,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ teams });
   } catch (error) {
     console.error("Error fetching teams:", error);
+
     return NextResponse.json(
       { error: "Failed to fetch teams" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -68,6 +70,7 @@ export async function POST(request: Request) {
 
     // Check team member limit
     const memberCheck = await checkTeamMemberLimit(userId, planType);
+
     if (!memberCheck.allowed) {
       return NextResponse.json(
         {
@@ -75,7 +78,7 @@ export async function POST(request: Request) {
           upgrade: true,
           currentPlan: planType,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -85,7 +88,7 @@ export async function POST(request: Request) {
     if (!name) {
       return NextResponse.json(
         { error: "Team name is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -105,9 +108,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, team });
   } catch (error) {
     console.error("Error creating team:", error);
+
     return NextResponse.json(
       { error: "Failed to create team" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

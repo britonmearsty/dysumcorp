@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth-server";
 import { headers } from "next/headers";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+
+import { PrismaClient } from "@/lib/generated/prisma/client";
+import { auth } from "@/lib/auth-server";
 
 // Create PostgreSQL connection pool
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
@@ -27,10 +28,7 @@ export async function POST(request: Request) {
     const { provider } = await request.json();
 
     if (!provider || (provider !== "google" && provider !== "dropbox")) {
-      return NextResponse.json(
-        { error: "Invalid provider" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid provider" }, { status: 400 });
     }
 
     // Delete the account connection for this provider
@@ -44,9 +42,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error disconnecting storage:", error);
+
     return NextResponse.json(
       { error: "Failed to disconnect" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

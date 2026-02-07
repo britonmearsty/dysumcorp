@@ -2,9 +2,10 @@
 
 import { Card, CardBody } from "@heroui/card";
 import { Progress } from "@heroui/progress";
+import { useEffect, useState } from "react";
+
 import { useSession } from "@/lib/auth-client";
 import { PRICING_PLANS, formatStorage } from "@/config/pricing";
-import { useEffect, useState } from "react";
 
 interface UsageData {
   portalsUsed: number;
@@ -24,15 +25,18 @@ export function UsageDashboard() {
   const [loading, setLoading] = useState(true);
 
   const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
-  const limits = PRICING_PLANS[currentPlan as keyof typeof PRICING_PLANS]?.limits;
+  const limits =
+    PRICING_PLANS[currentPlan as keyof typeof PRICING_PLANS]?.limits;
 
   useEffect(() => {
     // Fetch usage data from API
     async function fetchUsage() {
       try {
         const response = await fetch("/api/user/usage");
+
         if (response.ok) {
           const data = await response.json();
+
           setUsage(data);
         }
       } catch (error) {
@@ -88,9 +92,15 @@ export function UsageDashboard() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {usageItems.map((item) => {
-        const percentage = item.limit === 999999 ? 0 : (item.used / item.limit) * 100;
+        const percentage =
+          item.limit === 999999 ? 0 : (item.used / item.limit) * 100;
         const isUnlimited = item.limit >= 999999;
-        const color = percentage >= 90 ? "danger" : percentage >= 70 ? "warning" : "success";
+        const color =
+          percentage >= 90
+            ? "danger"
+            : percentage >= 70
+              ? "warning"
+              : "success";
 
         return (
           <Card key={item.label}>
@@ -102,21 +112,23 @@ export function UsageDashboard() {
                     "Unlimited"
                   ) : (
                     <>
-                      {item.used}{item.unit} / {item.limit}{item.unit}
+                      {item.used}
+                      {item.unit} / {item.limit}
+                      {item.unit}
                     </>
                   )}
                 </p>
               </div>
-              
+
               {!isUnlimited && (
                 <Progress
-                  value={percentage}
+                  aria-label={`${item.label} usage`}
                   color={color}
                   size="sm"
-                  aria-label={`${item.label} usage`}
+                  value={percentage}
                 />
               )}
-              
+
               {!isUnlimited && percentage >= 80 && (
                 <p className="text-xs text-warning">
                   {percentage >= 90 ? "Almost at limit!" : "Approaching limit"}

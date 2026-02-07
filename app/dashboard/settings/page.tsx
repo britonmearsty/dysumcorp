@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
 import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,10 @@ import { Label } from "@/components/ui/label";
 export default function SettingsPage() {
   const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   // Profile state
   const [name, setName] = useState("");
@@ -84,6 +88,7 @@ export default function SettingsPage() {
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== "DELETE") {
       showMessage("error", 'Please type "DELETE" to confirm');
+
       return;
     }
 
@@ -115,7 +120,9 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold font-mono">Settings</h1>
-        <p className="text-muted-foreground mt-2">Manage your account and preferences</p>
+        <p className="text-muted-foreground mt-2">
+          Manage your account and preferences
+        </p>
       </div>
 
       {message && (
@@ -130,35 +137,37 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <form onSubmit={handleProfileUpdate} className="border rounded-lg p-6">
-        <h2 className="font-mono font-semibold text-xl mb-4">Profile Settings</h2>
+      <form className="border rounded-lg p-6" onSubmit={handleProfileUpdate}>
+        <h2 className="font-mono font-semibold text-xl mb-4">
+          Profile Settings
+        </h2>
         <div className="space-y-4">
           <div>
             <Label htmlFor="name">Full Name</Label>
             <Input
+              className="mt-2"
               id="name"
+              placeholder="John Doe"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="John Doe"
-              className="mt-2"
             />
           </div>
           <div>
             <Label htmlFor="email">Email</Label>
             <Input
+              disabled
+              className="mt-2"
               id="email"
+              placeholder="john@example.com"
               type="email"
               value={email}
-              placeholder="john@example.com"
-              className="mt-2"
-              disabled
             />
             <p className="text-xs text-muted-foreground mt-1">
               Email is managed by your OAuth provider and cannot be changed here
             </p>
           </div>
-          <Button type="submit" disabled={isLoading}>
+          <Button disabled={isLoading} type="submit">
             {isLoading ? "Saving..." : "Save Changes"}
           </Button>
         </div>
@@ -170,40 +179,46 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Email Notifications</p>
-              <p className="text-sm text-muted-foreground">Receive email updates about your account</p>
+              <p className="text-sm text-muted-foreground">
+                Receive email updates about your account
+              </p>
             </div>
             <input
-              type="checkbox"
-              className="w-5 h-5 cursor-pointer"
               checked={emailNotifications}
+              className="w-5 h-5 cursor-pointer"
+              type="checkbox"
               onChange={(e) => setEmailNotifications(e.target.checked)}
             />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Push Notifications</p>
-              <p className="text-sm text-muted-foreground">Receive push notifications on your devices</p>
+              <p className="text-sm text-muted-foreground">
+                Receive push notifications on your devices
+              </p>
             </div>
             <input
-              type="checkbox"
-              className="w-5 h-5 cursor-pointer"
               checked={pushNotifications}
+              className="w-5 h-5 cursor-pointer"
+              type="checkbox"
               onChange={(e) => setPushNotifications(e.target.checked)}
             />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Weekly Reports</p>
-              <p className="text-sm text-muted-foreground">Get weekly summary of your activity</p>
+              <p className="text-sm text-muted-foreground">
+                Get weekly summary of your activity
+              </p>
             </div>
             <input
-              type="checkbox"
-              className="w-5 h-5 cursor-pointer"
               checked={weeklyReports}
+              className="w-5 h-5 cursor-pointer"
+              type="checkbox"
               onChange={(e) => setWeeklyReports(e.target.checked)}
             />
           </div>
-          <Button onClick={handleNotificationUpdate} disabled={isLoading}>
+          <Button disabled={isLoading} onClick={handleNotificationUpdate}>
             {isLoading ? "Saving..." : "Save Preferences"}
           </Button>
         </div>
@@ -215,8 +230,11 @@ export default function SettingsPage() {
           <div>
             <p className="font-medium">Account Security</p>
             <p className="text-sm text-muted-foreground mt-2">
-              Your account is secured through OAuth authentication with {session?.user?.email?.includes("gmail") ? "Google" : "your provider"}.
-              Password management is handled by your OAuth provider.
+              Your account is secured through OAuth authentication with{" "}
+              {session?.user?.email?.includes("gmail")
+                ? "Google"
+                : "your provider"}
+              . Password management is handled by your OAuth provider.
             </p>
           </div>
           <div>
@@ -229,7 +247,9 @@ export default function SettingsPage() {
       </div>
 
       <div className="border rounded-lg p-6 border-red-200">
-        <h2 className="font-mono font-semibold text-xl mb-4 text-red-600">Danger Zone</h2>
+        <h2 className="font-mono font-semibold text-xl mb-4 text-red-600">
+          Danger Zone
+        </h2>
         <div className="space-y-4">
           {!showDeleteConfirm ? (
             <div className="flex items-center justify-between">
@@ -249,40 +269,43 @@ export default function SettingsPage() {
           ) : (
             <div className="space-y-4">
               <div>
-                <p className="font-medium text-red-600">Are you absolutely sure?</p>
+                <p className="font-medium text-red-600">
+                  Are you absolutely sure?
+                </p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  This action cannot be undone. This will permanently delete your account and remove
-                  all your data from our servers.
+                  This action cannot be undone. This will permanently delete
+                  your account and remove all your data from our servers.
                 </p>
               </div>
               <div>
                 <Label htmlFor="deleteConfirm">
-                  Type <span className="font-mono font-bold">DELETE</span> to confirm
+                  Type <span className="font-mono font-bold">DELETE</span> to
+                  confirm
                 </Label>
                 <Input
+                  className="mt-2"
                   id="deleteConfirm"
+                  placeholder="DELETE"
                   type="text"
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  placeholder="DELETE"
-                  className="mt-2"
                 />
               </div>
               <div className="flex gap-2">
                 <Button
+                  disabled={isLoading || deleteConfirmText !== "DELETE"}
                   variant="destructive"
                   onClick={handleDeleteAccount}
-                  disabled={isLoading || deleteConfirmText !== "DELETE"}
                 >
                   {isLoading ? "Deleting..." : "Confirm Delete"}
                 </Button>
                 <Button
+                  disabled={isLoading}
                   variant="outline"
                   onClick={() => {
                     setShowDeleteConfirm(false);
                     setDeleteConfirmText("");
                   }}
-                  disabled={isLoading}
                 >
                   Cancel
                 </Button>

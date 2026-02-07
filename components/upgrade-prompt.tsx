@@ -3,8 +3,14 @@
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { useRouter } from "next/navigation";
-import { PRICING_PLANS, PlanType, formatPrice, formatStorage } from "@/config/pricing";
 import { X, ArrowUp } from "lucide-react";
+
+import {
+  PRICING_PLANS,
+  PlanType,
+  formatPrice,
+  formatStorage,
+} from "@/config/pricing";
 
 interface UpgradePromptProps {
   currentPlan: PlanType;
@@ -14,12 +20,12 @@ interface UpgradePromptProps {
   inline?: boolean;
 }
 
-export function UpgradePrompt({ 
-  currentPlan, 
-  reason, 
+export function UpgradePrompt({
+  currentPlan,
+  reason,
   feature,
   onClose,
-  inline = false 
+  inline = false,
 }: UpgradePromptProps) {
   const router = useRouter();
 
@@ -28,6 +34,7 @@ export function UpgradePrompt({
     if (currentPlan === "free") return "pro";
     if (currentPlan === "pro") return "team";
     if (currentPlan === "team") return "enterprise";
+
     return "enterprise";
   };
 
@@ -46,16 +53,15 @@ export function UpgradePrompt({
           <div className="flex-1">
             <p className="font-semibold text-sm mb-1">Upgrade Required</p>
             <p className="text-sm text-default-600 mb-3">{reason}</p>
-            <Button
-              size="sm"
-              color="warning"
-              onPress={handleUpgrade}
-            >
+            <Button color="warning" size="sm" onPress={handleUpgrade}>
               Upgrade to {plan.name}
             </Button>
           </div>
           {onClose && (
-            <button onClick={onClose} className="text-default-400 hover:text-default-600">
+            <button
+              className="text-default-400 hover:text-default-600"
+              onClick={onClose}
+            >
               <X className="w-5 h-5" />
             </button>
           )}
@@ -70,11 +76,15 @@ export function UpgradePrompt({
         <div>
           <h3 className="text-xl font-bold font-mono">Upgrade Required</h3>
           <p className="text-sm text-default-500 mt-1">
-            You've reached the limits of your {PRICING_PLANS[currentPlan].name} plan
+            You've reached the limits of your {PRICING_PLANS[currentPlan].name}{" "}
+            plan
           </p>
         </div>
         {onClose && (
-          <button onClick={onClose} className="text-default-400 hover:text-default-600">
+          <button
+            className="text-default-400 hover:text-default-600"
+            onClick={onClose}
+          >
             <X className="w-6 h-6" />
           </button>
         )}
@@ -104,23 +114,31 @@ export function UpgradePrompt({
               <div>
                 <p className="text-default-500">Portals</p>
                 <p className="font-semibold">
-                  {plan.limits.portals >= 999999 ? "Unlimited" : plan.limits.portals}
+                  {plan.limits.portals >= 999999
+                    ? "Unlimited"
+                    : plan.limits.portals}
                 </p>
               </div>
               <div>
                 <p className="text-default-500">Storage</p>
-                <p className="font-semibold">{formatStorage(plan.limits.storage)}</p>
+                <p className="font-semibold">
+                  {formatStorage(plan.limits.storage)}
+                </p>
               </div>
               <div>
                 <p className="text-default-500">Team Members</p>
                 <p className="font-semibold">
-                  {plan.limits.teamMembers >= 999999 ? "Unlimited" : plan.limits.teamMembers}
+                  {plan.limits.teamMembers >= 999999
+                    ? "Unlimited"
+                    : plan.limits.teamMembers}
                 </p>
               </div>
               <div>
                 <p className="text-default-500">Custom Domains</p>
                 <p className="font-semibold">
-                  {plan.limits.customDomains >= 999999 ? "Unlimited" : plan.limits.customDomains}
+                  {plan.limits.customDomains >= 999999
+                    ? "Unlimited"
+                    : plan.limits.customDomains}
                 </p>
               </div>
             </div>
@@ -129,7 +147,9 @@ export function UpgradePrompt({
               <p className="text-sm font-semibold mb-2">Key Features:</p>
               <ul className="text-sm space-y-1">
                 {plan.features.slice(0, 5).map((feature, index) => (
-                  <li key={index} className="text-default-600">• {feature}</li>
+                  <li key={index} className="text-default-600">
+                    • {feature}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -138,19 +158,11 @@ export function UpgradePrompt({
 
         {/* Actions */}
         <div className="flex gap-3">
-          <Button
-            color="primary"
-            fullWidth
-            size="lg"
-            onPress={handleUpgrade}
-          >
+          <Button fullWidth color="primary" size="lg" onPress={handleUpgrade}>
             Upgrade to {plan.name}
           </Button>
           {onClose && (
-            <Button
-              variant="bordered"
-              onPress={onClose}
-            >
+            <Button variant="bordered" onPress={onClose}>
               Maybe Later
             </Button>
           )}
@@ -159,8 +171,8 @@ export function UpgradePrompt({
         {/* Compare Plans Link */}
         <div className="text-center">
           <button
-            onClick={() => router.push("/pricing")}
             className="text-sm text-primary hover:underline"
+            onClick={() => router.push("/pricing")}
           >
             Compare all plans
           </button>

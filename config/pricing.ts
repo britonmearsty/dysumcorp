@@ -174,10 +174,14 @@ export function getPlanLimits(planType: PlanType): PlanLimits {
 
 export function getPlanByCreemProductId(productId: string): PricingPlan | null {
   for (const plan of Object.values(PRICING_PLANS)) {
-    if (plan.creemProductId === productId || plan.creemProductIdAnnual === productId) {
+    if (
+      plan.creemProductId === productId ||
+      plan.creemProductIdAnnual === productId
+    ) {
       return plan;
     }
   }
+
   return null;
 }
 
@@ -185,6 +189,7 @@ export function formatStorage(gb: number): string {
   if (gb >= 1000) {
     return `${gb / 1000}TB`;
   }
+
   return `${gb}GB`;
 }
 

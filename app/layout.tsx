@@ -8,12 +8,15 @@ import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BETTER_AUTH_URL || 'http://localhost:3000'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000",
+  ),
   title: {
     default: `${siteConfig.name} - Secure Client File Collection Portal | No Login Required`,
     template: `%s - ${siteConfig.name}`,
   },
-  description: "Professional branded file collection portals for CPAs, lawyers, and consultants. Secure client document uploads with no account required. Bank-level encryption, custom branding, instant notifications.",
+  description:
+    "Professional branded file collection portals for CPAs, lawyers, and consultants. Secure client document uploads with no account required. Bank-level encryption, custom branding, instant notifications.",
   keywords: [
     "client file collection",
     "secure file upload portal",
@@ -35,7 +38,8 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://dysumcorp.pro",
     title: `${siteConfig.name} - Secure Client File Collection Portal`,
-    description: "Professional branded file collection portals with bank-level security. Clients upload files in seconds—no account required.",
+    description:
+      "Professional branded file collection portals with bank-level security. Clients upload files in seconds—no account required.",
     siteName: siteConfig.name,
     images: [
       {
@@ -49,7 +53,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: `${siteConfig.name} - Secure Client File Collection Portal`,
-    description: "Professional branded file collection portals with bank-level security. Clients upload files in seconds—no account required.",
+    description:
+      "Professional branded file collection portals with bank-level security. Clients upload files in seconds—no account required.",
     images: ["/logo.svg"],
     creator: "@dysumcorp",
   },

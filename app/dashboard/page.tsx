@@ -1,10 +1,19 @@
 "use client";
 
-import { useSession } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
-import { FolderOpen, FileText, Clock, Plus, Upload, Share2, ExternalLink, TrendingUp } from "lucide-react";
+import {
+  FolderOpen,
+  FileText,
+  Plus,
+  Upload,
+  Share2,
+  ExternalLink,
+  TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { useSession } from "@/lib/auth-client";
 
 interface Portal {
   id: string;
@@ -41,7 +50,7 @@ export default function DashboardPage() {
       try {
         const [portalsRes, filesRes] = await Promise.all([
           fetch("/api/portals"),
-          fetch("/api/files")
+          fetch("/api/files"),
         ]);
 
         if (portalsRes.ok && filesRes.ok) {
@@ -52,16 +61,21 @@ export default function DashboardPage() {
           const files = filesData.files || [];
 
           // Calculate stats
-          const fileCount = portals.reduce((acc: number, p: any) => acc + (p._count?.files || 0), 0);
+          const fileCount = portals.reduce(
+            (acc: number, p: any) => acc + (p._count?.files || 0),
+            0,
+          );
 
           // Get recent files (last 24h)
           const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-          const recentFiles = files.filter((f: any) => new Date(f.uploadedAt) > oneDayAgo);
+          const recentFiles = files.filter(
+            (f: any) => new Date(f.uploadedAt) > oneDayAgo,
+          );
 
           setStats({
             activePortals: portals.length,
             totalFilesReceived: fileCount,
-            recentActivityCount: recentFiles.length
+            recentActivityCount: recentFiles.length,
           });
 
           setActivePortalsList(portals.slice(0, 5));
@@ -87,17 +101,18 @@ export default function DashboardPage() {
 
     if (hours < 1) return "Just now";
     if (hours < 24) return `${hours} hours ago`;
+
     return date.toLocaleDateString();
   };
 
   if (loading) {
     return (
       <div className="space-y-8 animate-pulse">
-        <div className="h-8 w-48 bg-muted rounded"></div>
+        <div className="h-8 w-48 bg-muted rounded" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="h-32 bg-muted rounded"></div>
-          <div className="h-32 bg-muted rounded"></div>
-          <div className="h-32 bg-muted rounded"></div>
+          <div className="h-32 bg-muted rounded" />
+          <div className="h-32 bg-muted rounded" />
+          <div className="h-32 bg-muted rounded" />
         </div>
       </div>
     );
@@ -118,9 +133,15 @@ export default function DashboardPage() {
         <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-mono text-muted-foreground">ACTIVE PORTALS</p>
-              <p className="text-3xl font-mono font-bold mt-2">{stats.activePortals}</p>
-              <p className="text-xs font-mono text-muted-foreground mt-1">Currently running</p>
+              <p className="text-sm font-mono text-muted-foreground">
+                ACTIVE PORTALS
+              </p>
+              <p className="text-3xl font-mono font-bold mt-2">
+                {stats.activePortals}
+              </p>
+              <p className="text-xs font-mono text-muted-foreground mt-1">
+                Currently running
+              </p>
             </div>
             <div className="w-12 h-12 bg-[#FF6B2C]/10 flex items-center justify-center">
               <FolderOpen className="h-6 w-6 text-[#FF6B2C]" />
@@ -131,9 +152,15 @@ export default function DashboardPage() {
         <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-mono text-muted-foreground">FILES RECEIVED</p>
-              <p className="text-3xl font-mono font-bold mt-2">{stats.totalFilesReceived}</p>
-              <p className="text-xs font-mono text-muted-foreground mt-1">Across all portals</p>
+              <p className="text-sm font-mono text-muted-foreground">
+                FILES RECEIVED
+              </p>
+              <p className="text-3xl font-mono font-bold mt-2">
+                {stats.totalFilesReceived}
+              </p>
+              <p className="text-xs font-mono text-muted-foreground mt-1">
+                Across all portals
+              </p>
             </div>
             <div className="w-12 h-12 bg-[#FF6B2C]/10 flex items-center justify-center">
               <FileText className="h-6 w-6 text-[#FF6B2C]" />
@@ -144,9 +171,15 @@ export default function DashboardPage() {
         <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-mono text-muted-foreground">RECENT FILES</p>
-              <p className="text-3xl font-mono font-bold mt-2">{stats.recentActivityCount}</p>
-              <p className="text-xs font-mono text-muted-foreground mt-1">Uploaded in last 24h</p>
+              <p className="text-sm font-mono text-muted-foreground">
+                RECENT FILES
+              </p>
+              <p className="text-3xl font-mono font-bold mt-2">
+                {stats.recentActivityCount}
+              </p>
+              <p className="text-xs font-mono text-muted-foreground mt-1">
+                Uploaded in last 24h
+              </p>
             </div>
             <div className="w-12 h-12 bg-[#FF6B2C]/10 flex items-center justify-center">
               <TrendingUp className="h-6 w-6 text-[#FF6B2C]" />
@@ -160,19 +193,30 @@ export default function DashboardPage() {
         {/* Active Client Portals - Takes 2 columns */}
         <div className="lg:col-span-2 border border-border bg-background p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-mono font-bold">ACTIVE CLIENT PORTALS</h2>
+            <h2 className="text-xl font-mono font-bold">
+              ACTIVE CLIENT PORTALS
+            </h2>
             <Link href="/dashboard/portals">
-              <Button variant="outline" size="sm" className="rounded-none font-mono border-2">
+              <Button
+                className="rounded-none font-mono border-2"
+                size="sm"
+                variant="outline"
+              >
                 VIEW ALL <ExternalLink className="ml-2 w-4 h-4" />
               </Button>
             </Link>
           </div>
           <div className="space-y-4">
             {activePortalsList.length === 0 ? (
-              <p className="text-muted-foreground font-mono">No active portals found.</p>
+              <p className="text-muted-foreground font-mono">
+                No active portals found.
+              </p>
             ) : (
               activePortalsList.map((portal) => (
-                <div key={portal.id} className="border border-border p-4 hover:border-[#FF6B2C]/50 transition-colors">
+                <div
+                  key={portal.id}
+                  className="border border-border p-4 hover:border-[#FF6B2C]/50 transition-colors"
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
@@ -182,7 +226,8 @@ export default function DashboardPage() {
                         </span>
                       </div>
                       <p className="text-sm font-mono text-muted-foreground mt-1">
-                        Created {new Date(portal.createdAt).toLocaleDateString()}
+                        Created{" "}
+                        {new Date(portal.createdAt).toLocaleDateString()}
                       </p>
                       <div className="flex items-center gap-4 mt-3">
                         <div className="flex items-center gap-1 text-sm font-mono">
@@ -192,7 +237,11 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <Link href={`/dashboard/portals/${portal.id}`}>
-                      <Button variant="outline" size="sm" className="rounded-none font-mono">
+                      <Button
+                        className="rounded-none font-mono"
+                        size="sm"
+                        variant="outline"
+                      >
                         MANAGE
                       </Button>
                     </Link>
@@ -214,13 +263,19 @@ export default function DashboardPage() {
               </Button>
             </Link>
             <Link href="/dashboard/files">
-              <Button variant="outline" className="w-full rounded-none font-mono border-2 justify-start">
+              <Button
+                className="w-full rounded-none font-mono border-2 justify-start"
+                variant="outline"
+              >
                 <Upload className="mr-2 w-4 h-4" />
                 MANAGE FILES
               </Button>
             </Link>
             <Link href="/dashboard/teams">
-              <Button variant="outline" className="w-full rounded-none font-mono border-2 justify-start">
+              <Button
+                className="w-full rounded-none font-mono border-2 justify-start"
+                variant="outline"
+              >
                 <Share2 className="mr-2 w-4 h-4" />
                 MANAGE TEAM
               </Button>
@@ -234,20 +289,29 @@ export default function DashboardPage() {
         <h2 className="text-xl font-mono font-bold mb-6">RECENT UPLOADS</h2>
         <div className="space-y-3">
           {recentActivities.length === 0 ? (
-            <p className="text-muted-foreground font-mono">No recent uploads.</p>
+            <p className="text-muted-foreground font-mono">
+              No recent uploads.
+            </p>
           ) : (
             recentActivities.map((file, index) => (
-              <div key={index} className="flex items-center justify-between py-3 border-b border-border last:border-0 hover:bg-muted/30 transition-colors px-2">
+              <div
+                key={index}
+                className="flex items-center justify-between py-3 border-b border-border last:border-0 hover:bg-muted/30 transition-colors px-2"
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 flex items-center justify-center bg-blue-500/10">
                     <Upload className="w-5 h-5 text-blue-500" />
                   </div>
                   <div>
                     <p className="font-mono font-medium">File uploaded</p>
-                    <p className="text-sm font-mono text-muted-foreground">{file.portal.name} • {file.name}</p>
+                    <p className="text-sm font-mono text-muted-foreground">
+                      {file.portal.name} • {file.name}
+                    </p>
                   </div>
                 </div>
-                <p className="text-sm font-mono text-muted-foreground">{formatDate(file.uploadedAt)}</p>
+                <p className="text-sm font-mono text-muted-foreground">
+                  {formatDate(file.uploadedAt)}
+                </p>
               </div>
             ))
           )}

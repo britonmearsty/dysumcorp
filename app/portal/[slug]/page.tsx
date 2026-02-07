@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { Upload, FileText, CheckCircle, AlertCircle } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Upload, FileText, CheckCircle, AlertCircle } from "lucide-react";
 
 interface Portal {
   id: string;
@@ -17,12 +18,14 @@ interface Portal {
 export default function PublicPortalPage() {
   const params = useParams();
   const slug = params.slug as string;
-  
+
   const [portal, setPortal] = useState<Portal | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
-  const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle");
+  const [uploadStatus, setUploadStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -32,8 +35,10 @@ export default function PublicPortalPage() {
   const fetchPortal = async () => {
     try {
       const response = await fetch(`/api/portals/public/${slug}`);
+
       if (response.ok) {
         const data = await response.json();
+
         setPortal(data.portal);
       } else {
         setErrorMessage("Portal not found");
@@ -56,6 +61,7 @@ export default function PublicPortalPage() {
   const handleUpload = async () => {
     if (files.length === 0) {
       setErrorMessage("Please select at least one file");
+
       return;
     }
 
@@ -65,6 +71,7 @@ export default function PublicPortalPage() {
 
     try {
       const formData = new FormData();
+
       files.forEach((file) => {
         formData.append("files", file);
       });
@@ -80,6 +87,7 @@ export default function PublicPortalPage() {
         setFiles([]);
       } else {
         const data = await response.json();
+
         setErrorMessage(data.error || "Upload failed");
         setUploadStatus("error");
       }
@@ -105,7 +113,9 @@ export default function PublicPortalPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-          <h1 className="text-2xl font-bold font-mono mb-2">Portal Not Found</h1>
+          <h1 className="text-2xl font-bold font-mono mb-2">
+            Portal Not Found
+          </h1>
           <p className="text-muted-foreground font-mono">{errorMessage}</p>
         </div>
       </div>
@@ -130,23 +140,27 @@ export default function PublicPortalPage() {
           {uploadStatus === "success" ? (
             <div className="border border-green-500 bg-green-50 dark:bg-green-900/20 rounded-lg p-8 text-center">
               <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-              <h2 className="text-2xl font-bold font-mono mb-2">Upload Successful!</h2>
+              <h2 className="text-2xl font-bold font-mono mb-2">
+                Upload Successful!
+              </h2>
               <p className="text-muted-foreground font-mono mb-6">
                 Your files have been securely uploaded. Thank you!
               </p>
               <Button
+                className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
                 onClick={() => {
                   setUploadStatus("idle");
                   setFiles([]);
                 }}
-                className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
               >
                 UPLOAD MORE FILES
               </Button>
             </div>
           ) : (
             <div className="border border-border rounded-lg p-8">
-              <h2 className="text-2xl font-bold font-mono mb-6">Upload Your Files</h2>
+              <h2 className="text-2xl font-bold font-mono mb-6">
+                Upload Your Files
+              </h2>
 
               {/* File Upload Area */}
               <div className="border-2 border-dashed border-border rounded-lg p-12 text-center mb-6 hover:border-[#FF6B2C]/50 transition-colors">
@@ -158,16 +172,18 @@ export default function PublicPortalPage() {
                   Maximum file size: 50MB per file
                 </p>
                 <Input
-                  type="file"
                   multiple
-                  onChange={handleFileChange}
                   className="hidden"
                   id="file-upload"
+                  type="file"
+                  onChange={handleFileChange}
                 />
                 <Button
-                  variant="outline"
                   className="rounded-none font-mono"
-                  onClick={() => document.getElementById("file-upload")?.click()}
+                  variant="outline"
+                  onClick={() =>
+                    document.getElementById("file-upload")?.click()
+                  }
                 >
                   SELECT FILES
                 </Button>
@@ -209,9 +225,9 @@ export default function PublicPortalPage() {
 
               {/* Upload Button */}
               <Button
-                onClick={handleUpload}
-                disabled={files.length === 0 || uploading}
                 className="w-full rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                disabled={files.length === 0 || uploading}
+                onClick={handleUpload}
               >
                 {uploading ? "UPLOADING..." : "UPLOAD FILES"}
               </Button>
@@ -221,7 +237,8 @@ export default function PublicPortalPage() {
           {/* Security Notice */}
           <div className="mt-8 p-4 bg-muted/30 border border-border rounded-lg">
             <p className="text-sm text-muted-foreground font-mono text-center">
-              🔒 Your files are encrypted and securely stored. We take your privacy seriously.
+              🔒 Your files are encrypted and securely stored. We take your
+              privacy seriously.
             </p>
           </div>
         </div>

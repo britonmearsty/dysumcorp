@@ -1,9 +1,10 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { creem } from "@creem_io/better-auth";
 import pg from "pg";
+
+import { PrismaClient } from "@/lib/generated/prisma/client";
 
 // Create PostgreSQL connection pool
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
@@ -55,11 +56,15 @@ export const auth = betterAuth({
       defaultSuccessUrl: "/dashboard",
       persistSubscriptions: true, // Enable database persistence
       onGrantAccess: async ({ reason, product, customer, metadata }) => {
-        console.log(`✅ Granted access to ${customer.email} - Reason: ${reason}`);
+        console.log(
+          `✅ Granted access to ${customer.email} - Reason: ${reason}`,
+        );
         // Add custom logic here if needed
       },
       onRevokeAccess: async ({ reason, product, customer, metadata }) => {
-        console.log(`❌ Revoked access from ${customer.email} - Reason: ${reason}`);
+        console.log(
+          `❌ Revoked access from ${customer.email} - Reason: ${reason}`,
+        );
         // Add custom logic here if needed
       },
     }),

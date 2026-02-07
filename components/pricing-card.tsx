@@ -3,8 +3,9 @@
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Check } from "lucide-react";
+
 import { PricingPlan } from "@/config/pricing";
-import { formatPrice, formatStorage } from "@/config/pricing";
+import { formatPrice } from "@/config/pricing";
 
 interface PricingCardProps {
   plan: PricingPlan;
@@ -13,15 +14,23 @@ interface PricingCardProps {
   onSubscribe?: (planId: string, isAnnual: boolean) => void;
 }
 
-export function PricingCard({ plan, billingCycle, currentPlan, onSubscribe }: PricingCardProps) {
+export function PricingCard({
+  plan,
+  billingCycle,
+  currentPlan,
+  onSubscribe,
+}: PricingCardProps) {
   const isCurrentPlan = currentPlan === plan.id;
   const isFree = plan.id === "free";
   const price = billingCycle === "annual" ? plan.priceAnnual / 12 : plan.price;
   const totalPrice = billingCycle === "annual" ? plan.priceAnnual : plan.price;
-  const savings = billingCycle === "annual" && !isFree ? (plan.price * 12 - plan.priceAnnual) : 0;
+  const savings =
+    billingCycle === "annual" && !isFree
+      ? plan.price * 12 - plan.priceAnnual
+      : 0;
 
   return (
-    <Card 
+    <Card
       className={`relative ${plan.popular ? "border-2 border-primary" : ""}`}
       shadow={plan.popular ? "lg" : "sm"}
     >
@@ -30,14 +39,16 @@ export function PricingCard({ plan, billingCycle, currentPlan, onSubscribe }: Pr
           Most Popular
         </div>
       )}
-      
+
       <CardHeader className="flex flex-col items-start gap-2 pb-4">
         <h3 className="text-xl font-bold font-mono">{plan.name}</h3>
         <p className="text-sm text-default-500">{plan.description}</p>
-        
+
         <div className="mt-4">
           <div className="flex items-baseline gap-1">
-            <span className="text-4xl font-bold font-mono">{formatPrice(price)}</span>
+            <span className="text-4xl font-bold font-mono">
+              {formatPrice(price)}
+            </span>
             {!isFree && <span className="text-default-500">/month</span>}
           </div>
           {billingCycle === "annual" && !isFree && (
@@ -66,13 +77,17 @@ export function PricingCard({ plan, billingCycle, currentPlan, onSubscribe }: Pr
         </ul>
 
         <Button
-          color={plan.popular ? "primary" : "default"}
-          variant={isCurrentPlan ? "bordered" : "solid"}
           fullWidth
+          color={plan.popular ? "primary" : "default"}
           isDisabled={isCurrentPlan}
+          variant={isCurrentPlan ? "bordered" : "solid"}
           onPress={() => onSubscribe?.(plan.id, billingCycle === "annual")}
         >
-          {isCurrentPlan ? "Current Plan" : isFree ? "Get Started" : "Subscribe"}
+          {isCurrentPlan
+            ? "Current Plan"
+            : isFree
+              ? "Get Started"
+              : "Subscribe"}
         </Button>
       </CardBody>
     </Card>

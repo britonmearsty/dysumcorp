@@ -1,8 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 
 export function UserMenu() {
   const { data: session } = useSession();
@@ -10,7 +11,7 @@ export function UserMenu() {
 
   if (!session) {
     return (
-      <Button onClick={() => router.push("/auth")} variant="default">
+      <Button variant="default" onClick={() => router.push("/auth")}>
         Sign In
       </Button>
     );
@@ -22,11 +23,11 @@ export function UserMenu() {
         Welcome, {session.user?.name || session.user?.email}
       </span>
       <Button
+        variant="outline"
         onClick={async () => {
           await signOut();
           router.push("/");
         }}
-        variant="outline"
       >
         Sign Out
       </Button>
