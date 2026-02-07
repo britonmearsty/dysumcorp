@@ -6,6 +6,9 @@ import { Plus, Trash2, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { usePaywall } from "@/components/paywall-modal";
+import { PlanType } from "@/config/pricing";
+import { useSession } from "@/lib/auth-client";
 
 interface TeamMember {
   id: string;
@@ -30,6 +33,8 @@ interface Team {
 }
 
 export default function TeamsPage() {
+  const { data: session } = useSession();
+  const { showPaywall, PaywallModal } = usePaywall();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -39,10 +44,26 @@ export default function TeamsPage() {
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [userPlan, setUserPlan] = useState<PlanType>("free");
 
   useEffect(() => {
     fetchTeams();
+    fetchUserPlan();
   }, []);
+
+  const fetchUserPlan = async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      const response = await fetch("/api/limits/team-members");
+      if (response.ok) {
+        const data = await response.json();
+        setUserPlan(data.planType);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user plan:", error);
+    }
+  };
 
   const fetchTeams = async () => {
     try {
@@ -131,8 +152,45 @@ export default function TeamsPage() {
   const handleAddMember = async () => {
     if (!newMemberEmail.trim() || !selectedTeam) {
       alert("Please enter a member email");
-
       return;
+    }
+
+    if (!session?.user?.id) return;
+
+    try {
+      const response = await fetch("/api/limits/team-members");
+      const data = await response.json();
+
+      if (!data.allowed) {
+        showPaywall(
+          userPlan,
+          "Team Members",
+          data.reason || "You've reached your team member limit.",
+          "team",
+        );
+        return;
+      }
+    } catch (error) {
+      console.error("Failed to check team member limit:", error);
+    }
+
+    if (!session?.user?.id) return;
+
+    try {
+      const response = await fetch("/api/limits/team-members");
+      const limitCheck = await response.json();
+
+      if (!limitCheck.allowed) {
+        showPaywall(
+          userPlan,
+          "Team Members",
+          limitCheck.reason || "You've reached your team member limit.",
+          "team",
+        );
+        return;
+      }
+    } catch (error) {
+      console.error("Failed to check team member limit:", error);
     }
 
     setCreating(true);
@@ -457,6 +515,9 @@ export default function TeamsPage() {
           </div>
         </div>
       )}
+
+      {/* Paywall Modal */}
+      <PaywallModal />
     </div>
   );
 }

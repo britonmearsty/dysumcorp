@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   User,
   Palette,
@@ -19,12 +19,18 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { usePaywall } from "@/components/paywall-modal";
+import { PlanType } from "@/config/pricing";
+import { useSession } from "@/lib/auth-client";
 
 type Step = "identity" | "branding" | "storage" | "security" | "messaging";
 
 export default function CreatePortalPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const { showPaywall, PaywallModal } = usePaywall();
   const [currentStep, setCurrentStep] = useState<Step>("identity");
+  const [userPlan, setUserPlan] = useState<PlanType>("free");
   const [formData, setFormData] = useState({
     // Identity
     portalName: "",
@@ -120,6 +126,60 @@ export default function CreatePortalPage() {
       console.error("Failed to create portal:", error);
       alert("Failed to create portal. Please try again.");
     }
+  };
+
+  useEffect(() => {
+    fetchUserPlan();
+  }, []);
+
+  const fetchUserPlan = async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      const response = await fetch(
+        `/api/plan-limits?userId=${session.user.id}`,
+      );
+      const data = await response.json();
+
+      if (response.ok) {
+        setUserPlan(data.planType);
+      } else {
+        console.error("Failed to fetch user plan:", data.error);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user plan:", error);
+    }
+  };
+
+  const handleCustomDomainChange = async (value: string) => {
+    if (!session?.user?.id) return;
+
+    // Check if user has access to custom domains
+    const response = await fetch("/api/plan-limits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: session.user.id,
+        planType: userPlan,
+        checkType: "customDomain",
+      }),
+    });
+
+    const limitCheck = await response.json();
+
+    if (!limitCheck.allowed && value) {
+      showPaywall(
+        userPlan,
+        "Custom Domains",
+        limitCheck.reason ||
+          "Custom domains are not available on your current plan.",
+        "pro",
+      );
+
+      return;
+    }
+
+    updateFormData("customDomain", value);
   };
 
   const updateFormData = (field: string, value: any) => {
@@ -408,9 +468,7 @@ export default function CreatePortalPage() {
                   id="customDomain"
                   placeholder="e.g., portal.acmecorp.com"
                   value={formData.customDomain}
-                  onChange={(e) =>
-                    updateFormData("customDomain", e.target.value)
-                  }
+                  onChange={(e) => handleCustomDomainChange(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground font-mono">
                   Configure DNS settings to point to your portal
@@ -824,6 +882,9 @@ export default function CreatePortalPage() {
           </Button>
         )}
       </div>
+
+      {/* Paywall Modal */}
+      <PaywallModal />
     </div>
   );
 }

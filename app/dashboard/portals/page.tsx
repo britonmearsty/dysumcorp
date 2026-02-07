@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Trash2, ExternalLink, FileText } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { usePaywall } from "@/components/paywall-modal";
+import { PlanType } from "@/config/pricing";
+import { useSession } from "@/lib/auth-client";
 
 interface Portal {
   id: string;
@@ -22,13 +24,31 @@ interface Portal {
 
 export default function PortalsPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const { showPaywall, PaywallModal } = usePaywall();
   const [portals, setPortals] = useState<Portal[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [userPlan, setUserPlan] = useState<PlanType>("free");
 
   useEffect(() => {
     fetchPortals();
+    fetchUserPlan();
   }, []);
+
+  const fetchUserPlan = async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      const response = await fetch("/api/limits/portals");
+      if (response.ok) {
+        const data = await response.json();
+        setUserPlan(data.planType);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user plan:", error);
+    }
+  };
 
   const fetchPortals = async () => {
     try {
@@ -74,6 +94,31 @@ export default function PortalsPage() {
     }
   };
 
+  const handleCreatePortal = async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      const response = await fetch("/api/limits/portals");
+      const data = await response.json();
+
+      if (!data.allowed) {
+        showPaywall(
+          userPlan,
+          "Portals",
+          data.reason || "You've reached your portal limit.",
+          "pro",
+        );
+        return;
+      }
+
+      router.push("/dashboard/portals/create");
+    } catch (error) {
+      console.error("Failed to check portal limit:", error);
+      // Still allow navigation if check fails
+      router.push("/dashboard/portals/create");
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -109,12 +154,13 @@ export default function PortalsPage() {
             Manage your client portals
           </p>
         </div>
-        <Link href="/dashboard/portals/create">
-          <Button className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono">
-            <Plus className="w-4 h-4 mr-2" />
-            CREATE PORTAL
-          </Button>
-        </Link>
+        <Button
+          className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+          onClick={handleCreatePortal}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          CREATE PORTAL
+        </Button>
       </div>
 
       {portals.length === 0 ? (
@@ -126,12 +172,13 @@ export default function PortalsPage() {
           <p className="text-muted-foreground font-mono text-sm mb-6">
             Create your first client portal to start collecting files securely
           </p>
-          <Link href="/dashboard/portals/create">
-            <Button className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono">
-              <Plus className="w-4 h-4 mr-2" />
-              CREATE YOUR FIRST PORTAL
-            </Button>
-          </Link>
+          <Button
+            className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+            onClick={handleCreatePortal}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            CREATE FIRST PORTAL
+          </Button>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -198,6 +245,9 @@ export default function PortalsPage() {
           ))}
         </div>
       )}
+
+      {/* Paywall Modal */}
+      <PaywallModal />
     </div>
   );
 }

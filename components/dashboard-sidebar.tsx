@@ -4,31 +4,43 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { MotionIcon } from "motion-icons-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "@/lib/auth-client";
 
-import "motion-icons-react/style.css";
+// Animated Icons
+import { HomeIcon } from "@/components/ui/home";
+import { BlocksIcon } from "@/components/ui/blocks";
+import { FileTextIcon } from "@/components/ui/file-text";
+import { BoxIcon } from "@/components/ui/box";
+import { UserIcon } from "@/components/ui/user";
+import { GaugeIcon } from "@/components/ui/gauge";
+import { CircleDollarSignIcon } from "@/components/ui/circle-dollar-sign";
+import { CircleHelpIcon } from "@/components/ui/circle-help";
+import { UsersIcon } from "@/components/ui/users";
+import { SettingsIcon } from "@/components/ui/settings";
+import { MenuIcon } from "@/components/ui/menu";
+import { XIcon } from "@/components/ui/x";
+import { LogoutIcon } from "@/components/ui/logout";
 
 interface NavItem {
   label: string;
   href: string;
-  iconName: string;
+  icon: React.ComponentType<{ className?: string; size?: number }>;
 }
 
 const navItems: NavItem[] = [
-  { label: "OVERVIEW", href: "/dashboard", iconName: "Home" },
-  { label: "PORTALS", href: "/dashboard/portals", iconName: "LayoutGrid" },
-  { label: "FILES", href: "/dashboard/files", iconName: "FileText" },
-  { label: "ASSETS", href: "/dashboard/assets", iconName: "Package" },
-  { label: "CLIENTS", href: "/dashboard/clients", iconName: "UserCircle" },
-  { label: "STORAGE", href: "/dashboard/storage", iconName: "Database" },
-  { label: "BILLING", href: "/dashboard/billing", iconName: "CreditCard" },
-  { label: "SUPPORT", href: "/dashboard/support", iconName: "HelpCircle" },
-  { label: "TEAMS", href: "/dashboard/teams", iconName: "UsersRound" },
-  { label: "SETTINGS", href: "/dashboard/settings", iconName: "Settings" },
+  { label: "OVERVIEW", href: "/dashboard", icon: HomeIcon },
+  { label: "PORTALS", href: "/dashboard/portals", icon: BlocksIcon },
+  { label: "FILES", href: "/dashboard/files", icon: FileTextIcon },
+  { label: "ASSETS", href: "/dashboard/assets", icon: BoxIcon },
+  { label: "CLIENTS", href: "/dashboard/clients", icon: UserIcon },
+  { label: "STORAGE", href: "/dashboard/storage", icon: GaugeIcon },
+  { label: "BILLING", href: "/dashboard/billing", icon: CircleDollarSignIcon },
+  { label: "SUPPORT", href: "/dashboard/support", icon: CircleHelpIcon },
+  { label: "TEAMS", href: "/dashboard/teams", icon: UsersIcon },
+  { label: "SETTINGS", href: "/dashboard/settings", icon: SettingsIcon },
 ];
 
 function UserAccountSection({ onClose }: { onClose: () => void }) {
@@ -101,7 +113,7 @@ function UserAccountSection({ onClose }: { onClose: () => void }) {
         variant="outline"
         onClick={handleLogout}
       >
-        <MotionIcon className="h-4 w-4" name="LogOut" />
+        <LogoutIcon className="h-4 w-4" />
         {isLoggingOut ? "Logging out..." : "Logout"}
       </Button>
     </div>
@@ -122,9 +134,9 @@ export function DashboardSidebar() {
         onClick={() => setIsMobileOpen(!isMobileOpen)}
       >
         {isMobileOpen ? (
-          <MotionIcon className="h-6 w-6" name="X" />
+          <XIcon className="h-6 w-6" />
         ) : (
-          <MotionIcon className="h-6 w-6" name="Menu" />
+          <MenuIcon className="h-6 w-6" />
         )}
       </Button>
 
@@ -133,6 +145,13 @@ export function DashboardSidebar() {
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setIsMobileOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setIsMobileOpen(false);
+            }
+          }}
+          role="button"
+          tabIndex={0}
         />
       )}
 
@@ -159,6 +178,7 @@ export function DashboardSidebar() {
           <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-hide">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
+              const Icon = item.icon;
 
               return (
                 <Link
@@ -172,13 +192,7 @@ export function DashboardSidebar() {
                   href={item.href}
                   onClick={() => setIsMobileOpen(false)}
                 >
-                  <MotionIcon
-                    interactive
-                    animation={isActive ? "pulse" : "none"}
-                    className="h-5 w-5"
-                    name={item.iconName}
-                    trigger="hover"
-                  />
+                  <Icon className="h-5 w-5" size={20} />
                   <span>{item.label}</span>
                 </Link>
               );

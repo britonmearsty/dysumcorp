@@ -60,6 +60,7 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
       "Powered by branding",
     ],
   },
+  // started
   pro: {
     id: "pro",
     name: "Professional",

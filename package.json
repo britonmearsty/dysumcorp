@@ -71,7 +71,6 @@
     "intl-messageformat": "10.7.16",
     "lucide-react": "^0.563.0",
     "motion": "^12.33.0",
-    "motion-icons-react": "^1.0.9",
     "next": "15.5.9",
     "next-themes": "0.4.6",
     "pg": "^8.18.0",
