@@ -17,6 +17,7 @@ import Image from "next/image";
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { UserMenu } from "@/components/user-menu";
+import { UsageIndicator } from "@/components/usage-indicator";
 
 export const Navbar = () => {
   return (
@@ -55,6 +56,9 @@ export const Navbar = () => {
         className="hidden sm:flex basis-1/5 sm:basis-full"
         justify="end"
       >
+        <NavbarItem className="hidden lg:flex">
+          <UsageIndicator />
+        </NavbarItem>
         <NavbarItem className="hidden sm:flex">
           <ThemeSwitch />
         </NavbarItem>

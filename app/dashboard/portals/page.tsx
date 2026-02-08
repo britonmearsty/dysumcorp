@@ -5,7 +5,7 @@ import { Plus, Trash2, ExternalLink, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { usePaywall } from "@/components/paywall-modal";
+import { ProgressiveLimitWarning } from "@/components/progressive-limit-warning";
 import { PlanType } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
 
@@ -22,18 +22,39 @@ interface Portal {
   };
 }
 
+interface SoftLimitResponse {
+  allowed: boolean;
+  reason?: string;
+  current: number;
+  limit: number;
+  percentage: number;
+  softLimitLevel: "normal" | "warning" | "critical" | "exceeded";
+  canProceed: boolean;
+  requiresUpgrade: boolean;
+  graceUsed?: number;
+  graceTotal?: number;
+  recommendation?: {
+    suggestedPlan: PlanType;
+    message: string;
+  };
+}
+
 export default function PortalsPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const { showPaywall, PaywallModal } = usePaywall();
   const [portals, setPortals] = useState<Portal[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [userPlan, setUserPlan] = useState<PlanType>("free");
+  const [limitStatus, setLimitStatus] = useState<SoftLimitResponse | null>(
+    null,
+  );
+  const [showLimitWarning, setShowLimitWarning] = useState(false);
 
   useEffect(() => {
     fetchPortals();
     fetchUserPlan();
+    fetchLimitStatus();
   }, []);
 
   const fetchUserPlan = async () => {
@@ -49,6 +70,27 @@ export default function PortalsPage() {
       }
     } catch (error) {
       console.error("Failed to fetch user plan:", error);
+    }
+  };
+
+  const fetchLimitStatus = async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      const response = await fetch("/api/limits/portals/soft");
+
+      if (response.ok) {
+        const data: SoftLimitResponse = await response.json();
+
+        setLimitStatus(data);
+
+        // Show warning if we're at warning level or above
+        if (data.softLimitLevel !== "normal") {
+          setShowLimitWarning(true);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch limit status:", error);
     }
   };
 
@@ -85,6 +127,8 @@ export default function PortalsPage() {
 
       if (response.ok) {
         setPortals(portals.filter((p) => p.id !== id));
+        // Refresh limit status after deletion
+        await fetchLimitStatus();
       } else {
         alert("Failed to delete portal");
       }
@@ -99,19 +143,47 @@ export default function PortalsPage() {
   const handleCreatePortal = async () => {
     if (!session?.user?.id) return;
 
+    // Get current limit status
     try {
-      const response = await fetch("/api/limits/portals");
-      const data = await response.json();
+      const response = await fetch("/api/limits/portals/soft");
+      const data: SoftLimitResponse = await response.json();
 
-      if (!data.allowed) {
-        showPaywall(
-          userPlan,
-          "Portals",
-          data.reason || "You've reached your portal limit.",
-          "pro",
+      // If we can't proceed (hard limit exceeded), show gentle upgrade prompt
+      if (!data.canProceed) {
+        const shouldUpgrade = confirm(
+          `You've reached your ${data.current}/${data.limit} portal limit. Would you like to upgrade your plan to continue?`,
         );
 
+        if (shouldUpgrade) {
+          router.push("/dashboard/billing");
+        }
+
         return;
+      }
+
+      // If we're in a warning state, proceed but show context
+      if (
+        data.softLimitLevel === "warning" ||
+        data.softLimitLevel === "critical"
+      ) {
+        const confirmed = confirm(
+          `You're using ${data.current}/${data.limit} portals (${Math.round(data.percentage)}%). You can create another portal, but consider upgrading soon to avoid interruptions. Continue?`,
+        );
+
+        if (!confirmed) {
+          return;
+        }
+      }
+
+      // If we're in grace period (exceeded but allowed)
+      if (data.softLimitLevel === "exceeded" && data.canProceed) {
+        const confirmed = confirm(
+          `You've exceeded your portal limit (${data.current}/${data.limit}). You have ${data.graceTotal} grace uses remaining. Consider upgrading to continue without interruptions. Continue?`,
+        );
+
+        if (!confirmed) {
+          return;
+        }
       }
 
       router.push("/dashboard/portals/create");
@@ -165,6 +237,22 @@ export default function PortalsPage() {
           CREATE PORTAL
         </Button>
       </div>
+
+      {/* Progressive Limit Warning */}
+      {showLimitWarning && limitStatus && (
+        <ProgressiveLimitWarning
+          className="mb-6"
+          currentPlan={userPlan}
+          resourceType="portals"
+          usage={{
+            used: limitStatus.current,
+            limit: limitStatus.limit,
+            percentage: limitStatus.percentage,
+            isUnlimited: limitStatus.limit >= 999999,
+          }}
+          onUpgrade={() => router.push("/dashboard/billing")}
+        />
+      )}
 
       {portals.length === 0 ? (
         <div className="border rounded-lg p-12 text-center">
@@ -248,9 +336,6 @@ export default function PortalsPage() {
           ))}
         </div>
       )}
-
-      {/* Paywall Modal */}
-      <PaywallModal />
     </div>
   );
 }

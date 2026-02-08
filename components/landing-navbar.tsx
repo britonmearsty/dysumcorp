@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 
 const navigationItems = [
   { title: "FEATURES", href: "#features" },
-  { title: "PRICING", href: "#pricing" },
+  { title: "PRICING & PLANS", href: "#pricing" },
   { title: "SECURITY", href: "#security" },
+  { title: "DEMO", href: "#demo" },
   { title: "ABOUT", href: "#about" },
 ];
 
@@ -59,6 +60,23 @@ export function LandingNavbar() {
         </nav>
 
         <div className="flex items-center space-x-4">
+          <div className="hidden lg:flex items-center gap-6 mr-6">
+            <a
+              className="text-sm font-mono text-muted-foreground hover:text-foreground transition-colors"
+              href="tel:1-800-DYSUM"
+            >
+              1-800-DYSUM
+            </a>
+            <Button
+              className="rounded-none border border-foreground hover:bg-foreground hover:text-background font-mono text-sm px-4 py-2"
+              variant="outline"
+              onClick={() =>
+                window.open("https://demo.dysumcorp.com", "_blank")
+              }
+            >
+              DEMO
+            </Button>
+          </div>
           <Button
             aria-label={
               session?.user
@@ -69,7 +87,7 @@ export function LandingNavbar() {
             variant="default"
             onClick={handleGetStarted}
           >
-            {session?.user ? "DASHBOARD" : "GET STARTED"}{" "}
+            {session?.user ? "DASHBOARD" : "START FREE TRIAL"}{" "}
             <ArrowRight className="ml-1 w-4 h-4" />
           </Button>
           <Sheet>
@@ -90,11 +108,26 @@ export function LandingNavbar() {
                     {item.title}
                   </a>
                 ))}
+                <a
+                  className="text-sm font-mono text-muted-foreground hover:text-foreground transition-colors"
+                  href="tel:1-800-DYSUM"
+                >
+                  1-800-DYSUM
+                </a>
+                <Button
+                  className="cursor-pointer rounded-none border border-foreground hover:bg-foreground hover:text-background font-mono"
+                  variant="outline"
+                  onClick={() =>
+                    window.open("https://demo.dysumcorp.com", "_blank")
+                  }
+                >
+                  WATCH DEMO
+                </Button>
                 <Button
                   className="cursor-pointer rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
                   onClick={handleGetStarted}
                 >
-                  {session?.user ? "DASHBOARD" : "GET STARTED"}{" "}
+                  {session?.user ? "DASHBOARD" : "START FREE TRIAL"}{" "}
                   <ArrowRight className="ml-1 w-4 h-4" />
                 </Button>
               </nav>

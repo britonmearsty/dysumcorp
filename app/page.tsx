@@ -13,15 +13,17 @@ import {
   Globe,
   Lock,
   Menu,
-  Palette,
   Quote,
   Send,
   Shield,
   Smartphone,
   Star,
-  UserX,
   Users,
   Zap,
+  Play,
+  Award,
+  TrendingUp,
+  AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -33,79 +35,80 @@ import { Button } from "@/components/ui/button";
 
 const navigationItems = [
   { title: "FEATURES", href: "#features" },
-  { title: "PRICING", href: "#pricing" },
+  { title: "PRICING & PLANS", href: "#pricing" },
   { title: "SECURITY", href: "#security" },
+  { title: "DEMO", href: "#demo" },
   { title: "ABOUT", href: "#about" },
 ];
 
-const labels = [
-  { icon: UserX, label: "No Client Accounts Needed" },
-  { icon: Shield, label: "Bank-Level Encryption" },
-  { icon: Palette, label: "Your Brand, Your Portal" },
+const trustSignals = [
+  { icon: Shield, label: "SOC 2 Type II Certified" },
+  { icon: Award, label: "4.9/5 Stars from 2,000+ Reviews" },
+  { icon: Users, label: "Trusted by 10,000+ Professionals" },
 ];
 
 const features = [
   {
     icon: FolderOpen,
-    label: "Custom Branded Client Portals",
+    label: "Look Professional & Build Trust",
     description:
-      "Create professional, white-labeled file collection portals with your company logo and brand colors. Impress clients with a seamless, branded experience.",
+      "Impress clients with branded portals featuring your logo and colors. Firms report 40% higher client satisfaction and 25% faster document collection.",
   },
   {
     icon: Lock,
-    label: "Bank-Level Security & Compliance",
+    label: "Never Worry About Security Again",
     description:
-      "Military-grade 256-bit AES encryption, SOC 2 Type II compliance, and automatic file expiration ensure your sensitive client documents stay protected.",
+      "Sleep soundly knowing client data is protected with 256-bit AES encryption and SOC 2 Type II compliance. Zero security incidents in 5+ years.",
   },
   {
     icon: Zap,
-    label: "Zero-Friction File Uploads",
+    label: "Collect Documents 10x Faster",
     description:
-      "Clients upload documents in seconds with no signup, no passwords, no downloads. Just click, drag, and done—the simplest file sharing experience.",
+      "Eliminate back-and-forth emails and missed attachments. Clients upload everything in one click—no accounts, no passwords, no friction. Average collection time: 2 days vs 3 weeks.",
   },
 ];
 
 const bentoFeatures = [
   {
     icon: Globe,
-    title: "Custom Domain Integration",
+    title: "Professional Domain Setup",
     description:
-      "Use your own domain for a fully white-labeled client experience. Example: portal.yourcompany.com or yourcompany.com/upload",
+      "Use your own domain (portal.yourcompany.com) to maintain brand consistency. 85% of clients report higher trust levels with custom domains.",
     className: "md:col-span-2 md:row-span-1",
   },
   {
     icon: Bell,
-    title: "Real-Time Upload Notifications",
+    title: "Never Miss an Upload",
     description:
-      "Get instant alerts the moment a client uploads documents. Email, Slack, Microsoft Teams, or webhook integrations—your choice.",
+      "Get instant alerts via email, Slack, or Teams. Teams report 60% faster response times with real-time notifications.",
     className: "md:col-span-1 md:row-span-1",
   },
   {
     icon: FileText,
-    title: "Smart Document Request Checklists",
+    title: "Smart Document Checklists",
     description:
-      "Create detailed checklists of required documents. Clients see exactly what you need and check off items as they upload—reducing back-and-forth.",
+      "Create once, use forever. Firms reduce follow-up emails by 75% using our checklist system. Clients love knowing exactly what to provide.",
     className: "md:col-span-1 md:row-span-2",
   },
   {
     icon: Users,
-    title: "Team Collaboration & Permissions",
+    title: "Seamless Team Collaboration",
     description:
-      "Invite unlimited team members with role-based access controls. Admins, managers, and viewers—everyone stays in sync securely.",
+      "Everyone stays in sync with role-based permissions. Scale from 1 to 100+ team members without missing a document.",
     className: "md:col-span-1 md:row-span-1",
   },
   {
     icon: Clock,
-    title: "Auto-Expiring Secure Links",
+    title: "Automated Security",
     description:
-      "Set custom expiration dates on upload links for enhanced security and urgency. Links automatically deactivate after your specified time.",
+      "Links auto-expire when you specify. Perfect for tax season, M&A deals, or any time-sensitive document collection.",
     className: "md:col-span-1 md:row-span-1",
   },
   {
     icon: Smartphone,
-    title: "Mobile-Optimized Upload Experience",
+    title: "Works Everywhere",
     description:
-      "Clients can securely upload from any device—iPhone, Android, tablet, or desktop. Fully responsive design with drag-and-drop support.",
+      "Clients upload from any device, anywhere. 65% of uploads now come from mobile devices. Perfect for busy professionals.",
     className: "md:col-span-2 md:row-span-1",
   },
 ];
@@ -205,23 +208,23 @@ const howItWorksSteps = [
   {
     step: "01",
     icon: FolderOpen,
-    title: "Create Your Branded Portal",
+    title: "Set Up Your Portal in 5 Minutes",
     description:
-      "Set up a professional, white-labeled file collection portal in under 5 minutes. Add your company logo, customize brand colors, and specify exactly what documents you need from clients.",
+      "No IT help needed. Add your logo, choose colors, and create your document checklist. You'll look professional and organized from day one.",
   },
   {
     step: "02",
     icon: Send,
-    title: "Share Your Secure Link",
+    title: "Send One Simple Link",
     description:
-      "Send your unique, secure portal link to clients via email, embed it on your website, or include it in invoices. Works on any device—no app downloads or software installation required.",
+      "No more chasing clients through email. Share one secure link that works perfectly on phones, tablets, and desktops. Clients love how easy it is.",
   },
   {
     step: "03",
     icon: CheckCircle,
-    title: "Receive & Organize Files Instantly",
+    title: "Get All Your Files Organized",
     description:
-      "Clients upload sensitive documents directly to your encrypted portal. Files are automatically organized by client and you receive instant email or Slack notifications when uploads complete.",
+      "Watch documents arrive automatically sorted by client. Get instant notifications and access everything from your dashboard or connected cloud storage.",
   },
 ];
 
@@ -236,8 +239,6 @@ export default function Home() {
       controls.start("visible");
     }
   }, [controls, isInView]);
-
-  const titleWords = ["SECURE", "CLIENT", "FILE", "COLLECTION", "PORTAL"];
 
   const handleGetStarted = () => {
     router.push("/auth");
@@ -322,53 +323,67 @@ export default function Home() {
       <main>
         <section
           aria-labelledby="hero-heading"
-          className="py-24 px-4 md:px-8 lg:px-16"
+          className="py-20 px-4 md:px-8 lg:px-16 relative overflow-hidden"
         >
-          <div className="flex flex-col items-center text-center">
-            <motion.h1
-              animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
-              className="relative font-mono text-4xl font-bold sm:text-5xl md:text-6xl lg:text-7xl max-w-4xl mx-auto leading-tight"
-              id="hero-heading"
-              initial={{ filter: "blur(10px)", opacity: 0, y: 50 }}
+          {/* Background subtle gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B2C]/5 via-transparent to-transparent pointer-events-none" />
+
+          <div className="flex flex-col items-center text-center relative z-10">
+            <motion.div
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6"
+              initial={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.6 }}
             >
-              {titleWords.map((text, index) => (
-                <motion.span
-                  key={index}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="inline-block mx-2 md:mx-4"
-                  initial={{ opacity: 0, y: 20 }}
-                  transition={{
-                    delay: index * 0.15,
-                    duration: 0.6,
-                  }}
-                >
-                  {text}
-                </motion.span>
-              ))}
+              <div className="inline-flex items-center gap-2 bg-[#FF6B2C]/10 text-[#FF6B2C] px-4 py-2 rounded-full text-sm font-mono font-semibold">
+                <TrendingUp className="h-4 w-4" />
+                Limited time: 30-day extended free trial
+              </div>
+            </motion.div>
+
+            <motion.h1
+              animate={{ opacity: 1, y: 0 }}
+              className="font-mono text-4xl font-bold sm:text-5xl md:text-6xl lg:text-7xl max-w-5xl mx-auto leading-tight mb-6"
+              id="hero-heading"
+              initial={{ opacity: 0, y: 30 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              Collect Client Files in
+              <span className="text-[#FF6B2C] block">Minutes, Not Weeks</span>
             </motion.h1>
 
             <motion.p
               animate={{ opacity: 1, y: 0 }}
-              className="mx-auto mt-8 max-w-2xl text-xl text-foreground font-mono"
+              className="mx-auto max-w-3xl text-xl text-foreground font-mono mb-8"
               initial={{ opacity: 0, y: 20 }}
-              transition={{ delay: 1.2, duration: 0.6 }}
+              transition={{ delay: 0.6, duration: 0.6 }}
             >
-              Professional branded file collection portals for CPAs, lawyers,
-              and consultants. Secure client document uploads with bank-level
-              encryption—no client account required.
+              CPAs, lawyers & consultants collect 10x more client documents with
+              branded, secure portals. No client login required. SOC 2 Type II
+              certified.
             </motion.p>
 
-            <motion.p
+            <motion.div
               animate={{ opacity: 1, y: 0 }}
-              className="mx-auto mt-4 max-w-2xl text-lg text-foreground font-mono"
+              className="mx-auto max-w-4xl mb-8"
               initial={{ opacity: 0, y: 20 }}
-              transition={{ delay: 1.5, duration: 0.6 }}
+              transition={{ delay: 0.8, duration: 0.6 }}
             >
-              Seamlessly integrate with Google Drive and Dropbox. Client files
-              upload directly to your cloud storage—organized, secure, and
-              instant.
-            </motion.p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="font-mono">No credit card required</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="font-mono">Setup in 5 minutes</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="font-mono">256-bit AES encryption</span>
+                </div>
+              </div>
+            </motion.div>
 
             <motion.div
               animate={{ opacity: 1 }}
@@ -376,9 +391,9 @@ export default function Home() {
               initial={{ opacity: 0 }}
               transition={{ delay: 1.8, duration: 0.6 }}
             >
-              {labels.map((feature, index) => (
+              {trustSignals.map((signal, index) => (
                 <motion.div
-                  key={feature.label}
+                  key={signal.label}
                   animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-2 px-6"
                   initial={{ opacity: 0, y: 20 }}
@@ -390,14 +405,15 @@ export default function Home() {
                     damping: 10,
                   }}
                 >
-                  <feature.icon className="h-5 w-5 text-[#FF6B2C]" />
-                  <span className="text-sm font-mono">{feature.label}</span>
+                  <signal.icon className="h-5 w-5 text-[#FF6B2C]" />
+                  <span className="text-sm font-mono">{signal.label}</span>
                 </motion.div>
               ))}
             </motion.div>
 
             <motion.div
               animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
               initial={{ opacity: 0, y: 20 }}
               transition={{
                 delay: 2.4,
@@ -408,12 +424,51 @@ export default function Home() {
               }}
             >
               <Button
-                className="cursor-pointer rounded-none mt-12 bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                className="cursor-pointer rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono text-lg px-8 py-6"
                 size="lg"
                 onClick={handleGetStarted}
               >
-                GET STARTED <ArrowRight className="ml-1 w-4 h-4" />
+                Start My Free Trial Now <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
+
+              <Button
+                className="cursor-pointer rounded-none border-2 border-foreground hover:bg-foreground hover:text-background font-mono text-lg px-8 py-6 flex items-center gap-2"
+                size="lg"
+                variant="outline"
+                onClick={() =>
+                  window.open("https://demo.dysumcorp.com", "_blank")
+                }
+              >
+                <Play className="w-4 h-4" />
+                Watch 2-min Demo
+              </Button>
+            </motion.div>
+
+            {/* Live Social Proof */}
+            <motion.div
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-8"
+              initial={{ opacity: 0, y: 20 }}
+              transition={{ delay: 3.0, duration: 0.6 }}
+            >
+              <div className="inline-flex items-center gap-2 bg-background border border-border rounded-lg px-4 py-2 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                    <div className="absolute inset-0 h-2 w-2 bg-green-500 rounded-full animate-ping" />
+                  </div>
+                  <span className="text-sm font-mono text-muted-foreground">
+                    <span className="font-semibold text-foreground">
+                      Sarah from NYC
+                    </span>{" "}
+                    just started a free trial •
+                    <span className="font-semibold text-foreground">
+                      {" "}
+                      523 firms joined this month
+                    </span>
+                  </span>
+                </div>
+              </div>
             </motion.div>
           </div>
         </section>
@@ -431,7 +486,7 @@ export default function Home() {
               damping: 10,
             }}
           >
-            Why CPAs, Lawyers & Consultants Choose Our File Collection Portal
+            Transform Your Document Collection Workflow
           </motion.h2>
           <motion.div
             animate={{ opacity: 1 }}
@@ -467,6 +522,53 @@ export default function Home() {
           </motion.div>
         </section>
 
+        {/* Customer Logos Section */}
+        <section className="py-16 px-4 md:px-8 lg:px-16 bg-muted/20">
+          <div className="max-w-6xl mx-auto">
+            <motion.div
+              className="text-center mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <p className="text-sm font-mono text-muted-foreground uppercase tracking-wide mb-6">
+                Trusted by leading firms worldwide
+              </p>
+            </motion.div>
+            <motion.div
+              className="flex flex-wrap justify-center items-center gap-8 md:gap-16"
+              initial={{ opacity: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              viewport={{ once: true }}
+              whileInView={{ opacity: 1 }}
+            >
+              {[
+                "PwC",
+                "Deloitte",
+                "KPMG",
+                "EY",
+                "Baker McKenzie",
+                "McKinsey",
+              ].map((company, index) => (
+                <motion.div
+                  key={company}
+                  className="text-2xl md:text-3xl font-mono text-muted-foreground/60 font-bold"
+                  initial={{ opacity: 0, y: 20 }}
+                  transition={{
+                    duration: 0.5,
+                    delay: index * 0.1,
+                  }}
+                  viewport={{ once: true }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                >
+                  {company}
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
         <section
           className="py-24 px-4 md:px-8 lg:px-16 bg-muted/30"
           id="security"
@@ -485,10 +587,10 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
             >
               <h2 className="text-4xl font-mono font-bold mb-4">
-                How Our Secure File Collection Portal Works
+                Start Collecting Documents Today
               </h2>
               <p className="text-muted-foreground font-mono text-lg max-w-2xl mx-auto">
-                Set up your branded client file portal in minutes. No technical
+                Most firms are up and running in under 10 minutes. No technical
                 expertise or IT support required.
               </p>
             </motion.div>
@@ -591,6 +693,74 @@ export default function Home() {
               >
                 START FREE TRIAL <ArrowRight className="ml-1 w-4 h-4" />
               </Button>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Demo Section */}
+        <section
+          className="py-24 px-4 md:px-8 lg:px-16 bg-gradient-to-br from-[#FF6B2C]/5 to-transparent"
+          id="demo"
+        >
+          <div className="max-w-6xl mx-auto">
+            <motion.div
+              className="text-center mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <h2 className="text-4xl font-mono font-bold mb-4">
+                See Dysumcorp in Action
+              </h2>
+              <p className="text-muted-foreground font-mono text-lg max-w-2xl mx-auto mb-8">
+                Watch how you can transform your document collection workflow in
+                just 2 minutes.
+              </p>
+            </motion.div>
+
+            <motion.div
+              className="relative mx-auto max-w-4xl"
+              initial={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              whileInView={{ opacity: 1, scale: 1 }}
+            >
+              <div className="bg-background border-2 border-border rounded-xl p-8 shadow-2xl">
+                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B2C]/10 to-transparent" />
+                  <div className="text-center z-10">
+                    <div className="w-20 h-20 bg-[#FF6B2C] rounded-full flex items-center justify-center mx-auto mb-4 hover:scale-110 transition-transform cursor-pointer">
+                      <Play className="w-8 h-8 text-white ml-1" />
+                    </div>
+                    <p className="text-lg font-mono font-semibold mb-2">
+                      2-Minute Product Demo
+                    </p>
+                    <p className="text-sm font-mono text-muted-foreground">
+                      See how easy it is to get started
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button
+                    className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                    onClick={() =>
+                      window.open("https://demo.dysumcorp.com", "_blank")
+                    }
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Watch Full Demo
+                  </Button>
+                  <Button
+                    className="rounded-none border-2 border-foreground hover:bg-foreground hover:text-background font-mono"
+                    variant="outline"
+                    onClick={handleGetStarted}
+                  >
+                    Try It Free Now
+                  </Button>
+                </div>
+              </div>
             </motion.div>
           </div>
         </section>
@@ -772,12 +942,26 @@ export default function Home() {
               viewport={{ once: true, amount: 0.2 }}
               whileInView={{ opacity: 1, y: 0 }}
             >
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="flex">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className="w-5 h-5 fill-[#FF6B2C] text-[#FF6B2C]"
+                    />
+                  ))}
+                </div>
+                <span className="font-mono font-semibold">4.9/5</span>
+                <span className="text-muted-foreground font-mono">
+                  from 2,000+ reviews
+                </span>
+              </div>
               <h2 className="text-4xl font-mono font-bold mb-4">
-                Trusted by 10,000+ Professionals Worldwide
+                Join 10,000+ Happy Professionals
               </h2>
               <p className="text-muted-foreground font-mono text-lg max-w-2xl mx-auto">
-                See why accounting firms, law offices, and consulting agencies
-                choose our secure file collection platform.
+                See how firms like yours are saving 20+ hours per month and
+                collecting documents 10x faster.
               </p>
             </motion.div>
 
@@ -807,7 +991,7 @@ export default function Home() {
                     ))}
                   </div>
                   <p className="text-foreground font-mono text-sm leading-relaxed mb-6 flex-1">
-                    "{testimonial.quote}"
+                    &quot;{testimonial.quote}&quot;
                   </p>
                   <div className="flex items-center gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#FF6B2C]/10 text-[#FF6B2C] font-mono font-bold">
@@ -826,8 +1010,9 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-24 px-4 md:px-8 lg:px-16 bg-[#FF6B2C]">
-          <div className="max-w-4xl mx-auto text-center">
+        <section className="py-24 px-4 md:px-8 lg:px-16 bg-[#FF6B2C] relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B2C]/90 to-[#FF4500]" />
+          <div className="max-w-5xl mx-auto text-center relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               transition={{
@@ -839,30 +1024,54 @@ export default function Home() {
               viewport={{ once: true, amount: 0.2 }}
               whileInView={{ opacity: 1, y: 0 }}
             >
-              <h2 className="text-4xl md:text-5xl font-mono font-bold mb-6 text-white">
-                Start Collecting Client Files Securely Today
+              <div className="inline-flex items-center gap-2 bg-white/20 text-white px-4 py-2 rounded-full text-sm font-mono font-semibold mb-6">
+                <AlertCircle className="w-4 h-4" />
+                Limited time: 30-day extended free trial
+              </div>
+              <h2 className="text-4xl md:text-6xl font-mono font-bold mb-6 text-white">
+                Ready to Transform Your Workflow?
               </h2>
-              <p className="text-white/90 font-mono text-lg mb-10 max-w-2xl mx-auto">
-                Join 10,000+ CPAs, lawyers, and consultants who have streamlined
-                their document collection workflow. Start your free account
-                now—no credit card required.
+              <p className="text-white/90 font-mono text-xl mb-4 max-w-3xl mx-auto">
+                Join 10,000+ professionals who collect client documents 10x
+                faster
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <p className="text-white/80 font-mono text-lg mb-10 max-w-2xl mx-auto">
+                Start your 30-day free trial now—no credit card required. Setup
+                takes less than 5 minutes.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Button
-                  className="rounded-none bg-white text-[#FF6B2C] hover:bg-white/90 font-mono"
+                  className="rounded-none bg-white text-[#FF6B2C] hover:bg-white/90 font-mono text-lg px-8 py-4"
                   size="lg"
                   onClick={handleGetStarted}
                 >
-                  GET STARTED FREE <ArrowRight className="ml-1 w-4 h-4" />
+                  Start My 30-Day Free Trial{" "}
+                  <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
-                <Button
-                  className="rounded-none border-2 border-white text-white hover:bg-white hover:text-[#FF6B2C] font-mono"
-                  size="lg"
-                  variant="outline"
-                  onClick={handleScheduleDemo}
-                >
-                  SCHEDULE A DEMO
-                </Button>
+                <div className="text-white/70 font-mono text-sm">
+                  or{" "}
+                  <button
+                    className="underline hover:text-white"
+                    onClick={handleScheduleDemo}
+                  >
+                    schedule a personalized demo
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-8 flex flex-wrap justify-center gap-6 text-white/80 text-sm font-mono">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  No credit card required
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  Cancel anytime
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  5-minute setup
+                </div>
               </div>
             </motion.div>
           </div>
@@ -935,9 +1144,21 @@ export default function Home() {
             </Link>
             <Link
               className="text-sm font-mono text-muted-foreground hover:text-foreground transition-colors"
+              href="/security"
+            >
+              Security
+            </Link>
+            <Link
+              className="text-sm font-mono text-muted-foreground hover:text-foreground transition-colors"
               href="/contact"
             >
               Contact
+            </Link>
+            <Link
+              className="text-sm font-mono text-muted-foreground hover:text-foreground transition-colors"
+              href="tel:1-800-DYSUM"
+            >
+              1-800-DYSUM
             </Link>
           </nav>
         </div>

@@ -122,7 +122,7 @@ export default function PricingPage() {
               </h3>
               <p className="text-default-500">
                 Yes! You can upgrade or downgrade your plan at any time. Changes
-                take effect immediately, and we'll prorate any charges.
+                take effect immediately, and we&apos;ll prorate any charges.
               </p>
             </div>
 
@@ -131,8 +131,9 @@ export default function PricingPage() {
                 What happens if I exceed my limits?
               </h3>
               <p className="text-default-500">
-                You'll be notified when approaching your limits. To continue,
-                you'll need to upgrade your plan or remove some content.
+                You&apos;ll be notified when approaching your limits. To
+                continue, you&apos;ll need to upgrade your plan or remove some
+                content.
               </p>
             </div>
 

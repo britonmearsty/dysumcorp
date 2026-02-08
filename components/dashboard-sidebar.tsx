@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "@/lib/auth-client";
+import { AnimatedNavItem } from "@/components/animated-nav-item";
 
 // Animated Icons
 import { HomeIcon } from "@/components/ui/home";
@@ -53,7 +53,7 @@ function UserAccountSection({ onClose }: { onClose: () => void }) {
 
   if (isPending) {
     return (
-      <div className="px-3 py-2 animate-pulse">
+      <div className="px-4 py-3 animate-pulse">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-muted" />
           <div className="flex-1 space-y-2">
@@ -77,25 +77,26 @@ function UserAccountSection({ onClose }: { onClose: () => void }) {
     "U";
 
   return (
-    <div className="px-3 space-y-2">
-      <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50">
+    <div className="space-y-3 p-3">
+      {/* User Info Card */}
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
         {user?.image ? (
           <Image
             alt={user.name || "User"}
-            className="rounded-full"
-            height={40}
+            className="rounded-full ring-2 ring-primary/20"
+            height={44}
             src={user.image}
-            width={40}
+            width={44}
           />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-[#FF6B2C]/10 flex items-center justify-center">
-            <span className="text-[#FF6B2C] text-sm font-mono font-bold">
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center ring-2 ring-primary/20">
+            <span className="text-white text-sm font-mono font-bold">
               {initials}
             </span>
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-mono font-medium truncate">
+          <p className="text-sm font-mono font-semibold text-foreground truncate">
             {user?.name || "User"}
           </p>
           <p className="text-xs text-muted-foreground font-mono truncate">
@@ -104,15 +105,18 @@ function UserAccountSection({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
+      {/* Logout Button */}
       <Button
-        className="w-full justify-start gap-2 font-mono"
+        className="w-full justify-start gap-3 font-mono h-10 rounded-lg transition-all duration-200 hover:bg-destructive/10 hover:border-destructive hover:text-destructive dark:hover:bg-destructive/20 dark:hover:border-destructive/80"
         disabled={isLoggingOut}
         size="sm"
         variant="outline"
         onClick={handleLogout}
       >
-        <LogoutIcon className="h-4 w-4" />
-        {isLoggingOut ? "Logging out..." : "Logout"}
+        <LogoutIcon className="h-4 w-4 flex-shrink-0" />
+        <span className="truncate">
+          {isLoggingOut ? "Logging out..." : "Logout"}
+        </span>
       </Button>
     </div>
   );
@@ -126,22 +130,22 @@ export function DashboardSidebar() {
     <>
       {/* Mobile menu button */}
       <Button
-        className="lg:hidden fixed top-4 left-4 z-50"
+        className="lg:hidden fixed top-4 left-4 z-50 bg-background/80 backdrop-blur-sm border border-border/50 shadow-lg"
         size="icon"
-        variant="ghost"
+        variant="outline"
         onClick={() => setIsMobileOpen(!isMobileOpen)}
       >
         {isMobileOpen ? (
-          <XIcon className="h-6 w-6" />
+          <XIcon className="h-5 w-5" />
         ) : (
-          <MenuIcon className="h-6 w-6" />
+          <MenuIcon className="h-5 w-5" />
         )}
       </Button>
 
       {/* Overlay for mobile */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
           role="button"
           tabIndex={0}
           onClick={() => setIsMobileOpen(false)}
@@ -156,49 +160,49 @@ export function DashboardSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-background border-r border-border transition-transform duration-300",
+          "fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-gradient-to-b from-background to-background/95 backdrop-blur-sm border-r border-border/50 transition-transform duration-300 ease-in-out",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-2 px-6 py-6 border-b border-border">
-            <Image
-              alt="Dysumcorp Logo"
-              height={32}
-              src="/logo.svg"
-              width={32}
-            />
-            <span className="font-mono text-xl font-bold">Dysumcorp</span>
+          <div className="flex items-center gap-3 px-6 py-6 border-b border-border/50 bg-background/50 backdrop-blur-sm">
+            <div className="relative">
+              <Image
+                alt="Dysumcorp Logo"
+                className="transition-transform duration-200 hover:scale-105"
+                height={36}
+                src="/logo.svg"
+                width={36}
+              />
+              <div className="absolute -inset-1 bg-primary/20 rounded-full blur-md -z-10" />
+            </div>
+            <span className="font-mono text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+              Dysumcorp
+            </span>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-hide">
+          <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
 
               return (
-                <Link
+                <AnimatedNavItem
                   key={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 transition-colors font-mono text-sm rounded-lg relative group",
-                    isActive
-                      ? "bg-[#FF6B2C] text-white font-medium"
-                      : "text-foreground hover:bg-muted hover:text-[#FF6B2C]",
-                  )}
+                  Icon={Icon}
                   href={item.href}
+                  isActive={isActive}
+                  label={item.label}
                   onClick={() => setIsMobileOpen(false)}
-                >
-                  <Icon className="h-5 w-5" size={20} />
-                  <span>{item.label}</span>
-                </Link>
+                />
               );
             })}
           </nav>
 
           {/* User section */}
-          <div className="px-3 py-4 border-t border-border">
+          <div className="px-3 py-4 border-t border-border/50 bg-background/30 backdrop-blur-sm">
             <UserAccountSection onClose={() => setIsMobileOpen(false)} />
           </div>
         </div>

@@ -12,7 +12,7 @@ import {
 import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
-import { Lock, AlertTriangle, Check, X } from "lucide-react";
+import { Lock, Check, X } from "lucide-react";
 
 import {
   PRICING_PLANS,
@@ -85,10 +85,12 @@ export function PaywallModal({
 
   return (
     <Modal
+      backdrop="blur"
       classNames={{
         base: "max-h-[90vh]",
         body: "py-6",
       }}
+      hideCloseButton={false}
       isOpen={isOpen}
       scrollBehavior="inside"
       size="2xl"
@@ -99,15 +101,15 @@ export function PaywallModal({
           <>
             <ModalHeader className="flex flex-col gap-1">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                   <Lock className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold font-mono">
-                    Upgrade Required
+                    Feature Available on Higher Plans
                   </h2>
                   <p className="text-sm text-default-500">
-                    {feature} is available on paid plans
+                    {feature} requires an upgrade to access
                   </p>
                 </div>
               </div>
@@ -115,13 +117,13 @@ export function PaywallModal({
 
             <ModalBody>
               {/* Current Situation */}
-              <Card className="bg-warning/10 border-warning">
+              <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
                 <CardBody className="py-4">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                    <Lock className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-sm text-warning">
-                        Access Denied
+                      <p className="font-semibold text-sm text-blue-700 dark:text-blue-300">
+                        Upgrade Required
                       </p>
                       <p className="text-sm text-default-600 mt-1">{reason}</p>
                       <div className="flex items-center gap-2 mt-2">
@@ -129,8 +131,8 @@ export function PaywallModal({
                           Current: {PRICING_PLANS[currentPlan].name}
                         </Chip>
                         <span>→</span>
-                        <Chip color="warning" size="sm" variant="flat">
-                          Minimum: {minimumPlanDetails.name}
+                        <Chip color="primary" size="sm" variant="flat">
+                          Required: {minimumPlanDetails.name}
                         </Chip>
                       </div>
                     </div>

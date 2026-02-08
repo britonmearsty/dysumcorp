@@ -18,19 +18,36 @@ export interface PlanLimitCheck {
 export async function checkPortalLimit(
   userId: string,
   planType: PlanType,
+  softMode: boolean = false,
 ): Promise<PlanLimitCheck> {
   const limits = PRICING_PLANS[planType].limits;
   const currentCount = await prisma.portal.count({
     where: { userId },
   });
 
+  // In soft mode, allow 10% overage or 1 extra portal minimum
+  const effectiveLimit = softMode
+    ? limits.portals + Math.max(Math.ceil(limits.portals * 0.1), 1)
+    : limits.portals;
+
   if (currentCount >= limits.portals) {
-    return {
-      allowed: false,
-      reason: `Portal limit reached. Your ${planType} plan allows ${limits.portals} portal(s).`,
-      current: currentCount,
-      limit: limits.portals,
-    };
+    if (softMode && currentCount < effectiveLimit) {
+      // Allow with warning
+      return {
+        allowed: false,
+        reason: `Portal limit reached. Your ${planType} plan allows ${limits.portals} portal(s). You have ${effectiveLimit - currentCount} grace uses remaining.`,
+        current: currentCount,
+        limit: limits.portals,
+      };
+    } else if (currentCount >= effectiveLimit) {
+      // Hard block
+      return {
+        allowed: false,
+        reason: `Portal limit exceeded. Your ${planType} plan allows ${limits.portals} portal(s) and grace period is exhausted.`,
+        current: currentCount,
+        limit: limits.portals,
+      };
+    }
   }
 
   return { allowed: true, current: currentCount, limit: limits.portals };

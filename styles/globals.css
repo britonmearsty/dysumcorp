@@ -62,7 +62,7 @@
   --card-foreground: #0f1117;
   --popover: #ffffff;
   --popover-foreground: #0f1117;
-  --primary: #3b82f6;
+  --primary: #ff6b2c;
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #0f1117;
@@ -74,7 +74,7 @@
   --destructive-foreground: #f8fafc;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #3b82f6;
+  --ring: #ff6b2c;
   --chart-1: #e76e50;
   --chart-2: #2a9d8f;
   --chart-3: #264653;
@@ -82,12 +82,12 @@
   --chart-5: #e9c46a;
   --sidebar: #f8fafc;
   --sidebar-foreground: #0f1117;
-  --sidebar-primary: #3b82f6;
+  --sidebar-primary: #ff6b2c;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f1f5f9;
   --sidebar-accent-foreground: #0f1117;
   --sidebar-border: #e2e8f0;
-  --sidebar-ring: #3b82f6;
+  --sidebar-ring: #ff6b2c;
 }
 
 .dark {
@@ -97,7 +97,7 @@
   --card-foreground: #f8fafc;
   --popover: #1a1b2e;
   --popover-foreground: #f8fafc;
-  --primary: #3b82f6;
+  --primary: #ff6b2c;
   --primary-foreground: #ffffff;
   --secondary: #252736;
   --secondary-foreground: #f8fafc;
@@ -109,7 +109,7 @@
   --destructive-foreground: #f8fafc;
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(0, 0, 0, 0.2);
-  --ring: #3b82f6;
+  --ring: #ff6b2c;
   --chart-1: #3b82f6;
   --chart-2: #8b5cf6;
   --chart-3: #2563eb;
@@ -122,7 +122,7 @@
   --sidebar-accent: #1a1b2e;
   --sidebar-accent-foreground: #f8fafc;
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #3b82f6;
+  --sidebar-ring: #ff6b2c;
 }
 
 @layer base {
@@ -167,4 +167,63 @@
 
 .animate-gradient-x {
   animation: gradient-x 3s ease infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(255, 107, 44, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 107, 44, 0.6);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Enhanced button hover effects */
+.btn-hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(255, 107, 44, 0.3);
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus states for accessibility */
+.focus-visible:focus {
+  outline: 2px solid #ff6b2c;
+  outline-offset: 2px;
+}
+
+/* Enhanced card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
