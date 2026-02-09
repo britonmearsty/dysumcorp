@@ -1,24 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, Tab } from "@heroui/tabs";
 import { Card, CardBody } from "@heroui/card";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { SubscriptionStatus } from "@/components/subscription-status";
-import { CustomerPortalButton } from "@/components/customer-portal-button";
+import { SubscriptionManager } from "@/components/subscription-manager";
 import { PricingCard } from "@/components/pricing-card";
 import { UsageDashboard } from "@/components/usage-dashboard";
 import { PRICING_PLANS } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
 
 export default function BillingPage() {
-  const { data: session } = useSession();
+  const { data: session, refetch } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
     "monthly",
   );
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showCanceled, setShowCanceled] = useState(false);
   const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
+
+  // Handle successful/canceled checkout returns
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const canceled = searchParams.get("canceled");
+
+    if (success) {
+      setShowSuccess(true);
+      // Refresh session to get updated subscription data
+      refetch();
+
+      // Clean up URL after showing message
+      const timer = setTimeout(() => {
+        setShowSuccess(false);
+        router.replace("/dashboard/billing");
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+
+    if (canceled) {
+      setShowCanceled(true);
+      // Clean up URL after showing message
+      const timer = setTimeout(() => {
+        setShowCanceled(false);
+        router.replace("/dashboard/billing");
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, refetch, router]);
 
   const handleSubscribe = async (planId: string, isAnnual: boolean) => {
     if (planId === "free") {
@@ -61,20 +95,27 @@ export default function BillingPage() {
         </p>
       </div>
 
-      {/* Current Subscription Status */}
+      {/* Success/Canceled Messages */}
+      {showSuccess && (
+        <div className="bg-success-100 border border-success-200 text-success-700 px-4 py-3 rounded-lg">
+          <p className="font-medium">Payment successful! 🎉</p>
+          <p className="text-sm">Your subscription has been activated.</p>
+        </div>
+      )}
+      {showCanceled && (
+        <div className="bg-warning-100 border border-warning-200 text-warning-700 px-4 py-3 rounded-lg">
+          <p className="font-medium">Payment canceled</p>
+          <p className="text-sm">You can try again anytime.</p>
+        </div>
+      )}
+
+      {/* Current Subscription Status & Management */}
       <div className="grid gap-4 md:grid-cols-2">
         <SubscriptionStatus />
-        <Card>
-          <CardBody className="flex flex-row items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Manage Subscription</p>
-              <p className="text-xs text-default-500 mt-1">
-                Update payment methods and view invoices
-              </p>
-            </div>
-            <CustomerPortalButton />
-          </CardBody>
-        </Card>
+        <SubscriptionManager
+          currentPlan={currentPlan}
+          onSubscriptionChanged={() => refetch()}
+        />
       </div>
 
       {/* Usage Dashboard */}
@@ -84,7 +125,7 @@ export default function BillingPage() {
       </div>
 
       {/* Pricing Plans */}
-      <div>
+      <div id="pricing">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold font-mono">Available Plans</h2>
           <Tabs
@@ -117,10 +158,12 @@ export default function BillingPage() {
         <CardBody>
           <h2 className="font-mono font-semibold text-xl mb-2">Need Help?</h2>
           <p className="text-sm text-default-500 mb-4">
-            Use the Customer Portal to manage your subscription, update payment
-            methods, and view invoice history.
+            Having issues with your subscription? Contact our support team for
+            assistance.
           </p>
-          <CustomerPortalButton label="Open Customer Portal" variant="flat" />
+          <p className="text-sm text-default-500">
+            Email: support@dysumcorp.com
+          </p>
         </CardBody>
       </Card>
     </div>

@@ -1,20 +1,28 @@
 import { NextResponse } from "next/server";
+import { createCheckout } from "@creem_io/better-auth/server";
 
 import { auth } from "@/lib/auth-server";
 import { PRICING_PLANS } from "@/config/pricing";
 
 export async function POST(request: Request) {
   try {
+    console.log("🔍 Checkout API called");
+
     const session = await auth.api.getSession({
       headers: request.headers,
     });
 
+    console.log("🔍 Session:", session?.user?.id);
+
     if (!session?.user) {
+      console.log("❌ No session found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
     const { planId, billingCycle = "monthly" } = body;
+
+    console.log("🔍 Request body:", { planId, billingCycle });
 
     if (!planId || planId === "free") {
       return NextResponse.json(
@@ -42,72 +50,58 @@ export async function POST(request: Request) {
       );
     }
 
-    // Debug logging
-    console.log("Checkout request:", {
+    console.log("🔍 Creating checkout:", {
       productId,
       planId,
       billingCycle,
-      betterAuthUrl: process.env.NEXT_PUBLIC_BETTER_AUTH_URL,
       userId: session.user.id,
+      email: session.user.email,
     });
 
-    // Use Better Auth Creem plugin to create checkout
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/auth/creem/create-checkout`,
+    // Use Creem server-side SDK to create checkout
+    // Note: Creem API only accepts one of customer.id OR customer.email, not both
+    const result = await createCheckout(
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: request.headers.get("cookie") || "",
+        apiKey: process.env.CREEM_API_KEY!,
+        testMode: process.env.NODE_ENV === "development",
+      },
+      {
+        productId,
+        successUrl: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/dashboard/billing?success=true`,
+        // Pass email only - Creem will create/link customer by email
+        customer: {
+          email: session.user.email!,
         },
-        body: JSON.stringify({
-          productId,
-          successUrl: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/dashboard/billing?success=true`,
-          cancelUrl: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/dashboard/billing?canceled=true`,
-          metadata: {
-            planId,
-            billingCycle,
-            userId: session.user.id,
-          },
-        }),
+        metadata: {
+          planId,
+          billingCycle,
+          userId: session.user.id,
+        },
       },
     );
 
-    const responseText = await response.text();
+    console.log("🔍 Creem result:", result);
 
-    console.log("Creem API response:", {
-      status: response.status,
-      statusText: response.statusText,
-      body: responseText,
-    });
-
-    let checkoutData;
-
-    try {
-      checkoutData = JSON.parse(responseText);
-    } catch {
-      checkoutData = { error: "Invalid JSON response", raw: responseText };
-    }
-
-    if (!response.ok) {
+    if (!result || !result.url) {
       return NextResponse.json(
-        { error: checkoutData.error || "Failed to create checkout" },
-        { status: response.status },
+        { error: "Failed to create checkout - no URL returned" },
+        { status: 500 },
       );
     }
 
     return NextResponse.json({
       success: true,
-      checkoutUrl: checkoutData.url,
+      checkoutUrl: result.url,
       productId,
       planId,
       billingCycle,
     });
-  } catch (error) {
-    console.error("Checkout error:", error);
+  } catch (error: any) {
+    console.error("❌ Checkout error:", error);
+    console.error("❌ Error stack:", error?.stack);
 
     return NextResponse.json(
-      { error: "Failed to create checkout session" },
+      { error: error?.message || "Failed to create checkout session" },
       { status: 500 },
     );
   }

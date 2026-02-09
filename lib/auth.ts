@@ -18,7 +18,7 @@ if (!process.env.BETTER_AUTH_URL) {
 }
 
 // Create PostgreSQL connection pool
-const pool = new pg.Pool({ 
+const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   max: 20,
   idleTimeoutMillis: 30000,
@@ -26,17 +26,17 @@ const pool = new pg.Pool({
 });
 
 // Handle pool errors
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
+pool.on("error", (err) => {
+  console.error("Unexpected error on idle client", err);
 });
 
 // Create Prisma adapter for PostgreSQL
 const adapter = new PrismaPg(pool);
 
 // Initialize Prisma Client with the adapter
-const prisma = new PrismaClient({ 
+const prisma = new PrismaClient({
   adapter,
-  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
 });
 
 export const auth = betterAuth({
@@ -45,6 +45,26 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: false, // Disabled email/password auth
+  },
+  user: {
+    // Define additional fields that exist in your User model
+    additionalFields: {
+      subscriptionPlan: {
+        type: "string",
+        defaultValue: "free",
+        input: false, // Don't allow users to set this during signup
+      },
+      subscriptionStatus: {
+        type: "string",
+        defaultValue: "active",
+        input: false, // Don't allow users to set this during signup
+      },
+      creemCustomerId: {
+        type: "string",
+        defaultValue: null,
+        input: false,
+      },
+    },
   },
   socialProviders: {
     google: {
@@ -57,7 +77,9 @@ export const auth = betterAuth({
         "https://www.googleapis.com/auth/drive.file",
         "https://www.googleapis.com/auth/drive.appdata",
       ],
-      enabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+      enabled: !!(
+        process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ),
     },
     dropbox: {
       clientId: process.env.DROPBOX_CLIENT_ID || "",
@@ -69,7 +91,9 @@ export const auth = betterAuth({
         "files.content.write",
         "files.content.read",
       ],
-      enabled: !!(process.env.DROPBOX_CLIENT_ID && process.env.DROPBOX_CLIENT_SECRET),
+      enabled: !!(
+        process.env.DROPBOX_CLIENT_ID && process.env.DROPBOX_CLIENT_SECRET
+      ),
     },
   },
   secret: process.env.BETTER_AUTH_SECRET!,
@@ -84,19 +108,54 @@ export const auth = betterAuth({
       apiKey: process.env.CREEM_API_KEY!,
       webhookSecret: process.env.CREEM_WEBHOOK_SECRET,
       testMode: process.env.NODE_ENV === "development", // Automatically switch based on environment
-      defaultSuccessUrl: "/dashboard",
+      defaultSuccessUrl: "/dashboard/billing?success=true",
       persistSubscriptions: true, // Enable database persistence
+      onCheckoutCompleted: async ({ customer, metadata }) => {
+        console.log(`🛒 Checkout completed for ${customer?.email}`);
+      },
       onGrantAccess: async ({ reason, product, customer, metadata }) => {
         console.log(
-          `✅ Granted access to ${customer.email} - Reason: ${reason}`,
+          `✅ Granted access to ${customer?.email} - Reason: ${reason}`,
         );
-        // Add custom logic here if needed
+
+        // Update user's subscription plan in the database
+        try {
+          const planId = metadata?.planId as string | undefined;
+          if (planId && planId !== "free" && customer?.email) {
+            await prisma.user.updateMany({
+              where: { email: customer.email },
+              data: {
+                subscriptionPlan: planId,
+                subscriptionStatus: "active",
+                creemCustomerId: customer.id,
+              },
+            });
+            console.log(`✅ Updated user ${customer.email} to ${planId} plan`);
+          }
+        } catch (error) {
+          console.error("Failed to update user subscription:", error);
+        }
       },
       onRevokeAccess: async ({ reason, product, customer, metadata }) => {
         console.log(
-          `❌ Revoked access from ${customer.email} - Reason: ${reason}`,
+          `❌ Revoked access from ${customer?.email} - Reason: ${reason}`,
         );
-        // Add custom logic here if needed
+
+        // Downgrade user to free plan
+        try {
+          if (customer?.email) {
+            await prisma.user.updateMany({
+              where: { email: customer.email },
+              data: {
+                subscriptionPlan: "free",
+                subscriptionStatus: "cancelled",
+              },
+            });
+            console.log(`⬇️ Downgraded user ${customer.email} to free plan`);
+          }
+        } catch (error) {
+          console.error("Failed to downgrade user:", error);
+        }
       },
     }),
   ],

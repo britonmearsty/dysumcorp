@@ -67,8 +67,8 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
     description: "For professionals and freelancers",
     price: 29,
     priceAnnual: 276, // 20% discount (29 * 12 * 0.8)
-    creemProductId: "prod_7aN5Eu5kOtNEsFa405tDhR",
-    creemProductIdAnnual: "prod_6SzR9g8WRAYAAMBISSIPCR",
+    creemProductId: "prod_1Rz5XOjKFlcgahDws69WiH",
+    creemProductIdAnnual: "prod_4TLbnNWJvTQcOReecnTIa0",
     limits: {
       portals: 10,
       storage: 50, // 50GB
@@ -102,8 +102,8 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
     description: "For teams and growing businesses",
     price: 99,
     priceAnnual: 948, // 20% discount
-    creemProductId: "prod_70bG7mv8UBtq1ohZbwJy4Q", // Replace with actual Creem product ID
-    creemProductIdAnnual: "prod_3yCktfHdXnn7XfPN0HzqSX",
+    creemProductId: "prod_1uP8M3NW4CUYkc2kDjl8hW", // Replace with actual Creem product ID
+    creemProductIdAnnual: "prod_hEDWuK7pCBAdyjAmKNHW2",
     limits: {
       portals: 50,
       storage: 250, // 250GB
@@ -139,8 +139,8 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
     description: "For large organizations",
     price: 299,
     priceAnnual: 2868, // 20% discount
-    creemProductId: "prod_5nls4j0nxqRCb6rhb0J8Wt", // Replace with actual Creem product ID
-    creemProductIdAnnual: "prod_3e0cPF5VEQNFOeVKYyYXPr",
+    creemProductId: "prod_24QNadRVg2wfl1iJHW2Pvh", // Replace with actual Creem product ID
+    creemProductIdAnnual: "prod_bVrEmgO75kpsD3yrthToN",
     limits: {
       portals: 999999, // Unlimited
       storage: 1000, // 1TB

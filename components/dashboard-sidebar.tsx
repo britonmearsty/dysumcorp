@@ -173,6 +173,7 @@ export function DashboardSidebar() {
                 className="transition-transform duration-200 hover:scale-105"
                 height={36}
                 src="/logo.svg"
+                style={{ width: "auto", height: "auto" }}
                 width={36}
               />
               <div className="absolute -inset-1 bg-primary/20 rounded-full blur-md -z-10" />
