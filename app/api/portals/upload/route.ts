@@ -8,17 +8,65 @@ import {
   uploadToGoogleDrive,
   uploadToDropbox,
 } from "@/lib/storage-api";
+import {
+  getRateLimit,
+  uploadRateLimit,
+  fallbackUploadLimit,
+} from "@/lib/rate-limit";
+import { sendFileUploadNotification } from "@/lib/email-service";
+import { hashPassword } from "@/lib/password-utils";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
+// Helper function to format file size
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
+
 // POST /api/portals/upload - Upload files to a portal (public endpoint)
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting based on IP address
+    const ip =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
+
+    const rateLimitResult = await getRateLimit(
+      uploadRateLimit,
+      fallbackUploadLimit,
+      `upload:${ip}`,
+    );
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many upload requests. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": rateLimitResult.limit.toString(),
+            "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+            "X-RateLimit-Reset": rateLimitResult.reset.toString(),
+            "Retry-After": Math.ceil(
+              (rateLimitResult.reset - Date.now()) / 1000,
+            ).toString(),
+          },
+        },
+      );
+    }
+
     const formData = await request.formData();
     const portalId = formData.get("portalId") as string;
     const files = formData.getAll("files") as File[];
+    const passwords = formData.getAll("passwords") as string[];
 
     if (!portalId) {
       return NextResponse.json(
@@ -93,6 +141,14 @@ export async function POST(request: NextRequest) {
         }
 
         // Store file metadata in database
+        const fileIndex = files.indexOf(file);
+        const password = passwords[fileIndex];
+        let passwordHash = null;
+
+        if (password && password.trim() !== "") {
+          passwordHash = hashPassword(password.trim());
+        }
+
         return await prisma.file.create({
           data: {
             name: file.name,
@@ -100,19 +156,46 @@ export async function POST(request: NextRequest) {
             mimeType: file.type || "application/octet-stream",
             storageUrl: storageUrl,
             portalId: portalId,
+            passwordHash,
           },
         });
       }),
     );
 
-    return NextResponse.json({
-      success: true,
-      files: uploadedFiles.map((f: any) => ({
-        ...f,
-        size: f.size.toString(), // Convert BigInt to string for JSON
-      })),
-      provider: accessToken ? provider : "local",
-    });
+    // Send email notification to portal owner
+    try {
+      const uploaderName = formData.get("uploaderName") as string;
+      await sendFileUploadNotification({
+        userEmail: portal.user.email,
+        portalName: portal.name,
+        files: uploadedFiles.map((f) => ({
+          name: f.name,
+          size: formatFileSize(Number(f.size)),
+        })),
+        uploaderName: uploaderName || undefined,
+      });
+    } catch (emailError) {
+      console.error("Failed to send email notification:", emailError);
+      // Don't fail the upload if email fails
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        files: uploadedFiles.map((f: any) => ({
+          ...f,
+          size: f.size.toString(), // Convert BigInt to string for JSON
+        })),
+        provider: accessToken ? provider : "local",
+      },
+      {
+        headers: {
+          "X-RateLimit-Limit": rateLimitResult.limit.toString(),
+          "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+          "X-RateLimit-Reset": rateLimitResult.reset.toString(),
+        },
+      },
+    );
   } catch (error) {
     console.error("Portal upload error:", error);
 

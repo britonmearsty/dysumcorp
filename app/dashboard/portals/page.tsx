@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, ExternalLink, FileText } from "lucide-react";
+import { Plus, Trash2, ExternalLink, FileText, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,13 @@ interface Portal {
   _count: {
     files: number;
   };
+}
+
+interface FileUploadProgress {
+  file: File;
+  progress: number;
+  status: "pending" | "uploading" | "success" | "error";
+  error?: string;
 }
 
 interface SoftLimitResponse {
@@ -50,6 +57,13 @@ export default function PortalsPage() {
     null,
   );
   const [showLimitWarning, setShowLimitWarning] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState<FileUploadProgress[]>(
+    [],
+  );
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedPortalForUpload, setSelectedPortalForUpload] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     fetchPortals();
@@ -209,6 +223,120 @@ export default function PortalsPage() {
     return date.toLocaleDateString();
   };
 
+  const handleFileSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    portalId: string,
+  ) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const files = Array.from(e.target.files);
+      const fileProgress: FileUploadProgress[] = files.map((file) => ({
+        file,
+        progress: 0,
+        status: "pending",
+      }));
+
+      setUploadingFiles(fileProgress);
+      setSelectedPortalForUpload(portalId);
+      setShowUploadModal(true);
+      uploadFiles(fileProgress, portalId);
+    }
+  };
+
+  const uploadFiles = async (
+    fileProgress: FileUploadProgress[],
+    portalId: string,
+  ) => {
+    for (let i = 0; i < fileProgress.length; i++) {
+      const fileItem = fileProgress[i];
+
+      // Update status to uploading
+      setUploadingFiles((prev) =>
+        prev.map((item, idx) =>
+          idx === i ? { ...item, status: "uploading" } : item,
+        ),
+      );
+
+      try {
+        const formData = new FormData();
+
+        formData.append("files", fileItem.file);
+        formData.append("portalId", portalId);
+
+        // Create XMLHttpRequest for progress tracking
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+
+          xhr.upload.addEventListener("progress", (e) => {
+            if (e.lengthComputable) {
+              const percentComplete = (e.loaded / e.total) * 100;
+
+              setUploadingFiles((prev) =>
+                prev.map((item, idx) =>
+                  idx === i ? { ...item, progress: percentComplete } : item,
+                ),
+              );
+            }
+          });
+
+          xhr.addEventListener("load", () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              setUploadingFiles((prev) =>
+                prev.map((item, idx) =>
+                  idx === i
+                    ? { ...item, status: "success", progress: 100 }
+                    : item,
+                ),
+              );
+              resolve();
+            } else {
+              setUploadingFiles((prev) =>
+                prev.map((item, idx) =>
+                  idx === i
+                    ? {
+                        ...item,
+                        status: "error",
+                        error: "Upload failed",
+                      }
+                    : item,
+                ),
+              );
+              reject(new Error("Upload failed"));
+            }
+          });
+
+          xhr.addEventListener("error", () => {
+            setUploadingFiles((prev) =>
+              prev.map((item, idx) =>
+                idx === i
+                  ? {
+                      ...item,
+                      status: "error",
+                      error: "Network error",
+                    }
+                  : item,
+              ),
+            );
+            reject(new Error("Network error"));
+          });
+
+          xhr.open("POST", "/api/portals/upload");
+          xhr.send(formData);
+        });
+      } catch (error) {
+        console.error("Upload error:", error);
+      }
+    }
+
+    // Refresh portals after all uploads complete
+    await fetchPortals();
+  };
+
+  const closeUploadModal = () => {
+    setShowUploadModal(false);
+    setUploadingFiles([]);
+    setSelectedPortalForUpload(null);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -323,6 +451,25 @@ export default function PortalsPage() {
                   VIEW
                 </Button>
                 <Button
+                  className="rounded-none font-mono"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const input = document.createElement("input");
+
+                    input.type = "file";
+                    input.multiple = true;
+                    input.onchange = (e) =>
+                      handleFileSelect(
+                        e as unknown as React.ChangeEvent<HTMLInputElement>,
+                        portal.id,
+                      );
+                    input.click();
+                  }}
+                >
+                  <Upload className="w-4 h-4" />
+                </Button>
+                <Button
                   className="rounded-none font-mono text-red-600 hover:text-red-700 hover:bg-red-50"
                   disabled={deleting === portal.id}
                   size="sm"
@@ -334,6 +481,111 @@ export default function PortalsPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Upload Progress Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background border rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-bold font-mono">Uploading Files</h2>
+              <Button
+                className="rounded-none"
+                size="sm"
+                variant="ghost"
+                onClick={closeUploadModal}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="space-y-4">
+                {uploadingFiles.map((fileItem, index) => (
+                  <div
+                    key={index}
+                    className="border rounded-lg p-4 space-y-3"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-mono text-sm font-medium truncate">
+                          {fileItem.file.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground font-mono">
+                          {(fileItem.file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <div className="ml-4">
+                        {fileItem.status === "pending" && (
+                          <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 font-mono">
+                            Pending
+                          </span>
+                        )}
+                        {fileItem.status === "uploading" && (
+                          <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 font-mono">
+                            Uploading
+                          </span>
+                        )}
+                        {fileItem.status === "success" && (
+                          <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 font-mono">
+                            Complete
+                          </span>
+                        )}
+                        {fileItem.status === "error" && (
+                          <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 font-mono">
+                            Failed
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className={`absolute top-0 left-0 h-full transition-all duration-300 ease-out ${
+                          fileItem.status === "success"
+                            ? "bg-green-500"
+                            : fileItem.status === "error"
+                              ? "bg-red-500"
+                              : "bg-[#FF6B2C]"
+                        }`}
+                        style={{ width: `${fileItem.progress}%` }}
+                      >
+                        {fileItem.status === "uploading" && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-muted-foreground">
+                        {fileItem.error || ""}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {Math.round(fileItem.progress)}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-6 border-t">
+              <Button
+                className="w-full rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                disabled={uploadingFiles.some(
+                  (f) => f.status === "uploading" || f.status === "pending",
+                )}
+                onClick={closeUploadModal}
+              >
+                {uploadingFiles.every((f) => f.status === "success")
+                  ? "DONE"
+                  : uploadingFiles.some(
+                        (f) =>
+                          f.status === "uploading" || f.status === "pending",
+                      )
+                    ? "UPLOADING..."
+                    : "CLOSE"}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
