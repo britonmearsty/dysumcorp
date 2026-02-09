@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
 interface ConnectionStatus {
@@ -83,8 +84,15 @@ export default function StoragePage() {
 
   const handleConnect = async (provider: "google" | "dropbox") => {
     setActionLoading(provider);
-    // Redirect to OAuth flow
-    window.location.href = `/api/auth/signin/${provider}?callbackURL=/dashboard/storage`;
+    try {
+      await signIn.social({
+        provider,
+        callbackURL: "/dashboard/storage",
+      });
+    } catch (error) {
+      console.error("Failed to connect:", error);
+      setActionLoading(null);
+    }
   };
 
   const handleDisconnect = async (provider: "google" | "dropbox") => {
