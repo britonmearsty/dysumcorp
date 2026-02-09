@@ -27,6 +27,8 @@ export default function PublicPortalPage() {
     "idle" | "success" | "error"
   >("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [uploaderName, setUploaderName] = useState("");
+  const [uploaderEmail, setUploaderEmail] = useState("");
 
   useEffect(() => {
     fetchPortal();
@@ -65,6 +67,26 @@ export default function PublicPortalPage() {
       return;
     }
 
+    if (!uploaderName.trim()) {
+      setErrorMessage("Please enter your name");
+
+      return;
+    }
+
+    if (!uploaderEmail.trim()) {
+      setErrorMessage("Please enter your email");
+
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(uploaderEmail)) {
+      setErrorMessage("Please enter a valid email address");
+
+      return;
+    }
+
     setUploading(true);
     setUploadStatus("idle");
     setErrorMessage("");
@@ -76,6 +98,8 @@ export default function PublicPortalPage() {
         formData.append("files", file);
       });
       formData.append("portalId", portal!.id);
+      formData.append("uploaderName", uploaderName.trim());
+      formData.append("uploaderEmail", uploaderEmail.trim());
 
       const response = await fetch("/api/portals/upload", {
         method: "POST",
@@ -85,6 +109,8 @@ export default function PublicPortalPage() {
       if (response.ok) {
         setUploadStatus("success");
         setFiles([]);
+        setUploaderName("");
+        setUploaderEmail("");
       } else {
         const data = await response.json();
 
@@ -162,6 +188,42 @@ export default function PublicPortalPage() {
                 Upload Your Files
               </h2>
 
+              {/* Client Information */}
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label
+                    className="block text-sm font-mono font-medium mb-2"
+                    htmlFor="uploaderName"
+                  >
+                    YOUR NAME *
+                  </label>
+                  <Input
+                    className="rounded-none font-mono border-2"
+                    id="uploaderName"
+                    placeholder="John Doe"
+                    type="text"
+                    value={uploaderName}
+                    onChange={(e) => setUploaderName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label
+                    className="block text-sm font-mono font-medium mb-2"
+                    htmlFor="uploaderEmail"
+                  >
+                    YOUR EMAIL *
+                  </label>
+                  <Input
+                    className="rounded-none font-mono border-2"
+                    id="uploaderEmail"
+                    placeholder="john@example.com"
+                    type="email"
+                    value={uploaderEmail}
+                    onChange={(e) => setUploaderEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+
               {/* File Upload Area */}
               <div className="border-2 border-dashed border-border rounded-lg p-12 text-center mb-6 hover:border-[#FF6B2C]/50 transition-colors">
                 <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -226,7 +288,12 @@ export default function PublicPortalPage() {
               {/* Upload Button */}
               <Button
                 className="w-full rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
-                disabled={files.length === 0 || uploading}
+                disabled={
+                  files.length === 0 ||
+                  uploading ||
+                  !uploaderName.trim() ||
+                  !uploaderEmail.trim()
+                }
                 onClick={handleUpload}
               >
                 {uploading ? "UPLOADING..." : "UPLOAD FILES"}

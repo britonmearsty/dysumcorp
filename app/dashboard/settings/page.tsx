@@ -2,29 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardBody, CardHeader } from "@heroui/card";
-import { Chip } from "@heroui/chip";
+import {
+  CheckCircle,
+  Bell,
+  Shield,
+  User,
+  Globe,
+  Lock,
+} from "lucide-react";
 
 import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import {
-  CheckCircleIcon,
-  BellIcon,
-  ShieldCheckIcon,
-  UsersIcon,
-  GlobeIcon,
-  LockIcon,
-} from "@/components/icons";
-
-interface SettingsSection {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-}
 
 export default function SettingsPage() {
   const { data: session, isPending } = useSession();
@@ -149,451 +140,363 @@ export default function SettingsPage() {
   if (isPending) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground font-mono">Loading...</div>
       </div>
     );
   }
 
-  const sections: SettingsSection[] = [
-    {
-      id: "profile",
-      title: "Profile Settings",
-      description: "Manage your account information",
-      icon: <UsersIcon size={20} />,
-    },
-    {
-      id: "notifications",
-      title: "Notifications",
-      description: "Control how you receive updates",
-      icon: <BellIcon size={20} />,
-    },
-    {
-      id: "appearance",
-      title: "Appearance",
-      description: "Customize your interface",
-      icon: <GlobeIcon size={20} />,
-    },
-    {
-      id: "security",
-      title: "Security",
-      description: "Manage your account security",
-      icon: <ShieldCheckIcon size={20} />,
-    },
-    {
-      id: "danger",
-      title: "Danger Zone",
-      description: "Irreversible account actions",
-      icon: <LockIcon size={20} />,
-    },
-  ];
-
-  const getStatusColor = (status: "idle" | "success" | "error") => {
-    switch (status) {
-      case "success":
-        return "success";
-      case "error":
-        return "danger";
-      default:
-        return "default";
-    }
-  };
-
-  const getStatusMessage = (
-    status: "idle" | "success" | "error",
-    section: string,
-  ) => {
-    switch (status) {
-      case "success":
-        return `${section} updated successfully!`;
-      case "error":
-        return `Failed to update ${section}. Please try again.`;
-      default:
-        return "";
-    }
-  };
-
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold font-mono">Settings</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your account and preferences
-          </p>
-        </div>
-
-        {/* Quick status indicator */}
-        <div className="hidden md:flex items-center gap-2">
-          <Chip className="font-mono" color="success" size="sm" variant="flat">
-            Connected
-          </Chip>
-          <div className="text-sm text-muted-foreground font-mono">
-            {session?.user?.email}
-          </div>
-        </div>
+      <div>
+        <h1 className="text-4xl font-mono font-bold">SETTINGS</h1>
+        <p className="text-muted-foreground font-mono mt-2">
+          Manage your account and preferences
+        </p>
       </div>
 
-      {/* Settings Sections Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Settings Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Profile Settings */}
-        <Card className="border-border/50">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                <UsersIcon size={20} />
-              </div>
-              <div>
-                <h3 className="font-mono font-semibold">Profile Settings</h3>
-                <p className="text-sm text-default-600">
-                  Manage your information
-                </p>
-              </div>
+        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-[#FF6B2C]/10 flex items-center justify-center">
+              <User className="h-5 w-5 text-[#FF6B2C]" />
             </div>
-          </CardHeader>
-          <CardBody className="space-y-4 pt-0">
-            <form className="space-y-4" onSubmit={handleProfileUpdate}>
-              <div>
-                <Label className="text-sm font-mono" htmlFor="name">
-                  Full Name
-                </Label>
-                <Input
-                  className="mt-2 font-mono"
-                  id="name"
-                  placeholder="John Doe"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-mono" htmlFor="email">
-                  Email
-                </Label>
-                <Input
-                  disabled
-                  className="mt-2 font-mono opacity-60"
-                  id="email"
-                  placeholder="john@example.com"
-                  type="email"
-                  value={email}
-                />
-                <p className="text-xs text-default-500 font-mono mt-1">
-                  Email is managed by your OAuth provider
-                </p>
-              </div>
+            <div>
+              <h3 className="font-mono font-bold">PROFILE SETTINGS</h3>
+              <p className="text-sm text-muted-foreground font-mono">
+                Manage your information
+              </p>
+            </div>
+          </div>
 
-              {/* Profile Status */}
-              {profileStatus !== "idle" && (
-                <div
-                  className={`p-3 rounded-lg text-sm font-mono ${
-                    profileStatus === "success"
-                      ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
-                      : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300"
-                  }`}
-                >
-                  {getStatusMessage(profileStatus, "Profile")}
-                </div>
+          <form className="space-y-4" onSubmit={handleProfileUpdate}>
+            <div>
+              <Label className="text-sm font-mono" htmlFor="name">
+                FULL NAME
+              </Label>
+              <Input
+                className="mt-2 font-mono rounded-none border-2"
+                id="name"
+                placeholder="John Doe"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-mono" htmlFor="email">
+                EMAIL
+              </Label>
+              <Input
+                disabled
+                className="mt-2 font-mono rounded-none border-2 opacity-60"
+                id="email"
+                placeholder="john@example.com"
+                type="email"
+                value={email}
+              />
+              <p className="text-xs text-muted-foreground font-mono mt-1">
+                Email is managed by your OAuth provider
+              </p>
+            </div>
+
+            {profileStatus !== "idle" && (
+              <div
+                className={`p-3 border-2 text-sm font-mono ${
+                  profileStatus === "success"
+                    ? "bg-green-500/10 text-green-500 border-green-500/20"
+                    : "bg-red-500/10 text-red-500 border-red-500/20"
+                }`}
+              >
+                {profileStatus === "success"
+                  ? "Profile updated successfully!"
+                  : "Failed to update profile. Please try again."}
+              </div>
+            )}
+
+            <Button
+              className="w-full font-mono rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90"
+              disabled={profileLoading}
+              type="submit"
+            >
+              {profileLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  SAVING...
+                </>
+              ) : (
+                "SAVE CHANGES"
               )}
-
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1 font-mono rounded-lg"
-                  color="primary"
-                  disabled={profileLoading}
-                  type="submit"
-                >
-                  {profileLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Changes"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardBody>
-        </Card>
+            </Button>
+          </form>
+        </div>
 
         {/* Notifications */}
-        <Card className="border-border/50">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                <BellIcon size={20} />
-              </div>
-              <div>
-                <h3 className="font-mono font-semibold">Notifications</h3>
-                <p className="text-sm text-default-600">Control your alerts</p>
-              </div>
+        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-blue-500/10 flex items-center justify-center">
+              <Bell className="h-5 w-5 text-blue-500" />
             </div>
-          </CardHeader>
-          <CardBody className="space-y-4 pt-0">
-            {/* Email Notifications */}
-            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-default-50 dark:hover:bg-default-100 transition-colors">
+            <div>
+              <h3 className="font-mono font-bold">NOTIFICATIONS</h3>
+              <p className="text-sm text-muted-foreground font-mono">
+                Control your alerts
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 border border-border hover:border-[#FF6B2C]/50 transition-colors">
               <div>
                 <p className="font-medium text-sm font-mono">
-                  Email Notifications
+                  EMAIL NOTIFICATIONS
                 </p>
-                <p className="text-xs text-default-600">
+                <p className="text-xs text-muted-foreground font-mono">
                   Receive email updates
                 </p>
               </div>
               <input
                 checked={emailNotifications}
-                className="w-5 h-5 cursor-pointer accent-primary"
+                className="w-5 h-5 cursor-pointer accent-[#FF6B2C]"
                 type="checkbox"
                 onChange={(e) => setEmailNotifications(e.target.checked)}
               />
             </div>
 
-            {/* Push Notifications */}
-            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-default-50 dark:hover:bg-default-100 transition-colors">
+            <div className="flex items-center justify-between p-3 border border-border hover:border-[#FF6B2C]/50 transition-colors">
               <div>
                 <p className="font-medium text-sm font-mono">
-                  Push Notifications
+                  PUSH NOTIFICATIONS
                 </p>
-                <p className="text-xs text-default-600">
+                <p className="text-xs text-muted-foreground font-mono">
                   Browser notifications
                 </p>
               </div>
               <input
                 checked={pushNotifications}
-                className="w-5 h-5 cursor-pointer accent-primary"
+                className="w-5 h-5 cursor-pointer accent-[#FF6B2C]"
                 type="checkbox"
                 onChange={(e) => setPushNotifications(e.target.checked)}
               />
             </div>
 
-            {/* Weekly Reports */}
-            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-default-50 dark:hover:bg-default-100 transition-colors">
+            <div className="flex items-center justify-between p-3 border border-border hover:border-[#FF6B2C]/50 transition-colors">
               <div>
-                <p className="font-medium text-sm font-mono">Weekly Reports</p>
-                <p className="text-xs text-default-600">Activity summaries</p>
+                <p className="font-medium text-sm font-mono">WEEKLY REPORTS</p>
+                <p className="text-xs text-muted-foreground font-mono">
+                  Activity summaries
+                </p>
               </div>
               <input
                 checked={weeklyReports}
-                className="w-5 h-5 cursor-pointer accent-primary"
+                className="w-5 h-5 cursor-pointer accent-[#FF6B2C]"
                 type="checkbox"
                 onChange={(e) => setWeeklyReports(e.target.checked)}
               />
             </div>
 
-            {/* Notification Status */}
             {notificationsStatus !== "idle" && (
               <div
-                className={`p-3 rounded-lg text-sm font-mono ${
+                className={`p-3 border-2 text-sm font-mono ${
                   notificationsStatus === "success"
-                    ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
-                    : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300"
+                    ? "bg-green-500/10 text-green-500 border-green-500/20"
+                    : "bg-red-500/10 text-red-500 border-red-500/20"
                 }`}
               >
-                {getStatusMessage(notificationsStatus, "Notifications")}
+                {notificationsStatus === "success"
+                  ? "Notifications updated successfully!"
+                  : "Failed to update notifications. Please try again."}
               </div>
             )}
 
             <Button
-              className="w-full font-mono rounded-lg"
-              color="primary"
+              className="w-full font-mono rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90"
               disabled={notificationsLoading}
               onClick={handleNotificationUpdate}
             >
               {notificationsLoading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Saving...
+                  SAVING...
                 </>
               ) : (
-                "Save Preferences"
+                "SAVE PREFERENCES"
               )}
             </Button>
-          </CardBody>
-        </Card>
+          </div>
+        </div>
 
         {/* Appearance */}
-        <Card className="border-border/50">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400">
-                <GlobeIcon size={20} />
-              </div>
-              <div>
-                <h3 className="font-mono font-semibold">Appearance</h3>
-                <p className="text-sm text-default-600">Customize interface</p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardBody className="pt-0">
-            <ThemeSwitcher />
-          </CardBody>
-        </Card>
-
-        {/* Security */}
-        <Card className="border-border/50">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                <ShieldCheckIcon size={20} />
-              </div>
-              <div>
-                <h3 className="font-mono font-semibold">Security</h3>
-                <p className="text-sm text-default-600">Account protection</p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardBody className="space-y-4 pt-0">
-            <div className="space-y-3">
-              <div className="p-3 rounded-lg bg-default-50 dark:bg-default-100">
-                <p className="font-medium text-sm font-mono">
-                  Authentication Method
-                </p>
-                <p className="text-xs text-default-600 mt-1">
-                  OAuth via{" "}
-                  {session?.user?.email?.includes("gmail")
-                    ? "Google"
-                    : "Provider"}
-                </p>
-              </div>
-
-              <div className="p-3 rounded-lg bg-default-50 dark:bg-default-100">
-                <p className="font-medium text-sm font-mono">Connected Email</p>
-                <p className="text-xs text-default-600 mt-1 font-mono">
-                  {session?.user?.email}
-                </p>
-              </div>
-
-              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                <div className="flex items-center gap-2">
-                  <CheckCircleIcon
-                    className="text-green-600 dark:text-green-400"
-                    size={16}
-                  />
-                  <p className="text-sm font-mono text-green-700 dark:text-green-300">
-                    Account secured by OAuth
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-
-      {/* Danger Zone - Full Width */}
-      <Card className="border-red-200 dark:border-red-800">
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400">
-              <LockIcon size={20} />
+        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-purple-500/10 flex items-center justify-center">
+              <Globe className="h-5 w-5 text-purple-500" />
             </div>
             <div>
-              <h3 className="font-mono font-semibold text-red-600 dark:text-red-400">
-                Danger Zone
-              </h3>
-              <p className="text-sm text-red-500 dark:text-red-500">
-                Irreversible actions
+              <h3 className="font-mono font-bold">APPEARANCE</h3>
+              <p className="text-sm text-muted-foreground font-mono">
+                Customize interface
               </p>
             </div>
           </div>
-        </CardHeader>
-        <CardBody className="space-y-4 pt-0">
-          {!showDeleteConfirm ? (
-            <div className="flex items-center justify-between p-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10">
-              <div>
-                <p className="font-medium text-sm font-mono">Delete Account</p>
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                  Permanently delete your account and all data
+
+          <ThemeSwitcher />
+        </div>
+
+        {/* Security */}
+        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-green-500/10 flex items-center justify-center">
+              <Shield className="h-5 w-5 text-green-500" />
+            </div>
+            <div>
+              <h3 className="font-mono font-bold">SECURITY</h3>
+              <p className="text-sm text-muted-foreground font-mono">
+                Account protection
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="p-3 border border-border">
+              <p className="font-medium text-sm font-mono">
+                AUTHENTICATION METHOD
+              </p>
+              <p className="text-xs text-muted-foreground font-mono mt-1">
+                OAuth via{" "}
+                {session?.user?.email?.includes("gmail")
+                  ? "Google"
+                  : "Provider"}
+              </p>
+            </div>
+
+            <div className="p-3 border border-border">
+              <p className="font-medium text-sm font-mono">CONNECTED EMAIL</p>
+              <p className="text-xs text-muted-foreground font-mono mt-1">
+                {session?.user?.email}
+              </p>
+            </div>
+
+            <div className="p-3 bg-green-500/10 border-2 border-green-500/20">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="text-green-500 h-4 w-4" />
+                <p className="text-sm font-mono text-green-500">
+                  ACCOUNT SECURED BY OAUTH
                 </p>
               </div>
-              <Button
-                className="font-mono border-red-200 text-red-600 hover:bg-red-100 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
-                variant="outline"
-                onClick={() => setShowDeleteConfirm(true)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Danger Zone - Full Width */}
+      <div className="border-2 border-red-500/50 bg-background p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-red-500/10 flex items-center justify-center">
+            <Lock className="h-5 w-5 text-red-500" />
+          </div>
+          <div>
+            <h3 className="font-mono font-bold text-red-500">DANGER ZONE</h3>
+            <p className="text-sm text-red-500 font-mono">
+              Irreversible actions
+            </p>
+          </div>
+        </div>
+
+        {!showDeleteConfirm ? (
+          <div className="flex items-center justify-between p-4 border-2 border-red-500/50 bg-red-500/5">
+            <div>
+              <p className="font-medium text-sm font-mono">DELETE ACCOUNT</p>
+              <p className="text-xs text-red-500 font-mono mt-1">
+                Permanently delete your account and all data
+              </p>
+            </div>
+            <Button
+              className="font-mono rounded-none border-2 border-red-500 text-red-500 hover:bg-red-500/10"
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              DELETE ACCOUNT
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4 p-4 border-2 border-red-500/50 bg-red-500/5">
+            <div>
+              <p className="font-medium text-red-500 font-mono">
+                ARE YOU ABSOLUTELY SURE?
+              </p>
+              <p className="text-sm text-red-500 font-mono mt-2">
+                This action cannot be undone. This will permanently delete your
+                account and remove all your data from our servers.
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-sm font-mono" htmlFor="deleteConfirm">
+                Type{" "}
+                <span className="font-mono font-bold text-red-500">DELETE</span>{" "}
+                to confirm
+              </Label>
+              <Input
+                className="mt-2 font-mono rounded-none border-2 border-red-500/50 focus:border-red-500"
+                id="deleteConfirm"
+                placeholder="DELETE"
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+              />
+            </div>
+
+            {notificationsStatus !== "idle" && (
+              <div
+                className={`p-3 border-2 text-sm font-mono ${
+                  notificationsStatus === "success"
+                    ? "bg-green-500/10 text-green-500 border-green-500/20"
+                    : "bg-red-500/10 text-red-500 border-red-500/20"
+                }`}
               >
-                Delete Account
+                {notificationsStatus === "success"
+                  ? "ACCOUNT DELETION INITIATED"
+                  : deleteConfirmText !== "DELETE"
+                    ? 'PLEASE TYPE "DELETE" TO CONFIRM'
+                    : "FAILED TO DELETE ACCOUNT"}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                className="font-mono rounded-none bg-red-500 text-white hover:bg-red-600"
+                disabled={deleteLoading || deleteConfirmText !== "DELETE"}
+                variant="default"
+                onClick={handleDeleteAccount}
+              >
+                {deleteLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    DELETING...
+                  </>
+                ) : (
+                  "CONFIRM DELETE"
+                )}
+              </Button>
+              <Button
+                className="font-mono rounded-none border-2"
+                disabled={deleteLoading}
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteConfirmText("");
+                  setNotificationsStatus("idle");
+                }}
+              >
+                CANCEL
               </Button>
             </div>
-          ) : (
-            <div className="space-y-4 p-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10">
-              <div>
-                <p className="font-medium text-red-600 dark:text-red-400 font-mono">
-                  Are you absolutely sure?
-                </p>
-                <p className="text-sm text-red-500 dark:text-red-400 mt-2">
-                  This action cannot be undone. This will permanently delete
-                  your account and remove all your data from our servers.
-                </p>
-              </div>
-
-              <div>
-                <Label className="text-sm font-mono" htmlFor="deleteConfirm">
-                  Type{" "}
-                  <span className="font-mono font-bold text-red-600">
-                    DELETE
-                  </span>{" "}
-                  to confirm
-                </Label>
-                <Input
-                  className="mt-2 font-mono border-red-200 dark:border-red-800 focus:border-red-400"
-                  id="deleteConfirm"
-                  placeholder="DELETE"
-                  type="text"
-                  value={deleteConfirmText}
-                  onChange={(e) => setDeleteConfirmText(e.target.value)}
-                />
-              </div>
-
-              {/* Delete Status */}
-              {notificationsStatus !== "idle" && (
-                <div
-                  className={`p-3 rounded-lg text-sm font-mono ${
-                    notificationsStatus === "success"
-                      ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
-                      : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300"
-                  }`}
-                >
-                  {notificationsStatus === "success"
-                    ? "Account deletion initiated"
-                    : deleteConfirmText !== "DELETE"
-                      ? 'Please type "DELETE" to confirm'
-                      : "Failed to delete account"}
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button
-                  className="font-mono bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
-                  disabled={deleteLoading || deleteConfirmText !== "DELETE"}
-                  variant="default"
-                  onClick={handleDeleteAccount}
-                >
-                  {deleteLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    "Confirm Delete"
-                  )}
-                </Button>
-                <Button
-                  className="font-mono"
-                  disabled={deleteLoading}
-                  variant="outline"
-                  onClick={() => {
-                    setShowDeleteConfirm(false);
-                    setDeleteConfirmText("");
-                    setNotificationsStatus("idle");
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardBody>
-      </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

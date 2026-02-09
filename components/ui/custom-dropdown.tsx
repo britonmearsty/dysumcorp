@@ -45,10 +45,10 @@ export function CustomDropdown({
       <button
         className={cn(
           "w-full flex items-center justify-between px-4 py-2.5 text-sm",
-          "bg-white border-2 border-border rounded-lg",
-          "transition-all duration-200",
-          "hover:border-[#FF6B2C] hover:shadow-sm",
-          "focus:outline-none focus:border-[#FF6B2C] focus:ring-2 focus:ring-[#FF6B2C]/20",
+          "bg-background border-2 border-border",
+          "transition-colors duration-200",
+          "hover:border-[#FF6B2C]",
+          "focus:outline-none focus:border-[#FF6B2C]",
           "font-mono",
         )}
         type="button"
@@ -75,7 +75,7 @@ export function CustomDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-white border-2 border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-50 w-full mt-2 bg-background border-2 border-border overflow-hidden">
           <div className="py-1 max-h-60 overflow-y-auto">
             {options.map((option) => (
               <button
@@ -83,11 +83,11 @@ export function CustomDropdown({
                 className={cn(
                   "w-full flex items-center justify-between px-4 py-2.5 text-sm",
                   "transition-colors duration-150",
-                  "hover:bg-muted/50 hover:text-[#FF6B2C]",
-                  "focus:outline-none focus:bg-muted/50 focus:text-[#FF6B2C]",
+                  "hover:bg-[#FF6B2C]/10 hover:border-l-2 hover:border-[#FF6B2C]",
+                  "focus:outline-none focus:bg-[#FF6B2C]/10",
                   "font-mono",
                   value === option.value &&
-                    "bg-[#FF6B2C]/10 text-[#FF6B2C] font-medium",
+                    "bg-[#FF6B2C]/10 text-[#FF6B2C] font-medium border-l-2 border-[#FF6B2C]",
                 )}
                 type="button"
                 onClick={() => {

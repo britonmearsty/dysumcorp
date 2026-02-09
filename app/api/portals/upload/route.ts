@@ -149,6 +149,10 @@ export async function POST(request: NextRequest) {
           passwordHash = hashPassword(password.trim());
         }
 
+        // Get uploader info from form data
+        const uploaderName = formData.get("uploaderName") as string;
+        const uploaderEmail = formData.get("uploaderEmail") as string;
+
         return await prisma.file.create({
           data: {
             name: file.name,
@@ -157,6 +161,8 @@ export async function POST(request: NextRequest) {
             storageUrl: storageUrl,
             portalId: portalId,
             passwordHash,
+            uploaderName: uploaderName || null,
+            uploaderEmail: uploaderEmail || null,
           },
         });
       }),

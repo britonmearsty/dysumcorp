@@ -126,8 +126,11 @@ model File {
   expiresAt       DateTime?
   passwordHash    String?
   downloads       Int      @default(0)
+  uploaderName    String?  // Client/uploader name
+  uploaderEmail   String?  // Client/uploader email
   
   @@index([portalId])
+  @@index([uploaderEmail])
   @@map("file")
 }
 
