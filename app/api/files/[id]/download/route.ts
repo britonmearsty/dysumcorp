@@ -144,6 +144,17 @@ export async function GET(
     if (file.storageUrl.startsWith("http")) {
       try {
         let buffer: Buffer | null = null;
+        let storageProvider: "google" | "dropbox" | null = null;
+
+        // Determine which storage provider based on URL
+        if (
+          file.storageUrl.includes("drive.google.com") ||
+          file.storageUrl.includes("docs.google.com")
+        ) {
+          storageProvider = "google";
+        } else if (file.storageUrl.includes("dropbox.com")) {
+          storageProvider = "dropbox";
+        }
 
         // Try Google Drive first
         const googleToken = await getValidToken(session.user.id, "google");
@@ -164,6 +175,17 @@ export async function GET(
           }
 
           buffer = await downloadFromGoogleDrive(googleToken, fileId);
+        } else if (storageProvider === "google") {
+          // Google Drive file but no token available
+          return NextResponse.json(
+            {
+              error:
+                "Google Drive account disconnected. Please reconnect your Google Drive account to download this file.",
+              requiresReconnect: true,
+              provider: "google",
+            },
+            { status: 403 },
+          );
         }
 
         // Try Dropbox if Google Drive failed
@@ -174,11 +196,22 @@ export async function GET(
             // For Dropbox, storageUrl is the file ID, we need to get the file path
             // This is a simplified approach - you might need to store the full path
             buffer = await downloadFromDropbox(dropboxToken, file.storageUrl);
+          } else if (storageProvider === "dropbox") {
+            // Dropbox file but no token available
+            return NextResponse.json(
+              {
+                error:
+                  "Dropbox account disconnected. Please reconnect your Dropbox account to download this file.",
+                requiresReconnect: true,
+                provider: "dropbox",
+              },
+              { status: 403 },
+            );
           }
         }
 
         if (buffer) {
-          return new NextResponse(buffer, {
+          return new NextResponse(buffer as unknown as BodyInit, {
             headers: {
               "Content-Type": file.mimeType,
               "Content-Disposition": `attachment; filename="${file.name}"`,

@@ -22,8 +22,8 @@ export default function PublicPortalPage() {
   const [portal, setPortal] = useState<Portal | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [files, setFiles] = useState<File[]>([]);
+  const [fileProgress, setFileProgress] = useState<Record<number, number>>({});
   const [uploadStatus, setUploadStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
@@ -89,59 +89,67 @@ export default function PublicPortalPage() {
     }
 
     setUploading(true);
-    setUploadProgress(0);
+    setFileProgress({});
     setUploadStatus("idle");
     setErrorMessage("");
 
     try {
-      const formData = new FormData();
+      // Upload files one by one with individual progress tracking
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const formData = new FormData();
 
-      files.forEach((file) => {
         formData.append("files", file);
-      });
-      formData.append("portalId", portal!.id);
-      formData.append("uploaderName", uploaderName.trim());
-      formData.append("uploaderEmail", uploaderEmail.trim());
+        formData.append("portalId", portal!.id);
+        formData.append("uploaderName", uploaderName.trim());
+        formData.append("uploaderEmail", uploaderEmail.trim());
 
-      // Use XMLHttpRequest for progress tracking
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
+        // Use XMLHttpRequest for progress tracking
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
 
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            const percentComplete = Math.round((e.loaded / e.total) * 100);
-            setUploadProgress(percentComplete);
-          }
-        });
-
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            setUploadStatus("success");
-            setFiles([]);
-            setUploaderName("");
-            setUploaderEmail("");
-            resolve();
-          } else {
-            try {
-              const data = JSON.parse(xhr.responseText);
-              setErrorMessage(data.error || "Upload failed");
-            } catch {
-              setErrorMessage("Upload failed");
+          xhr.upload.addEventListener("progress", (e) => {
+            if (e.lengthComputable) {
+              const percentComplete = Math.round((e.loaded / e.total) * 100);
+              setFileProgress((prev) => ({ ...prev, [i]: percentComplete }));
             }
+          });
+
+          xhr.addEventListener("load", () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              setFileProgress((prev) => ({ ...prev, [i]: 100 }));
+              resolve();
+            } else {
+              try {
+                const data = JSON.parse(xhr.responseText);
+                setErrorMessage(
+                  data.error || `Failed to upload ${file.name}`,
+                );
+              } catch {
+                setErrorMessage(`Failed to upload ${file.name}`);
+              }
+              setUploadStatus("error");
+              reject(new Error("Upload failed"));
+            }
+          });
+
+          xhr.addEventListener("error", () => {
+            setErrorMessage(`Failed to upload ${file.name}. Please try again.`);
             setUploadStatus("error");
             reject(new Error("Upload failed"));
-          }
-        });
+          });
 
-        xhr.addEventListener("error", () => {
-          setErrorMessage("Upload failed. Please try again.");
-          setUploadStatus("error");
-          reject(new Error("Upload failed"));
+          xhr.open("POST", "/api/portals/upload");
+          xhr.send(formData);
         });
+      }
 
-        xhr.open("POST", "/api/portals/upload");
-        xhr.send(formData);
-      });
+      // All files uploaded successfully
+      setUploadStatus("success");
+      setFiles([]);
+      setUploaderName("");
+      setUploaderEmail("");
+      setFileProgress({});
     } catch (error) {
       console.error("Upload failed:", error);
       if (uploadStatus !== "error") {
@@ -150,7 +158,6 @@ export default function PublicPortalPage() {
       }
     } finally {
       setUploading(false);
-      setUploadProgress(0);
     }
   };
 
@@ -289,15 +296,30 @@ export default function PublicPortalPage() {
                     {files.map((file, index) => (
                       <div
                         key={index}
-                        className="flex items-center gap-3 p-3 border border-border rounded"
+                        className="p-3 border border-border rounded"
                       >
-                        <FileText className="w-5 h-5 text-[#FF6B2C]" />
-                        <div className="flex-1">
-                          <p className="font-mono text-sm">{file.name}</p>
-                          <p className="text-xs text-muted-foreground font-mono">
-                            {(file.size / 1024 / 1024).toFixed(2)} MB
-                          </p>
+                        <div className="flex items-center gap-3 mb-2">
+                          <FileText className="w-5 h-5 text-[#FF6B2C]" />
+                          <div className="flex-1">
+                            <p className="font-mono text-sm">{file.name}</p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                          {uploading && fileProgress[index] !== undefined && (
+                            <span className="text-sm font-mono font-medium">
+                              {fileProgress[index]}%
+                            </span>
+                          )}
                         </div>
+                        {uploading && fileProgress[index] !== undefined && (
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                            <div
+                              className="bg-[#FF6B2C] h-full transition-all duration-300 ease-out"
+                              style={{ width: `${fileProgress[index]}%` }}
+                            />
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -310,26 +332,6 @@ export default function PublicPortalPage() {
                   <p className="text-red-700 dark:text-red-400 font-mono text-sm">
                     {errorMessage}
                   </p>
-                </div>
-              )}
-
-              {/* Upload Progress */}
-              {uploading && (
-                <div className="mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-mono font-medium">
-                      Uploading...
-                    </span>
-                    <span className="text-sm font-mono font-medium">
-                      {uploadProgress}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
-                    <div
-                      className="bg-[#FF6B2C] h-full transition-all duration-300 ease-out"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
                 </div>
               )}
 
