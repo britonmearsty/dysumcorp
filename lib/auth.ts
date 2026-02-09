@@ -6,14 +6,38 @@ import pg from "pg";
 
 import { PrismaClient } from "@/lib/generated/prisma/client";
 
+// Validate required environment variables
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not defined");
+}
+if (!process.env.BETTER_AUTH_SECRET) {
+  throw new Error("BETTER_AUTH_SECRET is not defined");
+}
+if (!process.env.BETTER_AUTH_URL) {
+  throw new Error("BETTER_AUTH_URL is not defined");
+}
+
 // Create PostgreSQL connection pool
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new pg.Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+});
+
+// Handle pool errors
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+});
 
 // Create Prisma adapter for PostgreSQL
 const adapter = new PrismaPg(pool);
 
 // Initialize Prisma Client with the adapter
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient({ 
+  adapter,
+  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+});
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -24,8 +48,8 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
       scope: [
         "openid",
         "email",
@@ -33,10 +57,11 @@ export const auth = betterAuth({
         "https://www.googleapis.com/auth/drive.file",
         "https://www.googleapis.com/auth/drive.appdata",
       ],
+      enabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     },
     dropbox: {
-      clientId: process.env.DROPBOX_CLIENT_ID!,
-      clientSecret: process.env.DROPBOX_CLIENT_SECRET!,
+      clientId: process.env.DROPBOX_CLIENT_ID || "",
+      clientSecret: process.env.DROPBOX_CLIENT_SECRET || "",
       scope: [
         "account_info.read",
         "files.metadata.write",
@@ -44,10 +69,16 @@ export const auth = betterAuth({
         "files.content.write",
         "files.content.read",
       ],
+      enabled: !!(process.env.DROPBOX_CLIENT_ID && process.env.DROPBOX_CLIENT_SECRET),
     },
   },
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: process.env.BETTER_AUTH_URL!,
+  trustedOrigins: [process.env.BETTER_AUTH_URL!],
+  advanced: {
+    useSecureCookies: process.env.NODE_ENV === "production",
+    cookiePrefix: "better-auth",
+  },
   plugins: [
     creem({
       apiKey: process.env.CREEM_API_KEY!,

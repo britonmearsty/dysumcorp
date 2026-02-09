@@ -22,6 +22,7 @@ export default function PublicPortalPage() {
   const [portal, setPortal] = useState<Portal | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [files, setFiles] = useState<File[]>([]);
   const [uploadStatus, setUploadStatus] = useState<
     "idle" | "success" | "error"
@@ -88,6 +89,7 @@ export default function PublicPortalPage() {
     }
 
     setUploading(true);
+    setUploadProgress(0);
     setUploadStatus("idle");
     setErrorMessage("");
 
@@ -101,28 +103,54 @@ export default function PublicPortalPage() {
       formData.append("uploaderName", uploaderName.trim());
       formData.append("uploaderEmail", uploaderEmail.trim());
 
-      const response = await fetch("/api/portals/upload", {
-        method: "POST",
-        body: formData,
+      // Use XMLHttpRequest for progress tracking
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(percentComplete);
+          }
+        });
+
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setUploadStatus("success");
+            setFiles([]);
+            setUploaderName("");
+            setUploaderEmail("");
+            resolve();
+          } else {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              setErrorMessage(data.error || "Upload failed");
+            } catch {
+              setErrorMessage("Upload failed");
+            }
+            setUploadStatus("error");
+            reject(new Error("Upload failed"));
+          }
+        });
+
+        xhr.addEventListener("error", () => {
+          setErrorMessage("Upload failed. Please try again.");
+          setUploadStatus("error");
+          reject(new Error("Upload failed"));
+        });
+
+        xhr.open("POST", "/api/portals/upload");
+        xhr.send(formData);
       });
-
-      if (response.ok) {
-        setUploadStatus("success");
-        setFiles([]);
-        setUploaderName("");
-        setUploaderEmail("");
-      } else {
-        const data = await response.json();
-
-        setErrorMessage(data.error || "Upload failed");
-        setUploadStatus("error");
-      }
     } catch (error) {
       console.error("Upload failed:", error);
-      setErrorMessage("Upload failed. Please try again.");
-      setUploadStatus("error");
+      if (uploadStatus !== "error") {
+        setErrorMessage("Upload failed. Please try again.");
+        setUploadStatus("error");
+      }
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -282,6 +310,26 @@ export default function PublicPortalPage() {
                   <p className="text-red-700 dark:text-red-400 font-mono text-sm">
                     {errorMessage}
                   </p>
+                </div>
+              )}
+
+              {/* Upload Progress */}
+              {uploading && (
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-mono font-medium">
+                      Uploading...
+                    </span>
+                    <span className="text-sm font-mono font-medium">
+                      {uploadProgress}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-[#FF6B2C] h-full transition-all duration-300 ease-out"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
                 </div>
               )}
 
