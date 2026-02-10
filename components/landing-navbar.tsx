@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
 const navigationItems = [
-  { title: "FEATURES", href: "#features" },
+  { title: "FEATURESs", href: "#features" },
   { title: "PRICING & PLANS", href: "#pricing" },
   { title: "SECURITY", href: "#security" },
   { title: "DEMO", href: "#demo" },
