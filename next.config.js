@@ -3,6 +3,15 @@ const nextConfig = {
   // Optimize for production
   reactStrictMode: true,
   
+  // Exclude dysum subfolder from build
+  webpack: (config, { isServer }) => {
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: ['**/dysum/**', '**/node_modules/**'],
+    };
+    return config;
+  },
+  
   // Disable ESLint during builds (warnings are treated as errors)
   eslint: {
     ignoreDuringBuilds: true,
