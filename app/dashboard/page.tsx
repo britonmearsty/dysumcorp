@@ -130,7 +130,7 @@ export default function DashboardPage() {
 
       {/* Total Portals Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+        <div className="border border-border bg-background p-6 hover:border-rgba(51,65,85,0.5) transition-colors">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-mono text-muted-foreground">
@@ -143,13 +143,13 @@ export default function DashboardPage() {
                 Currently running
               </p>
             </div>
-            <div className="w-12 h-12 bg-[#FF6B2C]/10 flex items-center justify-center">
-              <FolderOpen className="h-6 w-6 text-[#FF6B2C]" />
+            <div className="w-12 h-12 bg-rgba(51,65,85,0.1) flex items-center justify-center">
+              <FolderOpen className="h-6 w-6 text-[#334155]" />
             </div>
           </div>
         </div>
 
-        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+        <div className="border border-border bg-background p-6 hover:border-rgba(51,65,85,0.5) transition-colors">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-mono text-muted-foreground">
@@ -162,13 +162,13 @@ export default function DashboardPage() {
                 Across all portals
               </p>
             </div>
-            <div className="w-12 h-12 bg-[#FF6B2C]/10 flex items-center justify-center">
-              <FileText className="h-6 w-6 text-[#FF6B2C]" />
+            <div className="w-12 h-12 bg-rgba(51,65,85,0.1) flex items-center justify-center">
+              <FileText className="h-6 w-6 text-[#334155]" />
             </div>
           </div>
         </div>
 
-        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+        <div className="border border-border bg-background p-6 hover:border-rgba(51,65,85,0.5) transition-colors">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-mono text-muted-foreground">
@@ -181,8 +181,8 @@ export default function DashboardPage() {
                 Uploaded in last 24h
               </p>
             </div>
-            <div className="w-12 h-12 bg-[#FF6B2C]/10 flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-[#FF6B2C]" />
+            <div className="w-12 h-12 bg-rgba(51,65,85,0.1) flex items-center justify-center">
+              <TrendingUp className="h-6 w-6 text-[#334155]" />
             </div>
           </div>
         </div>
@@ -215,7 +215,7 @@ export default function DashboardPage() {
               activePortalsList.map((portal) => (
                 <div
                   key={portal.id}
-                  className="border border-border p-4 hover:border-[#FF6B2C]/50 transition-colors"
+                  className="border border-border p-4 hover:border-rgba(51,65,85,0.5) transition-colors"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -231,7 +231,7 @@ export default function DashboardPage() {
                       </p>
                       <div className="flex items-center gap-4 mt-3">
                         <div className="flex items-center gap-1 text-sm font-mono">
-                          <FileText className="w-4 h-4 text-[#FF6B2C]" />
+                          <FileText className="w-4 h-4 text-[#334155]" />
                           <span>{portal._count?.files || 0} files</span>
                         </div>
                       </div>
@@ -257,7 +257,7 @@ export default function DashboardPage() {
           <h2 className="text-xl font-mono font-bold mb-6">QUICK ACTIONS</h2>
           <div className="space-y-3">
             <Link href="/dashboard/portals/create">
-              <Button className="w-full rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono justify-start">
+              <Button className="w-full rounded-none bg-[#334155] hover:bg-rgba(51,65,85,0.9) font-mono justify-start">
                 <Plus className="mr-2 w-4 h-4" />
                 CREATE NEW PORTAL
               </Button>

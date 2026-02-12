@@ -51,7 +51,7 @@ export function LandingNavbar() {
           {navigationItems.map((item) => (
             <a
               key={item.title}
-              className="text-sm font-mono text-foreground hover:text-[#FF6B2C] transition-colors"
+              className="text-sm font-mono text-foreground hover:text-[#334155] transition-colors"
               href={item.href}
             >
               {item.title}
@@ -83,7 +83,7 @@ export function LandingNavbar() {
                 ? "Go to dashboard"
                 : "Get started with free account"
             }
-            className="rounded-none hidden md:inline-flex bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+            className="rounded-none hidden md:inline-flex bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
             variant="default"
             onClick={handleGetStarted}
           >
@@ -102,7 +102,7 @@ export function LandingNavbar() {
                 {navigationItems.map((item) => (
                   <a
                     key={item.title}
-                    className="text-sm font-mono text-foreground hover:text-[#FF6B2C] transition-colors"
+                    className="text-sm font-mono text-foreground hover:text-[#334155] transition-colors"
                     href={item.href}
                   >
                     {item.title}
@@ -124,7 +124,7 @@ export function LandingNavbar() {
                   WATCH DEMO
                 </Button>
                 <Button
-                  className="cursor-pointer rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                  className="cursor-pointer rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
                   onClick={handleGetStarted}
                 >
                   {session?.user ? "DASHBOARD" : "START FREE TRIAL"}{" "}

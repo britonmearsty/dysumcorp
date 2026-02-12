@@ -88,7 +88,7 @@ export default function ClientsPage() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+        <div className="border border-border bg-background p-6 hover:border-[rgba(51,65,85,0.5)] transition-colors">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-mono text-muted-foreground">
@@ -98,13 +98,13 @@ export default function ClientsPage() {
                 {clients.length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-[#FF6B2C]/10 flex items-center justify-center">
-              <Users className="h-6 w-6 text-[#FF6B2C]" />
+            <div className="w-12 h-12 bg-[rgba(51,65,85,0.1)] flex items-center justify-center">
+              <Users className="h-6 w-6 text-[#334155]" />
             </div>
           </div>
         </div>
 
-        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+        <div className="border border-border bg-background p-6 hover:border-[rgba(51,65,85,0.5)] transition-colors">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-mono text-muted-foreground">
@@ -114,13 +114,13 @@ export default function ClientsPage() {
                 {clients.reduce((acc, c) => acc + c.totalFiles, 0)}
               </p>
             </div>
-            <div className="w-12 h-12 bg-[#FF6B2C]/10 flex items-center justify-center">
-              <FileText className="h-6 w-6 text-[#FF6B2C]" />
+            <div className="w-12 h-12 bg-[rgba(51,65,85,0.1)] flex items-center justify-center">
+              <FileText className="h-6 w-6 text-[#334155]" />
             </div>
           </div>
         </div>
 
-        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+        <div className="border border-border bg-background p-6 hover:border-[rgba(51,65,85,0.5)] transition-colors">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-mono text-muted-foreground">
@@ -134,8 +134,8 @@ export default function ClientsPage() {
                 )}
               </p>
             </div>
-            <div className="w-12 h-12 bg-[#FF6B2C]/10 flex items-center justify-center">
-              <Upload className="h-6 w-6 text-[#FF6B2C]" />
+            <div className="w-12 h-12 bg-[rgba(51,65,85,0.1)] flex items-center justify-center">
+              <Upload className="h-6 w-6 text-[#334155]" />
             </div>
           </div>
         </div>
@@ -166,8 +166,8 @@ export default function ClientsPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 bg-[#FF6B2C]/10 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-[#FF6B2C]" />
+                      <div className="w-10 h-10 bg-[rgba(51,65,85,0.1)] flex items-center justify-center">
+                        <Users className="h-5 w-5 text-[#334155]" />
                       </div>
                       <div>
                         <h3 className="font-mono font-bold text-lg">
@@ -227,7 +227,7 @@ export default function ClientsPage() {
                           {client.portals.map((portal, idx) => (
                             <span
                               key={idx}
-                              className="px-2 py-1 bg-[#FF6B2C]/10 text-[#FF6B2C] text-xs font-mono border border-[#FF6B2C]/20"
+                              className="px-2 py-1 bg-[rgba(51,65,85,0.1)] text-[#334155] text-xs font-mono border border-[rgba(51,65,85,0.2)]"
                             >
                               {portal}
                             </span>

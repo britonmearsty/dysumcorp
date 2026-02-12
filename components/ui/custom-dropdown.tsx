@@ -47,8 +47,8 @@ export function CustomDropdown({
           "w-full flex items-center justify-between px-4 py-2.5 text-sm",
           "bg-background border-2 border-border",
           "transition-colors duration-200",
-          "hover:border-[#FF6B2C]",
-          "focus:outline-none focus:border-[#FF6B2C]",
+          "hover:border-[#334155]",
+          "focus:outline-none focus:border-[#334155]",
           "font-mono",
         )}
         type="button"
@@ -83,11 +83,11 @@ export function CustomDropdown({
                 className={cn(
                   "w-full flex items-center justify-between px-4 py-2.5 text-sm",
                   "transition-colors duration-150",
-                  "hover:bg-[#FF6B2C]/10 hover:border-l-2 hover:border-[#FF6B2C]",
-                  "focus:outline-none focus:bg-[#FF6B2C]/10",
+                  "hover:bg-[rgba(51,65,85,0.1)] hover:border-l-2 hover:border-[#334155]",
+                  "focus:outline-none focus:bg-[rgba(51,65,85,0.1)]",
                   "font-mono",
                   value === option.value &&
-                    "bg-[#FF6B2C]/10 text-[#FF6B2C] font-medium border-l-2 border-[#FF6B2C]",
+                    "bg-[rgba(51,65,85,0.1)] text-[#334155] font-medium border-l-2 border-[#334155]",
                 )}
                 type="button"
                 onClick={() => {
@@ -100,7 +100,7 @@ export function CustomDropdown({
                   <span>{option.label}</span>
                 </div>
                 {value === option.value && (
-                  <Check className="w-4 h-4 text-[#FF6B2C]" />
+                  <Check className="w-4 h-4 text-[#334155]" />
                 )}
               </button>
             ))}

@@ -208,7 +208,7 @@ export default function PublicPortalPage() {
                 Your files have been securely uploaded. Thank you!
               </p>
               <Button
-                className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                className="rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
                 onClick={() => {
                   setUploadStatus("idle");
                   setFiles([]);
@@ -260,7 +260,7 @@ export default function PublicPortalPage() {
               </div>
 
               {/* File Upload Area */}
-              <div className="border-2 border-dashed border-border rounded-lg p-12 text-center mb-6 hover:border-[#FF6B2C]/50 transition-colors">
+              <div className="border-2 border-dashed border-border rounded-lg p-12 text-center mb-6 hover:border-[rgba(51,65,85,0.5)] transition-colors">
                 <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-lg font-mono mb-2">
                   Drag and drop files here, or click to select
@@ -299,7 +299,7 @@ export default function PublicPortalPage() {
                         className="p-3 border border-border rounded"
                       >
                         <div className="flex items-center gap-3 mb-2">
-                          <FileText className="w-5 h-5 text-[#FF6B2C]" />
+                          <FileText className="w-5 h-5 text-[#334155]" />
                           <div className="flex-1">
                             <p className="font-mono text-sm">{file.name}</p>
                             <p className="text-xs text-muted-foreground font-mono">
@@ -315,7 +315,7 @@ export default function PublicPortalPage() {
                         {uploading && fileProgress[index] !== undefined && (
                           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                             <div
-                              className="bg-[#FF6B2C] h-full transition-all duration-300 ease-out"
+                              className="bg-[#334155] h-full transition-all duration-300 ease-out"
                               style={{ width: `${fileProgress[index]}%` }}
                             />
                           </div>
@@ -337,7 +337,7 @@ export default function PublicPortalPage() {
 
               {/* Upload Button */}
               <Button
-                className="w-full rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                className="w-full rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
                 disabled={
                   files.length === 0 ||
                   uploading ||

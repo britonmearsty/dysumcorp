@@ -278,7 +278,7 @@ export default function TeamsPage() {
           </p>
         </div>
         <Button
-          className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+          className="rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
           onClick={() => setShowCreateModal(true)}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -294,7 +294,7 @@ export default function TeamsPage() {
             Create your first team to start collaborating
           </p>
           <Button
-            className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+            className="rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
             onClick={() => setShowCreateModal(true)}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -307,7 +307,7 @@ export default function TeamsPage() {
             {teams.map((team) => (
               <div
                 key={team.id}
-                className="border rounded-lg p-6 hover:border-[#FF6B2C] transition-colors"
+                className="border rounded-lg p-6 hover:border-[#334155] transition-colors"
               >
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="font-mono font-semibold text-lg">
@@ -363,11 +363,11 @@ export default function TeamsPage() {
                 team.members.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:border-[#FF6B2C] transition-colors"
+                    className="flex items-center justify-between p-4 border rounded-lg hover:border-[#334155] transition-colors"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-[#FF6B2C]/10 flex items-center justify-center">
-                        <span className="text-[#FF6B2C] font-mono font-bold">
+                      <div className="w-10 h-10 rounded-full bg-[rgba(51,65,85,0.1)] flex items-center justify-center">
+                        <span className="text-[#334155] font-mono font-bold">
                           {member.user.name?.charAt(0) ||
                             member.user.email.charAt(0).toUpperCase()}
                         </span>
@@ -449,7 +449,7 @@ export default function TeamsPage() {
                   CANCEL
                 </Button>
                 <Button
-                  className="flex-1 rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                  className="flex-1 rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
                   disabled={creating}
                   onClick={handleCreateTeam}
                 >
@@ -509,7 +509,7 @@ export default function TeamsPage() {
                   CANCEL
                 </Button>
                 <Button
-                  className="flex-1 rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                  className="flex-1 rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
                   disabled={creating}
                   onClick={handleAddMember}
                 >

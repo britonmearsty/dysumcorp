@@ -40,7 +40,7 @@ export default function CreatePortalPage() {
     description: "",
 
     // Branding
-    primaryColor: "#FF6B2C",
+    primaryColor: "#334155",
     secondaryColor: "#1a1a1a",
     logo: null as File | null,
     favicon: null as File | null,
@@ -210,9 +210,9 @@ export default function CreatePortalPage() {
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${
                       isActive
-                        ? "border-[#FF6B2C] bg-[#FF6B2C]/10"
+                        ? "border-[#334155] bg-[rgba(51,65,85,0.1)]"
                         : isCompleted
-                          ? "border-[#FF6B2C] bg-[#FF6B2C]"
+                          ? "border-[#334155] bg-[#334155]"
                           : "border-border bg-background"
                     }`}
                   >
@@ -221,7 +221,7 @@ export default function CreatePortalPage() {
                     ) : (
                       <Icon
                         className={`w-6 h-6 ${
-                          isActive ? "text-[#FF6B2C]" : "text-muted-foreground"
+                          isActive ? "text-[#334155]" : "text-muted-foreground"
                         }`}
                       />
                     )}
@@ -239,7 +239,7 @@ export default function CreatePortalPage() {
                 {index < steps.length - 1 && (
                   <div
                     className={`h-0.5 flex-1 mx-2 ${
-                      isCompleted ? "bg-[#FF6B2C]" : "bg-border"
+                      isCompleted ? "bg-[#334155]" : "bg-border"
                     }`}
                   />
                 )}
@@ -327,7 +327,7 @@ export default function CreatePortalPage() {
                   Description
                 </Label>
                 <textarea
-                  className="w-full min-h-[100px] px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#FF6B2C] focus:ring-2 focus:ring-[#FF6B2C]/20 hover:border-muted-foreground/50 transition-colors"
+                  className="w-full min-h-[100px] px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#334155] focus:ring-2 focus:ring-rgba(51,65,85,0.2)] hover:border-muted-foreground/50 transition-colors"
                   id="description"
                   placeholder="Brief description of this portal..."
                   value={formData.description}
@@ -405,7 +405,7 @@ export default function CreatePortalPage() {
                 <Label className="font-mono" htmlFor="logo">
                   Portal Logo
                 </Label>
-                <div className="border-2 border-dashed border-border p-6 text-center hover:border-[#FF6B2C]/50 transition-colors">
+                <div className="border-2 border-dashed border-border p-6 text-center hover:border-[rgba(51,65,85,0.5)] transition-colors">
                   <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm font-mono text-muted-foreground mb-2">
                     Click to upload or drag and drop
@@ -434,7 +434,7 @@ export default function CreatePortalPage() {
                 <Label className="font-mono" htmlFor="favicon">
                   Favicon
                 </Label>
-                <div className="border-2 border-dashed border-border p-6 text-center hover:border-[#FF6B2C]/50 transition-colors">
+                <div className="border-2 border-dashed border-border p-6 text-center hover:border-[rgba(51,65,85,0.5)] transition-colors">
                   <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm font-mono text-muted-foreground mb-2">
                     Click to upload or drag and drop
@@ -496,7 +496,7 @@ export default function CreatePortalPage() {
                   Storage Provider
                 </Label>
                 <select
-                  className="w-full px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#FF6B2C] focus:ring-2 focus:ring-[#FF6B2C]/20 hover:border-muted-foreground/50 transition-colors"
+                  className="w-full px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#334155] focus:ring-2 focus:ring-rgba(51,65,85,0.2)] hover:border-muted-foreground/50 transition-colors"
                   id="storageProvider"
                   value={formData.storageProvider}
                   onChange={(e) =>
@@ -616,7 +616,7 @@ export default function CreatePortalPage() {
                   Access Type
                 </Label>
                 <select
-                  className="w-full px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#FF6B2C] focus:ring-2 focus:ring-[#FF6B2C]/20 hover:border-muted-foreground/50 transition-colors"
+                  className="w-full px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#334155] focus:ring-2 focus:ring-rgba(51,65,85,0.2)] hover:border-muted-foreground/50 transition-colors"
                   id="accessType"
                   value={formData.accessType}
                   onChange={(e) => updateFormData("accessType", e.target.value)}
@@ -750,7 +750,7 @@ export default function CreatePortalPage() {
                   Welcome Message
                 </Label>
                 <textarea
-                  className="w-full min-h-[120px] px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#FF6B2C] focus:ring-2 focus:ring-[#FF6B2C]/20 hover:border-muted-foreground/50 transition-colors"
+                  className="w-full min-h-[120px] px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#334155] focus:ring-2 focus:ring-rgba(51,65,85,0.2)] hover:border-muted-foreground/50 transition-colors"
                   id="welcomeMessage"
                   placeholder="Enter a welcome message for your clients..."
                   value={formData.welcomeMessage}
@@ -769,7 +769,7 @@ export default function CreatePortalPage() {
                   Auto-Reply Message (Optional)
                 </Label>
                 <textarea
-                  className="w-full min-h-[100px] px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#FF6B2C] focus:ring-2 focus:ring-[#FF6B2C]/20 hover:border-muted-foreground/50 transition-colors"
+                  className="w-full min-h-[100px] px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#334155] focus:ring-2 focus:ring-rgba(51,65,85,0.2)] hover:border-muted-foreground/50 transition-colors"
                   id="autoReplyMessage"
                   placeholder="Automatic reply when files are uploaded..."
                   value={formData.autoReplyMessage}
@@ -866,7 +866,7 @@ export default function CreatePortalPage() {
 
         {currentStepIndex === steps.length - 1 ? (
           <Button
-            className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+            className="rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
             onClick={handleSubmit}
           >
             CREATE PORTAL
@@ -874,7 +874,7 @@ export default function CreatePortalPage() {
           </Button>
         ) : (
           <Button
-            className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+            className="rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
             onClick={handleNext}
           >
             NEXT

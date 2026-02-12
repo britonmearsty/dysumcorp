@@ -541,7 +541,7 @@ export default function AssetsPage() {
               </button>
               <button
                 onClick={handlePasswordSubmit}
-                className="px-4 py-2 bg-[#FF6B2C] text-white rounded-md font-mono hover:bg-[#FF6B2C]/80 disabled:opacity-50"
+                className="px-4 py-2 bg-[#334155] text-white rounded-md font-mono hover:bg-[rgba(51,65,85,0.8)] disabled:opacity-50"
                 disabled={managingPassword === selectedFile.id}
               >
                 {managingPassword === selectedFile.id
@@ -604,7 +604,7 @@ export default function AssetsPage() {
               </button>
               <button
                 onClick={handleExpirationSubmit}
-                className="px-4 py-2 bg-[#FF6B2C] text-white rounded-md font-mono hover:bg-[#FF6B2C]/80 disabled:opacity-50"
+                className="px-4 py-2 bg-[#334155] text-white rounded-md font-mono hover:bg-[rgba(51,65,85,0.8)] disabled:opacity-50"
                 disabled={managingExpiration === selectedFile.id}
               >
                 {managingExpiration === selectedFile.id
@@ -640,7 +640,7 @@ export default function AssetsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="border rounded-lg p-4">
           <div className="flex items-center gap-3">
-            <FileText className="w-8 h-8 text-[#FF6B2C]" />
+            <FileText className="w-8 h-8 text-[#334155]" />
             <div>
               <p className="text-sm text-muted-foreground font-mono">
                 Total Files
@@ -651,7 +651,7 @@ export default function AssetsPage() {
         </div>
         <div className="border rounded-lg p-4">
           <div className="flex items-center gap-3">
-            <HardDrive className="w-8 h-8 text-[#FF6B2C]" />
+            <HardDrive className="w-8 h-8 text-[#334155]" />
             <div>
               <p className="text-sm text-muted-foreground font-mono">
                 Storage Used
@@ -664,7 +664,7 @@ export default function AssetsPage() {
         </div>
         <div className="border rounded-lg p-4">
           <div className="flex items-center gap-3">
-            <Download className="w-8 h-8 text-[#FF6B2C]" />
+            <Download className="w-8 h-8 text-[#334155]" />
             <div>
               <p className="text-sm text-muted-foreground font-mono">
                 Total Downloads
@@ -811,7 +811,7 @@ export default function AssetsPage() {
                           {file.portal.name}
                         </span>
                         <a
-                          className="text-[#FF6B2C] hover:text-[#FF6B2C]/80"
+                          className="text-[#334155] hover:text-[rgba(51,65,85,0.8)]"
                           href={`/portal/${file.portal.slug}`}
                           rel="noopener noreferrer"
                           target="_blank"

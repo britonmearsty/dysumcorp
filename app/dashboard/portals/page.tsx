@@ -358,7 +358,7 @@ export default function PortalsPage() {
           </p>
         </div>
         <Button
-          className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+          className="rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
           onClick={handleCreatePortal}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -392,7 +392,7 @@ export default function PortalsPage() {
             Create your first client portal to start collecting files securely
           </p>
           <Button
-            className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+            className="rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
             onClick={handleCreatePortal}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -404,7 +404,7 @@ export default function PortalsPage() {
           {portals.map((portal) => (
             <div
               key={portal.id}
-              className="border rounded-lg p-6 hover:border-[#FF6B2C] transition-colors"
+              className="border rounded-lg p-6 hover:border-[#334155] transition-colors"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
@@ -415,7 +415,7 @@ export default function PortalsPage() {
                     /{portal.slug}
                   </p>
                   {portal.customDomain && (
-                    <p className="text-xs text-[#FF6B2C] font-mono mt-1">
+                    <p className="text-xs text-[#334155] font-mono mt-1">
                       {portal.customDomain}
                     </p>
                   )}
@@ -546,7 +546,7 @@ export default function PortalsPage() {
                             ? "bg-green-500"
                             : fileItem.status === "error"
                               ? "bg-red-500"
-                              : "bg-[#FF6B2C]"
+                              : "bg-[#334155]"
                         }`}
                         style={{ width: `${fileItem.progress}%` }}
                       >
@@ -569,7 +569,7 @@ export default function PortalsPage() {
             </div>
             <div className="p-6 border-t">
               <Button
-                className="w-full rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                className="w-full rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
                 disabled={uploadingFiles.some(
                   (f) => f.status === "uploading" || f.status === "pending",
                 )}

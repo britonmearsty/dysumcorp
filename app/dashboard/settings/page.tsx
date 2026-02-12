@@ -158,10 +158,10 @@ export default function SettingsPage() {
       {/* Settings Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Profile Settings */}
-        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+        <div className="border border-border bg-background p-6 hover:border-[rgba(51,65,85,0.5)] transition-colors">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-[#FF6B2C]/10 flex items-center justify-center">
-              <User className="h-5 w-5 text-[#FF6B2C]" />
+            <div className="w-10 h-10 bg-[rgba(51,65,85,0.1)] flex items-center justify-center">
+              <User className="h-5 w-5 text-[#334155]" />
             </div>
             <div>
               <h3 className="font-mono font-bold">PROFILE SETTINGS</h3>
@@ -217,7 +217,7 @@ export default function SettingsPage() {
             )}
 
             <Button
-              className="w-full font-mono rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90"
+              className="w-full font-mono rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)]"
               disabled={profileLoading}
               type="submit"
             >
@@ -234,7 +234,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Notifications */}
-        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+        <div className="border border-border bg-background p-6 hover:border-[rgba(51,65,85,0.5)] transition-colors">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-blue-500/10 flex items-center justify-center">
               <Bell className="h-5 w-5 text-blue-500" />
@@ -248,7 +248,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 border border-border hover:border-[#FF6B2C]/50 transition-colors">
+            <div className="flex items-center justify-between p-3 border border-border hover:border-[rgba(51,65,85,0.5)] transition-colors">
               <div>
                 <p className="font-medium text-sm font-mono">
                   EMAIL NOTIFICATIONS
@@ -259,13 +259,13 @@ export default function SettingsPage() {
               </div>
               <input
                 checked={emailNotifications}
-                className="w-5 h-5 cursor-pointer accent-[#FF6B2C]"
+                className="w-5 h-5 cursor-pointer accent-[#334155]"
                 type="checkbox"
                 onChange={(e) => setEmailNotifications(e.target.checked)}
               />
             </div>
 
-            <div className="flex items-center justify-between p-3 border border-border hover:border-[#FF6B2C]/50 transition-colors">
+            <div className="flex items-center justify-between p-3 border border-border hover:border-[rgba(51,65,85,0.5)] transition-colors">
               <div>
                 <p className="font-medium text-sm font-mono">
                   PUSH NOTIFICATIONS
@@ -276,13 +276,13 @@ export default function SettingsPage() {
               </div>
               <input
                 checked={pushNotifications}
-                className="w-5 h-5 cursor-pointer accent-[#FF6B2C]"
+                className="w-5 h-5 cursor-pointer accent-[#334155]"
                 type="checkbox"
                 onChange={(e) => setPushNotifications(e.target.checked)}
               />
             </div>
 
-            <div className="flex items-center justify-between p-3 border border-border hover:border-[#FF6B2C]/50 transition-colors">
+            <div className="flex items-center justify-between p-3 border border-border hover:border-[rgba(51,65,85,0.5)] transition-colors">
               <div>
                 <p className="font-medium text-sm font-mono">WEEKLY REPORTS</p>
                 <p className="text-xs text-muted-foreground font-mono">
@@ -291,7 +291,7 @@ export default function SettingsPage() {
               </div>
               <input
                 checked={weeklyReports}
-                className="w-5 h-5 cursor-pointer accent-[#FF6B2C]"
+                className="w-5 h-5 cursor-pointer accent-[#334155]"
                 type="checkbox"
                 onChange={(e) => setWeeklyReports(e.target.checked)}
               />
@@ -312,7 +312,7 @@ export default function SettingsPage() {
             )}
 
             <Button
-              className="w-full font-mono rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90"
+              className="w-full font-mono rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)]"
               disabled={notificationsLoading}
               onClick={handleNotificationUpdate}
             >
@@ -329,7 +329,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Appearance */}
-        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+        <div className="border border-border bg-background p-6 hover:border-[rgba(51,65,85,0.5)] transition-colors">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-purple-500/10 flex items-center justify-center">
               <Globe className="h-5 w-5 text-purple-500" />
@@ -346,7 +346,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Security */}
-        <div className="border border-border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors">
+        <div className="border border-border bg-background p-6 hover:border-[rgba(51,65,85,0.5)] transition-colors">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-green-500/10 flex items-center justify-center">
               <Shield className="h-5 w-5 text-green-500" />

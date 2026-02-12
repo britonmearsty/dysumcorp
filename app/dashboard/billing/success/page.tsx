@@ -30,7 +30,7 @@ export default function CheckoutSuccessPage() {
         </p>
         <div className="flex flex-col gap-4">
           <Button
-            className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+            className="rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
             onClick={() => router.push("/dashboard")}
           >
             GO TO DASHBOARD

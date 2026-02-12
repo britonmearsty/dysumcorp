@@ -64,7 +64,7 @@ export default function SupportPage() {
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="border rounded-lg p-6 text-center">
-          <p className="text-3xl font-bold font-mono text-[#FF6B2C]">2</p>
+          <p className="text-3xl font-bold font-mono text-[#334155]">2</p>
           <p className="text-sm text-muted-foreground mt-2">Open Tickets</p>
         </div>
         <div className="border rounded-lg p-6 text-center">
@@ -87,7 +87,7 @@ export default function SupportPage() {
           {tickets.map((ticket) => (
             <div
               key={ticket.id}
-              className="border rounded-lg p-4 hover:border-[#FF6B2C] transition-colors"
+              className="border rounded-lg p-4 hover:border-[#334155] transition-colors"
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
@@ -128,7 +128,7 @@ export default function SupportPage() {
           {resources.map((resource, index) => (
             <div
               key={index}
-              className="border rounded-lg p-4 hover:border-[#FF6B2C] transition-colors cursor-pointer"
+              className="border rounded-lg p-4 hover:border-[#334155] transition-colors cursor-pointer"
             >
               <h3 className="font-mono font-medium mb-2">{resource.title}</h3>
               <p className="text-sm text-muted-foreground">

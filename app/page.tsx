@@ -272,7 +272,7 @@ export default function Home() {
             {navigationItems.map((item) => (
               <a
                 key={item.title}
-                className="text-sm font-mono text-foreground hover:text-[#FF6B2C] transition-colors"
+                className="text-sm font-mono text-foreground hover:text-[#334155] transition-colors"
                 href={item.href}
               >
                 {item.title}
@@ -283,7 +283,7 @@ export default function Home() {
           <div className="flex items-center space-x-4">
             <Button
               aria-label="Get started with free account"
-              className="rounded-none hidden md:inline-flex bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+              className="rounded-none hidden md:inline-flex bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
               variant="default"
               onClick={handleGetStarted}
             >
@@ -301,14 +301,14 @@ export default function Home() {
                   {navigationItems.map((item) => (
                     <a
                       key={item.title}
-                      className="text-sm font-mono text-foreground hover:text-[#FF6B2C] transition-colors"
+                      className="text-sm font-mono text-foreground hover:text-[#334155] transition-colors"
                       href={item.href}
                     >
                       {item.title}
                     </a>
                   ))}
                   <Button
-                    className="cursor-pointer rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                    className="cursor-pointer rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
                     onClick={handleGetStarted}
                   >
                     GET STARTED <ArrowRight className="ml-1 w-4 h-4" />
@@ -326,7 +326,7 @@ export default function Home() {
           className="py-20 px-4 md:px-8 lg:px-16 relative overflow-hidden"
         >
           {/* Background subtle gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B2C]/5 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[rgba(51,65,85,0.05)] via-transparent to-transparent pointer-events-none" />
 
           <div className="flex flex-col items-center text-center relative z-10">
             <motion.div
@@ -335,7 +335,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="inline-flex items-center gap-2 bg-[#FF6B2C]/10 text-[#FF6B2C] px-4 py-2 rounded-full text-sm font-mono font-semibold">
+              <div className="inline-flex items-center gap-2 bg-[rgba(51,65,85,0.1)] text-[#334155] px-4 py-2 rounded-full text-sm font-mono font-semibold">
                 <TrendingUp className="h-4 w-4" />
                 Limited time: 30-day extended free trial
               </div>
@@ -349,7 +349,7 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               Collect Client Files in
-              <span className="text-[#FF6B2C] block">Minutes, Not Weeks</span>
+              <span className="text-[#334155] block">Minutes, Not Weeks</span>
             </motion.h1>
 
             <motion.p
@@ -405,7 +405,7 @@ export default function Home() {
                     damping: 10,
                   }}
                 >
-                  <signal.icon className="h-5 w-5 text-[#FF6B2C]" />
+                  <signal.icon className="h-5 w-5 text-[#334155]" />
                   <span className="text-sm font-mono">{signal.label}</span>
                 </motion.div>
               ))}
@@ -424,7 +424,7 @@ export default function Home() {
               }}
             >
               <Button
-                className="cursor-pointer rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono text-lg px-8 py-6"
+                className="cursor-pointer rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono text-lg px-8 py-6"
                 size="lg"
                 onClick={handleGetStarted}
               >
@@ -508,8 +508,8 @@ export default function Home() {
                   damping: 10,
                 }}
               >
-                <div className="mb-6 rounded-full bg-[#FF6B2C]/10 p-4">
-                  <feature.icon className="h-8 w-8 text-[#FF6B2C]" />
+                <div className="mb-6 rounded-full bg-[rgba(51,65,85,0.1)] p-4">
+                  <feature.icon className="h-8 w-8 text-[#334155]" />
                 </div>
                 <h3 className="mb-4 text-xl font-mono font-bold">
                   {feature.label}
@@ -612,13 +612,13 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                 >
                   {/* Magic gradient border - always visible */}
-                  <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-[#FF6B2C] via-[#FFB347] via-[#FF6B2C] to-[#FF4500] bg-[length:200%_100%] animate-gradient-x" />
+                  <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-[#334155] via-[#475569] via-[#334155] to-[#64748b] bg-[length:200%_100%] animate-gradient-x" />
                   <div className="relative flex flex-col items-center text-center p-8 bg-background rounded-xl">
-                    <div className="text-6xl font-mono font-bold text-[#FF6B2C]/20 mb-4">
+                    <div className="text-6xl font-mono font-bold text-[rgba(51,65,85,0.2)] mb-4">
                       {step.step}
                     </div>
-                    <div className="mb-6 rounded-full bg-[#FF6B2C]/10 p-4">
-                      <step.icon className="h-8 w-8 text-[#FF6B2C]" />
+                    <div className="mb-6 rounded-full bg-[rgba(51,65,85,0.1)] p-4">
+                      <step.icon className="h-8 w-8 text-[#334155]" />
                     </div>
                     <h3 className="mb-4 text-xl font-mono font-bold">
                       {step.title}
@@ -640,7 +640,7 @@ export default function Home() {
                             ease: "easeInOut",
                           }}
                         >
-                          <ChevronRight className="h-5 w-5 text-[#FF6B2C]" />
+                          <ChevronRight className="h-5 w-5 text-[#334155]" />
                         </motion.div>
                         <motion.div
                           animate={{ opacity: [0.3, 1, 0.3], x: [0, 3, 0] }}
@@ -652,7 +652,7 @@ export default function Home() {
                             delay: 0.2,
                           }}
                         >
-                          <ChevronRight className="h-5 w-5 text-[#FF6B2C] -ml-3" />
+                          <ChevronRight className="h-5 w-5 text-[#334155] -ml-3" />
                         </motion.div>
                         <motion.div
                           animate={{ opacity: [0.3, 1, 0.3], x: [0, 3, 0] }}
@@ -664,7 +664,7 @@ export default function Home() {
                             delay: 0.4,
                           }}
                         >
-                          <ChevronRight className="h-5 w-5 text-[#FF6B2C] -ml-3" />
+                          <ChevronRight className="h-5 w-5 text-[#334155] -ml-3" />
                         </motion.div>
                       </div>
                     </div>
@@ -687,7 +687,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
             >
               <Button
-                className="cursor-pointer rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                className="cursor-pointer rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
                 size="lg"
                 onClick={handleGetStarted}
               >
@@ -699,7 +699,7 @@ export default function Home() {
 
         {/* Demo Section */}
         <section
-          className="py-24 px-4 md:px-8 lg:px-16 bg-gradient-to-br from-[#FF6B2C]/5 to-transparent"
+          className="py-24 px-4 md:px-8 lg:px-16 bg-gradient-to-br from-[rgba(51,65,85,0.05)] to-transparent"
           id="demo"
         >
           <div className="max-w-6xl mx-auto">
@@ -728,9 +728,9 @@ export default function Home() {
             >
               <div className="bg-background border-2 border-border rounded-xl p-8 shadow-2xl">
                 <div className="aspect-video bg-muted rounded-lg flex items-center justify-center relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B2C]/10 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-[rgba(51,65,85,0.1)] to-transparent" />
                   <div className="text-center z-10">
-                    <div className="w-20 h-20 bg-[#FF6B2C] rounded-full flex items-center justify-center mx-auto mb-4 hover:scale-110 transition-transform cursor-pointer">
+                    <div className="w-20 h-20 bg-[#334155] rounded-full flex items-center justify-center mx-auto mb-4 hover:scale-110 transition-transform cursor-pointer">
                       <Play className="w-8 h-8 text-white ml-1" />
                     </div>
                     <p className="text-lg font-mono font-semibold mb-2">
@@ -744,7 +744,7 @@ export default function Home() {
 
                 <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
                   <Button
-                    className="rounded-none bg-[#FF6B2C] hover:bg-[#FF6B2C]/90 font-mono"
+                    className="rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
                     onClick={() =>
                       window.open("https://demo.dysumcorp.com", "_blank")
                     }
@@ -792,7 +792,7 @@ export default function Home() {
               {bentoFeatures.map((feature, index) => (
                 <motion.div
                   key={feature.title}
-                  className={`group relative overflow-hidden rounded-lg border bg-background p-6 hover:border-[#FF6B2C]/50 transition-colors ${feature.className}`}
+                  className={`group relative overflow-hidden rounded-lg border bg-background p-6 hover:border-[rgba(51,65,85,0.5)] transition-colors ${feature.className}`}
                   initial={{ opacity: 0, y: 30 }}
                   transition={{
                     delay: index * 0.1,
@@ -805,8 +805,8 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                 >
                   <div className="flex flex-col h-full">
-                    <div className="mb-4 w-fit rounded-lg bg-[#FF6B2C]/10 p-3">
-                      <feature.icon className="h-6 w-6 text-[#FF6B2C]" />
+                    <div className="mb-4 w-fit rounded-lg bg-[rgba(51,65,85,0.1)] p-3">
+                      <feature.icon className="h-6 w-6 text-[#334155]" />
                     </div>
                     <h3 className="mb-2 text-lg font-mono font-bold">
                       {feature.title}
@@ -815,7 +815,7 @@ export default function Home() {
                       {feature.description}
                     </p>
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B2C]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-[rgba(51,65,85,0.05)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                 </motion.div>
               ))}
             </div>
@@ -854,7 +854,7 @@ export default function Home() {
                   key={plan.name}
                   className={`relative flex flex-col rounded-lg border p-8 ${
                     plan.highlighted
-                      ? "border-[#FF6B2C] bg-[#FF6B2C]/5 scale-105 shadow-lg"
+                      ? "border-[#334155] bg-[rgba(51,65,85,0.05)] scale-105 shadow-lg"
                       : "bg-background"
                   }`}
                   initial={{ opacity: 0, y: 30 }}
@@ -869,7 +869,7 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                 >
                   {plan.highlighted && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#FF6B2C] text-white text-xs font-mono font-bold px-4 py-1 rounded-full">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#334155] text-white text-xs font-mono font-bold px-4 py-1 rounded-full">
                       MOST POPULAR
                     </div>
                   )}
@@ -895,7 +895,7 @@ export default function Home() {
                         key={feature}
                         className="flex items-center gap-3 text-sm font-mono"
                       >
-                        <Check className="h-4 w-4 text-[#FF6B2C] flex-shrink-0" />
+                        <Check className="h-4 w-4 text-[#334155] flex-shrink-0" />
                         {feature}
                       </li>
                     ))}
@@ -903,7 +903,7 @@ export default function Home() {
                   <Button
                     className={`w-full rounded-none font-mono ${
                       plan.highlighted
-                        ? "bg-[#FF6B2C] hover:bg-[#FF6B2C]/90"
+                        ? "bg-[#334155] hover:bg-[rgba(51,65,85,0.9)]"
                         : "border-2 border-foreground hover:bg-foreground hover:text-background"
                     }`}
                     variant={plan.highlighted ? "default" : "outline"}
@@ -947,7 +947,7 @@ export default function Home() {
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className="w-5 h-5 fill-[#FF6B2C] text-[#FF6B2C]"
+                      className="w-5 h-5 fill-[#334155] text-[#334155]"
                     />
                   ))}
                 </div>
@@ -981,12 +981,12 @@ export default function Home() {
                   viewport={{ once: true, amount: 0.2 }}
                   whileInView={{ opacity: 1, y: 0 }}
                 >
-                  <Quote className="absolute top-6 right-6 h-8 w-8 text-[#FF6B2C]/20" />
+                  <Quote className="absolute top-6 right-6 h-8 w-8 text-[rgba(51,65,85,0.2)]" />
                   <div className="flex items-center gap-1 mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
                       <Star
                         key={i}
-                        className="h-4 w-4 fill-[#FF6B2C] text-[#FF6B2C]"
+                        className="h-4 w-4 fill-[#334155] text-[#334155]"
                       />
                     ))}
                   </div>
@@ -994,7 +994,7 @@ export default function Home() {
                     &quot;{testimonial.quote}&quot;
                   </p>
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#FF6B2C]/10 text-[#FF6B2C] font-mono font-bold">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(51,65,85,0.1)] text-[#334155] font-mono font-bold">
                       {testimonial.avatar}
                     </div>
                     <div>
@@ -1010,8 +1010,8 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-24 px-4 md:px-8 lg:px-16 bg-[#FF6B2C] relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B2C]/90 to-[#FF4500]" />
+        <section className="py-24 px-4 md:px-8 lg:px-16 bg-[#334155] relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-[rgba(51,65,85,0.9)] to-[#475569]" />
           <div className="max-w-5xl mx-auto text-center relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -1041,7 +1041,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Button
-                  className="rounded-none bg-white text-[#FF6B2C] hover:bg-white/90 font-mono text-lg px-8 py-4"
+                  className="rounded-none bg-white text-[#334155] hover:bg-white/90 font-mono text-lg px-8 py-4"
                   size="lg"
                   onClick={handleGetStarted}
                 >

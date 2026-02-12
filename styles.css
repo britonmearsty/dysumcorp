@@ -1,15 +1,15 @@
 :root {
   /* -- Color Palette -- */
-  /* Background colors */
-  --bg-primary: #0f1117;
-  --bg-secondary: #1a1b2e;
-  --bg-elevated: #252736;
+  /* Background colors - Slate greyscale */
+  --bg-primary: #020617;
+  --bg-secondary: #0f172a;
+  --bg-elevated: #1e293b;
 
-  /* Accent colors */
-  --accent-blue: #3b82f6;
-  --accent-blue-light: #60a5fa;
-  --accent-purple: #8b5cf6;
-  --accent-purple-light: #a78bfa;
+  /* Accent colors - Slate greyscale */
+  --accent-slate: #64748b;
+  --accent-slate-light: #94a3b8;
+  --accent-slate-muted: #475569;
+  --accent-slate-bright: #cbd5e1;
 
   /* Text colors */
   --text-primary: #f8fafc;
@@ -18,14 +18,14 @@
 
   /* Opacity variants for overlays */
   --overlay-white-5: rgba(255, 255, 255, 0.05);
-  --overlay-white-10: rgba(255, 255, 255, 0.10);
-  --overlay-blue-8: rgba(59, 130, 246, 0.08);
-  --overlay-purple-8: rgba(139, 92, 246, 0.08);
+  --overlay-white-10: rgba(255, 255, 255, 0.1);
+  --overlay-slate-8: rgba(100, 116, 139, 0.08);
+  --overlay-slate-deep-8: rgba(71, 85, 105, 0.08);
 
   /* Border colors */
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-medium: rgba(255, 255, 255, 0.12);
-  --border-accent: rgba(59, 130, 246, 0.2);
+  --border-accent: rgba(100, 116, 139, 0.3);
 
   /* -- Typography -- */
   /* Font sizes */
@@ -70,7 +70,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   color: var(--text-secondary);
@@ -80,7 +80,12 @@ body {
 }
 
 /* Ensure proper text rendering */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: var(--text-primary);
   font-weight: 600;
   line-height: 1.25;
@@ -120,30 +125,30 @@ h1, h2, h3, h4, h5, h6 {
 /* -- Background Architecture -- */
 .app-background {
   min-height: 100vh;
-  background: #0f1117;
+  background: #020617;
 
-  /* Multi-layer gradient system */
+  /* Multi-layer gradient system - Neutral slate greyscale */
   background-image:
-    /* Top-right purple-blue glow */
+    /* Top-right subtle highlight */
     radial-gradient(
       circle 800px at 80% 20%,
-      rgba(67, 56, 202, 0.12) 0%,
+      rgba(51, 65, 85, 0.15) 0%,
       transparent 50%
     ),
-    /* Bottom-left blue glow */
-    radial-gradient(
-      circle 1000px at 20% 80%,
-      rgba(59, 130, 246, 0.08) 0%,
-      transparent 50%
-    ),
-    /* Center purple glow */
-    radial-gradient(
-      circle 600px at 50% 50%,
-      rgba(139, 92, 246, 0.05) 0%,
-      transparent 60%
-    ),
-    /* Base gradient */
-    linear-gradient(180deg, #0a0b1a 0%, #1a1b2e 100%);
+    /* Bottom-left subtle glow */
+      radial-gradient(
+        circle 1000px at 20% 80%,
+        rgba(30, 41, 59, 0.12) 0%,
+        transparent 50%
+      ),
+    /* Center subtle accent */
+      radial-gradient(
+        circle 600px at 50% 50%,
+        rgba(71, 85, 105, 0.08) 0%,
+        transparent 60%
+      ),
+    /* Base gradient - Dark slate */
+      linear-gradient(180deg, #020617 0%, #0f172a 100%);
 
   /* Vignette effect */
   box-shadow: inset 0 0 200px rgba(0, 0, 0, 0.5);
@@ -153,7 +158,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Optional: Add noise texture overlay */
 .app-background::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -175,9 +180,9 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
 
-  /* Colored shadow for depth */
+  /* Neutral shadow for depth */
   box-shadow:
-    0 4px 24px rgba(59, 130, 246, 0.06),
+    0 4px 24px rgba(100, 116, 139, 0.06),
     0 2px 8px rgba(0, 0, 0, 0.3);
 
   /* Spacing */
@@ -189,10 +194,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .card:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(59, 130, 246, 0.2);
+  border-color: rgba(100, 116, 139, 0.25);
   transform: translateY(-2px);
   box-shadow:
-    0 8px 32px rgba(59, 130, 246, 0.12),
+    0 8px 32px rgba(100, 116, 139, 0.1),
     0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
@@ -206,13 +211,13 @@ h1, h2, h3, h4, h5, h6 {
 
 .card-hover:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(59, 130, 246, 0.2);
+  border-color: rgba(100, 116, 139, 0.25);
   transform: translateY(-2px);
 }
 
 /* Buttons */
 .button-primary {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -221,13 +226,13 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(71, 85, 105, 0.3);
 }
 
 .button-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  box-shadow: 0 6px 20px rgba(71, 85, 105, 0.4);
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
 }
 
 .button-secondary {
@@ -243,7 +248,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .button-secondary:hover {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(59, 130, 246, 0.3);
+  border-color: rgba(100, 116, 139, 0.4);
 }
 
 /* Input Fields */
@@ -259,8 +264,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .input:focus {
   outline: none;
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--accent-slate);
+  box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.15);
   background: rgba(0, 0, 0, 0.3);
 }
 
@@ -292,15 +297,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .nav-link.active {
-  color: var(--accent-blue);
-  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent-slate-light);
+  background: rgba(100, 116, 139, 0.15);
 }
 
 /* -- Special Effects -- */
 .glow-effect {
   box-shadow:
-    0 0 20px rgba(59, 130, 246, 0.15),
-    0 0 40px rgba(139, 92, 246, 0.1);
+    0 0 20px rgba(100, 116, 139, 0.15),
+    0 0 40px rgba(71, 85, 105, 0.1);
 }
 
 .top-highlight {
@@ -308,7 +313,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .top-highlight::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -317,7 +322,7 @@ h1, h2, h3, h4, h5, h6 {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(59, 130, 246, 0.5) 50%,
+    rgba(148, 163, 184, 0.4) 50%,
     transparent 100%
   );
 }
@@ -365,7 +370,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* -- Interactive & Animations -- */
 :focus-visible {
-  outline: 2px solid var(--accent-blue);
+  outline: 2px solid var(--accent-slate);
   outline-offset: 2px;
 }
 
@@ -377,8 +382,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .loading {
@@ -397,8 +407,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .fade-in {
@@ -422,8 +436,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .glow-on-hover:hover {
   box-shadow:
-    0 0 20px rgba(59, 130, 246, 0.3),
-    0 0 40px rgba(139, 92, 246, 0.2);
+    0 0 20px rgba(100, 116, 139, 0.25),
+    0 0 40px rgba(71, 85, 105, 0.15);
 }
 
 .slide-in-left {
@@ -503,9 +517,9 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 12px;
   padding: var(--space-8);
 
-  /* Shadow with color tint */
+  /* Shadow with neutral tint */
   box-shadow:
-    0 4px 24px rgba(59, 130, 246, 0.06),
+    0 4px 24px rgba(100, 116, 139, 0.06),
     0 2px 8px rgba(0, 0, 0, 0.3);
 
   /* Smooth transitions */
@@ -515,6 +529,30 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.feature-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(100, 116, 139, 0.25);
+  transform: translateY(-4px);
+  box-shadow:
+    0 12px 40px rgba(100, 116, 139, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(
+    135deg,
+    rgba(71, 85, 105, 0.3),
+    rgba(100, 116, 139, 0.25)
+  );
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-slate);
 }
 
 .feature-card:hover {
@@ -529,7 +567,11 @@ h1, h2, h3, h4, h5, h6 {
 .feature-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.2),
+    rgba(139, 92, 246, 0.2)
+  );
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -553,8 +595,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .feature-cta {
   background: transparent;
-  color: var(--accent-blue);
-  border: 1px solid var(--accent-blue);
+  color: var(--accent-slate);
+  border: 1px solid var(--accent-slate);
   border-radius: 6px;
   padding: var(--space-3) var(--space-6);
   font-weight: 500;
@@ -565,7 +607,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .feature-cta:hover {
-  background: var(--accent-blue);
+  background: var(--accent-slate);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 }
