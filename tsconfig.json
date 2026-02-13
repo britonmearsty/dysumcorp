@@ -24,5 +24,12 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "dysum"]
+  "exclude": [
+    "node_modules",
+    "dysum",
+    "dashboard-pages-reference",
+    "design-reference",
+    "**/dashboard-pages-reference/**",
+    "**/design-reference/**"
+  ]
 }

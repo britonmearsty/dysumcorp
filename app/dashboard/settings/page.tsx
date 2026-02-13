@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle,
   Bell,
@@ -9,6 +10,7 @@ import {
   User,
   Globe,
   Lock,
+  ChevronRight,
 } from "lucide-react";
 
 import { useSession } from "@/lib/auth-client";
@@ -20,6 +22,7 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 export default function SettingsPage() {
   const { data: session, isPending } = useSession();
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState("profile");
 
   // Individual loading states for each section
   const [profileLoading, setProfileLoading] = useState(false);
@@ -46,6 +49,14 @@ export default function SettingsPage() {
   // Delete account state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
+  const tabs = [
+    { id: "profile", name: "Profile", icon: User, description: "Manage your personal information" },
+    { id: "notifications", name: "Notifications", icon: Bell, description: "Control your alerts" },
+    { id: "appearance", name: "Appearance", icon: Globe, description: "Customize interface" },
+    { id: "security", name: "Security", icon: Shield, description: "Account protection" },
+    { id: "danger", name: "Danger Zone", icon: Lock, description: "Irreversible actions" },
+  ];
 
   useEffect(() => {
     if (session?.user) {
@@ -139,363 +150,345 @@ export default function SettingsPage() {
 
   if (isPending) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground font-mono">Loading...</div>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Settings</h1>
+          <p className="text-muted-foreground mt-2 text-lg">Loading...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
-      <div>
-        <h1 className="text-4xl font-mono font-bold">SETTINGS</h1>
-        <p className="text-muted-foreground font-mono mt-2">
-          Manage your account and preferences
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground tracking-tight">Settings</h1>
+        <p className="text-muted-foreground mt-2 text-lg">
+          Manage your account preferences and application settings
         </p>
       </div>
 
-      {/* Settings Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Profile Settings */}
-        <div className="border border-border bg-background p-6 hover:border-[rgba(51,65,85,0.5)] transition-colors">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-[rgba(51,65,85,0.1)] flex items-center justify-center">
-              <User className="h-5 w-5 text-[#334155]" />
-            </div>
-            <div>
-              <h3 className="font-mono font-bold">PROFILE SETTINGS</h3>
-              <p className="text-sm text-muted-foreground font-mono">
-                Manage your information
-              </p>
-            </div>
-          </div>
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Navigation Sidebar */}
+        <aside className="lg:w-64 flex-shrink-0">
+          <nav className="space-y-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                    isActive
+                      ? "bg-card shadow-sm border border-border text-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`} />
+                  <span className="font-medium text-sm">{tab.name}</span>
+                  {isActive && (
+                    <motion.div layoutId="settings-active-indicator" className="ml-auto">
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </motion.div>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
 
-          <form className="space-y-4" onSubmit={handleProfileUpdate}>
-            <div>
-              <Label className="text-sm font-mono" htmlFor="name">
-                FULL NAME
-              </Label>
-              <Input
-                className="mt-2 font-mono rounded-none border-2"
-                id="name"
-                placeholder="John Doe"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-mono" htmlFor="email">
-                EMAIL
-              </Label>
-              <Input
-                disabled
-                className="mt-2 font-mono rounded-none border-2 opacity-60"
-                id="email"
-                placeholder="john@example.com"
-                type="email"
-                value={email}
-              />
-              <p className="text-xs text-muted-foreground font-mono mt-1">
-                Email is managed by your OAuth provider
-              </p>
-            </div>
-
-            {profileStatus !== "idle" && (
-              <div
-                className={`p-3 border-2 text-sm font-mono ${
-                  profileStatus === "success"
-                    ? "bg-green-500/10 text-green-500 border-green-500/20"
-                    : "bg-red-500/10 text-red-500 border-red-500/20"
-                }`}
-              >
-                {profileStatus === "success"
-                  ? "Profile updated successfully!"
-                  : "Failed to update profile. Please try again."}
-              </div>
-            )}
-
-            <Button
-              className="w-full font-mono rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)]"
-              disabled={profileLoading}
-              type="submit"
+        {/* Content Area */}
+        <main className="flex-1">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
             >
-              {profileLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  SAVING...
-                </>
-              ) : (
-                "SAVE CHANGES"
-              )}
-            </Button>
-          </form>
-        </div>
+              <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+                <div className="p-6 border-b border-border bg-muted/30">
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {tabs.find((t) => t.id === activeTab)?.name}
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {tabs.find((t) => t.id === activeTab)?.description}
+                  </p>
+                </div>
 
-        {/* Notifications */}
-        <div className="border border-border bg-background p-6 hover:border-[rgba(51,65,85,0.5)] transition-colors">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-blue-500/10 flex items-center justify-center">
-              <Bell className="h-5 w-5 text-blue-500" />
-            </div>
-            <div>
-              <h3 className="font-mono font-bold">NOTIFICATIONS</h3>
-              <p className="text-sm text-muted-foreground font-mono">
-                Control your alerts
-              </p>
-            </div>
-          </div>
+                <div className="p-8">
+                  {/* Profile Settings */}
+                  {activeTab === "profile" && (
+                    <form className="space-y-6" onSubmit={handleProfileUpdate}>
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground" htmlFor="name">
+                          Full Name
+                        </Label>
+                        <Input
+                          className="mt-2 rounded-xl"
+                          id="name"
+                          placeholder="John Doe"
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground" htmlFor="email">
+                          Email
+                        </Label>
+                        <Input
+                          disabled
+                          className="mt-2 rounded-xl opacity-60"
+                          id="email"
+                          placeholder="john@example.com"
+                          type="email"
+                          value={email}
+                        />
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Email is managed by your OAuth provider
+                        </p>
+                      </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 border border-border hover:border-[rgba(51,65,85,0.5)] transition-colors">
-              <div>
-                <p className="font-medium text-sm font-mono">
-                  EMAIL NOTIFICATIONS
-                </p>
-                <p className="text-xs text-muted-foreground font-mono">
-                  Receive email updates
-                </p>
+                      {profileStatus !== "idle" && (
+                        <div
+                          className={`p-4 rounded-xl text-sm font-medium ${
+                            profileStatus === "success"
+                              ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                              : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
+                          }`}
+                        >
+                          {profileStatus === "success"
+                            ? "Profile updated successfully!"
+                            : "Failed to update profile. Please try again."}
+                        </div>
+                      )}
+
+                      <Button
+                        className="w-full rounded-xl"
+                        disabled={profileLoading}
+                        type="submit"
+                      >
+                        {profileLoading ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </form>
+                  )}
+
+                  {/* Notifications */}
+                  {activeTab === "notifications" && (
+                    <div className="space-y-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:bg-card transition-colors">
+                          <div>
+                            <p className="font-semibold text-sm text-foreground">
+                              Email Notifications
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Receive email updates
+                            </p>
+                          </div>
+                          <input
+                            checked={emailNotifications}
+                            className="w-5 h-5 cursor-pointer accent-primary"
+                            type="checkbox"
+                            onChange={(e) => setEmailNotifications(e.target.checked)}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:bg-card transition-colors">
+                          <div>
+                            <p className="font-semibold text-sm text-foreground">
+                              Push Notifications
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Browser notifications
+                            </p>
+                          </div>
+                          <input
+                            checked={pushNotifications}
+                            className="w-5 h-5 cursor-pointer accent-primary"
+                            type="checkbox"
+                            onChange={(e) => setPushNotifications(e.target.checked)}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:bg-card transition-colors">
+                          <div>
+                            <p className="font-semibold text-sm text-foreground">Weekly Reports</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Activity summaries
+                            </p>
+                          </div>
+                          <input
+                            checked={weeklyReports}
+                            className="w-5 h-5 cursor-pointer accent-primary"
+                            type="checkbox"
+                            onChange={(e) => setWeeklyReports(e.target.checked)}
+                          />
+                        </div>
+                      </div>
+
+                      {notificationsStatus !== "idle" && (
+                        <div
+                          className={`p-4 rounded-xl text-sm font-medium ${
+                            notificationsStatus === "success"
+                              ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                              : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
+                          }`}
+                        >
+                          {notificationsStatus === "success"
+                            ? "Notifications updated successfully!"
+                            : "Failed to update notifications. Please try again."}
+                        </div>
+                      )}
+
+                      <Button
+                        className="w-full rounded-xl"
+                        disabled={notificationsLoading}
+                        onClick={handleNotificationUpdate}
+                      >
+                        {notificationsLoading ? "Saving..." : "Save Preferences"}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Appearance */}
+                  {activeTab === "appearance" && (
+                    <div>
+                      <ThemeSwitcher />
+                    </div>
+                  )}
+
+                  {/* Security */}
+                  {activeTab === "security" && (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-muted rounded-xl border border-border">
+                        <p className="font-semibold text-sm text-foreground">
+                          Authentication Method
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          OAuth via{" "}
+                          {session?.user?.email?.includes("gmail")
+                            ? "Google"
+                            : "Provider"}
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-muted rounded-xl border border-border">
+                        <p className="font-semibold text-sm text-foreground">Connected Email</p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {session?.user?.email}
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="text-emerald-600 dark:text-emerald-400 h-5 w-5" />
+                          <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                            Account Secured by OAuth
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Danger Zone */}
+                  {activeTab === "danger" && (
+                    <div className="space-y-6">
+                      {!showDeleteConfirm ? (
+                        <div className="flex items-center justify-between p-6 rounded-xl border-2 border-red-500/50 bg-red-50 dark:bg-red-950/20">
+                          <div>
+                            <p className="font-semibold text-sm text-foreground">Delete Account</p>
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                              Permanently delete your account and all data
+                            </p>
+                          </div>
+                          <Button
+                            className="rounded-xl border-2 border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            variant="outline"
+                            onClick={() => setShowDeleteConfirm(true)}
+                          >
+                            Delete Account
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4 p-6 rounded-xl border-2 border-red-500/50 bg-red-50 dark:bg-red-950/20">
+                          <div>
+                            <p className="font-bold text-red-600 dark:text-red-400">
+                              Are you absolutely sure?
+                            </p>
+                            <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+                              This action cannot be undone. This will permanently delete your
+                              account and remove all your data from our servers.
+                            </p>
+                          </div>
+
+                          <div>
+                            <Label className="text-sm font-semibold text-foreground" htmlFor="deleteConfirm">
+                              Type{" "}
+                              <span className="font-bold text-red-600 dark:text-red-400">DELETE</span>{" "}
+                              to confirm
+                            </Label>
+                            <Input
+                              className="mt-2 rounded-xl border-2 border-red-500/50 focus:border-red-500"
+                              id="deleteConfirm"
+                              placeholder="DELETE"
+                              type="text"
+                              value={deleteConfirmText}
+                              onChange={(e) => setDeleteConfirmText(e.target.value)}
+                            />
+                          </div>
+
+                          {notificationsStatus !== "idle" && (
+                            <div
+                              className={`p-4 rounded-xl text-sm font-medium ${
+                                notificationsStatus === "success"
+                                  ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                                  : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
+                              }`}
+                            >
+                              {notificationsStatus === "success"
+                                ? "Account deletion initiated"
+                                : deleteConfirmText !== "DELETE"
+                                  ? 'Please type "DELETE" to confirm'
+                                  : "Failed to delete account"}
+                            </div>
+                          )}
+
+                          <div className="flex gap-3">
+                            <Button
+                              className="rounded-xl bg-red-600 text-white hover:bg-red-700"
+                              disabled={deleteLoading || deleteConfirmText !== "DELETE"}
+                              variant="default"
+                              onClick={handleDeleteAccount}
+                            >
+                              {deleteLoading ? "Deleting..." : "Confirm Delete"}
+                            </Button>
+                            <Button
+                              className="rounded-xl"
+                              disabled={deleteLoading}
+                              variant="outline"
+                              onClick={() => {
+                                setShowDeleteConfirm(false);
+                                setDeleteConfirmText("");
+                                setNotificationsStatus("idle");
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-              <input
-                checked={emailNotifications}
-                className="w-5 h-5 cursor-pointer accent-[#334155]"
-                type="checkbox"
-                onChange={(e) => setEmailNotifications(e.target.checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-3 border border-border hover:border-[rgba(51,65,85,0.5)] transition-colors">
-              <div>
-                <p className="font-medium text-sm font-mono">
-                  PUSH NOTIFICATIONS
-                </p>
-                <p className="text-xs text-muted-foreground font-mono">
-                  Browser notifications
-                </p>
-              </div>
-              <input
-                checked={pushNotifications}
-                className="w-5 h-5 cursor-pointer accent-[#334155]"
-                type="checkbox"
-                onChange={(e) => setPushNotifications(e.target.checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-3 border border-border hover:border-[rgba(51,65,85,0.5)] transition-colors">
-              <div>
-                <p className="font-medium text-sm font-mono">WEEKLY REPORTS</p>
-                <p className="text-xs text-muted-foreground font-mono">
-                  Activity summaries
-                </p>
-              </div>
-              <input
-                checked={weeklyReports}
-                className="w-5 h-5 cursor-pointer accent-[#334155]"
-                type="checkbox"
-                onChange={(e) => setWeeklyReports(e.target.checked)}
-              />
-            </div>
-
-            {notificationsStatus !== "idle" && (
-              <div
-                className={`p-3 border-2 text-sm font-mono ${
-                  notificationsStatus === "success"
-                    ? "bg-green-500/10 text-green-500 border-green-500/20"
-                    : "bg-red-500/10 text-red-500 border-red-500/20"
-                }`}
-              >
-                {notificationsStatus === "success"
-                  ? "Notifications updated successfully!"
-                  : "Failed to update notifications. Please try again."}
-              </div>
-            )}
-
-            <Button
-              className="w-full font-mono rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)]"
-              disabled={notificationsLoading}
-              onClick={handleNotificationUpdate}
-            >
-              {notificationsLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  SAVING...
-                </>
-              ) : (
-                "SAVE PREFERENCES"
-              )}
-            </Button>
-          </div>
-        </div>
-
-        {/* Appearance */}
-        <div className="border border-border bg-background p-6 hover:border-[rgba(51,65,85,0.5)] transition-colors">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-purple-500/10 flex items-center justify-center">
-              <Globe className="h-5 w-5 text-purple-500" />
-            </div>
-            <div>
-              <h3 className="font-mono font-bold">APPEARANCE</h3>
-              <p className="text-sm text-muted-foreground font-mono">
-                Customize interface
-              </p>
-            </div>
-          </div>
-
-          <ThemeSwitcher />
-        </div>
-
-        {/* Security */}
-        <div className="border border-border bg-background p-6 hover:border-[rgba(51,65,85,0.5)] transition-colors">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-green-500/10 flex items-center justify-center">
-              <Shield className="h-5 w-5 text-green-500" />
-            </div>
-            <div>
-              <h3 className="font-mono font-bold">SECURITY</h3>
-              <p className="text-sm text-muted-foreground font-mono">
-                Account protection
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="p-3 border border-border">
-              <p className="font-medium text-sm font-mono">
-                AUTHENTICATION METHOD
-              </p>
-              <p className="text-xs text-muted-foreground font-mono mt-1">
-                OAuth via{" "}
-                {session?.user?.email?.includes("gmail")
-                  ? "Google"
-                  : "Provider"}
-              </p>
-            </div>
-
-            <div className="p-3 border border-border">
-              <p className="font-medium text-sm font-mono">CONNECTED EMAIL</p>
-              <p className="text-xs text-muted-foreground font-mono mt-1">
-                {session?.user?.email}
-              </p>
-            </div>
-
-            <div className="p-3 bg-green-500/10 border-2 border-green-500/20">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="text-green-500 h-4 w-4" />
-                <p className="text-sm font-mono text-green-500">
-                  ACCOUNT SECURED BY OAUTH
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Danger Zone - Full Width */}
-      <div className="border-2 border-red-500/50 bg-background p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-red-500/10 flex items-center justify-center">
-            <Lock className="h-5 w-5 text-red-500" />
-          </div>
-          <div>
-            <h3 className="font-mono font-bold text-red-500">DANGER ZONE</h3>
-            <p className="text-sm text-red-500 font-mono">
-              Irreversible actions
-            </p>
-          </div>
-        </div>
-
-        {!showDeleteConfirm ? (
-          <div className="flex items-center justify-between p-4 border-2 border-red-500/50 bg-red-500/5">
-            <div>
-              <p className="font-medium text-sm font-mono">DELETE ACCOUNT</p>
-              <p className="text-xs text-red-500 font-mono mt-1">
-                Permanently delete your account and all data
-              </p>
-            </div>
-            <Button
-              className="font-mono rounded-none border-2 border-red-500 text-red-500 hover:bg-red-500/10"
-              variant="outline"
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              DELETE ACCOUNT
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4 p-4 border-2 border-red-500/50 bg-red-500/5">
-            <div>
-              <p className="font-medium text-red-500 font-mono">
-                ARE YOU ABSOLUTELY SURE?
-              </p>
-              <p className="text-sm text-red-500 font-mono mt-2">
-                This action cannot be undone. This will permanently delete your
-                account and remove all your data from our servers.
-              </p>
-            </div>
-
-            <div>
-              <Label className="text-sm font-mono" htmlFor="deleteConfirm">
-                Type{" "}
-                <span className="font-mono font-bold text-red-500">DELETE</span>{" "}
-                to confirm
-              </Label>
-              <Input
-                className="mt-2 font-mono rounded-none border-2 border-red-500/50 focus:border-red-500"
-                id="deleteConfirm"
-                placeholder="DELETE"
-                type="text"
-                value={deleteConfirmText}
-                onChange={(e) => setDeleteConfirmText(e.target.value)}
-              />
-            </div>
-
-            {notificationsStatus !== "idle" && (
-              <div
-                className={`p-3 border-2 text-sm font-mono ${
-                  notificationsStatus === "success"
-                    ? "bg-green-500/10 text-green-500 border-green-500/20"
-                    : "bg-red-500/10 text-red-500 border-red-500/20"
-                }`}
-              >
-                {notificationsStatus === "success"
-                  ? "ACCOUNT DELETION INITIATED"
-                  : deleteConfirmText !== "DELETE"
-                    ? 'PLEASE TYPE "DELETE" TO CONFIRM'
-                    : "FAILED TO DELETE ACCOUNT"}
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <Button
-                className="font-mono rounded-none bg-red-500 text-white hover:bg-red-600"
-                disabled={deleteLoading || deleteConfirmText !== "DELETE"}
-                variant="default"
-                onClick={handleDeleteAccount}
-              >
-                {deleteLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    DELETING...
-                  </>
-                ) : (
-                  "CONFIRM DELETE"
-                )}
-              </Button>
-              <Button
-                className="font-mono rounded-none border-2"
-                disabled={deleteLoading}
-                variant="outline"
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  setDeleteConfirmText("");
-                  setNotificationsStatus("idle");
-                }}
-              >
-                CANCEL
-              </Button>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          </AnimatePresence>
+        </main>
       </div>
     </div>
   );

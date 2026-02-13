@@ -3,13 +3,34 @@ const nextConfig = {
   // Optimize for production
   reactStrictMode: true,
   
-  // Exclude dysum subfolder from build
+  // Exclude reference folders and dysum subfolder from build
   webpack: (config, { isServer }) => {
+    // Exclude reference folders from watching
     config.watchOptions = {
       ...config.watchOptions,
-      ignored: ['**/dysum/**', '**/node_modules/**'],
+      ignored: [
+        '**/dysum/**',
+        '**/dashboard-pages-reference/**',
+        '**/design-reference/**',
+        '**/node_modules/**'
+      ],
     };
+    
     return config;
+  },
+  
+  // Exclude reference folders from page compilation
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'].map(ext => `page.${ext}`).concat(['tsx', 'ts', 'jsx', 'js']),
+  
+  // Exclude specific directories
+  experimental: {
+    outputFileTracingExcludes: {
+      '*': [
+        './dashboard-pages-reference/**/*',
+        './design-reference/**/*',
+        './dysum/**/*',
+      ],
+    },
   },
   
   // Disable ESLint during builds (warnings are treated as errors)

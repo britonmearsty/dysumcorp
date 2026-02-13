@@ -2,19 +2,24 @@
 
 import { useEffect, useState } from "react";
 import {
-  User,
+  Type,
   Palette,
-  HardDrive,
-  Shield,
-  MessageSquare,
+  Cloud,
+  Lock,
+  Settings2,
   ChevronRight,
-  ChevronLeft,
-  Check,
-  Upload,
+  ArrowLeft,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  Hash,
   Eye,
   EyeOff,
+  Upload,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +36,10 @@ export default function CreatePortalPage() {
   const { showPaywall, PaywallModal } = usePaywall();
   const [currentStep, setCurrentStep] = useState<Step>("identity");
   const [userPlan, setUserPlan] = useState<PlanType>("free");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
   const [formData, setFormData] = useState({
     // Identity
     portalName: "",
@@ -70,63 +79,15 @@ export default function CreatePortalPage() {
     autoReplyMessage: "",
   });
 
-  const [showPassword, setShowPassword] = useState(false);
-
   const steps: { id: Step; label: string; icon: any }[] = [
-    { id: "identity", label: "Identity", icon: User },
+    { id: "identity", label: "Identity", icon: Type },
     { id: "branding", label: "Branding", icon: Palette },
-    { id: "storage", label: "Storage", icon: HardDrive },
-    { id: "security", label: "Security", icon: Shield },
-    { id: "messaging", label: "Messaging", icon: MessageSquare },
+    { id: "storage", label: "Storage", icon: Cloud },
+    { id: "security", label: "Security", icon: Lock },
+    { id: "messaging", label: "Messaging", icon: Settings2 },
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.id === currentStep);
-
-  const handleNext = () => {
-    if (currentStepIndex < steps.length - 1) {
-      setCurrentStep(steps[currentStepIndex + 1].id);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStep(steps[currentStepIndex - 1].id);
-    }
-  };
-
-  const handleSubmit = async () => {
-    try {
-      const response = await fetch("/api/portals/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.portalName,
-          slug: formData.portalUrl,
-          customDomain: formData.customDomain || null,
-          whiteLabeled: false, // Can be extended based on plan
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (data.upgrade) {
-          alert(`${data.error}\n\nPlease upgrade your plan to continue.`);
-          router.push("/dashboard/billing");
-        } else {
-          alert(data.error || "Failed to create portal");
-        }
-
-        return;
-      }
-
-      alert("Portal created successfully!");
-      router.push("/dashboard/portals");
-    } catch (error) {
-      console.error("Failed to create portal:", error);
-      alert("Failed to create portal. Please try again.");
-    }
-  };
 
   useEffect(() => {
     fetchUserPlan();
@@ -154,7 +115,6 @@ export default function CreatePortalPage() {
   const handleCustomDomainChange = async (value: string) => {
     if (!session?.user?.id) return;
 
-    // Check if user has access to custom domains
     const response = await fetch("/api/plan-limits", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -186,701 +146,711 @@ export default function CreatePortalPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleSubmit = async () => {
+    setError("");
+    
+    if (!formData.portalName.trim()) {
+      setError("Portal name is required");
+      setCurrentStep("identity");
+      return;
+    }
+    
+    if (!formData.portalUrl.trim()) {
+      setError("Portal URL slug is required");
+      setCurrentStep("identity");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/portals/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.portalName,
+          slug: formData.portalUrl,
+          customDomain: formData.customDomain || null,
+          whiteLabeled: false,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.upgrade) {
+          setError(`${data.error}\n\nPlease upgrade your plan to continue.`);
+          router.push("/dashboard/billing");
+        } else {
+          setError(data.error || "Failed to create portal");
+        }
+        return;
+      }
+
+      router.push("/dashboard/portals");
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to create portal:", error);
+      setError("Failed to create portal. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-4xl font-mono font-bold">CREATE NEW PORTAL</h1>
-        <p className="text-muted-foreground font-mono mt-2">
-          Set up a new client portal with custom configuration
-        </p>
-      </div>
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <Link
+        href="/dashboard/portals"
+        className="group inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-medium text-sm mb-8"
+      >
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+        Back to Portals
+      </Link>
 
-      {/* Progress Steps */}
-      <div className="border border-border bg-background p-6">
-        <div className="flex items-center justify-between">
-          {steps.map((step, index) => {
-            const Icon = step.icon;
-            const isActive = step.id === currentStep;
-            const isCompleted = index < currentStepIndex;
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Navigation Sidebar */}
+        <aside className="lg:w-64 flex-shrink-0">
+          <div className="mb-6 px-2">
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">New Portal</h1>
+            <p className="text-muted-foreground text-sm mt-1">Create a secure space for your clients.</p>
+          </div>
+          <nav className="space-y-1">
+            {steps.map((step) => {
+              const Icon = step.icon;
+              const isActive = currentStep === step.id;
+              return (
+                <button
+                  key={step.id}
+                  type="button"
+                  onClick={() => setCurrentStep(step.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                    isActive
+                      ? "bg-card shadow-sm border border-border text-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`} />
+                  <span className="font-medium text-sm">{step.label}</span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="new-portal-active-indicator"
+                      className="ml-auto"
+                      initial={{ opacity: 0, x: -5 }}
+                      animate={{ opacity: 1, x: 0 }}
+                    >
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </motion.div>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
 
-            return (
-              <div key={step.id} className="flex items-center flex-1">
-                <div className="flex flex-col items-center flex-1">
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${
-                      isActive
-                        ? "border-[#334155] bg-[rgba(51,65,85,0.1)]"
-                        : isCompleted
-                          ? "border-[#334155] bg-[#334155]"
-                          : "border-border bg-background"
-                    }`}
-                  >
-                    {isCompleted ? (
-                      <Check className="w-6 h-6 text-white" />
-                    ) : (
-                      <Icon
-                        className={`w-6 h-6 ${
-                          isActive ? "text-[#334155]" : "text-muted-foreground"
-                        }`}
-                      />
+        {/* Content Area */}
+        <main className="flex-1 min-w-0">
+          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+                  <div className="p-6 border-b border-border bg-muted/30 flex justify-between items-center">
+                    <div>
+                      <h2 className="text-xl font-semibold text-foreground">
+                        {steps.find(s => s.id === currentStep)?.label}
+                      </h2>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Configure settings for this section.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {loading && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />}
+                    </div>
+                  </div>
+
+                  <div className="p-8 space-y-8">
+                    {/* Identity Section */}
+                    {currentStep === "identity" && (
+                      <div className="space-y-6">
+                        <div>
+                          <label className="block text-sm font-semibold text-foreground mb-2">
+                            Portal Name
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.portalName}
+                            onChange={(e) => updateFormData("portalName", e.target.value)}
+                            placeholder="e.g. Project Delivery Materials"
+                            className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-foreground mb-2">
+                            Portal URL Slug
+                          </label>
+                          <div className="flex items-stretch shadow-sm rounded-xl">
+                            <div className="px-4 flex items-center bg-muted border border-r-0 border-border rounded-l-xl text-muted-foreground text-sm font-medium">
+                              /p/
+                            </div>
+                            <input
+                              type="text"
+                              value={formData.portalUrl}
+                              onChange={(e) => updateFormData("portalUrl", e.target.value)}
+                              placeholder="custom-address"
+                              className="flex-1 px-4 py-3 bg-card border border-border rounded-r-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                              required
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Your portal will be accessible at /p/{formData.portalUrl || "slug"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-foreground mb-2">
+                            Client Name
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.clientName}
+                            onChange={(e) => updateFormData("clientName", e.target.value)}
+                            placeholder="e.g., John Doe"
+                            className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-foreground mb-2">
+                            Client Email
+                          </label>
+                          <input
+                            type="email"
+                            value={formData.clientEmail}
+                            onChange={(e) => updateFormData("clientEmail", e.target.value)}
+                            placeholder="e.g., john@acmecorp.com"
+                            className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-foreground mb-2">
+                            Description
+                          </label>
+                          <textarea
+                            value={formData.description}
+                            onChange={(e) => updateFormData("description", e.target.value)}
+                            placeholder="Brief description of this portal..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
+                          />
+                        </div>
+
+                        <div className="pt-4 flex justify-between">
+                          <div></div>
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setCurrentStep("messaging")}
+                              className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
+                            >
+                              Jump to Finish
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCurrentStep("branding")}
+                              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors"
+                            >
+                              Next: Branding
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Branding Section */}
+                    {currentStep === "branding" && (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-semibold text-foreground mb-2">
+                              Primary Color
+                            </label>
+                            <div className="flex gap-2">
+                              <input
+                                type="color"
+                                value={formData.primaryColor}
+                                onChange={(e) => updateFormData("primaryColor", e.target.value)}
+                                className="w-20 h-10 rounded-xl border border-border cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={formData.primaryColor}
+                                onChange={(e) => updateFormData("primaryColor", e.target.value)}
+                                className="flex-1 px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-semibold text-foreground mb-2">
+                              Secondary Color
+                            </label>
+                            <div className="flex gap-2">
+                              <input
+                                type="color"
+                                value={formData.secondaryColor}
+                                onChange={(e) => updateFormData("secondaryColor", e.target.value)}
+                                className="w-20 h-10 rounded-xl border border-border cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={formData.secondaryColor}
+                                onChange={(e) => updateFormData("secondaryColor", e.target.value)}
+                                className="flex-1 px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-foreground mb-2">
+                            Portal Logo
+                          </label>
+                          <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-muted-foreground/50 transition-colors">
+                            <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground mb-2">
+                              Click to upload or drag and drop
+                            </p>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              id="logo"
+                              onChange={(e) => updateFormData("logo", e.target.files?.[0])}
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl"
+                              onClick={() => document.getElementById("logo")?.click()}
+                            >
+                              SELECT FILE
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-foreground mb-2">
+                            Custom Domain (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.customDomain}
+                            onChange={(e) => handleCustomDomainChange(e.target.value)}
+                            placeholder="e.g., portal.acmecorp.com"
+                            className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                          />
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Configure DNS settings to point to your portal
+                          </p>
+                        </div>
+
+                        <div className="pt-4 flex justify-between">
+                          <div></div>
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setCurrentStep("messaging")}
+                              className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
+                            >
+                              Jump to Finish
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCurrentStep("storage")}
+                              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors"
+                            >
+                              Next: Storage
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Storage Section */}
+                    {currentStep === "storage" && (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-semibold text-foreground mb-2">
+                              Storage Provider
+                            </label>
+                            <select
+                              value={formData.storageProvider}
+                              onChange={(e) => updateFormData("storageProvider", e.target.value)}
+                              className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                            >
+                              <option value="local">Local Storage</option>
+                              <option value="s3">Amazon S3</option>
+                              <option value="azure">Azure Blob Storage</option>
+                              <option value="gcs">Google Cloud Storage</option>
+                              <option value="dropbox">Dropbox</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-semibold text-foreground mb-2">
+                              Storage Limit (GB)
+                            </label>
+                            <input
+                              type="number"
+                              value={formData.storageLimit}
+                              onChange={(e) => updateFormData("storageLimit", e.target.value)}
+                              className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-semibold text-foreground mb-2">
+                              Allowed File Types
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.allowedFileTypes}
+                              onChange={(e) => updateFormData("allowedFileTypes", e.target.value)}
+                              placeholder="e.g., pdf,doc,docx,jpg,png"
+                              className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                            />
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Comma-separated list of file extensions
+                            </p>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-semibold text-foreground mb-2">
+                              Max File Size (MB)
+                            </label>
+                            <input
+                              type="number"
+                              value={formData.maxFileSize}
+                              onChange={(e) => updateFormData("maxFileSize", e.target.value)}
+                              className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-semibold text-foreground mb-2">
+                              File Retention (Days)
+                            </label>
+                            <input
+                              type="number"
+                              value={formData.retentionDays}
+                              onChange={(e) => updateFormData("retentionDays", e.target.value)}
+                              disabled={!formData.autoDelete}
+                              className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground disabled:opacity-50"
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={formData.autoDelete}
+                                onChange={(e) => updateFormData("autoDelete", e.target.checked)}
+                                className="w-4 h-4 rounded border-border"
+                              />
+                              <span className="text-sm font-medium text-foreground">
+                                Enable automatic file deletion after retention period
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="pt-4 flex justify-between">
+                          <div></div>
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setCurrentStep("messaging")}
+                              className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
+                            >
+                              Jump to Finish
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCurrentStep("security")}
+                              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors"
+                            >
+                              Next: Security
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Security Section */}
+                    {currentStep === "security" && (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-semibold text-foreground mb-2">
+                              Access Type
+                            </label>
+                            <select
+                              value={formData.accessType}
+                              onChange={(e) => updateFormData("accessType", e.target.value)}
+                              className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                            >
+                              <option value="password">Password Protected</option>
+                              <option value="link">Secure Link Only</option>
+                              <option value="sso">Single Sign-On (SSO)</option>
+                              <option value="oauth">OAuth 2.0</option>
+                            </select>
+                          </div>
+
+                          {formData.accessType === "password" && (
+                            <div>
+                              <label className="block text-sm font-semibold text-foreground mb-2">
+                                Portal Password
+                              </label>
+                              <div className="relative">
+                                <input
+                                  type={showPassword ? "text" : "password"}
+                                  value={formData.password}
+                                  onChange={(e) => updateFormData("password", e.target.value)}
+                                  className="w-full px-4 py-3 pr-10 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                                >
+                                  {showPassword ? (
+                                    <EyeOff className="w-4 h-4 text-muted-foreground" />
+                                  ) : (
+                                    <Eye className="w-4 h-4 text-muted-foreground" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          <div>
+                            <label className="block text-sm font-semibold text-foreground mb-2">
+                              Session Timeout (minutes)
+                            </label>
+                            <input
+                              type="number"
+                              value={formData.sessionTimeout}
+                              onChange={(e) => updateFormData("sessionTimeout", e.target.value)}
+                              className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-semibold text-foreground mb-2">
+                              IP Whitelist (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.ipWhitelist}
+                              onChange={(e) => updateFormData("ipWhitelist", e.target.value)}
+                              placeholder="e.g., 192.168.1.1, 10.0.0.0/24"
+                              className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                            />
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Comma-separated IP addresses or CIDR ranges
+                            </p>
+                          </div>
+
+                          <div className="md:col-span-2 space-y-4">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={formData.twoFactorAuth}
+                                onChange={(e) => updateFormData("twoFactorAuth", e.target.checked)}
+                                className="w-4 h-4 rounded border-border"
+                              />
+                              <span className="text-sm font-medium text-foreground">
+                                Enable Two-Factor Authentication (2FA)
+                              </span>
+                            </label>
+
+                            <label className="flex items-center gap-3 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={formData.encryptFiles}
+                                onChange={(e) => updateFormData("encryptFiles", e.target.checked)}
+                                className="w-4 h-4 rounded border-border"
+                              />
+                              <span className="text-sm font-medium text-foreground">
+                                Encrypt files at rest (AES-256)
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="pt-4 flex justify-between">
+                          <div></div>
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setCurrentStep("messaging")}
+                              className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
+                            >
+                              Jump to Finish
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCurrentStep("messaging")}
+                              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors"
+                            >
+                              Next: Messaging
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Messaging Section */}
+                    {currentStep === "messaging" && (
+                      <div className="space-y-6">
+                        <div>
+                          <label className="block text-sm font-semibold text-foreground mb-2">
+                            Welcome Message
+                          </label>
+                          <textarea
+                            value={formData.welcomeMessage}
+                            onChange={(e) => updateFormData("welcomeMessage", e.target.value)}
+                            placeholder="Welcome! Please upload your documents for review."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
+                          />
+                          <p className="text-xs text-muted-foreground mt-2">
+                            This message will be displayed when clients first access the portal
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-foreground mb-2">
+                            Auto-Reply Message (Optional)
+                          </label>
+                          <textarea
+                            value={formData.autoReplyMessage}
+                            onChange={(e) => updateFormData("autoReplyMessage", e.target.value)}
+                            placeholder="Automatic reply when files are uploaded..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
+                          />
+                        </div>
+
+                        <div className="space-y-4">
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.emailNotifications}
+                              onChange={(e) => updateFormData("emailNotifications", e.target.checked)}
+                              className="w-4 h-4 rounded border-border"
+                            />
+                            <span className="text-sm font-medium text-foreground">
+                              Enable email notifications
+                            </span>
+                          </label>
+
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.uploadNotifications}
+                              onChange={(e) => updateFormData("uploadNotifications", e.target.checked)}
+                              className="w-4 h-4 rounded border-border"
+                            />
+                            <span className="text-sm font-medium text-foreground">
+                              Notify on file uploads
+                            </span>
+                          </label>
+
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.customEmailTemplate}
+                              onChange={(e) => updateFormData("customEmailTemplate", e.target.checked)}
+                              className="w-4 h-4 rounded border-border"
+                            />
+                            <span className="text-sm font-medium text-foreground">
+                              Use custom email template
+                            </span>
+                          </label>
+                        </div>
+
+                        {formData.customEmailTemplate && (
+                          <div className="bg-muted/50 border border-border rounded-xl p-4">
+                            <p className="text-sm text-muted-foreground">
+                              Custom email templates can be configured after portal creation
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="bg-primary rounded-xl p-6 text-primary-foreground shadow-lg">
+                          <div className="flex items-start gap-4">
+                            <div className="p-2 bg-primary-foreground/10 rounded-lg">
+                              <CheckCircle2 className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-lg">Ready to Create?</h4>
+                              <p className="text-primary-foreground/80 text-sm mt-1 leading-relaxed">
+                                Your new portal will be accessible at <strong className="text-primary-foreground">/p/{formData.portalUrl || "..."}</strong>
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="pt-6 border-t border-border flex justify-end gap-3">
+                          <Link
+                            href="/dashboard/portals"
+                            className="px-6 py-3 border border-border rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-all font-bold text-sm"
+                          >
+                            Cancel
+                          </Link>
+                          <button
+                            type="submit"
+                            disabled={loading}
+                            className="flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all shadow-md active:scale-95 disabled:opacity-50 font-bold text-sm"
+                          >
+                            {loading ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>Create Portal <ChevronRight className="w-4 h-4" /></>
+                            )}
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
-                  <p
-                    className={`text-sm font-mono mt-2 ${
-                      isActive
-                        ? "text-foreground font-bold"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    {step.label}
-                  </p>
                 </div>
-                {index < steps.length - 1 && (
-                  <div
-                    className={`h-0.5 flex-1 mx-2 ${
-                      isCompleted ? "bg-[#334155]" : "bg-border"
-                    }`}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+              </motion.div>
+            </AnimatePresence>
 
-      {/* Form Content */}
-      <div className="border border-border bg-background p-8">
-        {/* Identity Section */}
-        {currentStep === "identity" && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-mono font-bold mb-2">
-                PORTAL IDENTITY
-              </h2>
-              <p className="text-muted-foreground font-mono text-sm">
-                Define the basic information for your portal
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="portalName">
-                  Portal Name *
-                </Label>
-                <Input
-                  className="rounded-none font-mono"
-                  id="portalName"
-                  placeholder="e.g., Acme Corp Portal"
-                  value={formData.portalName}
-                  onChange={(e) => updateFormData("portalName", e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="portalUrl">
-                  Portal URL Slug *
-                </Label>
-                <Input
-                  className="rounded-none font-mono"
-                  id="portalUrl"
-                  placeholder="e.g., acme-corp"
-                  value={formData.portalUrl}
-                  onChange={(e) => updateFormData("portalUrl", e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground font-mono">
-                  yoursite.com/portal/{formData.portalUrl || "slug"}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="clientName">
-                  Client Name *
-                </Label>
-                <Input
-                  className="rounded-none font-mono"
-                  id="clientName"
-                  placeholder="e.g., John Doe"
-                  value={formData.clientName}
-                  onChange={(e) => updateFormData("clientName", e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="clientEmail">
-                  Client Email *
-                </Label>
-                <Input
-                  className="rounded-none font-mono"
-                  id="clientEmail"
-                  placeholder="e.g., john@acmecorp.com"
-                  type="email"
-                  value={formData.clientEmail}
-                  onChange={(e) =>
-                    updateFormData("clientEmail", e.target.value)
-                  }
-                />
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label className="font-mono" htmlFor="description">
-                  Description
-                </Label>
-                <textarea
-                  className="w-full min-h-[100px] px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#334155] focus:ring-2 focus:ring-rgba(51,65,85,0.2)] hover:border-muted-foreground/50 transition-colors"
-                  id="description"
-                  placeholder="Brief description of this portal..."
-                  value={formData.description}
-                  onChange={(e) =>
-                    updateFormData("description", e.target.value)
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Branding Section */}
-        {currentStep === "branding" && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-mono font-bold mb-2">
-                PORTAL BRANDING
-              </h2>
-              <p className="text-muted-foreground font-mono text-sm">
-                Customize the look and feel of your portal
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="primaryColor">
-                  Primary Color
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    className="w-20 h-10 rounded-none"
-                    id="primaryColor"
-                    type="color"
-                    value={formData.primaryColor}
-                    onChange={(e) =>
-                      updateFormData("primaryColor", e.target.value)
-                    }
-                  />
-                  <Input
-                    className="rounded-none font-mono flex-1"
-                    value={formData.primaryColor}
-                    onChange={(e) =>
-                      updateFormData("primaryColor", e.target.value)
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="secondaryColor">
-                  Secondary Color
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    className="w-20 h-10 rounded-none"
-                    id="secondaryColor"
-                    type="color"
-                    value={formData.secondaryColor}
-                    onChange={(e) =>
-                      updateFormData("secondaryColor", e.target.value)
-                    }
-                  />
-                  <Input
-                    className="rounded-none font-mono flex-1"
-                    value={formData.secondaryColor}
-                    onChange={(e) =>
-                      updateFormData("secondaryColor", e.target.value)
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="logo">
-                  Portal Logo
-                </Label>
-                <div className="border-2 border-dashed border-border p-6 text-center hover:border-[rgba(51,65,85,0.5)] transition-colors">
-                  <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm font-mono text-muted-foreground mb-2">
-                    Click to upload or drag and drop
-                  </p>
-                  <Input
-                    accept="image/*"
-                    className="hidden"
-                    id="logo"
-                    type="file"
-                    onChange={(e) =>
-                      updateFormData("logo", e.target.files?.[0])
-                    }
-                  />
-                  <Button
-                    className="rounded-none font-mono"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => document.getElementById("logo")?.click()}
-                  >
-                    SELECT FILE
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="favicon">
-                  Favicon
-                </Label>
-                <div className="border-2 border-dashed border-border p-6 text-center hover:border-[rgba(51,65,85,0.5)] transition-colors">
-                  <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm font-mono text-muted-foreground mb-2">
-                    Click to upload or drag and drop
-                  </p>
-                  <Input
-                    accept="image/*"
-                    className="hidden"
-                    id="favicon"
-                    type="file"
-                    onChange={(e) =>
-                      updateFormData("favicon", e.target.files?.[0])
-                    }
-                  />
-                  <Button
-                    className="rounded-none font-mono"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => document.getElementById("favicon")?.click()}
-                  >
-                    SELECT FILE
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label className="font-mono" htmlFor="customDomain">
-                  Custom Domain (Optional)
-                </Label>
-                <Input
-                  className="rounded-none font-mono"
-                  id="customDomain"
-                  placeholder="e.g., portal.acmecorp.com"
-                  value={formData.customDomain}
-                  onChange={(e) => handleCustomDomainChange(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground font-mono">
-                  Configure DNS settings to point to your portal
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Storage Section */}
-        {currentStep === "storage" && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-mono font-bold mb-2">
-                STORAGE CONFIGURATION
-              </h2>
-              <p className="text-muted-foreground font-mono text-sm">
-                Configure storage settings and file management
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="storageProvider">
-                  Storage Provider
-                </Label>
-                <select
-                  className="w-full px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#334155] focus:ring-2 focus:ring-rgba(51,65,85,0.2)] hover:border-muted-foreground/50 transition-colors"
-                  id="storageProvider"
-                  value={formData.storageProvider}
-                  onChange={(e) =>
-                    updateFormData("storageProvider", e.target.value)
-                  }
-                >
-                  <option value="local">Local Storage</option>
-                  <option value="s3">Amazon S3</option>
-                  <option value="azure">Azure Blob Storage</option>
-                  <option value="gcs">Google Cloud Storage</option>
-                  <option value="dropbox">Dropbox</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="storageLimit">
-                  Storage Limit (GB)
-                </Label>
-                <Input
-                  className="rounded-none font-mono"
-                  id="storageLimit"
-                  type="number"
-                  value={formData.storageLimit}
-                  onChange={(e) =>
-                    updateFormData("storageLimit", e.target.value)
-                  }
-                />
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label className="font-mono" htmlFor="allowedFileTypes">
-                  Allowed File Types
-                </Label>
-                <Input
-                  className="rounded-none font-mono"
-                  id="allowedFileTypes"
-                  placeholder="e.g., pdf,doc,docx,jpg,png"
-                  value={formData.allowedFileTypes}
-                  onChange={(e) =>
-                    updateFormData("allowedFileTypes", e.target.value)
-                  }
-                />
-                <p className="text-xs text-muted-foreground font-mono">
-                  Comma-separated list of file extensions
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="maxFileSize">
-                  Max File Size (MB)
-                </Label>
-                <Input
-                  className="rounded-none font-mono"
-                  id="maxFileSize"
-                  type="number"
-                  value={formData.maxFileSize}
-                  onChange={(e) =>
-                    updateFormData("maxFileSize", e.target.value)
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="retentionDays">
-                  File Retention (Days)
-                </Label>
-                <Input
-                  className="rounded-none font-mono"
-                  disabled={!formData.autoDelete}
-                  id="retentionDays"
-                  type="number"
-                  value={formData.retentionDays}
-                  onChange={(e) =>
-                    updateFormData("retentionDays", e.target.value)
-                  }
-                />
-              </div>
-
-              <div className="space-y-4 md:col-span-2">
-                <div className="flex items-center gap-3">
-                  <input
-                    checked={formData.autoDelete}
-                    className="w-4 h-4"
-                    id="autoDelete"
-                    type="checkbox"
-                    onChange={(e) =>
-                      updateFormData("autoDelete", e.target.checked)
-                    }
-                  />
-                  <Label
-                    className="font-mono cursor-pointer"
-                    htmlFor="autoDelete"
-                  >
-                    Enable automatic file deletion after retention period
-                  </Label>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Security Section */}
-        {currentStep === "security" && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-mono font-bold mb-2">
-                SECURITY SETTINGS
-              </h2>
-              <p className="text-muted-foreground font-mono text-sm">
-                Configure access control and security features
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="accessType">
-                  Access Type
-                </Label>
-                <select
-                  className="w-full px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#334155] focus:ring-2 focus:ring-rgba(51,65,85,0.2)] hover:border-muted-foreground/50 transition-colors"
-                  id="accessType"
-                  value={formData.accessType}
-                  onChange={(e) => updateFormData("accessType", e.target.value)}
-                >
-                  <option value="password">Password Protected</option>
-                  <option value="link">Secure Link Only</option>
-                  <option value="sso">Single Sign-On (SSO)</option>
-                  <option value="oauth">OAuth 2.0</option>
-                </select>
-              </div>
-
-              {formData.accessType === "password" && (
-                <div className="space-y-2">
-                  <Label className="font-mono" htmlFor="password">
-                    Portal Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      className="rounded-none font-mono pr-10"
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) =>
-                        updateFormData("password", e.target.value)
-                      }
-                    />
-                    <button
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="w-4 h-4 text-muted-foreground" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="sessionTimeout">
-                  Session Timeout (minutes)
-                </Label>
-                <Input
-                  className="rounded-none font-mono"
-                  id="sessionTimeout"
-                  type="number"
-                  value={formData.sessionTimeout}
-                  onChange={(e) =>
-                    updateFormData("sessionTimeout", e.target.value)
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="ipWhitelist">
-                  IP Whitelist (Optional)
-                </Label>
-                <Input
-                  className="rounded-none font-mono"
-                  id="ipWhitelist"
-                  placeholder="e.g., 192.168.1.1, 10.0.0.0/24"
-                  value={formData.ipWhitelist}
-                  onChange={(e) =>
-                    updateFormData("ipWhitelist", e.target.value)
-                  }
-                />
-                <p className="text-xs text-muted-foreground font-mono">
-                  Comma-separated IP addresses or CIDR ranges
-                </p>
-              </div>
-
-              <div className="space-y-4 md:col-span-2">
-                <div className="flex items-center gap-3">
-                  <input
-                    checked={formData.twoFactorAuth}
-                    className="w-4 h-4"
-                    id="twoFactorAuth"
-                    type="checkbox"
-                    onChange={(e) =>
-                      updateFormData("twoFactorAuth", e.target.checked)
-                    }
-                  />
-                  <Label
-                    className="font-mono cursor-pointer"
-                    htmlFor="twoFactorAuth"
-                  >
-                    Enable Two-Factor Authentication (2FA)
-                  </Label>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <input
-                    checked={formData.encryptFiles}
-                    className="w-4 h-4"
-                    id="encryptFiles"
-                    type="checkbox"
-                    onChange={(e) =>
-                      updateFormData("encryptFiles", e.target.checked)
-                    }
-                  />
-                  <Label
-                    className="font-mono cursor-pointer"
-                    htmlFor="encryptFiles"
-                  >
-                    Encrypt files at rest (AES-256)
-                  </Label>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Messaging Section */}
-        {currentStep === "messaging" && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-mono font-bold mb-2">
-                MESSAGING & NOTIFICATIONS
-              </h2>
-              <p className="text-muted-foreground font-mono text-sm">
-                Configure communication and notification settings
-              </p>
-            </div>
-
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="welcomeMessage">
-                  Welcome Message
-                </Label>
-                <textarea
-                  className="w-full min-h-[120px] px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#334155] focus:ring-2 focus:ring-rgba(51,65,85,0.2)] hover:border-muted-foreground/50 transition-colors"
-                  id="welcomeMessage"
-                  placeholder="Enter a welcome message for your clients..."
-                  value={formData.welcomeMessage}
-                  onChange={(e) =>
-                    updateFormData("welcomeMessage", e.target.value)
-                  }
-                />
-                <p className="text-xs text-muted-foreground font-mono">
-                  This message will be displayed when clients first access the
-                  portal
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-mono" htmlFor="autoReplyMessage">
-                  Auto-Reply Message (Optional)
-                </Label>
-                <textarea
-                  className="w-full min-h-[100px] px-3 py-2 border-2 border-border bg-muted/30 font-mono text-sm rounded-md focus:outline-none focus:border-[#334155] focus:ring-2 focus:ring-rgba(51,65,85,0.2)] hover:border-muted-foreground/50 transition-colors"
-                  id="autoReplyMessage"
-                  placeholder="Automatic reply when files are uploaded..."
-                  value={formData.autoReplyMessage}
-                  onChange={(e) =>
-                    updateFormData("autoReplyMessage", e.target.value)
-                  }
-                />
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <input
-                    checked={formData.emailNotifications}
-                    className="w-4 h-4"
-                    id="emailNotifications"
-                    type="checkbox"
-                    onChange={(e) =>
-                      updateFormData("emailNotifications", e.target.checked)
-                    }
-                  />
-                  <Label
-                    className="font-mono cursor-pointer"
-                    htmlFor="emailNotifications"
-                  >
-                    Enable email notifications
-                  </Label>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <input
-                    checked={formData.uploadNotifications}
-                    className="w-4 h-4"
-                    id="uploadNotifications"
-                    type="checkbox"
-                    onChange={(e) =>
-                      updateFormData("uploadNotifications", e.target.checked)
-                    }
-                  />
-                  <Label
-                    className="font-mono cursor-pointer"
-                    htmlFor="uploadNotifications"
-                  >
-                    Notify on file uploads
-                  </Label>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <input
-                    checked={formData.customEmailTemplate}
-                    className="w-4 h-4"
-                    id="customEmailTemplate"
-                    type="checkbox"
-                    onChange={(e) =>
-                      updateFormData("customEmailTemplate", e.target.checked)
-                    }
-                  />
-                  <Label
-                    className="font-mono cursor-pointer"
-                    htmlFor="customEmailTemplate"
-                  >
-                    Use custom email template
-                  </Label>
-                </div>
-              </div>
-
-              {formData.customEmailTemplate && (
-                <div className="border border-border p-4 bg-muted/30">
-                  <p className="text-sm font-mono text-muted-foreground mb-2">
-                    Custom email templates can be configured after portal
-                    creation
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Navigation Buttons */}
-      <div className="flex items-center justify-between border border-border bg-background p-6">
-        <Button
-          className="rounded-none font-mono border-2"
-          disabled={currentStepIndex === 0}
-          variant="outline"
-          onClick={handlePrevious}
-        >
-          <ChevronLeft className="w-4 h-4 mr-2" />
-          PREVIOUS
-        </Button>
-
-        <div className="text-sm font-mono text-muted-foreground">
-          Step {currentStepIndex + 1} of {steps.length}
-        </div>
-
-        {currentStepIndex === steps.length - 1 ? (
-          <Button
-            className="rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
-            onClick={handleSubmit}
-          >
-            CREATE PORTAL
-            <Check className="w-4 h-4 ml-2" />
-          </Button>
-        ) : (
-          <Button
-            className="rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
-            onClick={handleNext}
-          >
-            NEXT
-            <ChevronRight className="w-4 h-4 ml-2" />
-          </Button>
-        )}
+            {/* Error Toast */}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive text-sm font-bold"
+              >
+                <AlertCircle className="w-5 h-5" />
+                {error}
+              </motion.div>
+            )}
+          </form>
+        </main>
       </div>
 
       {/* Paywall Modal */}

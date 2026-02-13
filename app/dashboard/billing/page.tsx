@@ -86,86 +86,86 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold font-mono">Billing & Usage</h1>
-        <p className="text-default-500 mt-2">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground tracking-tight">Billing & Usage</h1>
+        <p className="text-muted-foreground mt-2 text-lg">
           Manage your subscription, view usage, and upgrade your plan
         </p>
       </div>
 
-      {/* Success/Canceled Messages */}
-      {showSuccess && (
-        <div className="bg-success-100 border border-success-200 text-success-700 px-4 py-3 rounded-lg">
-          <p className="font-medium">Payment successful! 🎉</p>
-          <p className="text-sm">Your subscription has been activated.</p>
-        </div>
-      )}
-      {showCanceled && (
-        <div className="bg-warning-100 border border-warning-200 text-warning-700 px-4 py-3 rounded-lg">
-          <p className="font-medium">Payment canceled</p>
-          <p className="text-sm">You can try again anytime.</p>
-        </div>
-      )}
+      <div className="space-y-8">
+        {/* Success/Canceled Messages */}
+        {showSuccess && (
+          <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-6 py-4 rounded-xl">
+            <p className="font-bold">Payment successful! 🎉</p>
+            <p className="text-sm mt-1">Your subscription has been activated.</p>
+          </div>
+        )}
+        {showCanceled && (
+          <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-400 px-6 py-4 rounded-xl">
+            <p className="font-bold">Payment canceled</p>
+            <p className="text-sm mt-1">You can try again anytime.</p>
+          </div>
+        )}
 
-      {/* Current Subscription Status & Management */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <SubscriptionStatus />
-        <SubscriptionManager
-          currentPlan={currentPlan}
-          onSubscriptionChanged={() => refetch()}
-        />
-      </div>
-
-      {/* Usage Dashboard */}
-      <div>
-        <h2 className="text-xl font-semibold font-mono mb-4">Current Usage</h2>
-        <UsageDashboard />
-      </div>
-
-      {/* Pricing Plans */}
-      <div id="pricing">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold font-mono">Available Plans</h2>
-          <Tabs
-            selectedKey={billingCycle}
-            size="sm"
-            onSelectionChange={(key) =>
-              setBillingCycle(key as "monthly" | "annual")
-            }
-          >
-            <Tab key="monthly" title="Monthly" />
-            <Tab key="annual" title="Annual (Save 20%)" />
-          </Tabs>
+        {/* Current Subscription Status & Management */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <SubscriptionStatus />
+          <SubscriptionManager
+            currentPlan={currentPlan}
+            onSubscriptionChanged={() => refetch()}
+          />
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {Object.values(PRICING_PLANS).map((plan) => (
-            <PricingCard
-              key={plan.id}
-              billingCycle={billingCycle}
-              currentPlan={currentPlan}
-              plan={plan}
-              onSubscribe={handleSubscribe}
-            />
-          ))}
+        {/* Usage Dashboard */}
+        <div>
+          <h2 className="text-xl font-bold text-foreground mb-6">Current Usage</h2>
+          <UsageDashboard />
         </div>
-      </div>
 
-      {/* Help Section */}
-      <Card>
-        <CardBody>
-          <h2 className="font-mono font-semibold text-xl mb-2">Need Help?</h2>
-          <p className="text-sm text-default-500 mb-4">
+        {/* Pricing Plans */}
+        <div id="pricing">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <h2 className="text-xl font-bold text-foreground">Available Plans</h2>
+            <Tabs
+              selectedKey={billingCycle}
+              size="sm"
+              onSelectionChange={(key) =>
+                setBillingCycle(key as "monthly" | "annual")
+              }
+            >
+              <Tab key="monthly" title="Monthly" />
+              <Tab key="annual" title="Annual (Save 20%)" />
+            </Tabs>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {Object.values(PRICING_PLANS).map((plan) => (
+              <PricingCard
+                key={plan.id}
+                billingCycle={billingCycle}
+                currentPlan={currentPlan}
+                plan={plan}
+                onSubscribe={handleSubscribe}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Help Section */}
+        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+          <h2 className="font-bold text-xl mb-2 text-foreground">Need Help?</h2>
+          <p className="text-sm text-muted-foreground mb-4">
             Having issues with your subscription? Contact our support team for
             assistance.
           </p>
-          <p className="text-sm text-default-500">
+          <p className="text-sm text-muted-foreground">
             Email: support@dysumcorp.com
           </p>
-        </CardBody>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

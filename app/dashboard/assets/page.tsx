@@ -464,9 +464,9 @@ export default function AssetsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div>
-          <h1 className="text-3xl font-bold font-mono">Assets</h1>
+          <h1 className="text-3xl font-bold text-foreground">Assets & Files</h1>
           <p className="text-muted-foreground mt-2">Loading your files...</p>
         </div>
       </div>
@@ -474,18 +474,18 @@ export default function AssetsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
       {/* Password Modal */}
       {showPasswordModal && selectedFile && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold font-mono mb-4">
+          <div className="bg-card rounded-xl p-6 w-full max-w-md border border-border shadow-xl">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
               Set Password for "{selectedFile.name}"
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium font-mono mb-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
                   Password
                 </label>
                 <div className="relative">
@@ -493,13 +493,13 @@ export default function AssetsPage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md font-mono pr-10"
+                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                     placeholder="Enter password (min 8 characters)"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -509,15 +509,16 @@ export default function AssetsPage() {
                   </button>
                 </div>
                 {passwordError && (
-                  <p className="text-red-500 text-sm mt-1 font-mono">
+                  <p className="text-destructive text-sm mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
                     {passwordError}
                   </p>
                 )}
               </div>
 
-              <div className="text-xs text-gray-500 font-mono">
-                <p>Password requirements:</p>
-                <ul className="list-disc list-inside mt-1 space-y-1">
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded-xl p-3">
+                <p className="font-semibold mb-1">Password requirements:</p>
+                <ul className="list-disc list-inside space-y-1">
                   <li>At least 8 characters long</li>
                   <li>Contains uppercase and lowercase letters</li>
                   <li>Contains at least one number</li>
@@ -534,14 +535,14 @@ export default function AssetsPage() {
                   setPassword("");
                   setPasswordError("");
                 }}
-                className="px-4 py-2 border rounded-md font-mono hover:bg-gray-50"
+                className="px-4 py-2.5 border border-border rounded-xl text-muted-foreground hover:bg-muted transition-colors font-medium text-sm"
                 disabled={managingPassword === selectedFile.id}
               >
                 Cancel
               </button>
               <button
                 onClick={handlePasswordSubmit}
-                className="px-4 py-2 bg-[#334155] text-white rounded-md font-mono hover:bg-[rgba(51,65,85,0.8)] disabled:opacity-50"
+                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 font-bold text-sm"
                 disabled={managingPassword === selectedFile.id}
               >
                 {managingPassword === selectedFile.id
@@ -556,36 +557,39 @@ export default function AssetsPage() {
       {/* Expiration Modal */}
       {showExpirationModal && selectedFile && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold font-mono mb-4">
+          <div className="bg-card rounded-xl p-6 w-full max-w-md border border-border shadow-xl">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
               Set Expiration for "{selectedFile.name}"
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium font-mono mb-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
                   Expiration Date & Time
                 </label>
                 <input
                   type="datetime-local"
                   value={expirationDate}
                   onChange={(e) => setExpirationDate(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md font-mono"
+                  className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                   min={new Date(Date.now() + 24 * 60 * 60 * 1000)
                     .toISOString()
                     .slice(0, 16)}
                 />
                 {expirationError && (
-                  <p className="text-red-500 text-sm mt-1 font-mono">
+                  <p className="text-destructive text-sm mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
                     {expirationError}
                   </p>
                 )}
               </div>
 
-              <div className="text-xs text-gray-500 font-mono">
-                <p>• The file will no longer be accessible after this date</p>
-                <p>• You can remove the expiration at any time</p>
-                <p>• Minimum expiration is 24 hours from now</p>
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded-xl p-3">
+                <ul className="space-y-1">
+                  <li>• The file will no longer be accessible after this date</li>
+                  <li>• You can remove the expiration at any time</li>
+                  <li>• Minimum expiration is 24 hours from now</li>
+                </ul>
               </div>
             </div>
 
@@ -597,14 +601,14 @@ export default function AssetsPage() {
                   setExpirationDate("");
                   setExpirationError("");
                 }}
-                className="px-4 py-2 border rounded-md font-mono hover:bg-gray-50"
+                className="px-4 py-2.5 border border-border rounded-xl text-muted-foreground hover:bg-muted transition-colors font-medium text-sm"
                 disabled={managingExpiration === selectedFile.id}
               >
                 Cancel
               </button>
               <button
                 onClick={handleExpirationSubmit}
-                className="px-4 py-2 bg-[#334155] text-white rounded-md font-mono hover:bg-[rgba(51,65,85,0.8)] disabled:opacity-50"
+                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 font-bold text-sm"
                 disabled={managingExpiration === selectedFile.id}
               >
                 {managingExpiration === selectedFile.id
@@ -617,72 +621,68 @@ export default function AssetsPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold font-mono">Assets</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage all uploaded files
-          </p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Assets & Files</h1>
+          <p className="text-muted-foreground text-sm">Manage all uploaded files across your portals</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className="text-sm text-muted-foreground font-mono">
-              Total Storage
-            </p>
-            <p className="text-lg font-mono font-bold">
+            <p className="text-sm text-muted-foreground">Total Storage</p>
+            <p className="text-2xl font-bold text-foreground">
               {formatFileSize(totalSize.toString())}
             </p>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="border rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <FileText className="w-8 h-8 text-[#334155]" />
-            <div>
-              <p className="text-sm text-muted-foreground font-mono">
-                Total Files
-              </p>
-              <p className="text-2xl font-mono font-bold">{files.length}</p>
+      <div className="grid gap-6 md:grid-cols-3 mb-8">
+        <div className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/50">
+              <FileText className="w-6 h-6" />
             </div>
           </div>
-        </div>
-        <div className="border rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <HardDrive className="w-8 h-8 text-[#334155]" />
-            <div>
-              <p className="text-sm text-muted-foreground font-mono">
-                Storage Used
-              </p>
-              <p className="text-2xl font-mono font-bold">
-                {formatFileSize(totalSize.toString())}
-              </p>
-            </div>
+          <div className="space-y-1">
+            <p className="text-2xl font-bold text-foreground">{files.length}</p>
+            <p className="text-sm text-muted-foreground">Total Files</p>
           </div>
         </div>
-        <div className="border rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <Download className="w-8 h-8 text-[#334155]" />
-            <div>
-              <p className="text-sm text-muted-foreground font-mono">
-                Total Downloads
-              </p>
-              <p className="text-2xl font-mono font-bold">
-                {files.reduce((acc, f) => acc + f.downloads, 0)}
-              </p>
+        <div className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/50">
+              <HardDrive className="w-6 h-6" />
             </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl font-bold text-foreground">
+              {formatFileSize(totalSize.toString())}
+            </p>
+            <p className="text-sm text-muted-foreground">Storage Used</p>
+          </div>
+        </div>
+        <div className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-green-50 text-green-600 dark:bg-green-950/50">
+              <Download className="w-6 h-6" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl font-bold text-foreground">
+              {files.reduce((acc, f) => acc + f.downloads, 0)}
+            </p>
+            <p className="text-sm text-muted-foreground">Total Downloads</p>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            className="pl-10 rounded-none font-mono"
+            className="pl-11 rounded-xl"
             placeholder="Search files..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -741,47 +741,47 @@ export default function AssetsPage() {
 
       {/* Files List */}
       {filteredFiles.length === 0 ? (
-        <div className="border rounded-lg p-12 text-center">
-          <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="font-mono font-semibold text-lg mb-2">
+        <div className="bg-card rounded-xl p-12 text-center border border-border">
+          <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="font-semibold text-lg mb-2 text-foreground">
             {searchQuery || filterPortal !== "all"
               ? "No files found"
               : "No files yet"}
           </h3>
-          <p className="text-muted-foreground font-mono text-sm">
+          <p className="text-muted-foreground text-sm">
             {searchQuery || filterPortal !== "all"
               ? "Try adjusting your search or filters"
               : "Files uploaded to your portals will appear here"}
           </p>
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-muted/30 border-b">
+              <thead className="bg-muted/30 border-b border-border">
                 <tr>
-                  <th className="text-left p-4 font-mono text-sm font-semibold">
+                  <th className="text-left p-4 text-sm font-semibold text-foreground">
                     File
                   </th>
-                  <th className="text-left p-4 font-mono text-sm font-semibold">
+                  <th className="text-left p-4 text-sm font-semibold text-foreground">
                     Portal
                   </th>
-                  <th className="text-left p-4 font-mono text-sm font-semibold">
+                  <th className="text-left p-4 text-sm font-semibold text-foreground">
                     Storage
                   </th>
-                  <th className="text-left p-4 font-mono text-sm font-semibold">
+                  <th className="text-left p-4 text-sm font-semibold text-foreground">
                     Size
                   </th>
-                  <th className="text-left p-4 font-mono text-sm font-semibold">
+                  <th className="text-left p-4 text-sm font-semibold text-foreground">
                     Uploaded
                   </th>
-                  <th className="text-left p-4 font-mono text-sm font-semibold">
+                  <th className="text-left p-4 text-sm font-semibold text-foreground">
                     Downloads
                   </th>
-                  <th className="text-left p-4 font-mono text-sm font-semibold">
+                  <th className="text-left p-4 text-sm font-semibold text-foreground">
                     Security
                   </th>
-                  <th className="text-right p-4 font-mono text-sm font-semibold">
+                  <th className="text-right p-4 text-sm font-semibold text-foreground">
                     Actions
                   </th>
                 </tr>
@@ -790,7 +790,7 @@ export default function AssetsPage() {
                 {filteredFiles.map((file) => (
                   <tr
                     key={file.id}
-                    className="border-b hover:bg-muted/20 transition-colors"
+                    className="border-b border-border hover:bg-muted/20 transition-colors"
                   >
                     <td className="p-4">
                       <div className="flex items-center gap-3">
@@ -798,8 +798,8 @@ export default function AssetsPage() {
                           {getFileIcon(file.mimeType)}
                         </span>
                         <div>
-                          <p className="font-mono font-medium">{file.name}</p>
-                          <p className="text-xs text-muted-foreground font-mono">
+                          <p className="font-medium text-foreground">{file.name}</p>
+                          <p className="text-xs text-muted-foreground">
                             {file.mimeType}
                           </p>
                         </div>
@@ -807,11 +807,11 @@ export default function AssetsPage() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm">
+                        <span className="text-sm text-foreground">
                           {file.portal.name}
                         </span>
                         <a
-                          className="text-[#334155] hover:text-[rgba(51,65,85,0.8)]"
+                          className="text-primary hover:text-primary/80 transition-colors"
                           href={`/portal/${file.portal.slug}`}
                           rel="noopener noreferrer"
                           target="_blank"
@@ -823,26 +823,26 @@ export default function AssetsPage() {
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         {getStorageIcon(getStorageType(file.storageUrl))}
-                        <span className="font-mono text-sm">
+                        <span className="text-sm text-foreground">
                           {getStorageLabel(getStorageType(file.storageUrl))}
                         </span>
                       </div>
                     </td>
                     <td className="p-4">
-                      <span className="font-mono text-sm">
+                      <span className="text-sm text-foreground">
                         {formatFileSize(file.size)}
                       </span>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-mono text-sm">
+                        <span className="text-sm text-foreground">
                           {formatDate(file.uploadedAt)}
                         </span>
                       </div>
                     </td>
                     <td className="p-4">
-                      <span className="font-mono text-sm">
+                      <span className="text-sm text-foreground">
                         {file.downloads}
                       </span>
                     </td>
@@ -851,14 +851,14 @@ export default function AssetsPage() {
                         {file.passwordHash ? (
                           <>
                             <Lock className="w-4 h-4 text-green-600" />
-                            <span className="font-mono text-sm text-green-600">
+                            <span className="text-sm text-green-600 font-medium">
                               Protected
                             </span>
                           </>
                         ) : (
                           <>
-                            <Unlock className="w-4 h-4 text-gray-400" />
-                            <span className="font-mono text-sm text-gray-400">
+                            <Unlock className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
                               Open
                             </span>
                           </>
@@ -868,7 +868,7 @@ export default function AssetsPage() {
                     <td className="p-4">
                       <div className="flex items-center justify-end gap-2">
                         <Button
-                          className="rounded-none font-mono"
+                          className="rounded-xl"
                           size="sm"
                           variant="outline"
                           onClick={() => handleDownload(file)}
@@ -876,7 +876,7 @@ export default function AssetsPage() {
                           <Download className="w-4 h-4" />
                         </Button>
                         <Button
-                          className="rounded-none font-mono"
+                          className="rounded-xl"
                           size="sm"
                           variant="outline"
                           onClick={() => handleSetPassword(file)}
