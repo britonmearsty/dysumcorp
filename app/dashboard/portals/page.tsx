@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, ExternalLink, FileText, Upload, X } from "lucide-react";
+import { Plus, Trash2, ExternalLink, FileText, Upload, X, Search, FolderOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,7 @@ export default function PortalsPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [userPlan, setUserPlan] = useState<PlanType>("free");
+  const [searchQuery, setSearchQuery] = useState("");
   const [limitStatus, setLimitStatus] = useState<SoftLimitResponse | null>(
     null,
   );
@@ -61,9 +62,6 @@ export default function PortalsPage() {
     [],
   );
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedPortalForUpload, setSelectedPortalForUpload] = useState<
-    string | null
-  >(null);
 
   useEffect(() => {
     fetchPortals();
@@ -236,7 +234,6 @@ export default function PortalsPage() {
       }));
 
       setUploadingFiles(fileProgress);
-      setSelectedPortalForUpload(portalId);
       setShowUploadModal(true);
       uploadFiles(fileProgress, portalId);
     }
@@ -334,37 +331,48 @@ export default function PortalsPage() {
   const closeUploadModal = () => {
     setShowUploadModal(false);
     setUploadingFiles([]);
-    setSelectedPortalForUpload(null);
   };
+
+  const filteredPortals = portals.filter((portal) =>
+    portal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    portal.slug.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold font-mono">Portals</h1>
-          <p className="text-muted-foreground mt-2">Loading your portals...</p>
+      <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="space-y-6">
+          <div className="h-8 w-48 bg-muted rounded-xl animate-pulse" />
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="h-48 bg-muted rounded-xl animate-pulse" />
+            <div className="h-48 bg-muted rounded-xl animate-pulse" />
+            <div className="h-48 bg-muted rounded-xl animate-pulse" />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      {/* Header */}
+      <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-mono">Portals</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your client portals
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+            Secure Portals
+          </h1>
+          <p className="text-muted-foreground mt-1 text-lg">
+            Manage and monitor your secure file collection endpoints.
           </p>
         </div>
         <Button
-          className="rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
+          className="rounded-xl bg-primary hover:bg-primary/90 font-bold shadow-sm hover:shadow-md active:scale-95 transition-all w-fit"
           onClick={handleCreatePortal}
         >
           <Plus className="w-4 h-4 mr-2" />
-          CREATE PORTAL
+          Create New Portal
         </Button>
-      </div>
+      </header>
 
       {/* Progressive Limit Warning */}
       {showLimitWarning && limitStatus && (
@@ -382,76 +390,96 @@ export default function PortalsPage() {
         />
       )}
 
-      {portals.length === 0 ? (
-        <div className="border rounded-lg p-12 text-center">
-          <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="font-mono font-semibold text-lg mb-2">
-            No portals yet
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search by name or slug..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl focus:ring-2 focus:ring-primary transition-all outline-none text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Portals Grid */}
+      {filteredPortals.length === 0 ? (
+        <div className="bg-card rounded-xl p-12 border border-border text-center">
+          <FolderOpen className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="font-semibold text-lg mb-2">
+            {searchQuery ? "No portals found" : "No portals yet"}
           </h3>
-          <p className="text-muted-foreground font-mono text-sm mb-6">
-            Create your first client portal to start collecting files securely
+          <p className="text-muted-foreground text-sm mb-6">
+            {searchQuery
+              ? "Try adjusting your search query"
+              : "Create your first client portal to start collecting files securely"}
           </p>
-          <Button
-            className="rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
-            onClick={handleCreatePortal}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            CREATE FIRST PORTAL
-          </Button>
+          {!searchQuery && (
+            <Button
+              className="rounded-xl bg-primary hover:bg-primary/90 font-bold"
+              onClick={handleCreatePortal}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create First Portal
+            </Button>
+          )}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {portals.map((portal) => (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredPortals.map((portal) => (
             <div
               key={portal.id}
-              className="border rounded-lg p-6 hover:border-[#334155] transition-colors"
+              className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="font-mono font-semibold text-lg mb-1">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground truncate mb-1">
                     {portal.name}
                   </h3>
-                  <p className="text-xs text-muted-foreground font-mono">
+                  <p className="text-xs text-muted-foreground truncate">
                     /{portal.slug}
                   </p>
                   {portal.customDomain && (
-                    <p className="text-xs text-[#334155] font-mono mt-1">
+                    <p className="text-xs text-primary mt-1 truncate">
                       {portal.customDomain}
                     </p>
                   )}
                 </div>
                 {portal.whiteLabeled && (
-                  <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
-                    White-labeled
+                  <span className="text-xs px-2 py-1 rounded-md bg-purple-50 text-purple-600 dark:bg-purple-950/50 flex-shrink-0 ml-2">
+                    Premium
                   </span>
                 )}
               </div>
               <div className="space-y-2 text-sm mb-4">
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Files</span>
-                  <span className="font-mono font-medium">
+                  <span className="font-medium flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5" />
                     {portal._count.files}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Last Updated</span>
-                  <span className="font-mono">
+                  <span className="font-medium text-xs">
                     {formatDate(portal.updatedAt)}
                   </span>
                 </div>
               </div>
               <div className="flex gap-2">
                 <Button
-                  className="flex-1 rounded-none font-mono"
+                  className="flex-1 rounded-xl font-medium"
                   size="sm"
                   variant="outline"
                   onClick={() => router.push(`/portal/${portal.slug}`)}
                 >
-                  <ExternalLink className="w-4 h-4 mr-1" />
-                  VIEW
+                  <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                  View
                 </Button>
                 <Button
-                  className="rounded-none font-mono"
+                  className="rounded-xl font-medium"
                   size="sm"
                   variant="outline"
                   onClick={() => {
@@ -467,16 +495,16 @@ export default function PortalsPage() {
                     input.click();
                   }}
                 >
-                  <Upload className="w-4 h-4" />
+                  <Upload className="w-3.5 h-3.5" />
                 </Button>
                 <Button
-                  className="rounded-none font-mono text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="rounded-xl font-medium text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
                   disabled={deleting === portal.id}
                   size="sm"
                   variant="outline"
                   onClick={() => handleDelete(portal.id, portal.name)}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </div>
             </div>
@@ -487,11 +515,11 @@ export default function PortalsPage() {
       {/* Upload Progress Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-background border rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-background border rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-2xl">
             <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-xl font-bold font-mono">Uploading Files</h2>
+              <h2 className="text-xl font-bold">Uploading Files</h2>
               <Button
-                className="rounded-none"
+                className="rounded-xl"
                 size="sm"
                 variant="ghost"
                 onClick={closeUploadModal}
@@ -504,35 +532,35 @@ export default function PortalsPage() {
                 {uploadingFiles.map((fileItem, index) => (
                   <div
                     key={index}
-                    className="border rounded-lg p-4 space-y-3"
+                    className="border rounded-xl p-4 space-y-3"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <p className="font-mono text-sm font-medium truncate">
+                        <p className="text-sm font-medium truncate">
                           {fileItem.file.name}
                         </p>
-                        <p className="text-xs text-muted-foreground font-mono">
+                        <p className="text-xs text-muted-foreground">
                           {(fileItem.file.size / 1024 / 1024).toFixed(2)} MB
                         </p>
                       </div>
                       <div className="ml-4">
                         {fileItem.status === "pending" && (
-                          <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 font-mono">
+                          <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 font-medium">
                             Pending
                           </span>
                         )}
                         {fileItem.status === "uploading" && (
-                          <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 font-mono">
+                          <span className="text-xs px-2 py-1 rounded-md bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 font-medium">
                             Uploading
                           </span>
                         )}
                         {fileItem.status === "success" && (
-                          <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 font-mono">
+                          <span className="text-xs px-2 py-1 rounded-md bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 font-medium">
                             Complete
                           </span>
                         )}
                         {fileItem.status === "error" && (
-                          <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 font-mono">
+                          <span className="text-xs px-2 py-1 rounded-md bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 font-medium">
                             Failed
                           </span>
                         )}
@@ -546,20 +574,16 @@ export default function PortalsPage() {
                             ? "bg-green-500"
                             : fileItem.status === "error"
                               ? "bg-red-500"
-                              : "bg-[#334155]"
+                              : "bg-primary"
                         }`}
                         style={{ width: `${fileItem.progress}%` }}
-                      >
-                        {fileItem.status === "uploading" && (
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
-                        )}
-                      </div>
+                      />
                     </div>
-                    <div className="flex items-center justify-between text-xs font-mono">
+                    <div className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground">
                         {fileItem.error || ""}
                       </span>
-                      <span className="text-muted-foreground">
+                      <span className="text-muted-foreground font-medium">
                         {Math.round(fileItem.progress)}%
                       </span>
                     </div>
@@ -569,20 +593,20 @@ export default function PortalsPage() {
             </div>
             <div className="p-6 border-t">
               <Button
-                className="w-full rounded-none bg-[#334155] hover:bg-[rgba(51,65,85,0.9)] font-mono"
+                className="w-full rounded-xl bg-primary hover:bg-primary/90 font-bold"
                 disabled={uploadingFiles.some(
                   (f) => f.status === "uploading" || f.status === "pending",
                 )}
                 onClick={closeUploadModal}
               >
                 {uploadingFiles.every((f) => f.status === "success")
-                  ? "DONE"
+                  ? "Done"
                   : uploadingFiles.some(
                         (f) =>
                           f.status === "uploading" || f.status === "pending",
                       )
-                    ? "UPLOADING..."
-                    : "CLOSE"}
+                    ? "Uploading..."
+                    : "Close"}
               </Button>
             </div>
           </div>
