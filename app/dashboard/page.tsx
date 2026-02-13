@@ -6,7 +6,7 @@ import {
   Plus,
   Upload,
   Share2,
-  ExternalLink,
+  ArrowRight,
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
@@ -37,6 +37,7 @@ interface FileData {
 export default function DashboardPage() {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
+  const [greeting, setGreeting] = useState("Good afternoon");
   const [stats, setStats] = useState({
     activePortals: 0,
     totalFilesReceived: 0,
@@ -44,6 +45,13 @@ export default function DashboardPage() {
   });
   const [activePortalsList, setActivePortalsList] = useState<Portal[]>([]);
   const [recentActivities, setRecentActivities] = useState<FileData[]>([]);
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Good morning");
+    else if (hour < 18) setGreeting("Good afternoon");
+    else setGreeting("Good evening");
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -107,216 +115,247 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="space-y-8 animate-pulse">
-        <div className="h-8 w-48 bg-muted rounded" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="h-32 bg-muted rounded" />
-          <div className="h-32 bg-muted rounded" />
-          <div className="h-32 bg-muted rounded" />
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="space-y-8 animate-pulse">
+          <div className="h-8 w-48 bg-muted rounded-xl" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="h-32 bg-muted rounded-xl" />
+            <div className="h-32 bg-muted rounded-xl" />
+            <div className="h-32 bg-muted rounded-xl" />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-4xl font-mono font-bold">OVERVIEW</h1>
-        <p className="text-muted-foreground font-mono mt-2">
-          Welcome back, {session?.user?.name || "User"}!
-        </p>
-      </div>
+    <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      {/* Header Section */}
+      <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-black text-foreground tracking-tight mb-2">
+            {greeting}, {session?.user?.name?.split(" ")[0] || "User"}
+          </h1>
+          <p className="text-muted-foreground font-medium text-lg">
+            Manage your secure file collection and track client uploads in real-time.
+          </p>
+        </div>
 
-      {/* Total Portals Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="border border-border bg-background p-6 hover:border-rgba(51,65,85,0.5) transition-colors">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-mono text-muted-foreground">
-                ACTIVE PORTALS
-              </p>
-              <p className="text-3xl font-mono font-bold mt-2">
-                {stats.activePortals}
-              </p>
-              <p className="text-xs font-mono text-muted-foreground mt-1">
-                Currently running
-              </p>
+        <nav className="flex items-center gap-3">
+          <Link
+            href="/dashboard/portals/create"
+            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 hover:shadow-xl hover:shadow-primary/20 active:scale-95 font-bold text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Create Portal
+          </Link>
+        </nav>
+      </header>
+
+      {/* Stats Grid */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/50">
+              <FolderOpen className="w-6 h-6" />
             </div>
-            <div className="w-12 h-12 bg-rgba(51,65,85,0.1) flex items-center justify-center">
-              <FolderOpen className="h-6 w-6 text-[#334155]" />
-            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl font-bold text-foreground">
+              {stats.activePortals}
+            </p>
+            <p className="text-sm text-muted-foreground">Active Portals</p>
           </div>
         </div>
 
-        <div className="border border-border bg-background p-6 hover:border-rgba(51,65,85,0.5) transition-colors">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-mono text-muted-foreground">
-                FILES RECEIVED
-              </p>
-              <p className="text-3xl font-mono font-bold mt-2">
-                {stats.totalFilesReceived}
-              </p>
-              <p className="text-xs font-mono text-muted-foreground mt-1">
-                Across all portals
-              </p>
+        <div className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-green-50 text-green-600 dark:bg-green-950/50">
+              <FileText className="w-6 h-6" />
             </div>
-            <div className="w-12 h-12 bg-rgba(51,65,85,0.1) flex items-center justify-center">
-              <FileText className="h-6 w-6 text-[#334155]" />
-            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl font-bold text-foreground">
+              {stats.totalFilesReceived}
+            </p>
+            <p className="text-sm text-muted-foreground">Files Received</p>
           </div>
         </div>
 
-        <div className="border border-border bg-background p-6 hover:border-rgba(51,65,85,0.5) transition-colors">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-mono text-muted-foreground">
-                RECENT FILES
-              </p>
-              <p className="text-3xl font-mono font-bold mt-2">
-                {stats.recentActivityCount}
-              </p>
-              <p className="text-xs font-mono text-muted-foreground mt-1">
-                Uploaded in last 24h
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-rgba(51,65,85,0.1) flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-[#334155]" />
+        <div className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/50">
+              <TrendingUp className="w-6 h-6" />
             </div>
           </div>
+          <div className="space-y-1">
+            <p className="text-2xl font-bold text-foreground">
+              {stats.recentActivityCount}
+            </p>
+            <p className="text-sm text-muted-foreground">Recent Uploads (24h)</p>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
         {/* Active Client Portals - Takes 2 columns */}
-        <div className="lg:col-span-2 border border-border bg-background p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-mono font-bold">
-              ACTIVE CLIENT PORTALS
+        <section className="lg:col-span-2 flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-foreground">
+              Active Client Portals
             </h2>
-            <Link href="/dashboard/portals">
-              <Button
-                className="rounded-none font-mono border-2"
-                size="sm"
-                variant="outline"
-              >
-                VIEW ALL <ExternalLink className="ml-2 w-4 h-4" />
-              </Button>
+            <Link
+              href="/dashboard/portals"
+              className="group flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              View All Portals
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
-          <div className="space-y-4">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {activePortalsList.length === 0 ? (
-              <p className="text-muted-foreground font-mono">
-                No active portals found.
-              </p>
+              <div className="col-span-2 bg-card rounded-xl p-12 border border-border text-center">
+                <FolderOpen className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground font-medium">
+                  No active portals found.
+                </p>
+              </div>
             ) : (
               activePortalsList.map((portal) => (
                 <div
                   key={portal.id}
-                  className="border border-border p-4 hover:border-rgba(51,65,85,0.5) transition-colors"
+                  className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-mono font-bold">{portal.name}</h3>
-                        <span className="px-2 py-0.5 bg-green-500/10 text-green-500 text-xs font-mono border border-green-500/20">
-                          ACTIVE
-                        </span>
-                      </div>
-                      <p className="text-sm font-mono text-muted-foreground mt-1">
-                        Created{" "}
-                        {new Date(portal.createdAt).toLocaleDateString()}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground truncate mb-1">
+                        {portal.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Created {new Date(portal.createdAt).toLocaleDateString()}
                       </p>
-                      <div className="flex items-center gap-4 mt-3">
-                        <div className="flex items-center gap-1 text-sm font-mono">
-                          <FileText className="w-4 h-4 text-[#334155]" />
-                          <span>{portal._count?.files || 0} files</span>
-                        </div>
-                      </div>
                     </div>
-                    <Link href={`/dashboard/portals/${portal.id}`}>
-                      <Button
-                        className="rounded-none font-mono"
-                        size="sm"
-                        variant="outline"
-                      >
-                        MANAGE
-                      </Button>
-                    </Link>
+                    <span className="px-2 py-1 bg-green-50 text-green-600 dark:bg-green-950/50 text-xs font-medium rounded-md flex-shrink-0 ml-2">
+                      Active
+                    </span>
                   </div>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <FileText className="w-4 h-4" />
+                      <span>{portal._count?.files || 0} files</span>
+                    </div>
+                  </div>
+                  <Link href={`/dashboard/portals/${portal.id}`}>
+                    <Button
+                      className="w-full rounded-xl font-medium"
+                      size="sm"
+                      variant="outline"
+                    >
+                      Manage Portal
+                    </Button>
+                  </Link>
                 </div>
               ))
             )}
           </div>
-        </div>
 
-        {/* Quick Actions - Takes 1 column */}
-        <div className="border border-border bg-background p-6">
-          <h2 className="text-xl font-mono font-bold mb-6">QUICK ACTIONS</h2>
-          <div className="space-y-3">
-            <Link href="/dashboard/portals/create">
-              <Button className="w-full rounded-none bg-[#334155] hover:bg-rgba(51,65,85,0.9) font-mono justify-start">
-                <Plus className="mr-2 w-4 h-4" />
-                CREATE NEW PORTAL
-              </Button>
+          {activePortalsList.length > 4 && (
+            <Link
+              href="/dashboard/portals"
+              className="flex items-center justify-center py-4 bg-card rounded-xl border border-dashed border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all text-sm font-bold"
+            >
+              View {activePortalsList.length - 4} more portals
             </Link>
-            <Link href="/dashboard/files">
-              <Button
-                className="w-full rounded-none font-mono border-2 justify-start"
-                variant="outline"
-              >
-                <Upload className="mr-2 w-4 h-4" />
-                MANAGE FILES
-              </Button>
-            </Link>
-            <Link href="/dashboard/teams">
-              <Button
-                className="w-full rounded-none font-mono border-2 justify-start"
-                variant="outline"
-              >
-                <Share2 className="mr-2 w-4 h-4" />
-                MANAGE TEAM
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity (Files) */}
-      <div className="border border-border bg-background p-6">
-        <h2 className="text-xl font-mono font-bold mb-6">RECENT UPLOADS</h2>
-        <div className="space-y-3">
-          {recentActivities.length === 0 ? (
-            <p className="text-muted-foreground font-mono">
-              No recent uploads.
-            </p>
-          ) : (
-            recentActivities.map((file, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between py-3 border-b border-border last:border-0 hover:bg-muted/30 transition-colors px-2"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 flex items-center justify-center bg-blue-500/10">
-                    <Upload className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="font-mono font-medium">File uploaded</p>
-                    <p className="text-sm font-mono text-muted-foreground">
-                      {file.portal.name} • {file.name}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-sm font-mono text-muted-foreground">
-                  {formatDate(file.uploadedAt)}
-                </p>
-              </div>
-            ))
           )}
-        </div>
+        </section>
+
+        {/* Quick Actions & Recent Activity - Takes 1 column */}
+        <aside className="lg:col-span-1 flex flex-col gap-8">
+          {/* Quick Actions */}
+          <nav className="space-y-4">
+            <h2 className="text-sm font-bold text-foreground px-1">
+              Quick Actions
+            </h2>
+            <div className="space-y-3">
+              <Link href="/dashboard/portals/create" className="block">
+                <Button className="w-full rounded-xl bg-primary hover:bg-primary/90 font-medium justify-start">
+                  <Plus className="mr-2 w-4 h-4" />
+                  Create New Portal
+                </Button>
+              </Link>
+              <Link href="/dashboard/assets" className="block">
+                <Button
+                  className="w-full rounded-xl font-medium justify-start"
+                  variant="outline"
+                >
+                  <Upload className="mr-2 w-4 h-4" />
+                  Manage Files
+                </Button>
+              </Link>
+              <Link href="/dashboard/teams" className="block">
+                <Button
+                  className="w-full rounded-xl font-medium justify-start"
+                  variant="outline"
+                >
+                  <Share2 className="mr-2 w-4 h-4" />
+                  Manage Team
+                </Button>
+              </Link>
+            </div>
+          </nav>
+
+          {/* Recent Activity */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-sm font-bold text-foreground">
+                Recent Activity
+              </h2>
+              <Link
+                href="/dashboard/assets"
+                className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
+              >
+                View All
+              </Link>
+            </div>
+            <div className="bg-card rounded-xl border border-border overflow-hidden">
+              {recentActivities.length === 0 ? (
+                <div className="p-6 text-center">
+                  <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    No recent uploads.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {recentActivities.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="w-10 h-10 flex items-center justify-center bg-blue-50 dark:bg-blue-950/50 rounded-lg flex-shrink-0">
+                        <Upload className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">
+                          {file.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {file.portal.name}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground flex-shrink-0">
+                        {formatDate(file.uploadedAt)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        </aside>
       </div>
-    </div>
+    </main>
   );
 }

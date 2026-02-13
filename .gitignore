@@ -43,3 +43,11 @@ bun.lockb
 /lib/generated/prisma
 
 .vercel
+
+.kiro/
+CODEBASE_INDEX.md
+DASHBOARD_PAGES_REFERENCE_INDEX.md
+DESIGN_VISUAL_DESCRIPTION.md
+IMPLEMENTATION_PLAN.md
+/dashboard-pages-reference/
+/design-reference/
