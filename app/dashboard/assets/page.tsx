@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   FileText,
   Download,
   Trash2,
   Search,
-  Filter,
   Calendar,
   HardDrive,
   ExternalLink,
@@ -18,11 +17,19 @@ import {
   EyeOff,
   Clock,
   AlertCircle,
+  ChevronRight,
+  LayoutGrid,
+  List as ListIcon,
+  PieChart,
+  TrendingUp,
+  Server,
+  X,
+  RefreshCw,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CustomDropdown } from "@/components/ui/custom-dropdown";
 
 interface File {
   id: string;
@@ -45,8 +52,6 @@ export default function AssetsPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterPortal, setFilterPortal] = useState<string>("all");
-  const [filterStorage, setFilterStorage] = useState<string>("all");
   const [deleting, setDeleting] = useState<string | null>(null);
   const [managingPassword, setManagingPassword] = useState<string | null>(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -54,12 +59,14 @@ export default function AssetsPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState("");
-  const [managingExpiration, setManagingExpiration] = useState<string | null>(
-    null,
-  );
-  const [showExpirationModal, setShowExpirationModal] = useState(false);
-  const [expirationDate, setExpirationDate] = useState("");
-  const [expirationError, setExpirationError] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+
+  const tabs = [
+    { id: "all", name: "All Assets", icon: Database, description: "All uploaded files across all providers" },
+    { id: "storage", name: "By Storage", icon: Server, description: "Organized by cloud provider" },
+    { id: "stats", name: "Insights", icon: PieChart, description: "Storage usage and distribution" },
+  ];
 
   useEffect(() => {
     fetchFiles();
@@ -68,10 +75,8 @@ export default function AssetsPage() {
   const fetchFiles = async () => {
     try {
       const response = await fetch("/api/files");
-
       if (response.ok) {
         const data = await response.json();
-
         setFiles(data.files);
       }
     } catch (error) {
@@ -82,20 +87,12 @@ export default function AssetsPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${name}"? This action cannot be undone.`,
-      )
-    ) {
+    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
       return;
     }
-
     setDeleting(id);
     try {
-      const response = await fetch(`/api/files/${id}`, {
-        method: "DELETE",
-      });
-
+      const response = await fetch(`/api/files/${id}`, { method: "DELETE" });
       if (response.ok) {
         setFiles(files.filter((f) => f.id !== id));
       } else {
@@ -111,28 +108,17 @@ export default function AssetsPage() {
 
   const handleDownload = async (file: File) => {
     try {
-      // If file is password protected, prompt for password
       if (file.passwordHash) {
-        const password = prompt(
-          "This file is password protected. Please enter the password:",
-        );
+        const password = prompt("This file is password protected. Please enter the password:");
         if (!password) return;
       }
-
-      // Always download via API to handle both cloud and local files
       const response = await fetch(`/api/files/${file.id}/download`, {
-        headers: file.passwordHash
-          ? {
-              "x-file-password": password || "",
-            }
-          : {},
+        headers: file.passwordHash ? { "x-file-password": password || "" } : {},
       });
-
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
-
         a.href = url;
         a.download = file.name;
         document.body.appendChild(a);
@@ -140,12 +126,7 @@ export default function AssetsPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else if (response.status === 401) {
-        const errorData = await response.json();
-        if (errorData.requiresPassword) {
-          alert("Invalid password. Please try again.");
-        } else {
-          alert("Unauthorized access");
-        }
+        alert("Invalid password. Please try again.");
       } else {
         alert("Failed to download file");
       }
@@ -163,25 +144,13 @@ export default function AssetsPage() {
   };
 
   const handleRemovePassword = async (file: File) => {
-    if (
-      !confirm(
-        `Are you sure you want to remove password protection from "${file.name}"?`,
-      )
-    ) {
+    if (!confirm(`Are you sure you want to remove password protection from "${file.name}"?`)) {
       return;
     }
-
     try {
-      const response = await fetch(`/api/files/${file.id}/password`, {
-        method: "DELETE",
-      });
-
+      const response = await fetch(`/api/files/${file.id}/password`, { method: "DELETE" });
       if (response.ok) {
-        setFiles(
-          files.map((f) =>
-            f.id === file.id ? { ...f, passwordHash: null } : f,
-          ),
-        );
+        setFiles(files.map((f) => (f.id === file.id ? { ...f, passwordHash: null } : f)));
         alert("Password protection removed successfully");
       } else {
         alert("Failed to remove password protection");
@@ -197,31 +166,20 @@ export default function AssetsPage() {
       setPasswordError("Password is required");
       return;
     }
-
-    // Basic password validation
     if (password.length < 8) {
       setPasswordError("Password must be at least 8 characters long");
       return;
     }
-
     setManagingPassword(selectedFile.id);
     setPasswordError("");
-
     try {
       const response = await fetch(`/api/files/${selectedFile.id}/password`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: password.trim() }),
       });
-
       if (response.ok) {
-        setFiles(
-          files.map((f) =>
-            f.id === selectedFile.id ? { ...f, passwordHash: "set" } : f,
-          ),
-        );
+        setFiles(files.map((f) => (f.id === selectedFile.id ? { ...f, passwordHash: "set" } : f)));
         setShowPasswordModal(false);
         setSelectedFile(null);
         setPassword("");
@@ -238,159 +196,28 @@ export default function AssetsPage() {
     }
   };
 
-  const handleSetExpiration = (file: File) => {
-    setSelectedFile(file);
-    setExpirationDate(
-      file.expiresAt ? new Date(file.expiresAt).toISOString().slice(0, 16) : "",
-    );
-    setExpirationError("");
-    setShowExpirationModal(true);
-  };
-
-  const handleRemoveExpiration = async (file: File) => {
-    if (
-      !confirm(
-        `Are you sure you want to remove the expiration date from "${file.name}"?`,
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/files/${file.id}/expiration`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setFiles(
-          files.map((f) => (f.id === file.id ? { ...f, expiresAt: null } : f)),
-        );
-        alert("Expiration date removed successfully");
-      } else {
-        alert("Failed to remove expiration date");
-      }
-    } catch (error) {
-      console.error("Failed to remove expiration:", error);
-      alert("Failed to remove expiration date");
-    }
-  };
-
-  const handleExpirationSubmit = async () => {
-    if (!selectedFile || !expirationDate) {
-      setExpirationError("Expiration date is required");
-      return;
-    }
-
-    const expiration = new Date(expirationDate);
-    if (expiration <= new Date()) {
-      setExpirationError("Expiration date must be in the future");
-      return;
-    }
-
-    setManagingExpiration(selectedFile.id);
-    setExpirationError("");
-
-    try {
-      const response = await fetch(`/api/files/${selectedFile.id}/expiration`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ expiresAt: expiration.toISOString() }),
-      });
-
-      if (response.ok) {
-        setFiles(
-          files.map((f) =>
-            f.id === selectedFile.id
-              ? { ...f, expiresAt: expiration.toISOString() }
-              : f,
-          ),
-        );
-        setShowExpirationModal(false);
-        setSelectedFile(null);
-        setExpirationDate("");
-        alert("Expiration date set successfully");
-      } else {
-        const errorData = await response.json();
-        setExpirationError(errorData.error || "Failed to set expiration date");
-      }
-    } catch (error) {
-      console.error("Failed to set expiration:", error);
-      setExpirationError("Failed to set expiration date");
-    } finally {
-      setManagingExpiration(null);
-    }
-  };
-
-  const isFileExpired = (file: File) => {
-    if (!file.expiresAt) return false;
-    return new Date(file.expiresAt) < new Date();
-  };
-
-  const getExpirationStatus = (file: File) => {
-    if (!file.expiresAt) return null;
-
-    const expiration = new Date(file.expiresAt);
-    const now = new Date();
-    const isExpired = expiration < now;
-
-    const timeDiff = expiration.getTime() - now.getTime();
-    const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
-    return {
-      isExpired,
-      daysDiff,
-      formatted: expiration.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-  };
-
+  // Helper functions
   const getStorageType = (storageUrl: string): string => {
-    if (
-      storageUrl.includes("drive.google.com") ||
-      storageUrl.includes("googleapis.com")
-    ) {
-      return "google";
-    }
-    if (
-      storageUrl.includes("dropbox.com") ||
-      storageUrl.includes("dl.dropboxusercontent.com")
-    ) {
-      return "dropbox";
-    }
-    if (storageUrl.startsWith("http")) {
-      return "other";
-    }
-
+    if (storageUrl.includes("drive.google.com") || storageUrl.includes("googleapis.com")) return "google";
+    if (storageUrl.includes("dropbox.com") || storageUrl.includes("dl.dropboxusercontent.com")) return "dropbox";
+    if (storageUrl.startsWith("http")) return "other";
     return "local";
   };
 
   const formatFileSize = (bytes: string) => {
     const size = Number(bytes);
-
     if (size < 1024) return `${size} B`;
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
-    if (size < 1024 * 1024 * 1024)
-      return `${(size / (1024 * 1024)).toFixed(2)} MB`;
-
+    if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(2)} MB`;
     return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
 
@@ -401,80 +228,71 @@ export default function AssetsPage() {
     if (mimeType.includes("pdf")) return "📄";
     if (mimeType.includes("word") || mimeType.includes("document")) return "📝";
     if (mimeType.includes("sheet") || mimeType.includes("excel")) return "📊";
-    if (mimeType.includes("presentation") || mimeType.includes("powerpoint"))
-      return "📽️";
-    if (
-      mimeType.includes("zip") ||
-      mimeType.includes("rar") ||
-      mimeType.includes("archive")
-    )
-      return "📦";
-
+    if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return "📽️";
+    if (mimeType.includes("zip") || mimeType.includes("rar") || mimeType.includes("archive")) return "📦";
     return "📎";
   };
 
   const getStorageIcon = (storageType: string) => {
     switch (storageType) {
-      case "google":
-        return <Cloud className="w-4 h-4 text-blue-500" />;
-      case "dropbox":
-        return <Cloud className="w-4 h-4 text-blue-600" />;
-      case "local":
-        return <HardDrive className="w-4 h-4 text-gray-500" />;
-      default:
-        return <Database className="w-4 h-4 text-muted-foreground" />;
+      case "google": return <Cloud className="w-4 h-4 text-blue-500" />;
+      case "dropbox": return <Cloud className="w-4 h-4 text-blue-600" />;
+      case "local": return <HardDrive className="w-4 h-4 text-gray-500" />;
+      default: return <Database className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
   const getStorageLabel = (storageType: string) => {
     switch (storageType) {
-      case "google":
-        return "Google Drive";
-      case "dropbox":
-        return "Dropbox";
-      case "local":
-        return "Local";
-      default:
-        return "Other";
+      case "google": return "Google Drive";
+      case "dropbox": return "Dropbox";
+      case "local": return "Local";
+      default: return "Other";
+    }
+  };
+
+  const getProviderIcon = (provider: string) => {
+    switch (provider) {
+      case "google": return <Cloud className="w-5 h-5 text-blue-500" />;
+      case "dropbox": return <Cloud className="w-5 h-5 text-blue-600" />;
+      case "local": return <HardDrive className="w-5 h-5 text-gray-500" />;
+      default: return <Database className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
   const filteredFiles = files.filter((file) => {
-    const matchesSearch = file.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesPortal =
-      filterPortal === "all" || file.portal.id === filterPortal;
-    const storageType = getStorageType(file.storageUrl);
-    const matchesStorage =
-      filterStorage === "all" || storageType === filterStorage;
-
-    return matchesSearch && matchesPortal && matchesStorage;
+    const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
 
-  const uniquePortals = Array.from(new Set(files.map((f) => f.portal.id))).map(
-    (id) => {
-      const file = files.find((f) => f.portal.id === id);
+  const stats = useMemo(() => {
+    const totalSize = files.reduce((acc, file) => acc + Number(file.size), 0);
+    const byProvider = files.reduce((acc, f) => {
+      const type = getStorageType(f.storageUrl);
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
 
-      return file?.portal;
-    },
-  );
-
-  const totalSize = files.reduce((acc, file) => acc + Number(file.size), 0);
+    return {
+      totalFiles: files.length,
+      totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
+      byProvider,
+    };
+  }, [files]);
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Assets & Files</h1>
-          <p className="text-muted-foreground mt-2">Loading your files...</p>
+          <h1 className="text-4xl font-black text-foreground tracking-tight">Assets</h1>
+          <p className="text-muted-foreground mt-2 text-lg">Loading your files...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Password Modal */}
       {showPasswordModal && selectedFile && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -482,12 +300,9 @@ export default function AssetsPage() {
             <h3 className="text-lg font-semibold text-foreground mb-4">
               Set Password for "{selectedFile.name}"
             </h3>
-
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Password
-                </label>
+                <label className="block text-sm font-semibold text-foreground mb-2">Password</label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -501,11 +316,7 @@ export default function AssetsPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
                 {passwordError && (
@@ -515,18 +326,7 @@ export default function AssetsPage() {
                   </p>
                 )}
               </div>
-
-              <div className="text-xs text-muted-foreground bg-muted/50 rounded-xl p-3">
-                <p className="font-semibold mb-1">Password requirements:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>At least 8 characters long</li>
-                  <li>Contains uppercase and lowercase letters</li>
-                  <li>Contains at least one number</li>
-                  <li>Contains at least one special character</li>
-                </ul>
-              </div>
             </div>
-
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => {
@@ -545,75 +345,7 @@ export default function AssetsPage() {
                 className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 font-bold text-sm"
                 disabled={managingPassword === selectedFile.id}
               >
-                {managingPassword === selectedFile.id
-                  ? "Setting..."
-                  : "Set Password"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Expiration Modal */}
-      {showExpirationModal && selectedFile && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card rounded-xl p-6 w-full max-w-md border border-border shadow-xl">
-            <h3 className="text-lg font-semibold text-foreground mb-4">
-              Set Expiration for "{selectedFile.name}"
-            </h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Expiration Date & Time
-                </label>
-                <input
-                  type="datetime-local"
-                  value={expirationDate}
-                  onChange={(e) => setExpirationDate(e.target.value)}
-                  className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
-                  min={new Date(Date.now() + 24 * 60 * 60 * 1000)
-                    .toISOString()
-                    .slice(0, 16)}
-                />
-                {expirationError && (
-                  <p className="text-destructive text-sm mt-2 flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" />
-                    {expirationError}
-                  </p>
-                )}
-              </div>
-
-              <div className="text-xs text-muted-foreground bg-muted/50 rounded-xl p-3">
-                <ul className="space-y-1">
-                  <li>• The file will no longer be accessible after this date</li>
-                  <li>• You can remove the expiration at any time</li>
-                  <li>• Minimum expiration is 24 hours from now</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowExpirationModal(false);
-                  setSelectedFile(null);
-                  setExpirationDate("");
-                  setExpirationError("");
-                }}
-                className="px-4 py-2.5 border border-border rounded-xl text-muted-foreground hover:bg-muted transition-colors font-medium text-sm"
-                disabled={managingExpiration === selectedFile.id}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleExpirationSubmit}
-                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 font-bold text-sm"
-                disabled={managingExpiration === selectedFile.id}
-              >
-                {managingExpiration === selectedFile.id
-                  ? "Setting..."
-                  : "Set Expiration"}
+                {managingPassword === selectedFile.id ? "Setting..." : "Set Password"}
               </button>
             </div>
           </div>
@@ -621,306 +353,440 @@ export default function AssetsPage() {
       )}
 
       {/* Header */}
-      <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Assets & Files</h1>
-          <p className="text-muted-foreground text-sm">Manage all uploaded files across your portals</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <p className="text-sm text-muted-foreground">Total Storage</p>
-            <p className="text-2xl font-bold text-foreground">
-              {formatFileSize(totalSize.toString())}
-            </p>
-          </div>
-        </div>
-      </header>
-
-      {/* Stats */}
-      <div className="grid gap-6 md:grid-cols-3 mb-8">
-        <div className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/50">
-              <FileText className="w-6 h-6" />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-bold text-foreground">{files.length}</p>
-            <p className="text-sm text-muted-foreground">Total Files</p>
-          </div>
-        </div>
-        <div className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/50">
-              <HardDrive className="w-6 h-6" />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-bold text-foreground">
-              {formatFileSize(totalSize.toString())}
-            </p>
-            <p className="text-sm text-muted-foreground">Storage Used</p>
-          </div>
-        </div>
-        <div className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-lg bg-green-50 text-green-600 dark:bg-green-950/50">
-              <Download className="w-6 h-6" />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-bold text-foreground">
-              {files.reduce((acc, f) => acc + f.downloads, 0)}
-            </p>
-            <p className="text-sm text-muted-foreground">Total Downloads</p>
-          </div>
-        </div>
+      <div className="mb-10">
+        <h1 className="text-4xl font-black text-foreground tracking-tight">Assets</h1>
+        <p className="text-muted-foreground mt-2 text-lg max-w-2xl leading-relaxed">
+          A centralized, secure command center for all client documents across your connected cloud storage ecosystems.
+        </p>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            className="pl-11 rounded-xl"
-            placeholder="Search files..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-muted-foreground" />
-            <CustomDropdown
-              className="w-48"
-              options={[
-                { value: "all", label: "All Portals" },
-                ...uniquePortals.map((portal) => ({
-                  value: portal?.id || "",
-                  label: portal?.name || "",
-                })),
-              ]}
-              placeholder="Select portal"
-              value={filterPortal}
-              onChange={setFilterPortal}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-muted-foreground" />
-            <CustomDropdown
-              className="w-48"
-              options={[
-                {
-                  value: "all",
-                  label: "All Storage",
-                  icon: <Database className="w-4 h-4" />,
-                },
-                {
-                  value: "google",
-                  label: "Google Drive",
-                  icon: <Cloud className="w-4 h-4 text-blue-500" />,
-                },
-                {
-                  value: "dropbox",
-                  label: "Dropbox",
-                  icon: <Cloud className="w-4 h-4 text-blue-600" />,
-                },
-                {
-                  value: "local",
-                  label: "Local Storage",
-                  icon: <HardDrive className="w-4 h-4 text-gray-500" />,
-                },
-              ]}
-              placeholder="Select storage"
-              value={filterStorage}
-              onChange={setFilterStorage}
-            />
-          </div>
-        </div>
-      </div>
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Navigation Sidebar */}
+        <aside className="lg:w-64 flex-shrink-0">
+          <nav className="space-y-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                    isActive
+                      ? "bg-card shadow-sm border border-border text-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`} />
+                  <span className="font-medium text-sm">{tab.name}</span>
+                  {isActive && (
+                    <motion.div layoutId="assets-active-indicator" className="ml-auto">
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </motion.div>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
 
-      {/* Files List */}
-      {filteredFiles.length === 0 ? (
-        <div className="bg-card rounded-xl p-12 text-center border border-border">
-          <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="font-semibold text-lg mb-2 text-foreground">
-            {searchQuery || filterPortal !== "all"
-              ? "No files found"
-              : "No files yet"}
-          </h3>
-          <p className="text-muted-foreground text-sm">
-            {searchQuery || filterPortal !== "all"
-              ? "Try adjusting your search or filters"
-              : "Files uploaded to your portals will appear here"}
-          </p>
-        </div>
-      ) : (
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted/30 border-b border-border">
-                <tr>
-                  <th className="text-left p-4 text-sm font-semibold text-foreground">
-                    File
-                  </th>
-                  <th className="text-left p-4 text-sm font-semibold text-foreground">
-                    Portal
-                  </th>
-                  <th className="text-left p-4 text-sm font-semibold text-foreground">
-                    Storage
-                  </th>
-                  <th className="text-left p-4 text-sm font-semibold text-foreground">
-                    Size
-                  </th>
-                  <th className="text-left p-4 text-sm font-semibold text-foreground">
-                    Uploaded
-                  </th>
-                  <th className="text-left p-4 text-sm font-semibold text-foreground">
-                    Downloads
-                  </th>
-                  <th className="text-left p-4 text-sm font-semibold text-foreground">
-                    Security
-                  </th>
-                  <th className="text-right p-4 text-sm font-semibold text-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredFiles.map((file) => (
-                  <tr
-                    key={file.id}
-                    className="border-b border-border hover:bg-muted/20 transition-colors"
-                  >
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">
-                          {getFileIcon(file.mimeType)}
-                        </span>
-                        <div>
-                          <p className="font-medium text-foreground">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {file.mimeType}
+          {/* Storage Pulse Widget */}
+          <div className="mt-8 p-6 bg-muted border border-border rounded-3xl">
+            <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">Storage Pulse</h4>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-muted-foreground font-medium">Total Volume</span>
+                  <span className="text-foreground font-bold">{stats.totalSizeMB} MB</span>
+                </div>
+                <div className="h-1.5 w-full bg-border rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: "45%" }}
+                    className="h-full bg-foreground"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-between items-center bg-card p-3 rounded-xl border border-border">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400" />
+                  <span className="text-xs text-muted-foreground">Dropbox</span>
+                </div>
+                <span className="text-xs font-bold text-foreground">{stats.byProvider['dropbox'] || 0}</span>
+              </div>
+              <div className="flex justify-between items-center bg-card p-3 rounded-xl border border-border">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+                  <span className="text-xs text-muted-foreground">Google Drive</span>
+                </div>
+                <span className="text-xs font-bold text-foreground">{stats.byProvider['google'] || 0}</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Content Area */}
+        <main className="flex-1 min-w-0">
+          <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search assets..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-2xl focus:ring-2 focus:ring-ring transition-all outline-none text-sm text-foreground"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="flex items-center gap-2 px-3 py-2 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground rounded-lg transition-colors text-sm font-medium border border-border"
+                title="Refresh page"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </button>
+
+              <div className="flex items-center gap-2 p-1 bg-muted border border-border rounded-xl w-fit">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 rounded-lg transition-all ${
+                    viewMode === "grid" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 rounded-lg transition-all ${
+                    viewMode === "list" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <ListIcon className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab + viewMode}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-border bg-muted/30">
+                  <h2 className="text-xl font-bold text-foreground">
+                    {tabs.find((t) => t.id === activeTab)?.name}
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {tabs.find((t) => t.id === activeTab)?.description}
+                  </p>
+                </div>
+
+                <div className="p-0">
+                  {/* All Assets Tab */}
+                  {activeTab === "all" && (
+                    <div className="p-6">
+                      {filteredFiles.length === 0 ? (
+                        <div className="text-center py-12">
+                          <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                          <h3 className="font-semibold text-lg mb-2 text-foreground">No Assets Found</h3>
+                          <p className="text-muted-foreground text-sm">
+                            Your vault is empty or no files match your current search criteria.
+                          </p>
+                        </div>
+                      ) : viewMode === "list" ? (
+                        <div className="divide-y divide-border">
+                          {filteredFiles.map((file) => (
+                            <div key={file.id} className="py-4 hover:bg-muted/20 transition-colors px-4 -mx-4 rounded-xl">
+                              <div className="flex items-center gap-4">
+                                <div className="flex-shrink-0 text-3xl">{getFileIcon(file.mimeType)}</div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-foreground truncate">{file.name}</h4>
+                                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                    <span className="flex items-center gap-1">
+                                      {getStorageIcon(getStorageType(file.storageUrl))}
+                                      {getStorageLabel(getStorageType(file.storageUrl))}
+                                    </span>
+                                    <span>•</span>
+                                    <span>{formatFileSize(file.size)}</span>
+                                    <span>•</span>
+                                    <span>{formatDate(file.uploadedAt)}</span>
+                                    {file.passwordHash && (
+                                      <>
+                                        <span>•</span>
+                                        <Lock className="w-3 h-3" />
+                                      </>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs text-muted-foreground">Portal:</span>
+                                    <a
+                                      href={`/portal/${file.portal.slug}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                                    >
+                                      {file.portal.name}
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleDownload(file)}
+                                    className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
+                                    title="Download"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </button>
+                                  {file.passwordHash ? (
+                                    <button
+                                      onClick={() => handleRemovePassword(file)}
+                                      className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
+                                      title="Remove password"
+                                    >
+                                      <Unlock className="w-4 h-4" />
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleSetPassword(file)}
+                                      className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
+                                      title="Set password"
+                                    >
+                                      <Lock className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => handleDelete(file.id, file.name)}
+                                    disabled={deleting === file.id}
+                                    className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all disabled:opacity-50"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {filteredFiles.map((file) => (
+                            <div key={file.id} className="group bg-muted rounded-2xl border border-border hover:border-muted-foreground hover:shadow-lg transition-all p-4">
+                              <div className="flex justify-between items-start mb-4">
+                                <div className="bg-card rounded-xl border border-border group-hover:bg-muted transition-colors p-3 text-2xl">
+                                  {getFileIcon(file.mimeType)}
+                                </div>
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => handleDownload(file)}
+                                    className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(file.id, file.name)}
+                                    disabled={deleting === file.id}
+                                    className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                              <h4 className="font-bold text-foreground truncate text-sm" title={file.name}>
+                                {file.name}
+                              </h4>
+                              <div className="text-xs text-muted-foreground truncate mt-1">
+                                {file.portal.name}
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase">{formatFileSize(file.size)}</span>
+                                <span className="w-1 h-1 bg-border rounded-full" />
+                                <div className="flex items-center gap-1">
+                                  {getStorageIcon(getStorageType(file.storageUrl))}
+                                  <span className="text-[10px] text-muted-foreground">{getStorageLabel(getStorageType(file.storageUrl))}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* By Storage Tab */}
+                  {activeTab === "storage" && (
+                    <div className="p-6 space-y-8">
+                      {['google', 'dropbox', 'local', 'other'].map((provider) => {
+                        const providerFiles = filteredFiles.filter((f) => getStorageType(f.storageUrl) === provider);
+                        if (providerFiles.length === 0) return null;
+
+                        return (
+                          <div key={provider} className="bg-muted rounded-3xl border border-border overflow-hidden">
+                            <div className="p-4 bg-card border-b border-border flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 bg-muted rounded-xl">
+                                  {getProviderIcon(provider)}
+                                </div>
+                                <h3 className="font-bold text-foreground capitalize">{getStorageLabel(provider)}</h3>
+                              </div>
+                              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                                {providerFiles.length} items
+                              </span>
+                            </div>
+                            <div className="p-4">
+                              {viewMode === "list" ? (
+                                <div className="divide-y divide-border">
+                                  {providerFiles.map((file) => (
+                                    <div key={file.id} className="py-3 hover:bg-card/50 transition-colors px-3 -mx-3 rounded-xl">
+                                      <div className="flex items-center gap-3">
+                                        <div className="flex-shrink-0 text-2xl">{getFileIcon(file.mimeType)}</div>
+                                        <div className="flex-1 min-w-0">
+                                          <h4 className="font-semibold text-foreground truncate text-sm">{file.name}</h4>
+                                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                            <span>{formatFileSize(file.size)}</span>
+                                            <span>•</span>
+                                            <span>{formatDate(file.uploadedAt)}</span>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <button
+                                            onClick={() => handleDownload(file)}
+                                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
+                                          >
+                                            <Download className="w-4 h-4" />
+                                          </button>
+                                          <button
+                                            onClick={() => handleDelete(file.id, file.name)}
+                                            disabled={deleting === file.id}
+                                            className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                  {providerFiles.map((file) => (
+                                    <div key={file.id} className="bg-card rounded-xl border border-border hover:shadow-md transition-all p-3">
+                                      <div className="flex justify-between items-start mb-3">
+                                        <div className="text-xl">{getFileIcon(file.mimeType)}</div>
+                                        <div className="flex gap-1">
+                                          <button
+                                            onClick={() => handleDownload(file)}
+                                            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
+                                          >
+                                            <Download className="w-3.5 h-3.5" />
+                                          </button>
+                                          <button
+                                            onClick={() => handleDelete(file.id, file.name)}
+                                            className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                      <h4 className="font-bold text-foreground truncate text-xs" title={file.name}>
+                                        {file.name}
+                                      </h4>
+                                      <div className="text-[10px] text-muted-foreground mt-1">
+                                        {formatFileSize(file.size)}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Insights Tab */}
+                  {activeTab === "stats" && (
+                    <div className={`transition-all duration-300 ${viewMode === 'list' ? "p-8" : "p-12"} text-center`}>
+                      <div className={`mx-auto transition-all duration-300 bg-muted rounded-full border border-border relative flex items-center justify-center ${
+                        viewMode === 'list' ? "w-20 h-20 mb-6" : "w-32 h-32 mb-8"
+                      }`}>
+                        <PieChart className={`text-muted-foreground transition-all ${viewMode === 'list' ? "w-10 h-10" : "w-16 h-16"}`} />
+                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card rounded-full flex items-center justify-center shadow-sm transition-all ${
+                          viewMode === 'list' ? "w-7 h-7" : "w-10 h-10"
+                        }`}>
+                          <TrendingUp className={`text-foreground ${viewMode === 'list' ? "w-3.5 h-3.5" : "w-5 h-5"}`} />
+                        </div>
+                      </div>
+
+                      <div className={viewMode === 'list' ? "flex flex-col items-center" : ""}>
+                        <h3 className={`font-black text-foreground mb-2 transition-all ${viewMode === 'list' ? "text-xl" : "text-2xl"}`}>
+                          Storage Intelligence
+                        </h3>
+                        <p className={`text-muted-foreground text-sm max-w-md mx-auto leading-relaxed transition-all ${
+                          viewMode === 'list' ? "mb-8" : "mb-10"
+                        }`}>
+                          Monitor how your storage is distributed across your connected cloud ecosystems.
+                        </p>
+                      </div>
+
+                      <div className={`grid gap-4 mx-auto transition-all ${
+                        viewMode === 'list' ? "grid-cols-2 md:grid-cols-4 max-w-4xl" : "grid-cols-2 md:grid-cols-4 max-w-3xl"
+                      }`}>
+                        <div className={`bg-muted rounded-3xl border border-border group hover:bg-card hover:border-border transition-all ${
+                          viewMode === 'list' ? "p-4" : "p-6"
+                        }`}>
+                          <p className={`font-black text-foreground transition-all ${viewMode === 'list' ? "text-2xl" : "text-3xl"}`}>
+                            {stats.totalFiles}
+                          </p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5">
+                            Files Collected
+                          </p>
+                        </div>
+                        <div className={`bg-muted rounded-3xl border border-border group hover:bg-card hover:border-border transition-all ${
+                          viewMode === 'list' ? "p-4" : "p-6"
+                        }`}>
+                          <p className={`font-black text-foreground transition-all ${viewMode === 'list' ? "text-2xl" : "text-3xl"}`}>
+                            {Math.round(parseFloat(stats.totalSizeMB))}
+                          </p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5">
+                            MB Utilized
+                          </p>
+                        </div>
+                        <div className={`bg-muted rounded-3xl border border-border group hover:bg-card hover:border-border transition-all ${
+                          viewMode === 'list' ? "p-4" : "p-6"
+                        }`}>
+                          <p className={`font-black text-foreground transition-all ${viewMode === 'list' ? "text-2xl" : "text-3xl"}`}>
+                            {Object.keys(stats.byProvider).length}
+                          </p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5">
+                            Providers
+                          </p>
+                        </div>
+                        <div className={`bg-muted rounded-3xl border border-border group hover:bg-card hover:border-border transition-all ${
+                          viewMode === 'list' ? "p-4" : "p-6"
+                        }`}>
+                          <p className={`font-black text-foreground transition-all ${viewMode === 'list' ? "text-2xl" : "text-3xl"}`}>
+                            {files.length > 0 ? 'Healthy' : '-'}
+                          </p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5">
+                            Vault Status
                           </p>
                         </div>
                       </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-foreground">
-                          {file.portal.name}
-                        </span>
-                        <a
-                          className="text-primary hover:text-primary/80 transition-colors"
-                          href={`/portal/${file.portal.slug}`}
-                          rel="noopener noreferrer"
-                          target="_blank"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        {getStorageIcon(getStorageType(file.storageUrl))}
-                        <span className="text-sm text-foreground">
-                          {getStorageLabel(getStorageType(file.storageUrl))}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="text-sm text-foreground">
-                        {formatFileSize(file.size)}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm text-foreground">
-                          {formatDate(file.uploadedAt)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="text-sm text-foreground">
-                        {file.downloads}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        {file.passwordHash ? (
-                          <>
-                            <Lock className="w-4 h-4 text-green-600" />
-                            <span className="text-sm text-green-600 font-medium">
-                              Protected
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <Unlock className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">
-                              Open
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          className="rounded-xl"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDownload(file)}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          className="rounded-xl"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSetPassword(file)}
-                          title={
-                            file.passwordHash
-                              ? "Change Password"
-                              : "Set Password"
-                          }
-                        >
-                          {file.passwordHash ? (
-                            <Lock className="w-4 h-4" />
-                          ) : (
-                            <Unlock className="w-4 h-4" />
-                          )}
-                        </Button>
-                        {file.passwordHash && (
-                          <Button
-                            className="rounded-none font-mono text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleRemovePassword(file)}
-                            title="Remove Password"
-                          >
-                            <Unlock className="w-4 h-4" />
-                          </Button>
-                        )}
-                        <Button
-                          className="rounded-none font-mono text-red-600 hover:text-red-700 hover:bg-red-50"
-                          disabled={deleting === file.id}
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDelete(file.id, file.name)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
     </div>
   );
 }
