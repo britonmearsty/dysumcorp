@@ -2,16 +2,14 @@
 
 import {
   FolderOpen,
-  FileText,
-  Plus,
-  Upload,
-  ArrowRight,
   TrendingUp,
+  Settings,
+  HardDrive,
+  Plus,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 
 interface Portal {
@@ -38,6 +36,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState("Good afternoon");
   const [stats, setStats] = useState({
+    totalPortals: 0,
     activePortals: 0,
     totalFilesReceived: 0,
     recentActivityCount: 0,
@@ -67,19 +66,18 @@ export default function DashboardPage() {
           const portals = portalsData.portals || [];
           const files = filesData.files || [];
 
-          // Calculate stats
           const fileCount = portals.reduce(
             (acc: number, p: any) => acc + (p._count?.files || 0),
             0,
           );
 
-          // Get recent files (last 24h)
           const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
           const recentFiles = files.filter(
             (f: any) => new Date(f.uploadedAt) > oneDayAgo,
           );
 
           setStats({
+            totalPortals: portals.length,
             activePortals: portals.length,
             totalFilesReceived: fileCount,
             recentActivityCount: recentFiles.length,
@@ -100,27 +98,16 @@ export default function DashboardPage() {
     }
   }, [session]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    // Return relative time if under 24h, else date
-    const diff = Date.now() - date.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-
-    if (hours < 1) return "Just now";
-    if (hours < 24) return `${hours} hours ago`;
-
-    return date.toLocaleDateString();
-  };
-
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-bg-base px-12 py-10">
         <div className="space-y-8 animate-pulse">
-          <div className="h-8 w-48 bg-muted rounded-xl" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="h-32 bg-muted rounded-xl" />
-            <div className="h-32 bg-muted rounded-xl" />
-            <div className="h-32 bg-muted rounded-xl" />
+          <div className="h-8 w-48 bg-bg-card rounded-xl" />
+          <div className="grid grid-cols-4 gap-4">
+            <div className="h-32 bg-bg-card rounded-xl" />
+            <div className="h-32 bg-bg-card rounded-xl" />
+            <div className="h-32 bg-bg-card rounded-xl" />
+            <div className="h-32 bg-bg-card rounded-xl" />
           </div>
         </div>
       </div>
@@ -128,226 +115,293 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-bg-base px-12 py-10">
       {/* Header Section */}
-      <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <header className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-black text-foreground tracking-tight mb-2">
+          <h1 className="text-[1.75rem] font-bold text-text-white tracking-tight mb-1.5">
             {greeting}, {session?.user?.name?.split(" ")[0] || "User"}
           </h1>
-          <p className="text-muted-foreground font-medium text-lg">
+          <p className="text-sm text-text-muted">
             Manage your secure file collection and track client uploads in
             real-time.
           </p>
         </div>
 
-        <nav className="flex items-center gap-3">
-          <Link
-            href="/dashboard/portals/create"
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 hover:shadow-xl hover:shadow-primary/20 active:scale-95 font-bold text-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Create Portal
-          </Link>
-        </nav>
+        <Link
+          href="/dashboard/portals/create"
+          className="flex items-center gap-1.5 bg-primary text-primary-foreground border-none rounded-[10px] px-5 py-2.5 text-sm font-semibold cursor-pointer hover:opacity-90 transition-opacity"
+        >
+          <span className="text-lg font-medium">+</span> Create Portal
+        </Link>
       </header>
 
-      {/* Stats Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/50">
-              <FolderOpen className="w-6 h-6" />
-            </div>
+      {/* Stats Grid - 4 columns */}
+      <section className="grid grid-cols-4 gap-4 mb-9">
+        {/* Total Portals */}
+        <div className="bg-bg-card border border-border rounded-[14px] p-[22px_24px_24px]">
+          <div className="w-9 h-9 mb-[18px]">
+            <svg
+              className="w-9 h-9 text-accent-blue"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            </svg>
           </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-bold text-foreground">
-              {stats.activePortals}
-            </p>
-            <p className="text-sm text-muted-foreground">Active Portals</p>
-          </div>
+          <p className="text-[0.8rem] text-text-muted font-medium mb-1.5 tracking-wide">
+            Total Portals
+          </p>
+          <p className="text-[2rem] font-bold text-text-white leading-none">
+            {stats.totalPortals}
+          </p>
         </div>
 
-        <div className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-lg bg-green-50 text-green-600 dark:bg-green-950/50">
-              <FileText className="w-6 h-6" />
-            </div>
+        {/* Active Portals */}
+        <div className="bg-bg-card border border-border rounded-[14px] p-[22px_24px_24px]">
+          <div className="w-9 h-9 mb-[18px]">
+            <svg
+              className="w-9 h-9 text-accent-green"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
           </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-bold text-foreground">
-              {stats.totalFilesReceived}
-            </p>
-            <p className="text-sm text-muted-foreground">Files Received</p>
-          </div>
+          <p className="text-[0.8rem] text-text-muted font-medium mb-1.5 tracking-wide">
+            Active Portals
+          </p>
+          <p className="text-[2rem] font-bold text-text-white leading-none">
+            {stats.activePortals}
+          </p>
         </div>
 
-        <div className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/50">
-              <TrendingUp className="w-6 h-6" />
-            </div>
+        {/* Files Received */}
+        <div className="bg-bg-card border border-border rounded-[14px] p-[22px_24px_24px]">
+          <div className="w-9 h-9 mb-[18px]">
+            <svg
+              className="w-9 h-9 text-accent-purple"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+              <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+            </svg>
           </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-bold text-foreground">
-              {stats.recentActivityCount}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Recent Uploads (24h)
-            </p>
+          <p className="text-[0.8rem] text-text-muted font-medium mb-1.5 tracking-wide">
+            Files Received
+          </p>
+          <p className="text-[2rem] font-bold text-text-white leading-none">
+            {stats.totalFilesReceived}
+          </p>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="bg-bg-card border border-border rounded-[14px] p-[22px_24px_24px]">
+          <div className="w-9 h-9 mb-[18px]">
+            <svg
+              className="w-9 h-9 text-accent-yellow"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+              <polyline points="17 6 23 6 23 12" />
+            </svg>
           </div>
+          <p className="text-[0.8rem] text-text-muted font-medium mb-1.5 tracking-wide">
+            Recent Activity
+          </p>
+          <p className="text-[2rem] font-bold text-text-white leading-none">
+            {stats.recentActivityCount}
+          </p>
         </div>
       </section>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-        {/* Active Client Portals - Takes 2 columns */}
-        <section className="lg:col-span-2 flex flex-col gap-6">
+      <div className="grid grid-cols-[1fr_360px] gap-6 items-start">
+        {/* Left Panel - Active Client Portals */}
+        <section className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-foreground">
+            <span className="text-base font-bold text-text-white">
               Active Client Portals
+            </span>
+            <Link
+              href="/dashboard/portals"
+              className="text-xs text-text-muted hover:text-text-white transition-colors flex items-center gap-1"
+            >
+              View All Portals <span>→</span>
+            </Link>
+          </div>
+
+          <div className="bg-bg-card border border-border rounded-[14px] flex flex-col items-center justify-center py-[72px] px-10 min-h-[380px] text-center">
+            <svg
+              className="w-14 h-14 mb-6 opacity-45"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            </svg>
+            <h2 className="text-[1.15rem] font-bold text-text-white mb-2.5">
+              Build your first portal
             </h2>
-            <Link
-              href="/dashboard/portals"
-              className="group flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
-            >
-              View All Portals
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            <p className="text-sm text-text-muted leading-relaxed max-w-[280px] mb-7">
+              Start collecting files securely. It takes less than a minute to
+              set up.
+            </p>
+            <Link href="/dashboard/portals/create">
+              <button className="bg-primary text-primary-foreground border-none rounded-[10px] px-9 py-3 text-[0.9rem] font-bold cursor-pointer hover:opacity-90 transition-opacity">
+                Create Portal
+              </button>
             </Link>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {activePortalsList.length === 0 ? (
-              <div className="col-span-2 bg-card rounded-xl p-12 border border-border text-center">
-                <FolderOpen className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground font-medium">
-                  No active portals found.
-                </p>
-              </div>
-            ) : (
-              activePortalsList.map((portal) => (
-                <div
-                  key={portal.id}
-                  className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate mb-1">
-                        {portal.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        Created{" "}
-                        {new Date(portal.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <span className="px-2 py-1 bg-green-50 text-green-600 dark:bg-green-950/50 text-xs font-medium rounded-md flex-shrink-0 ml-2">
-                      Active
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <FileText className="w-4 h-4" />
-                      <span>{portal._count?.files || 0} files</span>
-                    </div>
-                  </div>
-                  <Link href={`/dashboard/portals/${portal.id}`}>
-                    <Button
-                      className="w-full rounded-xl font-medium"
-                      size="sm"
-                      variant="outline"
-                    >
-                      Manage Portal
-                    </Button>
-                  </Link>
-                </div>
-              ))
-            )}
-          </div>
-
-          {activePortalsList.length > 4 && (
-            <Link
-              href="/dashboard/portals"
-              className="flex items-center justify-center py-4 bg-card rounded-xl border border-dashed border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all text-sm font-bold"
-            >
-              View {activePortalsList.length - 4} more portals
-            </Link>
-          )}
         </section>
 
-        {/* Quick Actions & Recent Activity - Takes 1 column */}
-        <aside className="lg:col-span-1 flex flex-col gap-8">
+        {/* Right Panel - Quick Actions + Recent Activity */}
+        <aside className="flex flex-col gap-6">
           {/* Quick Actions */}
-          <nav className="space-y-4">
-            <h2 className="text-sm font-bold text-foreground px-1">
+          <div>
+            <h2 className="text-base font-bold text-text-white mb-3.5">
               Quick Actions
             </h2>
-            <div className="space-y-3">
-              <Link href="/dashboard/portals/create" className="block">
-                <Button className="w-full rounded-xl bg-primary hover:bg-primary/90 font-medium justify-start">
-                  <Plus className="mr-2 w-4 h-4" />
-                  Create New Portal
-                </Button>
-              </Link>
-              <Link href="/dashboard/assets" className="block">
-                <Button
-                  className="w-full rounded-xl font-medium justify-start"
-                  variant="outline"
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                href="/dashboard/portals/create"
+                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-bg-card2 hover:border-muted-2 transition-all flex flex-col gap-2.5"
+              >
+                <svg
+                  className="w-[26px] h-[26px] text-accent-green"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <Upload className="mr-2 w-4 h-4" />
-                  Manage Files
-                </Button>
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <span className="text-sm font-semibold text-text-white">
+                  New Portal
+                </span>
+              </Link>
+
+              <Link
+                href="/dashboard/portals"
+                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-bg-card2 hover:border-muted-2 transition-all flex flex-col gap-2.5"
+              >
+                <svg
+                  className="w-[26px] h-[26px] text-accent-blue"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                </svg>
+                <span className="text-sm font-semibold text-text-white">
+                  All Portals
+                </span>
+              </Link>
+
+              <Link
+                href="/dashboard/storage"
+                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-bg-card2 hover:border-muted-2 transition-all flex flex-col gap-2.5"
+              >
+                <svg
+                  className="w-[26px] h-[26px] text-accent-purple"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+                </svg>
+                <span className="text-sm font-semibold text-text-white">
+                  Storage
+                </span>
+              </Link>
+
+              <Link
+                href="/dashboard/settings"
+                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-bg-card2 hover:border-muted-2 transition-all flex flex-col gap-2.5"
+              >
+                <svg
+                  className="w-[26px] h-[26px] text-accent-yellow"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                <span className="text-sm font-semibold text-text-white">
+                  Settings
+                </span>
               </Link>
             </div>
-          </nav>
+          </div>
 
           {/* Recent Activity */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <h2 className="text-sm font-bold text-foreground">
+          <div>
+            <div className="flex items-center justify-between mb-3.5">
+              <span className="text-base font-bold text-text-white">
                 Recent Activity
-              </h2>
+              </span>
               <Link
                 href="/dashboard/assets"
-                className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
+                className="text-xs text-text-muted hover:text-text-white transition-colors"
               >
                 View All
               </Link>
             </div>
-            <div className="bg-card rounded-xl border border-border overflow-hidden">
-              {recentActivities.length === 0 ? (
-                <div className="p-6 text-center">
-                  <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    No recent uploads.
-                  </p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border">
-                  {recentActivities.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="w-10 h-10 flex items-center justify-center bg-blue-50 dark:bg-blue-950/50 rounded-lg flex-shrink-0">
-                        <Upload className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">
-                          {file.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {file.portal.name}
-                        </p>
-                      </div>
-                      <p className="text-xs text-muted-foreground flex-shrink-0">
-                        {formatDate(file.uploadedAt)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="bg-bg-card border border-border rounded-[12px] flex flex-col items-center justify-center py-11 px-6 min-h-[200px] text-center">
+              <svg
+                className="w-10 h-10 mb-4 opacity-40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+                <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+              </svg>
+              <h3 className="text-sm font-semibold text-text-sub mb-1.5">
+                No recent activity detected.
+              </h3>
+              <p className="text-[0.78rem] text-text-muted leading-relaxed">
+                Files uploaded to your portals will appear here.
+              </p>
             </div>
-          </section>
+          </div>
         </aside>
       </div>
     </main>

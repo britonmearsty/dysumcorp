@@ -24,6 +24,7 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-card-2: var(--card-2);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
@@ -32,6 +33,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-muted-2: var(--muted-2);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
@@ -53,6 +55,17 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-main-bg: var(--main-bg);
+  --color-bg-base: var(--bg-base);
+  --color-bg-card: var(--bg-card);
+  --color-bg-card2: var(--bg-card2);
+  --color-bg-empty: var(--bg-empty);
+  --color-text-white: var(--text-white);
+  --color-text-muted: var(--text-muted);
+  --color-text-sub: var(--text-sub);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-green: var(--accent-green);
+  --color-accent-purple: var(--accent-purple);
+  --color-accent-yellow: var(--accent-yellow);
 }
 
 :root {
@@ -61,6 +74,7 @@
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
+  --card-2: #f1f5f9;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
   --primary: #334155;
@@ -69,6 +83,7 @@
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
+  --muted-2: #cbd5e1;
   --accent: #f1f5f9;
   --accent-foreground: #0f172a;
   --destructive: #7f1d1d;
@@ -90,6 +105,18 @@
   --sidebar-border: #e2e8f0;
   --sidebar-ring: #334155;
   --main-bg: #f8fafc;
+
+  /* Dashboard theme colors */
+  --bg-base: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-empty: #f1f5f9;
+  --text-white: #0f172a;
+  --text-muted: #64748b;
+  --text-sub: #475569;
+  --accent-blue: #3b82f6;
+  --accent-green: #22c55e;
+  --accent-purple: #8b5cf6;
+  --accent-yellow: #f59e0b;
 }
 
 .dark {
@@ -97,6 +124,7 @@
   --foreground: #f8fafc;
   --card: #0f172a;
   --card-foreground: #f8fafc;
+  --card-2: #1e293b;
   --popover: #0f172a;
   --popover-foreground: #f8fafc;
   --primary: #94a3b8;
@@ -105,6 +133,7 @@
   --secondary-foreground: #f8fafc;
   --muted: #0f172a;
   --muted-foreground: #94a3b8;
+  --muted-2: #334155;
   --accent: #1e293b;
   --accent-foreground: #f8fafc;
   --destructive: #7f1d1d;
@@ -126,6 +155,20 @@
   --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: #94a3b8;
   --main-bg: #1a202c;
+
+  /* Dashboard theme colors */
+  --bg-base: #0f1520;
+  --bg-card: #182030;
+  --bg-card2: #1a2236;
+  --bg-empty: #1e2840;
+  --border: #263045;
+  --text-white: #e8edf5;
+  --text-muted: #6b7a96;
+  --text-sub: #8a9bb8;
+  --accent-blue: #4ea8e8;
+  --accent-green: #3ec98a;
+  --accent-purple: #9b72f0;
+  --accent-yellow: #f5a623;
 }
 
 @layer base {

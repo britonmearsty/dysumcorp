@@ -46,18 +46,6 @@ export async function GET(request: Request) {
       (storageUsedBytes / (1024 * 1024 * 1024)).toFixed(2),
     ); // Convert to GB
 
-    // Get team members count (teams where user is owner)
-    const teams = await prisma.team.findMany({
-      where: { ownerId: userId },
-      include: {
-        members: true,
-      },
-    });
-
-    const teamMembersUsed =
-      teams.reduce((acc: number, team: any) => acc + team.members.length, 0) +
-      1; // +1 for owner
-
     // Get custom domains count
     const customDomainsUsed = await prisma.portal.count({
       where: {
@@ -71,7 +59,6 @@ export async function GET(request: Request) {
     return NextResponse.json({
       portalsUsed,
       storageUsed,
-      teamMembersUsed,
       customDomainsUsed,
     });
   } catch (error) {

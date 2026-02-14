@@ -4,7 +4,13 @@ import type { Transition, Variants } from "motion/react";
 import type { HTMLAttributes } from "react";
 
 import { motion, useAnimation } from "motion/react";
-import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -15,6 +21,7 @@ export interface HomeIconHandle {
 
 interface HomeIconProps extends HTMLAttributes<HTMLDivElement> {
   size?: number;
+  isHovered?: boolean;
 }
 
 const DEFAULT_TRANSITION: Transition = {
@@ -34,7 +41,10 @@ const PATH_VARIANTS: Variants = {
 };
 
 const HomeIcon = forwardRef<HomeIconHandle, HomeIconProps>(
-  ({ onMouseEnter, onMouseLeave, className, size = 28, ...props }, ref) => {
+  (
+    { onMouseEnter, onMouseLeave, className, size = 28, isHovered, ...props },
+    ref,
+  ) => {
     const controls = useAnimation();
     const isControlledRef = useRef(false);
 
@@ -46,6 +56,14 @@ const HomeIcon = forwardRef<HomeIconHandle, HomeIconProps>(
         stopAnimation: () => controls.start("normal"),
       };
     });
+
+    useEffect(() => {
+      if (isHovered) {
+        controls.start("animate");
+      } else {
+        controls.start("normal");
+      }
+    }, [isHovered, controls]);
 
     const handleMouseEnter = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {

@@ -4,7 +4,13 @@ import type { Variants } from "motion/react";
 import type { HTMLAttributes } from "react";
 
 import { motion, useAnimation } from "motion/react";
-import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -15,6 +21,7 @@ export interface BlocksIconHandle {
 
 interface BlocksIconProps extends HTMLAttributes<HTMLDivElement> {
   size?: number;
+  isHovered?: boolean;
 }
 
 const VARIANTS: Variants = {
@@ -23,7 +30,10 @@ const VARIANTS: Variants = {
 };
 
 const BlocksIcon = forwardRef<BlocksIconHandle, BlocksIconProps>(
-  ({ onMouseEnter, onMouseLeave, className, size = 28, ...props }, ref) => {
+  (
+    { onMouseEnter, onMouseLeave, className, size = 28, isHovered, ...props },
+    ref,
+  ) => {
     const controls = useAnimation();
     const isControlledRef = useRef(false);
 
@@ -35,6 +45,14 @@ const BlocksIcon = forwardRef<BlocksIconHandle, BlocksIconProps>(
         stopAnimation: () => controls.start("normal"),
       };
     });
+
+    useEffect(() => {
+      if (isHovered) {
+        controls.start("animate");
+      } else {
+        controls.start("normal");
+      }
+    }, [isHovered, controls]);
 
     const handleMouseEnter = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {

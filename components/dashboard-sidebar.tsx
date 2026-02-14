@@ -105,7 +105,7 @@ function UserAccountSection({ onClose }: { onClose: () => void }) {
 
       {/* Logout Button */}
       <Button
-        className="w-full justify-start gap-3 font-mono h-10 rounded-lg transition-all duration-200 hover:bg-destructive/10 hover:border-destructive hover:text-destructive dark:hover:bg-destructive/20 dark:hover:border-destructive/80"
+        className="w-full justify-start gap-3 font-mono h-10 rounded-lg transition-all duration-200 hover:bg-destructive/10 hover:border-destructive hover:text-destructive dark:hover:bg-destructive/20 dark:hover:border-destructive/80 py-0"
         disabled={isLoggingOut}
         size="sm"
         variant="outline"
@@ -158,7 +158,7 @@ export function DashboardSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-sidebar backdrop-blur-sm border-r border-sidebar-border/50 transition-transform duration-300 ease-in-out",
+          "fixed lg:sticky top-0 left-0 z-40 h-screen w-72 bg-sidebar backdrop-blur-sm border-r border-sidebar-border/50 transition-transform duration-300 ease-in-out",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
