@@ -2,21 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 
-<<<<<<< HEAD
-function StatCard({
-  value,
-  label,
-  delay = 0,
-  className = "",
-}: {
-  value: React.ReactNode;
-  label: string;
-  delay?: number;
-  className?: string;
-}) {
-=======
 function StatCard({ value, label, delay = 0, className = "" }: { value: string; label: string; delay?: number; className?: string }) {
->>>>>>> bda1a267ff59dd0a2ebdf872d7d88b40408681f5
   return (
     <div
       className={`stat-card ${className}`}
