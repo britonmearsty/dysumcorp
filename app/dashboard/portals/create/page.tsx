@@ -573,9 +573,11 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                   <p className="text-xs font-semibold text-foreground truncate">
                     {folderPath[folderPath.length - 1].name}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {formData.storageFolderPath}
-                  </p>
+                  {formData.storageFolderPath && formData.storageFolderPath !== "/" && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {formData.storageFolderPath}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
