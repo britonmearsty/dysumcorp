@@ -79,7 +79,7 @@ function UserAccountSection({ onClose }: { onClose: () => void }) {
   return (
     <div className="space-y-3 p-3">
       {/* User Info Card */}
-      <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-sidebar-border/50">
         {user?.image ? (
           <Image
             alt={user.name || "User"}
@@ -130,7 +130,7 @@ export function DashboardSidebar() {
     <>
       {/* Mobile menu button */}
       <Button
-        className="lg:hidden fixed top-4 left-4 z-50 bg-background/80 backdrop-blur-sm border border-border/50 shadow-lg"
+        className="lg:hidden fixed top-4 left-4 z-50 bg-sidebar/80 backdrop-blur-sm border border-sidebar-border/50 shadow-lg"
         size="icon"
         variant="outline"
         onClick={() => setIsMobileOpen(!isMobileOpen)}
@@ -160,13 +160,13 @@ export function DashboardSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-gradient-to-b from-background to-background/95 backdrop-blur-sm border-r border-border/50 transition-transform duration-300 ease-in-out",
+          "fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-sidebar backdrop-blur-sm border-r border-sidebar-border/50 transition-transform duration-300 ease-in-out",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-3 px-6 py-6 border-b border-border/50 bg-background/50 backdrop-blur-sm">
+          <div className="flex items-center gap-3 px-6 py-6 border-b border-sidebar-border/50 bg-sidebar/50 backdrop-blur-sm">
             <div className="relative">
               <Image
                 alt="Dysumcorp Logo"
@@ -203,7 +203,7 @@ export function DashboardSidebar() {
           </nav>
 
           {/* User section */}
-          <div className="px-3 py-4 border-t border-border/50 bg-background/30 backdrop-blur-sm">
+          <div className="px-3 py-4 border-t border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm">
             <UserAccountSection onClose={() => setIsMobileOpen(false)} />
           </div>
         </div>
