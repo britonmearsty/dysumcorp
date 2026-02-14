@@ -28,8 +28,15 @@ export default function StoragePage() {
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Transform new API format to old format for this page
+        const googleAccount = data.accounts?.find((a: any) => a.provider === "google");
+        const dropboxAccount = data.accounts?.find((a: any) => a.provider === "dropbox");
 
-        setConnections(data);
+        setConnections({
+          google: googleAccount?.isConnected || false,
+          dropbox: dropboxAccount?.isConnected || false,
+        });
       }
     } catch (error) {
       console.error("Failed to check connections:", error);

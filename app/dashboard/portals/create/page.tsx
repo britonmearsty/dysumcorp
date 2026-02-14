@@ -184,11 +184,11 @@ const StorageSection: React.FC<StorageSectionProps> = ({
       if (res.ok) {
         const data = await res.json();
         console.log("Storage connections response:", data);
-        const connectedAccounts = data.accounts?.filter(
-          (a: ConnectedAccount) => a.isConnected
-        ) || [];
-        console.log("Connected accounts:", connectedAccounts);
-        setAccounts(connectedAccounts);
+        // Show ALL accounts, not just connected ones
+        // This way users can see disconnected accounts and know they need to reconnect
+        const allAccounts = data.accounts || [];
+        console.log("All accounts:", allAccounts);
+        setAccounts(allAccounts);
       } else {
         console.error("Failed to fetch storage connections:", res.status, await res.text());
       }
@@ -344,13 +344,12 @@ const StorageSection: React.FC<StorageSectionProps> = ({
           <div className="bg-warning/10 border border-warning/20 rounded-xl p-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-              <div>
+              <div className="flex-1">
                 <h4 className="font-semibold text-foreground mb-1">
                   Storage Account Issues Detected
                 </h4>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Some of your storage accounts have connection issues. This
-                  may affect portal functionality.
+                  Your storage accounts need to be reconnected. Please go to Settings to fix this issue.
                 </p>
                 <div className="space-y-2">
                   {accounts
@@ -385,23 +384,16 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                       </div>
                     ))}
                 </div>
-                <div className="mt-3 pt-3 border-t border-warning/20">
-                  <button
-                    type="button"
-                    onClick={runStorageHealthCheck}
-                    disabled={isRunningHealthCheck}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-warning/10 hover:bg-warning/20 border border-warning/30 rounded-lg text-xs font-medium text-warning-foreground transition-colors disabled:opacity-50"
+                <div className="mt-4 flex items-center gap-3">
+                  <Link
+                    href="/dashboard/storage"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-warning text-warning-foreground rounded-lg text-sm font-medium hover:bg-warning/90 transition-colors"
                   >
-                    <RefreshCw
-                      className={`w-3 h-3 ${isRunningHealthCheck ? "animate-spin" : ""}`}
-                    />
-                    {isRunningHealthCheck
-                      ? "Running Health Check..."
-                      : "Run Storage Health Check"}
-                  </button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Visit <strong>Settings → Connected Accounts</strong> to fix
-                    these issues manually.
+                    Reconnect Storage
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                  <p className="text-xs text-muted-foreground">
+                    Go to Storage page to reconnect your accounts
                   </p>
                 </div>
               </div>
