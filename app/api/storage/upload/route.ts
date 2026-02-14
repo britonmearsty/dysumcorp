@@ -19,8 +19,99 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = session.user.id;
+    const contentType = request.headers.get("content-type");
 
-    // Parse form data
+    // Check if this is a folder creation request (JSON) or file upload (FormData)
+    if (contentType?.includes("application/json")) {
+      // Folder creation
+      const body = await request.json();
+      const { provider, folderName, parentFolderId } = body;
+
+      if (!provider || !folderName) {
+        return NextResponse.json(
+          { error: "Provider and folderName are required" },
+          { status: 400 },
+        );
+      }
+
+      // Map google_drive to google
+      const tokenProvider = provider === "google_drive" ? "google" : provider;
+
+      // Get valid access token
+      const accessToken = await getValidToken(userId, tokenProvider);
+
+      if (!accessToken) {
+        return NextResponse.json(
+          { error: `No ${provider} account connected or token expired` },
+          { status: 403 },
+        );
+      }
+
+      // Create folder based on provider
+      if (provider === "google_drive") {
+        const metadata = {
+          name: folderName,
+          mimeType: "application/vnd.google-apps.folder",
+          parents: parentFolderId && parentFolderId !== "root" ? [parentFolderId] : ["root"],
+        };
+
+        const response = await fetch(
+          "https://www.googleapis.com/drive/v3/files?fields=id,name",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(metadata),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`Google Drive folder creation failed: ${response.statusText}`);
+        }
+
+        const folder = await response.json();
+        return NextResponse.json({
+          id: folder.id,
+          name: folder.name,
+          path: `/${folder.name}`,
+          subfolders: [],
+        });
+      } else if (provider === "dropbox") {
+        const path = parentFolderId
+          ? `${parentFolderId}/${folderName}`
+          : `/${folderName}`;
+
+        const response = await fetch(
+          "https://api.dropboxapi.com/2/files/create_folder_v2",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ path }),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`Dropbox folder creation failed: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return NextResponse.json({
+          id: data.metadata.path_lower,
+          name: data.metadata.name,
+          path: data.metadata.path_display,
+          subfolders: [],
+        });
+      }
+
+      return NextResponse.json({ error: "Unsupported provider" }, { status: 400 });
+    }
+
+    // File upload (existing logic)
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const provider = formData.get("provider") as StorageProvider;

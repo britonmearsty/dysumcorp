@@ -136,6 +136,7 @@ const CheckIcon = ({ size = 14 }) => (
   </svg>
 );
 
+<<<<<<< HEAD
 function AnimatedNumber({
   target,
   suffix = "",
@@ -145,6 +146,9 @@ function AnimatedNumber({
   suffix?: string;
   duration?: number;
 }) {
+=======
+function AnimatedNumber({ target, suffix = "", duration = 1800 }: { target: number; suffix?: string; duration?: number }) {
+>>>>>>> bda1a267ff59dd0a2ebdf872d7d88b40408681f5
   const [count, setCount] = useState(0);
   const ref = useRef(null);
   const started = useRef(false);
@@ -666,6 +670,7 @@ function ClientRow() {
   );
 }
 
+<<<<<<< HEAD
 function FeatureCard({
   feature,
   style = {},
@@ -673,6 +678,9 @@ function FeatureCard({
   feature: Feature;
   style?: React.CSSProperties;
 }) {
+=======
+function FeatureCard({ feature, style = {} }: { feature: any; style?: React.CSSProperties }) {
+>>>>>>> bda1a267ff59dd0a2ebdf872d7d88b40408681f5
   const [hovered, setHovered] = useState(false);
 
   return (
