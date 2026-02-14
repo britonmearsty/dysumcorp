@@ -22,15 +22,13 @@ const nextConfig = {
   // Exclude reference folders from page compilation
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'].map(ext => `page.${ext}`).concat(['tsx', 'ts', 'jsx', 'js']),
   
-  // Exclude specific directories
-  experimental: {
-    outputFileTracingExcludes: {
-      '*': [
-        './dashboard-pages-reference/**/*',
-        './design-reference/**/*',
-        './dysum/**/*',
-      ],
-    },
+  // Exclude specific directories from output file tracing
+  outputFileTracingExcludes: {
+    '*': [
+      './dashboard-pages-reference/**/*',
+      './design-reference/**/*',
+      './dysum/**/*',
+    ],
   },
   
   // Disable ESLint during builds (warnings are treated as errors)
