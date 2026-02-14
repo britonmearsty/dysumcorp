@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 
-function StatCard({ value, label, delay = 0, className = "" }) {
+function StatCard({ value, label, delay = 0, className = "" }: { value: string; label: string; delay?: number; className?: string }) {
   return (
     <div
       className={`stat-card ${className}`}
