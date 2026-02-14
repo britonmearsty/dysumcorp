@@ -1,25 +1,9 @@
-import { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Clock, Calendar } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
-export const metadata: Metadata = {
-  title: "How to Collect Files from Clients Without Email | Dysumcorp Blog",
-  description:
-    "Stop chasing clients for files. Learn how to set up a simple file collection system that works without email attachments.",
-  keywords: [
-    "collect files from clients without email",
-    "client file upload without account",
-    "file collection tool",
-    "no email file transfer",
-  ],
-  openGraph: {
-    title: "How to Collect Files from Clients Without Email",
-    description:
-      "Stop chasing clients for files. Learn how to set up a simple file collection system.",
-  },
-};
 
 export default function BlogPostPage() {
   return (

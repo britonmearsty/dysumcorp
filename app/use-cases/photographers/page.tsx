@@ -1,21 +1,9 @@
-import { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Image } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
-export const metadata: Metadata = {
-  title: "File Collection for Photographers | Receive Client Photos & Videos",
-  description:
-    "Photographers collect high-resolution photos and videos from clients directly to cloud storage. No client accounts needed. Perfect for wedding, portrait & event photographers.",
-  keywords: [
-    "photographer file collection",
-    "receive client photos",
-    "photo upload from clients",
-    "photographer client portal",
-    "large file transfer for photographers",
-  ],
-};
 
 export default function PhotographersPage() {
   return (

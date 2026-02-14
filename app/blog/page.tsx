@@ -1,14 +1,9 @@
-import { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
-export const metadata: Metadata = {
-  title: "Blog - Dysumcorp | File Collection Tips & Best Practices",
-  description:
-    "Learn how to collect files from clients efficiently. Tips, best practices, and guides for freelancers, agencies, accountants, and lawyers.",
-};
 
 const posts = [
   {

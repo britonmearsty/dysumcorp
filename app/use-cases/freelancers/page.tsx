@@ -1,4 +1,5 @@
-import { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import {
   ArrowRight,
@@ -11,26 +12,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
-export const metadata: Metadata = {
-  title: "File Collection for Freelancers | Collect Client Files Without Email",
-  description:
-    "Freelancers collect files from clients directly to cloud storage. No chasing emails, no client accounts needed. Built for designers, developers, writers & consultants.",
-  keywords: [
-    "freelancer file collection",
-    "collect files from clients freelance",
-    "client file upload for freelancers",
-    "freelance document management",
-    "file request tool for freelancers",
-    "no email file transfer",
-  ],
-  openGraph: {
-    title:
-      "File Collection for Freelancers | Collect Client Files Without Email",
-    description:
-      "Freelancers collect files from clients without the email chase. No client accounts needed.",
-  },
-};
 
 const features = [
   {

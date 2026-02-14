@@ -1102,6 +1102,64 @@ export default function CreatePortalPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Handle logo file selection and validation
+  const handleLogoSelect = (file: File | null) => {
+    if (!file) {
+      updateFormData("logo", null);
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setError('Invalid file type. Please upload an image (JPG, PNG, GIF, SVG, or WebP)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      setError('File too large. Maximum size is 5MB');
+      return;
+    }
+
+    // Update form data
+    updateFormData("logo", file);
+  };
+
+  // Upload logo to storage
+  const uploadLogo = async (file: File): Promise<string | null> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('provider', 'google'); // Default to Google Drive
+
+      const response = await fetch('/api/storage/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload logo');
+      }
+
+      const data = await response.json();
+      
+      // Return the file URL or ID from the response
+      if (data.file?.webViewLink) {
+        return data.file.webViewLink; // Google Drive
+      } else if (data.file?.id) {
+        return data.file.id; // Fallback to ID
+      }
+      
+      throw new Error('No file URL returned from upload');
+    } catch (error) {
+      console.error('Logo upload error:', error);
+      throw error;
+    }
+  };
+
   // Debounced slug validation
   useEffect(() => {
     const checkSlug = async () => {
@@ -1315,11 +1373,16 @@ export default function CreatePortalPage() {
     setLoading(true);
 
     try {
-      // TODO: Upload logo file if present (Task 1.2)
+      // Upload logo file if present
       let logoUrl = null;
       if (formData.logo) {
-        // Logo upload will be implemented in Task 1.2
-        console.warn("Logo upload not yet implemented");
+        try {
+          logoUrl = await uploadLogo(formData.logo);
+        } catch (uploadError) {
+          setError("Failed to upload logo. Please try again or remove the logo to continue.");
+          setCurrentStep("branding");
+          return;
+        }
       }
 
       const response = await fetch("/api/portals/create", {
@@ -1609,13 +1672,11 @@ export default function CreatePortalPage() {
                               Click to upload or drag and drop
                             </p>
                             <input
-                              accept="image/*"
+                              accept="image/jpeg,image/jpg,image/png,image/gif,image/svg+xml,image/webp"
                               className="hidden"
                               id="logo"
                               type="file"
-                              onChange={(e) =>
-                                updateFormData("logo", e.target.files?.[0])
-                              }
+                              onChange={(e) => handleLogoSelect(e.target.files?.[0] || null)}
                             />
                             <Button
                               className="rounded-xl"

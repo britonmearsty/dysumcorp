@@ -1,21 +1,9 @@
-import { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Shield } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
-export const metadata: Metadata = {
-  title: "Document Collection for Accountants | Secure Client Document Portal",
-  description:
-    "Accountants collect tax documents, financial statements, and records from clients securely. No client login required. Bank-level encryption for sensitive data.",
-  keywords: [
-    "accountant document collection",
-    "tax document portal",
-    "CPA client portal",
-    "secure document collection",
-    "accounting file sharing",
-  ],
-};
 
 export default function AccountantsPage() {
   return (

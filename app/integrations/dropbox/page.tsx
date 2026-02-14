@@ -1,27 +1,9 @@
-import { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, FolderOpen, Shield, Zap, Bell } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
-export const metadata: Metadata = {
-  title: "Collect Client Files Straight to Dropbox | Dysumcorp Integration",
-  description:
-    "Receive files from clients directly to your Dropbox account. No client account needed. Automatic file delivery with enterprise-grade security.",
-  keywords: [
-    "receive files to dropbox",
-    "client upload dropbox",
-    "dropbox client portal",
-    "file collection dropbox",
-    "dropbox integration",
-    "collect files to dropbox",
-  ],
-  openGraph: {
-    title: "Collect Client Files Straight to Dropbox | Dysumcorp Integration",
-    description:
-      "Receive files from clients directly to your Dropbox. No client account needed.",
-  },
-};
 
 const benefits = [
   {

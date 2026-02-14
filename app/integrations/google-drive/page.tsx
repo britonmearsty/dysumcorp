@@ -1,30 +1,9 @@
-import { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, FolderOpen, Shield, Zap, Bell } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
-export const metadata: Metadata = {
-  title:
-    "Receive Client Files Directly to Google Drive | Dysumcorp Integration",
-  description:
-    "Let clients send you files straight to your Google Drive folder. No account required on their end. Simple, secure, and automatic file collection.",
-  keywords: [
-    "receive files to google drive",
-    "client upload google drive",
-    "google drive client portal",
-    "file collection google drive",
-    "client file transfer to google drive",
-    "google drive integration",
-    "collect files to google drive",
-  ],
-  openGraph: {
-    title:
-      "Receive Client Files Directly to Google Drive | Dysumcorp Integration",
-    description:
-      "Let clients send you files straight to your Google Drive folder. No account required.",
-  },
-};
 
 const benefits = [
   {

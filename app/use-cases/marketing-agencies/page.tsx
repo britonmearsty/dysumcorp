@@ -1,4 +1,5 @@
-import { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import {
   ArrowRight,
@@ -10,20 +11,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
-export const metadata: Metadata = {
-  title:
-    "Client File Collection for Marketing Agencies | Creative Asset Management",
-  description:
-    "Marketing and creative agencies collect client files, creative assets, and campaign materials directly to cloud storage. Streamline your client workflow today.",
-  keywords: [
-    "marketing agency file collection",
-    "creative agency client portal",
-    "collect client assets",
-    "agency file management",
-    "client creative files",
-  ],
-};
 
 const features = [
   {

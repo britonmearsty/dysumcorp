@@ -1,21 +1,9 @@
-import { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Lock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
-export const metadata: Metadata = {
-  title: "Secure Document Collection for Lawyers | Legal Client Portal",
-  description:
-    "Lawyers collect case documents, contracts, and evidence from clients securely. No client login required. Attorney-client privilege protection.",
-  keywords: [
-    "lawyer document collection",
-    "legal client portal",
-    "attorney file sharing",
-    "secure legal documents",
-    "law firm client portal",
-  ],
-};
 
 export default function LawyersPage() {
   return (
