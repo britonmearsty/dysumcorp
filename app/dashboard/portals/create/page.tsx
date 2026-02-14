@@ -56,6 +56,7 @@ interface FolderNodeProps {
   navigateToFolder: (folder: StorageFolder) => void;
   expandedFolders: Set<string>;
   toggleFolder: (id: string) => void;
+  selectedFolderId?: string;
 }
 
 const FolderNode: React.FC<FolderNodeProps> = ({
@@ -63,22 +64,33 @@ const FolderNode: React.FC<FolderNodeProps> = ({
   navigateToFolder,
   expandedFolders,
   toggleFolder,
+  selectedFolderId,
 }) => {
   const isExpanded = expandedFolders.has(folder.id);
+  const isSelected = selectedFolderId === folder.id;
   const { subfolders = [] } = folder;
 
   return (
     <div className="pl-4">
-      <div className="flex items-center justify-between py-2 hover:bg-muted/50 transition-colors group rounded-lg pr-2">
+      <div className={`flex items-center justify-between py-2 hover:bg-muted/50 transition-colors group rounded-lg pr-2 ${
+        isSelected ? 'bg-primary/10 border-l-2 border-primary' : ''
+      }`}>
         <button
           type="button"
           onClick={() => navigateToFolder(folder)}
           className="flex items-center gap-2 text-left flex-1"
         >
-          <FolderOpen className="w-4 h-4 text-warning flex-shrink-0" />
-          <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground truncate">
+          <FolderOpen className={`w-4 h-4 flex-shrink-0 ${
+            isSelected ? 'text-primary' : 'text-warning'
+          }`} />
+          <span className={`text-sm font-medium truncate ${
+            isSelected ? 'text-primary font-semibold' : 'text-muted-foreground group-hover:text-foreground'
+          }`}>
             {folder.name}
           </span>
+          {isSelected && (
+            <CheckCircle2 className="w-4 h-4 text-primary ml-auto flex-shrink-0" />
+          )}
         </button>
 
         {subfolders.length > 0 && (
@@ -103,6 +115,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
               navigateToFolder={navigateToFolder}
               expandedFolders={expandedFolders}
               toggleFolder={toggleFolder}
+              selectedFolderId={selectedFolderId}
             />
           ))}
         </div>
@@ -552,6 +565,26 @@ const StorageSection: React.FC<StorageSectionProps> = ({
             </button>
           </div>
 
+          {/* Currently Selected Folder Display */}
+          {formData.storageFolderId && folderPath.length > 0 && (
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1">
+                    Selected Folder
+                  </p>
+                  <p className="text-xs font-semibold text-foreground truncate">
+                    {folderPath[folderPath.length - 1].name}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {formData.storageFolderPath}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Breadcrumbs */}
           <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
             <button
@@ -654,6 +687,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                     navigateToFolder={navigateToFolder}
                     expandedFolders={expandedFolders}
                     toggleFolder={toggleFolder}
+                    selectedFolderId={formData.storageFolderId}
                   />
                 ))}
               </div>
@@ -1136,6 +1170,111 @@ export default function CreatePortalPage() {
     }
   };
 
+  // Section validation functions
+  const validateIdentitySection = (): boolean => {
+    return !!(
+      formData.portalName.trim() &&
+      formData.portalUrl.trim() &&
+      slugValidation.isValid
+    );
+  };
+
+  const validateBrandingSection = (): boolean => {
+    // Branding is optional, so always valid
+    return true;
+  };
+
+  const validateStorageSection = (): boolean => {
+    return !!(
+      formData.storageProvider &&
+      formData.storageFolderId &&
+      formData.storageFolderPath
+    );
+  };
+
+  const validateSecuritySection = (): boolean => {
+    return !!(
+      formData.maxFileSize &&
+      formData.maxFileSize > 0 &&
+      formData.allowedFileTypes.length > 0
+    );
+  };
+
+  const validateMessagingSection = (): boolean => {
+    // Messaging has defaults, so always valid
+    return true;
+  };
+
+  // Get section completion status
+  const getSectionStatus = (sectionId: Step): 'complete' | 'incomplete' | 'current' => {
+    if (sectionId === currentStep) return 'current';
+    
+    switch (sectionId) {
+      case 'identity':
+        return validateIdentitySection() ? 'complete' : 'incomplete';
+      case 'branding':
+        return validateBrandingSection() ? 'complete' : 'incomplete';
+      case 'storage':
+        return validateStorageSection() ? 'complete' : 'incomplete';
+      case 'security':
+        return validateSecuritySection() ? 'complete' : 'incomplete';
+      case 'messaging':
+        return validateMessagingSection() ? 'complete' : 'incomplete';
+      default:
+        return 'incomplete';
+    }
+  };
+
+  // Check if can proceed to next section
+  const canProceedToSection = (targetSection: Step): boolean => {
+    const sections: Step[] = ['identity', 'branding', 'storage', 'security', 'messaging'];
+    const currentIndex = sections.indexOf(currentStep);
+    const targetIndex = sections.indexOf(targetSection);
+    
+    // Can always go back
+    if (targetIndex < currentIndex) return true;
+    
+    // Can go forward if current section is valid
+    switch (currentStep) {
+      case 'identity':
+        return validateIdentitySection();
+      case 'branding':
+        return validateBrandingSection();
+      case 'storage':
+        return validateStorageSection();
+      case 'security':
+        return validateSecuritySection();
+      case 'messaging':
+        return validateMessagingSection();
+      default:
+        return false;
+    }
+  };
+
+  // Navigate to section with validation
+  const navigateToSection = (targetSection: Step) => {
+    if (!canProceedToSection(targetSection)) {
+      // Show error for current section
+      switch (currentStep) {
+        case 'identity':
+          setError('Please complete the Identity section before proceeding');
+          break;
+        case 'storage':
+          setError('Please select a storage provider and folder before proceeding');
+          break;
+        case 'security':
+          setError('Please set a maximum file size and select allowed file types');
+          break;
+        default:
+          setError('Please complete the current section before proceeding');
+      }
+      return;
+    }
+    
+    setError('');
+    setCurrentStep(targetSection);
+  };
+
   const handleSubmit = async () => {
     setError("");
 
@@ -1269,6 +1408,7 @@ export default function CreatePortalPage() {
             {steps.map((step) => {
               const Icon = step.icon;
               const isActive = currentStep === step.id;
+              const status = getSectionStatus(step.id);
 
               return (
                 <button
@@ -1279,12 +1419,21 @@ export default function CreatePortalPage() {
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                   type="button"
-                  onClick={() => setCurrentStep(step.id)}
+                  onClick={() => navigateToSection(step.id)}
                 >
                   <Icon
                     className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}
                   />
-                  <span className="font-medium text-sm">{step.label}</span>
+                  <span className="font-medium text-sm flex-1 text-left">{step.label}</span>
+                  
+                  {/* Completion Indicator */}
+                  {status === 'complete' && !isActive && (
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  )}
+                  {status === 'incomplete' && !isActive && (
+                    <AlertCircle className="w-4 h-4 text-muted-foreground/40" />
+                  )}
+                  
                   {isActive && (
                     <motion.div
                       animate={{ opacity: 1, x: 0 }}
@@ -1430,15 +1579,15 @@ export default function CreatePortalPage() {
                             <button
                               className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
                               type="button"
-                              onClick={() => setCurrentStep("messaging")}
+                              onClick={() => navigateToSection("messaging")}
                             >
                               Jump to Finish
                             </button>
                             <button
-                              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+                              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               type="button"
-                              disabled={!slugValidation.isValid}
-                              onClick={() => setCurrentStep("branding")}
+                              disabled={!validateIdentitySection()}
+                              onClick={() => navigateToSection("branding")}
                             >
                               Next: Branding
                             </button>
@@ -1648,14 +1797,14 @@ export default function CreatePortalPage() {
                             <button
                               className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
                               type="button"
-                              onClick={() => setCurrentStep("messaging")}
+                              onClick={() => navigateToSection("messaging")}
                             >
                               Jump to Finish
                             </button>
                             <button
                               className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors"
                               type="button"
-                              onClick={() => setCurrentStep("storage")}
+                              onClick={() => navigateToSection("storage")}
                             >
                               Next: Storage
                             </button>
