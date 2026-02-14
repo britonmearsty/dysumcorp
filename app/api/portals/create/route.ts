@@ -43,12 +43,54 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, slug, customDomain, whiteLabeled } = body;
+    const {
+      name,
+      slug,
+      customDomain,
+      whiteLabeled,
+      // Branding
+      primaryColor,
+      textColor,
+      backgroundColor,
+      cardBackgroundColor,
+      logoUrl,
+      // Storage
+      storageProvider,
+      storageFolderId,
+      storageFolderPath,
+      useClientFolders,
+      // Security
+      password,
+      requireClientName,
+      requireClientEmail,
+      maxFileSize,
+      allowedFileTypes,
+      // Messaging
+      welcomeMessage,
+      submitButtonText,
+      successMessage,
+    } = body;
 
     // Validate required fields
     if (!name || !slug) {
       return NextResponse.json(
         { error: "Portal name and slug are required" },
+        { status: 400 },
+      );
+    }
+
+    // Validate storage configuration
+    if (storageProvider && (!storageFolderId || !storageFolderPath)) {
+      return NextResponse.json(
+        { error: "Storage folder must be selected when storage provider is specified" },
+        { status: 400 },
+      );
+    }
+
+    // Validate file size
+    if (maxFileSize && maxFileSize <= 0) {
+      return NextResponse.json(
+        { error: "Maximum file size must be greater than 0" },
         { status: 400 },
       );
     }
@@ -113,6 +155,27 @@ export async function POST(request: Request) {
         customDomain: customDomain || null,
         whiteLabeled: whiteLabeled || false,
         userId,
+        // Branding
+        primaryColor: primaryColor || "#3b82f6",
+        textColor: textColor || "#0f172a",
+        backgroundColor: backgroundColor || "#ffffff",
+        cardBackgroundColor: cardBackgroundColor || "#ffffff",
+        logoUrl: logoUrl || null,
+        // Storage
+        storageProvider: storageProvider || null,
+        storageFolderId: storageFolderId || null,
+        storageFolderPath: storageFolderPath || null,
+        useClientFolders: useClientFolders || false,
+        // Security
+        password: password || null,
+        requireClientName: requireClientName !== undefined ? requireClientName : true,
+        requireClientEmail: requireClientEmail || false,
+        maxFileSize: maxFileSize ? BigInt(maxFileSize) : BigInt(52428800), // Default 50MB
+        allowedFileTypes: allowedFileTypes || [],
+        // Messaging
+        welcomeMessage: welcomeMessage || null,
+        submitButtonText: submitButtonText || "Initialize Transfer",
+        successMessage: successMessage || "Transmission Verified",
       },
     });
 

@@ -97,16 +97,42 @@ model Creem_subscription {
 }
 
 model Portal {
-  id              String   @id @default(cuid())
-  name            String
-  slug            String   @unique
-  customDomain    String?  @unique
-  whiteLabeled    Boolean  @default(false)
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  files           File[]
+  id                    String   @id @default(cuid())
+  name                  String
+  slug                  String   @unique
+  customDomain          String?  @unique
+  whiteLabeled          Boolean  @default(false)
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Branding
+  primaryColor          String   @default("#3b82f6")
+  textColor             String   @default("#0f172a")
+  backgroundColor       String   @default("#ffffff")
+  cardBackgroundColor   String   @default("#ffffff")
+  logoUrl               String?
+  
+  // Storage
+  storageProvider       String?  // "google_drive" or "dropbox"
+  storageFolderId       String?
+  storageFolderPath     String?
+  useClientFolders      Boolean  @default(false)
+  
+  // Security
+  password              String?
+  requireClientName     Boolean  @default(true)
+  requireClientEmail    Boolean  @default(false)
+  maxFileSize           BigInt   @default(52428800) // 50MB in bytes
+  allowedFileTypes      String[] @default([])
+  
+  // Messaging
+  welcomeMessage        String?
+  submitButtonText      String   @default("Initialize Transfer")
+  successMessage        String   @default("Transmission Verified")
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  files                 File[]
   
   @@index([userId])
   @@map("portal")
