@@ -42,6 +42,8 @@ export async function GET() {
       },
     });
 
+    console.log(`[Storage Connections] Found ${accounts.length} accounts for user ${session.user.id}`);
+
     // Transform accounts into the expected format
     const connectedAccounts = accounts.map((account) => {
       const hasValidToken = !!(
@@ -49,6 +51,8 @@ export async function GET() {
         (!account.accessTokenExpiresAt ||
           account.accessTokenExpiresAt > new Date())
       );
+
+      console.log(`[Storage Connections] ${account.providerId}: hasToken=${!!account.accessToken}, expiresAt=${account.accessTokenExpiresAt}, isValid=${hasValidToken}`);
 
       return {
         provider: account.providerId as "google" | "dropbox",
@@ -59,6 +63,8 @@ export async function GET() {
         hasValidOAuth: hasValidToken,
       };
     });
+
+    console.log(`[Storage Connections] Returning ${connectedAccounts.length} accounts, ${connectedAccounts.filter(a => a.isConnected).length} connected`);
 
     return NextResponse.json({
       accounts: connectedAccounts,

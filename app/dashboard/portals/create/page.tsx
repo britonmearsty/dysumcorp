@@ -183,10 +183,14 @@ const StorageSection: React.FC<StorageSectionProps> = ({
       const res = await fetch("/api/storage/connections");
       if (res.ok) {
         const data = await res.json();
+        console.log("Storage connections response:", data);
         const connectedAccounts = data.accounts?.filter(
           (a: ConnectedAccount) => a.isConnected
         ) || [];
+        console.log("Connected accounts:", connectedAccounts);
         setAccounts(connectedAccounts);
+      } else {
+        console.error("Failed to fetch storage connections:", res.status, await res.text());
       }
     } catch (error) {
       console.error("Error fetching accounts:", error);
