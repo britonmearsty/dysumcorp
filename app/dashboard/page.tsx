@@ -5,7 +5,6 @@ import {
   FileText,
   Plus,
   Upload,
-  Share2,
   ArrowRight,
   TrendingUp,
 } from "lucide-react";
@@ -137,7 +136,8 @@ export default function DashboardPage() {
             {greeting}, {session?.user?.name?.split(" ")[0] || "User"}
           </h1>
           <p className="text-muted-foreground font-medium text-lg">
-            Manage your secure file collection and track client uploads in real-time.
+            Manage your secure file collection and track client uploads in
+            real-time.
           </p>
         </div>
 
@@ -192,7 +192,9 @@ export default function DashboardPage() {
             <p className="text-2xl font-bold text-foreground">
               {stats.recentActivityCount}
             </p>
-            <p className="text-sm text-muted-foreground">Recent Uploads (24h)</p>
+            <p className="text-sm text-muted-foreground">
+              Recent Uploads (24h)
+            </p>
           </div>
         </div>
       </section>
@@ -234,7 +236,8 @@ export default function DashboardPage() {
                         {portal.name}
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        Created {new Date(portal.createdAt).toLocaleDateString()}
+                        Created{" "}
+                        {new Date(portal.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                     <span className="px-2 py-1 bg-green-50 text-green-600 dark:bg-green-950/50 text-xs font-medium rounded-md flex-shrink-0 ml-2">
@@ -292,15 +295,6 @@ export default function DashboardPage() {
                 >
                   <Upload className="mr-2 w-4 h-4" />
                   Manage Files
-                </Button>
-              </Link>
-              <Link href="/dashboard/teams" className="block">
-                <Button
-                  className="w-full rounded-xl font-medium justify-start"
-                  variant="outline"
-                >
-                  <Share2 className="mr-2 w-4 h-4" />
-                  Manage Team
                 </Button>
               </Link>
             </div>

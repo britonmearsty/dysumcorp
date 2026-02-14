@@ -95,35 +95,6 @@ export async function checkStorageLimit(
   };
 }
 
-export async function checkTeamMemberLimit(
-  userId: string,
-  planType: PlanType,
-): Promise<PlanLimitCheck> {
-  const limits = PRICING_PLANS[planType].limits;
-
-  // Get all teams owned by user
-  const teams = await prisma.team.findMany({
-    where: { ownerId: userId },
-    include: {
-      members: true,
-    },
-  });
-
-  const currentCount =
-    teams.reduce((acc: number, team: any) => acc + team.members.length, 0) + 1; // +1 for owner
-
-  if (currentCount >= limits.teamMembers) {
-    return {
-      allowed: false,
-      reason: `Team member limit reached. Your ${planType} plan allows ${limits.teamMembers} member(s).`,
-      current: currentCount,
-      limit: limits.teamMembers,
-    };
-  }
-
-  return { allowed: true, current: currentCount, limit: limits.teamMembers };
-}
-
 export async function checkCustomDomainLimit(
   userId: string,
   planType: PlanType,

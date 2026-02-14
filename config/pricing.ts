@@ -3,7 +3,6 @@ export type PlanType = "free" | "pro" | "team" | "enterprise";
 export interface PlanLimits {
   portals: number;
   storage: number; // in GB
-  teamMembers: number;
   customDomains: number;
   whiteLabeling: boolean;
   passwordProtection: boolean;
@@ -40,7 +39,6 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
     limits: {
       portals: 1,
       storage: 1, // 1GB
-      teamMembers: 1,
       customDomains: 0,
       whiteLabeling: false,
       passwordProtection: false,
@@ -72,7 +70,6 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
     limits: {
       portals: 10,
       storage: 50, // 50GB
-      teamMembers: 1,
       customDomains: 1,
       whiteLabeling: false,
       passwordProtection: true,
@@ -107,7 +104,6 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
     limits: {
       portals: 50,
       storage: 250, // 250GB
-      teamMembers: 5,
       customDomains: 5,
       whiteLabeling: true,
       passwordProtection: true,
@@ -121,10 +117,8 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
     features: [
       "50 Portals",
       "250GB Storage",
-      "5 Team members ($15/additional)",
       "Full white-labeling",
       "5 Custom domains",
-      "Team collaboration",
       "Client management",
       "Advanced analytics",
       "API access",
@@ -144,7 +138,6 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
     limits: {
       portals: 999999, // Unlimited
       storage: 1000, // 1TB
-      teamMembers: 999999, // Unlimited
       customDomains: 999999, // Unlimited
       whiteLabeling: true,
       passwordProtection: true,
@@ -158,7 +151,6 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
     features: [
       "Unlimited Portals",
       "1TB Storage (expandable)",
-      "Unlimited team members",
       "Unlimited custom domains",
       "Full white-labeling",
       "SSO/SAML authentication",

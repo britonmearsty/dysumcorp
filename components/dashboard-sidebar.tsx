@@ -17,7 +17,6 @@ import { UserIcon } from "@/components/ui/user";
 import { GaugeIcon } from "@/components/ui/gauge";
 import { CircleDollarSignIcon } from "@/components/ui/circle-dollar-sign";
 import { CircleHelpIcon } from "@/components/ui/circle-help";
-import { UsersIcon } from "@/components/ui/users";
 import { SettingsIcon } from "@/components/ui/settings";
 import { MenuIcon } from "@/components/ui/menu";
 import { XIcon } from "@/components/ui/x";
@@ -37,7 +36,6 @@ const navItems: NavItem[] = [
   { label: "STORAGE", href: "/dashboard/storage", icon: GaugeIcon },
   { label: "BILLING", href: "/dashboard/billing", icon: CircleDollarSignIcon },
   { label: "SUPPORT", href: "/dashboard/support", icon: CircleHelpIcon },
-  { label: "TEAMS", href: "/dashboard/teams", icon: UsersIcon },
   { label: "SETTINGS", href: "/dashboard/settings", icon: SettingsIcon },
 ];
 

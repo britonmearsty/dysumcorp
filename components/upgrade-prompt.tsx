@@ -126,14 +126,6 @@ export function UpgradePrompt({
                 </p>
               </div>
               <div>
-                <p className="text-default-500">Team Members</p>
-                <p className="font-semibold">
-                  {plan.limits.teamMembers >= 999999
-                    ? "Unlimited"
-                    : plan.limits.teamMembers}
-                </p>
-              </div>
-              <div>
                 <p className="text-default-500">Custom Domains</p>
                 <p className="font-semibold">
                   {plan.limits.customDomains >= 999999

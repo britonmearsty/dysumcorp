@@ -50,9 +50,6 @@ export function PaywallModal({
     if (feature.includes("Custom Domain") || feature.includes("White Label")) {
       return "pro";
     }
-    if (feature.includes("Team") || feature.includes("Collaboration")) {
-      return "team";
-    }
     if (feature.includes("SSO") || feature.includes("Enterprise")) {
       return "enterprise";
     }
@@ -185,14 +182,6 @@ export function PaywallModal({
                         <p className="text-default-500">Storage</p>
                         <p className="font-semibold">
                           {formatStorage(plan.limits.storage)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-default-500">Team Members</p>
-                        <p className="font-semibold">
-                          {plan.limits.teamMembers >= 999999
-                            ? "Unlimited"
-                            : plan.limits.teamMembers}
                         </p>
                       </div>
                       <div>

@@ -26,7 +26,7 @@ export interface SoftLimitState {
 }
 
 interface ProgressiveLimitWarningProps {
-  resourceType: "portals" | "storage" | "teamMembers" | "customDomains";
+  resourceType: "portals" | "storage" | "customDomains";
   currentPlan: PlanType;
   usage: LimitStatus;
   onUpgrade?: () => void;

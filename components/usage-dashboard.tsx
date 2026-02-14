@@ -10,7 +10,6 @@ import { PRICING_PLANS, formatStorage } from "@/config/pricing";
 interface UsageData {
   portalsUsed: number;
   storageUsed: number; // in GB
-  teamMembersUsed: number;
   customDomainsUsed: number;
 }
 
@@ -19,7 +18,6 @@ export function UsageDashboard() {
   const [usage, setUsage] = useState<UsageData>({
     portalsUsed: 0,
     storageUsed: 0,
-    teamMembersUsed: 1,
     customDomainsUsed: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -74,12 +72,6 @@ export function UsageDashboard() {
       limit: limits?.storage || 1,
       unit: "GB",
       formatter: formatStorage,
-    },
-    {
-      label: "Team Members",
-      used: usage.teamMembersUsed,
-      limit: limits?.teamMembers || 1,
-      unit: "",
     },
     {
       label: "Custom Domains",

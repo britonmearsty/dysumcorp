@@ -28,8 +28,6 @@ model User {
   subscriptionPlan String?  @default("free")
   subscriptionStatus String? @default("active")
   portals         Portal[]
-  teamMembers     TeamMember[]
-  ownedTeams      Team[]    @relation("TeamOwner")
 
   @@map("user")
 }
@@ -132,35 +130,6 @@ model File {
   @@index([portalId])
   @@index([uploaderEmail])
   @@map("file")
-}
-
-model Team {
-  id              String       @id @default(cuid())
-  name            String
-  ownerId         String
-  owner           User         @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  members         TeamMember[]
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  
-  @@index([ownerId])
-  @@map("team")
-}
-
-model TeamMember {
-  id              String   @id @default(cuid())
-  teamId          String
-  team            Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role            String   @default("member") // member, admin
-  invitedAt       DateTime @default(now())
-  joinedAt        DateTime?
-  
-  @@unique([teamId, userId])
-  @@index([teamId])
-  @@index([userId])
-  @@map("team_member")
 }
 
 model UsageTracking {

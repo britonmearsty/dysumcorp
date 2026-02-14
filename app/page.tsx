@@ -80,7 +80,7 @@ const bentoFeatures = [
     icon: Bell,
     title: "Never Miss an Upload",
     description:
-      "Get instant alerts via email, Slack, or Teams. Teams report 60% faster response times with real-time notifications.",
+      "Get instant alerts via email, Slack, or Microsoft Teams. Users report 60% faster response times with real-time notifications.",
     className: "md:col-span-1 md:row-span-1",
   },
   {
@@ -92,9 +92,9 @@ const bentoFeatures = [
   },
   {
     icon: Users,
-    title: "Seamless Team Collaboration",
+    title: "Client Management",
     description:
-      "Everyone stays in sync with role-based permissions. Scale from 1 to 100+ team members without missing a document.",
+      "Organize and manage all your clients in one place. Track uploads, activity, and client information effortlessly.",
     className: "md:col-span-1 md:row-span-1",
   },
   {
@@ -1107,7 +1107,6 @@ export default function Home() {
               "No client login required",
               "Custom domain integration",
               "Real-time notifications",
-              "Team collaboration",
               "Mobile-optimized",
               "SOC 2 compliance",
             ],

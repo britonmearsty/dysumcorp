@@ -132,17 +132,15 @@ export async function updateUsageTracking() {
  */
 function getPlanLimits(plan: string) {
   const limits = {
-    free: { storage: 5 * 1024 * 1024 * 1024, portals: 3, teamMembers: 1 }, // 5GB
-    pro: { storage: 50 * 1024 * 1024 * 1024, portals: 10, teamMembers: 5 }, // 50GB
+    free: { storage: 5 * 1024 * 1024 * 1024, portals: 3 }, // 5GB
+    pro: { storage: 50 * 1024 * 1024 * 1024, portals: 10 }, // 50GB
     business: {
       storage: 500 * 1024 * 1024 * 1024,
       portals: 50,
-      teamMembers: 20,
     }, // 500GB
     enterprise: {
       storage: 5 * 1024 * 1024 * 1024 * 1024,
       portals: 999,
-      teamMembers: 999,
     }, // 5TB
   };
 
