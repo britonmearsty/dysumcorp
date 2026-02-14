@@ -239,7 +239,7 @@ function Step3Visual() {
   );
 }
 
-function Connector({ active }) {
+function Connector({ active }: { active: boolean }) {
   return (
     <div className="connector-wrap" aria-hidden="true">
       <svg viewBox="0 0 120 40" fill="none" preserveAspectRatio="none">

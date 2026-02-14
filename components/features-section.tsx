@@ -2,6 +2,17 @@
 
 import { useState, useEffect, useRef } from "react";
 
+interface Feature {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  stat?: string;
+  statValue?: string;
+  accentGlow?: string;
+  visual?: React.ComponentType;
+  dark?: boolean;
+}
+
 const GlobeIcon = () => (
   <svg
     width="22"
@@ -125,7 +136,15 @@ const CheckIcon = ({ size = 14 }) => (
   </svg>
 );
 
-function AnimatedNumber({ target, suffix = "", duration = 1800 }) {
+function AnimatedNumber({
+  target,
+  suffix = "",
+  duration = 1800,
+}: {
+  target: number;
+  suffix?: string;
+  duration?: number;
+}) {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
   const started = useRef(false);
@@ -355,7 +374,6 @@ function DomainMockup() {
           style={{
             fontSize: "13px",
             fontWeight: 700,
-            color: "#111827",
             fontFamily: "monospace",
             background: "#111827",
             color: "#fff",
@@ -648,7 +666,13 @@ function ClientRow() {
   );
 }
 
-function FeatureCard({ feature, style = {} }) {
+function FeatureCard({
+  feature,
+  style = {},
+}: {
+  feature: Feature;
+  style?: React.CSSProperties;
+}) {
   const [hovered, setHovered] = useState(false);
 
   return (
