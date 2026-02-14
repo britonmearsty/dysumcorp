@@ -51,11 +51,36 @@ export default function SettingsPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const tabs = [
-    { id: "profile", name: "Profile", icon: User, description: "Manage your personal information" },
-    { id: "notifications", name: "Notifications", icon: Bell, description: "Control your alerts" },
-    { id: "appearance", name: "Appearance", icon: Globe, description: "Customize interface" },
-    { id: "security", name: "Security", icon: Shield, description: "Account protection" },
-    { id: "danger", name: "Danger Zone", icon: Lock, description: "Irreversible actions" },
+    {
+      id: "profile",
+      name: "Profile",
+      icon: User,
+      description: "Manage your personal information",
+    },
+    {
+      id: "notifications",
+      name: "Notifications",
+      icon: Bell,
+      description: "Control your alerts",
+    },
+    {
+      id: "appearance",
+      name: "Appearance",
+      icon: Globe,
+      description: "Customize interface",
+    },
+    {
+      id: "security",
+      name: "Security",
+      icon: Shield,
+      description: "Account protection",
+    },
+    {
+      id: "danger",
+      name: "Danger Zone",
+      icon: Lock,
+      description: "Irreversible actions",
+    },
   ];
 
   useEffect(() => {
@@ -150,9 +175,11 @@ export default function SettingsPage() {
 
   if (isPending) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div>
         <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Settings</h1>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+            Settings
+          </h1>
           <p className="text-muted-foreground mt-2 text-lg">Loading...</p>
         </div>
       </div>
@@ -160,10 +187,12 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">Settings</h1>
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold text-foreground tracking-tight">
+          Settings
+        </h1>
         <p className="text-muted-foreground mt-2 text-lg">
           Manage your account preferences and application settings
         </p>
@@ -186,10 +215,15 @@ export default function SettingsPage() {
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`} />
+                  <Icon
+                    className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}
+                  />
                   <span className="font-medium text-sm">{tab.name}</span>
                   {isActive && (
-                    <motion.div layoutId="settings-active-indicator" className="ml-auto">
+                    <motion.div
+                      layoutId="settings-active-indicator"
+                      className="ml-auto"
+                    >
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </motion.div>
                   )}
@@ -224,7 +258,10 @@ export default function SettingsPage() {
                   {activeTab === "profile" && (
                     <form className="space-y-6" onSubmit={handleProfileUpdate}>
                       <div>
-                        <Label className="text-sm font-semibold text-foreground" htmlFor="name">
+                        <Label
+                          className="text-sm font-semibold text-foreground"
+                          htmlFor="name"
+                        >
                           Full Name
                         </Label>
                         <Input
@@ -237,7 +274,10 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div>
-                        <Label className="text-sm font-semibold text-foreground" htmlFor="email">
+                        <Label
+                          className="text-sm font-semibold text-foreground"
+                          htmlFor="email"
+                        >
                           Email
                         </Label>
                         <Input
@@ -294,7 +334,9 @@ export default function SettingsPage() {
                             checked={emailNotifications}
                             className="w-5 h-5 cursor-pointer accent-primary"
                             type="checkbox"
-                            onChange={(e) => setEmailNotifications(e.target.checked)}
+                            onChange={(e) =>
+                              setEmailNotifications(e.target.checked)
+                            }
                           />
                         </div>
 
@@ -311,13 +353,17 @@ export default function SettingsPage() {
                             checked={pushNotifications}
                             className="w-5 h-5 cursor-pointer accent-primary"
                             type="checkbox"
-                            onChange={(e) => setPushNotifications(e.target.checked)}
+                            onChange={(e) =>
+                              setPushNotifications(e.target.checked)
+                            }
                           />
                         </div>
 
                         <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:bg-card transition-colors">
                           <div>
-                            <p className="font-semibold text-sm text-foreground">Weekly Reports</p>
+                            <p className="font-semibold text-sm text-foreground">
+                              Weekly Reports
+                            </p>
                             <p className="text-xs text-muted-foreground mt-1">
                               Activity summaries
                             </p>
@@ -350,7 +396,9 @@ export default function SettingsPage() {
                         disabled={notificationsLoading}
                         onClick={handleNotificationUpdate}
                       >
-                        {notificationsLoading ? "Saving..." : "Save Preferences"}
+                        {notificationsLoading
+                          ? "Saving..."
+                          : "Save Preferences"}
                       </Button>
                     </div>
                   )}
@@ -378,7 +426,9 @@ export default function SettingsPage() {
                       </div>
 
                       <div className="p-4 bg-muted rounded-xl border border-border">
-                        <p className="font-semibold text-sm text-foreground">Connected Email</p>
+                        <p className="font-semibold text-sm text-foreground">
+                          Connected Email
+                        </p>
                         <p className="text-xs text-muted-foreground mt-2">
                           {session?.user?.email}
                         </p>
@@ -401,7 +451,9 @@ export default function SettingsPage() {
                       {!showDeleteConfirm ? (
                         <div className="flex items-center justify-between p-6 rounded-xl border-2 border-red-500/50 bg-red-50 dark:bg-red-950/20">
                           <div>
-                            <p className="font-semibold text-sm text-foreground">Delete Account</p>
+                            <p className="font-semibold text-sm text-foreground">
+                              Delete Account
+                            </p>
                             <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                               Permanently delete your account and all data
                             </p>
@@ -421,15 +473,21 @@ export default function SettingsPage() {
                               Are you absolutely sure?
                             </p>
                             <p className="text-sm text-red-600 dark:text-red-400 mt-2">
-                              This action cannot be undone. This will permanently delete your
-                              account and remove all your data from our servers.
+                              This action cannot be undone. This will
+                              permanently delete your account and remove all
+                              your data from our servers.
                             </p>
                           </div>
 
                           <div>
-                            <Label className="text-sm font-semibold text-foreground" htmlFor="deleteConfirm">
+                            <Label
+                              className="text-sm font-semibold text-foreground"
+                              htmlFor="deleteConfirm"
+                            >
                               Type{" "}
-                              <span className="font-bold text-red-600 dark:text-red-400">DELETE</span>{" "}
+                              <span className="font-bold text-red-600 dark:text-red-400">
+                                DELETE
+                              </span>{" "}
                               to confirm
                             </Label>
                             <Input
@@ -438,7 +496,9 @@ export default function SettingsPage() {
                               placeholder="DELETE"
                               type="text"
                               value={deleteConfirmText}
-                              onChange={(e) => setDeleteConfirmText(e.target.value)}
+                              onChange={(e) =>
+                                setDeleteConfirmText(e.target.value)
+                              }
                             />
                           </div>
 
@@ -461,7 +521,9 @@ export default function SettingsPage() {
                           <div className="flex gap-3">
                             <Button
                               className="rounded-xl bg-red-600 text-white hover:bg-red-700"
-                              disabled={deleteLoading || deleteConfirmText !== "DELETE"}
+                              disabled={
+                                deleteLoading || deleteConfirmText !== "DELETE"
+                              }
                               variant="default"
                               onClick={handleDeleteAccount}
                             >

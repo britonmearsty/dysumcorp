@@ -86,10 +86,12 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">Billing & Usage</h1>
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold text-foreground tracking-tight">
+          Billing & Usage
+        </h1>
         <p className="text-muted-foreground mt-2 text-lg">
           Manage your subscription, view usage, and upgrade your plan
         </p>
@@ -100,7 +102,9 @@ export default function BillingPage() {
         {showSuccess && (
           <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-6 py-4 rounded-xl">
             <p className="font-bold">Payment successful! 🎉</p>
-            <p className="text-sm mt-1">Your subscription has been activated.</p>
+            <p className="text-sm mt-1">
+              Your subscription has been activated.
+            </p>
           </div>
         )}
         {showCanceled && (
@@ -121,14 +125,18 @@ export default function BillingPage() {
 
         {/* Usage Dashboard */}
         <div>
-          <h2 className="text-xl font-bold text-foreground mb-6">Current Usage</h2>
+          <h2 className="text-xl font-bold text-foreground mb-6">
+            Current Usage
+          </h2>
           <UsageDashboard />
         </div>
 
         {/* Pricing Plans */}
         <div id="pricing">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <h2 className="text-xl font-bold text-foreground">Available Plans</h2>
+            <h2 className="text-xl font-bold text-foreground">
+              Available Plans
+            </h2>
             <Tabs
               selectedKey={billingCycle}
               size="sm"

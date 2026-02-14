@@ -100,7 +100,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg-base px-12 py-10">
+      <div className="min-h-screen px-6 py-6">
         <div className="space-y-8 animate-pulse">
           <div className="h-8 w-48 bg-bg-card rounded-xl" />
           <div className="grid grid-cols-4 gap-4">
@@ -115,11 +115,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-bg-base px-12 py-10">
+    <main className="min-h-screen bg-bg-base px-6 py-6">
       {/* Header Section */}
-      <header className="mb-8 flex items-start justify-between">
+      <header className="mb-10 flex items-start justify-between">
         <div>
-          <h1 className="text-[1.75rem] font-bold text-text-white tracking-tight mb-1.5">
+          <h1 className="text-[1.75rem] font-bold text-text-white tracking-tight mb-2">
             {greeting}, {session?.user?.name?.split(" ")[0] || "User"}
           </h1>
           <p className="text-sm text-text-muted">
@@ -137,7 +137,7 @@ export default function DashboardPage() {
       </header>
 
       {/* Stats Grid - 4 columns */}
-      <section className="grid grid-cols-4 gap-4 mb-9">
+      <section className="grid grid-cols-4 gap-6 mb-12">
         {/* Total Portals */}
         <div className="bg-bg-card border border-border rounded-[14px] p-[22px_24px_24px]">
           <div className="w-9 h-9 mb-[18px]">
@@ -234,7 +234,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-[1fr_360px] gap-6 items-start">
+      <div className="grid grid-cols-[1fr_400px] gap-8 items-start">
         {/* Left Panel - Active Client Portals */}
         <section className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
@@ -277,16 +277,16 @@ export default function DashboardPage() {
         </section>
 
         {/* Right Panel - Quick Actions + Recent Activity */}
-        <aside className="flex flex-col gap-6">
+        <aside className="flex flex-col gap-8">
           {/* Quick Actions */}
           <div>
-            <h2 className="text-base font-bold text-text-white mb-3.5">
+            <h2 className="text-base font-bold text-text-white mb-5">
               Quick Actions
             </h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <Link
                 href="/dashboard/portals/create"
-                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-bg-card2 hover:border-muted-2 transition-all flex flex-col gap-2.5"
+                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2.5"
               >
                 <svg
                   className="w-[26px] h-[26px] text-accent-green"
@@ -307,7 +307,7 @@ export default function DashboardPage() {
 
               <Link
                 href="/dashboard/portals"
-                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-bg-card2 hover:border-muted-2 transition-all flex flex-col gap-2.5"
+                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2.5"
               >
                 <svg
                   className="w-[26px] h-[26px] text-accent-blue"
@@ -327,7 +327,7 @@ export default function DashboardPage() {
 
               <Link
                 href="/dashboard/storage"
-                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-bg-card2 hover:border-muted-2 transition-all flex flex-col gap-2.5"
+                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2.5"
               >
                 <svg
                   className="w-[26px] h-[26px] text-accent-purple"
@@ -347,7 +347,7 @@ export default function DashboardPage() {
 
               <Link
                 href="/dashboard/settings"
-                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-bg-card2 hover:border-muted-2 transition-all flex flex-col gap-2.5"
+                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2.5"
               >
                 <svg
                   className="w-[26px] h-[26px] text-accent-yellow"
@@ -370,7 +370,7 @@ export default function DashboardPage() {
 
           {/* Recent Activity */}
           <div>
-            <div className="flex items-center justify-between mb-3.5">
+            <div className="flex items-center justify-between mb-5">
               <span className="text-base font-bold text-text-white">
                 Recent Activity
               </span>
@@ -381,7 +381,7 @@ export default function DashboardPage() {
                 View All
               </Link>
             </div>
-            <div className="bg-bg-card border border-border rounded-[12px] flex flex-col items-center justify-center py-11 px-6 min-h-[200px] text-center">
+            <div className="bg-bg-card border border-border rounded-[12px] flex flex-col items-center justify-center py-14 px-6 min-h-[200px] text-center">
               <svg
                 className="w-10 h-10 mb-4 opacity-40"
                 viewBox="0 0 24 24"

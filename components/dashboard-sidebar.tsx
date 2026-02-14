@@ -6,7 +6,7 @@ import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useSession, signOut } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 import { AnimatedNavItem } from "@/components/animated-nav-item";
 
 // Animated Icons
@@ -20,7 +20,6 @@ import { CircleHelpIcon } from "@/components/ui/circle-help";
 import { SettingsIcon } from "@/components/ui/settings";
 import { MenuIcon } from "@/components/ui/menu";
 import { XIcon } from "@/components/ui/x";
-import { LogoutIcon } from "@/components/ui/logout";
 
 interface NavItem {
   label: string;
@@ -41,13 +40,6 @@ const navItems: NavItem[] = [
 
 function UserAccountSection({ onClose }: { onClose: () => void }) {
   const { data: session, isPending } = useSession();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    await signOut();
-    onClose();
-  };
 
   if (isPending) {
     return (
@@ -102,20 +94,6 @@ function UserAccountSection({ onClose }: { onClose: () => void }) {
           </p>
         </div>
       </div>
-
-      {/* Logout Button */}
-      <Button
-        className="w-full justify-start gap-3 font-mono h-10 rounded-lg transition-all duration-200 hover:bg-destructive/10 hover:border-destructive hover:text-destructive dark:hover:bg-destructive/20 dark:hover:border-destructive/80 py-0"
-        disabled={isLoggingOut}
-        size="sm"
-        variant="outline"
-        onClick={handleLogout}
-      >
-        <LogoutIcon className="h-4 w-4 flex-shrink-0" />
-        <span className="truncate">
-          {isLoggingOut ? "Logging out..." : "Logout"}
-        </span>
-      </Button>
     </div>
   );
 }
@@ -158,7 +136,7 @@ export function DashboardSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-40 h-screen w-72 bg-sidebar backdrop-blur-sm border-r border-sidebar-border/50 transition-transform duration-300 ease-in-out",
+          "fixed lg:sticky top-0 left-0 z-40 h-screen w-72 bg-sidebar backdrop-blur-sm border-r border-sidebar-border/30 transition-transform duration-300 ease-in-out",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >

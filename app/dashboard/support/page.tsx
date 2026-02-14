@@ -27,7 +27,9 @@ export default function SupportPage() {
   const [ticketPriority, setTicketPriority] = useState("Medium");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackRating, setFeedbackRating] = useState(0);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [submitStatus, setSubmitStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
 
   // Mock ticket data
   const tickets = [
@@ -162,7 +164,11 @@ export default function SupportPage() {
 
   const handleCreateTicket = () => {
     // In a real app, this would submit to an API
-    console.log("Creating ticket:", { ticketSubject, ticketMessage, ticketPriority });
+    console.log("Creating ticket:", {
+      ticketSubject,
+      ticketMessage,
+      ticketPriority,
+    });
     setSubmitStatus("success");
     setTimeout(() => {
       setShowCreateTicket(false);
@@ -187,9 +193,9 @@ export default function SupportPage() {
   const openTickets = tickets.filter((t) => t.status === "Open").length;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div>
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-10">
         <h1 className="text-3xl font-bold text-foreground tracking-tight">
           Support
         </h1>
@@ -405,7 +411,9 @@ export default function SupportPage() {
                               className="mt-2 w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                               id="priority"
                               value={ticketPriority}
-                              onChange={(e) => setTicketPriority(e.target.value)}
+                              onChange={(e) =>
+                                setTicketPriority(e.target.value)
+                              }
                             >
                               <option value="Low">Low</option>
                               <option value="Medium">Medium</option>
@@ -433,7 +441,9 @@ export default function SupportPage() {
                             <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                               <div className="flex items-center gap-2">
                                 <CheckCircle className="w-5 h-5" />
-                                <span className="font-medium">Ticket created successfully!</span>
+                                <span className="font-medium">
+                                  Ticket created successfully!
+                                </span>
                               </div>
                             </div>
                           )}
@@ -441,10 +451,16 @@ export default function SupportPage() {
                           <div className="flex gap-3">
                             <Button
                               className="rounded-xl"
-                              disabled={!ticketSubject || !ticketMessage || submitStatus === "success"}
+                              disabled={
+                                !ticketSubject ||
+                                !ticketMessage ||
+                                submitStatus === "success"
+                              }
                               onClick={handleCreateTicket}
                             >
-                              {submitStatus === "success" ? "Created!" : "Submit Ticket"}
+                              {submitStatus === "success"
+                                ? "Created!"
+                                : "Submit Ticket"}
                             </Button>
                             <Button
                               className="rounded-xl"
@@ -470,12 +486,16 @@ export default function SupportPage() {
                               className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                             >
                               <ChevronRight className="w-4 h-4 rotate-180" />
-                              <span className="text-sm font-medium">Back to tickets</span>
+                              <span className="text-sm font-medium">
+                                Back to tickets
+                              </span>
                             </button>
                           </div>
 
                           {(() => {
-                            const ticket = tickets.find((t) => t.id === selectedTicket);
+                            const ticket = tickets.find(
+                              (t) => t.id === selectedTicket,
+                            );
                             if (!ticket) return null;
 
                             return (
@@ -523,7 +543,8 @@ export default function SupportPage() {
                                         </span>
                                       </div>
                                       <p className="text-sm text-foreground">
-                                        Initial ticket message describing the issue...
+                                        Initial ticket message describing the
+                                        issue...
                                       </p>
                                     </div>
 
@@ -537,11 +558,14 @@ export default function SupportPage() {
                                             Admin
                                           </span>
                                           <span className="text-xs text-muted-foreground">
-                                            {ticket.status === "Resolved" ? "2 days ago" : "1 day ago"}
+                                            {ticket.status === "Resolved"
+                                              ? "2 days ago"
+                                              : "1 day ago"}
                                           </span>
                                         </div>
                                         <p className="text-sm text-foreground">
-                                          Thank you for reaching out. We're looking into this issue...
+                                          Thank you for reaching out. We're
+                                          looking into this issue...
                                         </p>
                                       </div>
                                     )}
@@ -561,7 +585,9 @@ export default function SupportPage() {
                                         id="reply"
                                         placeholder="Type your message..."
                                       />
-                                      <Button className="mt-3 rounded-xl">Send Reply</Button>
+                                      <Button className="mt-3 rounded-xl">
+                                        Send Reply
+                                      </Button>
                                     </div>
                                   )}
                                 </div>
@@ -619,17 +645,25 @@ export default function SupportPage() {
                         <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                           <div className="flex items-center gap-2">
                             <CheckCircle className="w-5 h-5" />
-                            <span className="font-medium">Thank you for your feedback!</span>
+                            <span className="font-medium">
+                              Thank you for your feedback!
+                            </span>
                           </div>
                         </div>
                       )}
 
                       <Button
                         className="w-full rounded-xl"
-                        disabled={!feedbackRating || !feedbackMessage || submitStatus === "success"}
+                        disabled={
+                          !feedbackRating ||
+                          !feedbackMessage ||
+                          submitStatus === "success"
+                        }
                         onClick={handleSubmitFeedback}
                       >
-                        {submitStatus === "success" ? "Submitted!" : "Submit Feedback"}
+                        {submitStatus === "success"
+                          ? "Submitted!"
+                          : "Submit Feedback"}
                       </Button>
                     </div>
                   )}

@@ -28,10 +28,10 @@ export const AnimatedNavItem = forwardRef<
     <Link
       ref={ref}
       className={cn(
-        "flex items-center gap-3 px-3 py-2.5 transition-all duration-200 font-mono text-sm rounded-lg group relative",
+        "flex items-center gap-3 px-4 py-2.5 my-0.5 transition-all duration-200 font-mono text-sm rounded-md group relative",
         isActive
-          ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
-          : "text-foreground hover:bg-muted/60 hover:text-primary",
+          ? "text-foreground"
+          : "text-muted-foreground hover:text-foreground",
         className,
       )}
       href={href}
@@ -39,33 +39,39 @@ export const AnimatedNavItem = forwardRef<
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Hover/Active background */}
-      <div
-        className={cn(
-          "absolute inset-0 rounded-lg transition-all duration-200",
-          isActive
-            ? "bg-primary"
-            : "bg-gradient-to-r from-primary/5 to-primary/5 group-hover:from-primary/10 group-hover:to-primary/5",
-        )}
-      />
-
       {/* Icon */}
-      <div className="relative z-10 transition-transform duration-200 group-hover:scale-110">
+      <div className="relative z-10">
         <Icon
-          className="h-5 w-5 flex-shrink-0"
+          className={cn(
+            "h-5 w-5 flex-shrink-0 transition-colors duration-200",
+            isActive
+              ? "text-primary"
+              : isHovered
+                ? "text-foreground"
+                : "text-muted-foreground",
+          )}
           size={20}
           isHovered={isHovered || isActive}
         />
       </div>
 
       {/* Label */}
-      <span className="relative z-10 transition-transform duration-200 group-hover:translate-x-0.5">
+      <span
+        className={cn(
+          "relative z-10 transition-colors duration-200",
+          isActive
+            ? "text-foreground font-semibold"
+            : isHovered
+              ? "text-foreground"
+              : "text-muted-foreground",
+        )}
+      >
         {label}
       </span>
 
-      {/* Active indicator */}
+      {/* Active indicator - left border */}
       {isActive && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-foreground rounded-r-full" />
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-primary rounded-r-full" />
       )}
     </Link>
   );

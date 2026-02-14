@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, ExternalLink, FileText, Upload, X, Search, FolderOpen } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  ExternalLink,
+  FileText,
+  Upload,
+  X,
+  Search,
+  FolderOpen,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -333,30 +342,29 @@ export default function PortalsPage() {
     setUploadingFiles([]);
   };
 
-  const filteredPortals = portals.filter((portal) =>
-    portal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    portal.slug.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredPortals = portals.filter(
+    (portal) =>
+      portal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      portal.slug.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="space-y-6">
-          <div className="h-8 w-48 bg-muted rounded-xl animate-pulse" />
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <div className="h-48 bg-muted rounded-xl animate-pulse" />
-            <div className="h-48 bg-muted rounded-xl animate-pulse" />
-            <div className="h-48 bg-muted rounded-xl animate-pulse" />
-          </div>
+      <div className="space-y-6">
+        <div className="h-8 w-48 bg-muted rounded-xl animate-pulse" />
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="h-48 bg-muted rounded-xl animate-pulse" />
+          <div className="h-48 bg-muted rounded-xl animate-pulse" />
+          <div className="h-48 bg-muted rounded-xl animate-pulse" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div>
       {/* Header */}
-      <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground tracking-tight">
             Secure Portals
@@ -530,10 +538,7 @@ export default function PortalsPage() {
             <div className="p-6 overflow-y-auto flex-1">
               <div className="space-y-4">
                 {uploadingFiles.map((fileItem, index) => (
-                  <div
-                    key={index}
-                    className="border rounded-xl p-4 space-y-3"
-                  >
+                  <div key={index} className="border rounded-xl p-4 space-y-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">

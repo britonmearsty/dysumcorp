@@ -148,13 +148,13 @@ export default function CreatePortalPage() {
 
   const handleSubmit = async () => {
     setError("");
-    
+
     if (!formData.portalName.trim()) {
       setError("Portal name is required");
       setCurrentStep("identity");
       return;
     }
-    
+
     if (!formData.portalUrl.trim()) {
       setError("Portal URL slug is required");
       setCurrentStep("identity");
@@ -198,10 +198,10 @@ export default function CreatePortalPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div>
       <Link
         href="/dashboard/portals"
-        className="group inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-medium text-sm mb-8"
+        className="group inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-medium text-sm mb-10"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
         Back to Portals
@@ -211,8 +211,12 @@ export default function CreatePortalPage() {
         {/* Navigation Sidebar */}
         <aside className="lg:w-64 flex-shrink-0">
           <div className="mb-6 px-2">
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">New Portal</h1>
-            <p className="text-muted-foreground text-sm mt-1">Create a secure space for your clients.</p>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
+              New Portal
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Create a secure space for your clients.
+            </p>
           </div>
           <nav className="space-y-1">
             {steps.map((step) => {
@@ -229,7 +233,9 @@ export default function CreatePortalPage() {
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`} />
+                  <Icon
+                    className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}
+                  />
                   <span className="font-medium text-sm">{step.label}</span>
                   {isActive && (
                     <motion.div
@@ -249,7 +255,12 @@ export default function CreatePortalPage() {
 
         {/* Content Area */}
         <main className="flex-1 min-w-0">
-          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit();
+            }}
+          >
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
@@ -262,14 +273,16 @@ export default function CreatePortalPage() {
                   <div className="p-6 border-b border-border bg-muted/30 flex justify-between items-center">
                     <div>
                       <h2 className="text-xl font-semibold text-foreground">
-                        {steps.find(s => s.id === currentStep)?.label}
+                        {steps.find((s) => s.id === currentStep)?.label}
                       </h2>
                       <p className="text-sm text-muted-foreground mt-1">
                         Configure settings for this section.
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      {loading && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />}
+                      {loading && (
+                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                      )}
                     </div>
                   </div>
 
@@ -284,7 +297,9 @@ export default function CreatePortalPage() {
                           <input
                             type="text"
                             value={formData.portalName}
-                            onChange={(e) => updateFormData("portalName", e.target.value)}
+                            onChange={(e) =>
+                              updateFormData("portalName", e.target.value)
+                            }
                             placeholder="e.g. Project Delivery Materials"
                             className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                             required
@@ -302,14 +317,17 @@ export default function CreatePortalPage() {
                             <input
                               type="text"
                               value={formData.portalUrl}
-                              onChange={(e) => updateFormData("portalUrl", e.target.value)}
+                              onChange={(e) =>
+                                updateFormData("portalUrl", e.target.value)
+                              }
                               placeholder="custom-address"
                               className="flex-1 px-4 py-3 bg-card border border-border rounded-r-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                               required
                             />
                           </div>
                           <p className="text-xs text-muted-foreground mt-2">
-                            Your portal will be accessible at /p/{formData.portalUrl || "slug"}
+                            Your portal will be accessible at /p/
+                            {formData.portalUrl || "slug"}
                           </p>
                         </div>
 
@@ -320,7 +338,9 @@ export default function CreatePortalPage() {
                           <input
                             type="text"
                             value={formData.clientName}
-                            onChange={(e) => updateFormData("clientName", e.target.value)}
+                            onChange={(e) =>
+                              updateFormData("clientName", e.target.value)
+                            }
                             placeholder="e.g., John Doe"
                             className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                           />
@@ -333,7 +353,9 @@ export default function CreatePortalPage() {
                           <input
                             type="email"
                             value={formData.clientEmail}
-                            onChange={(e) => updateFormData("clientEmail", e.target.value)}
+                            onChange={(e) =>
+                              updateFormData("clientEmail", e.target.value)
+                            }
                             placeholder="e.g., john@acmecorp.com"
                             className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                           />
@@ -345,7 +367,9 @@ export default function CreatePortalPage() {
                           </label>
                           <textarea
                             value={formData.description}
-                            onChange={(e) => updateFormData("description", e.target.value)}
+                            onChange={(e) =>
+                              updateFormData("description", e.target.value)
+                            }
                             placeholder="Brief description of this portal..."
                             rows={3}
                             className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
@@ -386,13 +410,17 @@ export default function CreatePortalPage() {
                               <input
                                 type="color"
                                 value={formData.primaryColor}
-                                onChange={(e) => updateFormData("primaryColor", e.target.value)}
+                                onChange={(e) =>
+                                  updateFormData("primaryColor", e.target.value)
+                                }
                                 className="w-20 h-10 rounded-xl border border-border cursor-pointer"
                               />
                               <input
                                 type="text"
                                 value={formData.primaryColor}
-                                onChange={(e) => updateFormData("primaryColor", e.target.value)}
+                                onChange={(e) =>
+                                  updateFormData("primaryColor", e.target.value)
+                                }
                                 className="flex-1 px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                               />
                             </div>
@@ -406,13 +434,23 @@ export default function CreatePortalPage() {
                               <input
                                 type="color"
                                 value={formData.secondaryColor}
-                                onChange={(e) => updateFormData("secondaryColor", e.target.value)}
+                                onChange={(e) =>
+                                  updateFormData(
+                                    "secondaryColor",
+                                    e.target.value,
+                                  )
+                                }
                                 className="w-20 h-10 rounded-xl border border-border cursor-pointer"
                               />
                               <input
                                 type="text"
                                 value={formData.secondaryColor}
-                                onChange={(e) => updateFormData("secondaryColor", e.target.value)}
+                                onChange={(e) =>
+                                  updateFormData(
+                                    "secondaryColor",
+                                    e.target.value,
+                                  )
+                                }
                                 className="flex-1 px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                               />
                             </div>
@@ -433,14 +471,18 @@ export default function CreatePortalPage() {
                               accept="image/*"
                               className="hidden"
                               id="logo"
-                              onChange={(e) => updateFormData("logo", e.target.files?.[0])}
+                              onChange={(e) =>
+                                updateFormData("logo", e.target.files?.[0])
+                              }
                             />
                             <Button
                               type="button"
                               size="sm"
                               variant="outline"
                               className="rounded-xl"
-                              onClick={() => document.getElementById("logo")?.click()}
+                              onClick={() =>
+                                document.getElementById("logo")?.click()
+                              }
                             >
                               SELECT FILE
                             </Button>
@@ -454,7 +496,9 @@ export default function CreatePortalPage() {
                           <input
                             type="text"
                             value={formData.customDomain}
-                            onChange={(e) => handleCustomDomainChange(e.target.value)}
+                            onChange={(e) =>
+                              handleCustomDomainChange(e.target.value)
+                            }
                             placeholder="e.g., portal.acmecorp.com"
                             className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                           />
@@ -495,7 +539,12 @@ export default function CreatePortalPage() {
                             </label>
                             <select
                               value={formData.storageProvider}
-                              onChange={(e) => updateFormData("storageProvider", e.target.value)}
+                              onChange={(e) =>
+                                updateFormData(
+                                  "storageProvider",
+                                  e.target.value,
+                                )
+                              }
                               className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                             >
                               <option value="local">Local Storage</option>
@@ -513,7 +562,9 @@ export default function CreatePortalPage() {
                             <input
                               type="number"
                               value={formData.storageLimit}
-                              onChange={(e) => updateFormData("storageLimit", e.target.value)}
+                              onChange={(e) =>
+                                updateFormData("storageLimit", e.target.value)
+                              }
                               className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                             />
                           </div>
@@ -525,7 +576,12 @@ export default function CreatePortalPage() {
                             <input
                               type="text"
                               value={formData.allowedFileTypes}
-                              onChange={(e) => updateFormData("allowedFileTypes", e.target.value)}
+                              onChange={(e) =>
+                                updateFormData(
+                                  "allowedFileTypes",
+                                  e.target.value,
+                                )
+                              }
                               placeholder="e.g., pdf,doc,docx,jpg,png"
                               className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                             />
@@ -541,7 +597,9 @@ export default function CreatePortalPage() {
                             <input
                               type="number"
                               value={formData.maxFileSize}
-                              onChange={(e) => updateFormData("maxFileSize", e.target.value)}
+                              onChange={(e) =>
+                                updateFormData("maxFileSize", e.target.value)
+                              }
                               className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                             />
                           </div>
@@ -553,7 +611,9 @@ export default function CreatePortalPage() {
                             <input
                               type="number"
                               value={formData.retentionDays}
-                              onChange={(e) => updateFormData("retentionDays", e.target.value)}
+                              onChange={(e) =>
+                                updateFormData("retentionDays", e.target.value)
+                              }
                               disabled={!formData.autoDelete}
                               className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground disabled:opacity-50"
                             />
@@ -564,11 +624,14 @@ export default function CreatePortalPage() {
                               <input
                                 type="checkbox"
                                 checked={formData.autoDelete}
-                                onChange={(e) => updateFormData("autoDelete", e.target.checked)}
+                                onChange={(e) =>
+                                  updateFormData("autoDelete", e.target.checked)
+                                }
                                 className="w-4 h-4 rounded border-border"
                               />
                               <span className="text-sm font-medium text-foreground">
-                                Enable automatic file deletion after retention period
+                                Enable automatic file deletion after retention
+                                period
                               </span>
                             </label>
                           </div>
@@ -606,10 +669,14 @@ export default function CreatePortalPage() {
                             </label>
                             <select
                               value={formData.accessType}
-                              onChange={(e) => updateFormData("accessType", e.target.value)}
+                              onChange={(e) =>
+                                updateFormData("accessType", e.target.value)
+                              }
                               className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                             >
-                              <option value="password">Password Protected</option>
+                              <option value="password">
+                                Password Protected
+                              </option>
                               <option value="link">Secure Link Only</option>
                               <option value="sso">Single Sign-On (SSO)</option>
                               <option value="oauth">OAuth 2.0</option>
@@ -625,7 +692,9 @@ export default function CreatePortalPage() {
                                 <input
                                   type={showPassword ? "text" : "password"}
                                   value={formData.password}
-                                  onChange={(e) => updateFormData("password", e.target.value)}
+                                  onChange={(e) =>
+                                    updateFormData("password", e.target.value)
+                                  }
                                   className="w-full px-4 py-3 pr-10 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                                 />
                                 <button
@@ -650,7 +719,9 @@ export default function CreatePortalPage() {
                             <input
                               type="number"
                               value={formData.sessionTimeout}
-                              onChange={(e) => updateFormData("sessionTimeout", e.target.value)}
+                              onChange={(e) =>
+                                updateFormData("sessionTimeout", e.target.value)
+                              }
                               className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                             />
                           </div>
@@ -662,7 +733,9 @@ export default function CreatePortalPage() {
                             <input
                               type="text"
                               value={formData.ipWhitelist}
-                              onChange={(e) => updateFormData("ipWhitelist", e.target.value)}
+                              onChange={(e) =>
+                                updateFormData("ipWhitelist", e.target.value)
+                              }
                               placeholder="e.g., 192.168.1.1, 10.0.0.0/24"
                               className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                             />
@@ -676,7 +749,12 @@ export default function CreatePortalPage() {
                               <input
                                 type="checkbox"
                                 checked={formData.twoFactorAuth}
-                                onChange={(e) => updateFormData("twoFactorAuth", e.target.checked)}
+                                onChange={(e) =>
+                                  updateFormData(
+                                    "twoFactorAuth",
+                                    e.target.checked,
+                                  )
+                                }
                                 className="w-4 h-4 rounded border-border"
                               />
                               <span className="text-sm font-medium text-foreground">
@@ -688,7 +766,12 @@ export default function CreatePortalPage() {
                               <input
                                 type="checkbox"
                                 checked={formData.encryptFiles}
-                                onChange={(e) => updateFormData("encryptFiles", e.target.checked)}
+                                onChange={(e) =>
+                                  updateFormData(
+                                    "encryptFiles",
+                                    e.target.checked,
+                                  )
+                                }
                                 className="w-4 h-4 rounded border-border"
                               />
                               <span className="text-sm font-medium text-foreground">
@@ -729,13 +812,16 @@ export default function CreatePortalPage() {
                           </label>
                           <textarea
                             value={formData.welcomeMessage}
-                            onChange={(e) => updateFormData("welcomeMessage", e.target.value)}
+                            onChange={(e) =>
+                              updateFormData("welcomeMessage", e.target.value)
+                            }
                             placeholder="Welcome! Please upload your documents for review."
                             rows={3}
                             className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
                           />
                           <p className="text-xs text-muted-foreground mt-2">
-                            This message will be displayed when clients first access the portal
+                            This message will be displayed when clients first
+                            access the portal
                           </p>
                         </div>
 
@@ -745,7 +831,9 @@ export default function CreatePortalPage() {
                           </label>
                           <textarea
                             value={formData.autoReplyMessage}
-                            onChange={(e) => updateFormData("autoReplyMessage", e.target.value)}
+                            onChange={(e) =>
+                              updateFormData("autoReplyMessage", e.target.value)
+                            }
                             placeholder="Automatic reply when files are uploaded..."
                             rows={3}
                             className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
@@ -757,7 +845,12 @@ export default function CreatePortalPage() {
                             <input
                               type="checkbox"
                               checked={formData.emailNotifications}
-                              onChange={(e) => updateFormData("emailNotifications", e.target.checked)}
+                              onChange={(e) =>
+                                updateFormData(
+                                  "emailNotifications",
+                                  e.target.checked,
+                                )
+                              }
                               className="w-4 h-4 rounded border-border"
                             />
                             <span className="text-sm font-medium text-foreground">
@@ -769,7 +862,12 @@ export default function CreatePortalPage() {
                             <input
                               type="checkbox"
                               checked={formData.uploadNotifications}
-                              onChange={(e) => updateFormData("uploadNotifications", e.target.checked)}
+                              onChange={(e) =>
+                                updateFormData(
+                                  "uploadNotifications",
+                                  e.target.checked,
+                                )
+                              }
                               className="w-4 h-4 rounded border-border"
                             />
                             <span className="text-sm font-medium text-foreground">
@@ -781,7 +879,12 @@ export default function CreatePortalPage() {
                             <input
                               type="checkbox"
                               checked={formData.customEmailTemplate}
-                              onChange={(e) => updateFormData("customEmailTemplate", e.target.checked)}
+                              onChange={(e) =>
+                                updateFormData(
+                                  "customEmailTemplate",
+                                  e.target.checked,
+                                )
+                              }
                               className="w-4 h-4 rounded border-border"
                             />
                             <span className="text-sm font-medium text-foreground">
@@ -793,7 +896,8 @@ export default function CreatePortalPage() {
                         {formData.customEmailTemplate && (
                           <div className="bg-muted/50 border border-border rounded-xl p-4">
                             <p className="text-sm text-muted-foreground">
-                              Custom email templates can be configured after portal creation
+                              Custom email templates can be configured after
+                              portal creation
                             </p>
                           </div>
                         )}
@@ -804,9 +908,14 @@ export default function CreatePortalPage() {
                               <CheckCircle2 className="w-6 h-6" />
                             </div>
                             <div>
-                              <h4 className="font-bold text-lg">Ready to Create?</h4>
+                              <h4 className="font-bold text-lg">
+                                Ready to Create?
+                              </h4>
                               <p className="text-primary-foreground/80 text-sm mt-1 leading-relaxed">
-                                Your new portal will be accessible at <strong className="text-primary-foreground">/p/{formData.portalUrl || "..."}</strong>
+                                Your new portal will be accessible at{" "}
+                                <strong className="text-primary-foreground">
+                                  /p/{formData.portalUrl || "..."}
+                                </strong>
                               </p>
                             </div>
                           </div>
@@ -827,7 +936,10 @@ export default function CreatePortalPage() {
                             {loading ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
-                              <>Create Portal <ChevronRight className="w-4 h-4" /></>
+                              <>
+                                Create Portal{" "}
+                                <ChevronRight className="w-4 h-4" />
+                              </>
                             )}
                           </button>
                         </div>

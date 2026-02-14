@@ -55,9 +55,24 @@ export default function ClientsPage() {
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   const tabs = [
-    { id: "directory", name: "Directory", icon: Users, description: "All clients and their history" },
-    { id: "activity", name: "Recent Activity", icon: Activity, description: "Latest uploads across all clients" },
-    { id: "stats", name: "Insights", icon: PieChart, description: "Client growth and portal usage" },
+    {
+      id: "directory",
+      name: "Directory",
+      icon: Users,
+      description: "All clients and their history",
+    },
+    {
+      id: "activity",
+      name: "Recent Activity",
+      icon: Activity,
+      description: "Latest uploads across all clients",
+    },
+    {
+      id: "stats",
+      name: "Insights",
+      icon: PieChart,
+      description: "Client growth and portal usage",
+    },
   ];
 
   useEffect(() => {
@@ -83,7 +98,8 @@ export default function ClientsPage() {
     const size = Number(bytes);
     if (size < 1024) return `${size} B`;
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
-    if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+    if (size < 1024 * 1024 * 1024)
+      return `${(size / (1024 * 1024)).toFixed(2)} MB`;
     return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   };
 
@@ -111,8 +127,14 @@ export default function ClientsPage() {
     if (mimeType.includes("pdf")) return "📄";
     if (mimeType.includes("word") || mimeType.includes("document")) return "📝";
     if (mimeType.includes("sheet") || mimeType.includes("excel")) return "📊";
-    if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return "📽️";
-    if (mimeType.includes("zip") || mimeType.includes("rar") || mimeType.includes("archive")) return "📦";
+    if (mimeType.includes("presentation") || mimeType.includes("powerpoint"))
+      return "📽️";
+    if (
+      mimeType.includes("zip") ||
+      mimeType.includes("rar") ||
+      mimeType.includes("archive")
+    )
+      return "📦";
     return "📎";
   };
 
@@ -127,8 +149,11 @@ export default function ClientsPage() {
       if (response.ok) {
         const data = await response.json();
         // Filter files by client email
-        const filtered = data.files.filter((f: FileItem) => 
-          f.portal && client.email && f.portal.name.toLowerCase().includes(client.email.toLowerCase())
+        const filtered = data.files.filter(
+          (f: FileItem) =>
+            f.portal &&
+            client.email &&
+            f.portal.name.toLowerCase().includes(client.email.toLowerCase()),
         );
         setClientFiles(filtered);
       }
@@ -143,7 +168,9 @@ export default function ClientsPage() {
     if (!client.email) return;
 
     const subject = encodeURIComponent(`Message regarding your uploads`);
-    const body = encodeURIComponent(`Hi ${client.name || "there"},\n\nI wanted to follow up regarding your recent uploads.\n\nBest regards`);
+    const body = encodeURIComponent(
+      `Hi ${client.name || "there"},\n\nI wanted to follow up regarding your recent uploads.\n\nBest regards`,
+    );
     const mailtoLink = `mailto:${client.email}?subject=${subject}&body=${body}`;
     window.location.href = mailtoLink;
   };
@@ -157,29 +184,36 @@ export default function ClientsPage() {
   const filteredClients = clients.filter(
     (c) =>
       c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      c.email?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const totalPortals = new Set(clients.flatMap((c) => c.portals)).size;
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div>
         <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Client Directory</h1>
-          <p className="text-muted-foreground mt-1 text-lg">Loading clients...</p>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+            Client Directory
+          </h1>
+          <p className="text-muted-foreground mt-1 text-lg">
+            Loading clients...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">Client Directory</h1>
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold text-foreground tracking-tight">
+          Client Directory
+        </h1>
         <p className="text-muted-foreground mt-1 text-lg">
-          Manage your client relationships, track recent file transfers, and monitor activity across all your portals.
+          Manage your client relationships, track recent file transfers, and
+          monitor activity across all your portals.
         </p>
       </div>
 
@@ -200,10 +234,15 @@ export default function ClientsPage() {
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`} />
+                  <Icon
+                    className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}
+                  />
                   <span className="font-medium text-sm">{tab.name}</span>
                   {isActive && (
-                    <motion.div layoutId="clients-active-indicator" className="ml-auto">
+                    <motion.div
+                      layoutId="clients-active-indicator"
+                      className="ml-auto"
+                    >
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </motion.div>
                   )}
@@ -214,15 +253,25 @@ export default function ClientsPage() {
 
           {/* Quick Stats Widget */}
           <div className="mt-8 p-4 bg-muted border border-border rounded-2xl">
-            <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Quick Stats</h4>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">
+              Quick Stats
+            </h4>
             <div className="space-y-3">
               <div className="flex justify-between items-end">
-                <span className="text-xs text-muted-foreground">Total Clients</span>
-                <span className="text-sm font-bold text-foreground">{clients.length}</span>
+                <span className="text-xs text-muted-foreground">
+                  Total Clients
+                </span>
+                <span className="text-sm font-bold text-foreground">
+                  {clients.length}
+                </span>
               </div>
               <div className="flex justify-between items-end">
-                <span className="text-xs text-muted-foreground">Active Portals</span>
-                <span className="text-sm font-bold text-foreground">{totalPortals}</span>
+                <span className="text-xs text-muted-foreground">
+                  Active Portals
+                </span>
+                <span className="text-sm font-bold text-foreground">
+                  {totalPortals}
+                </span>
               </div>
             </div>
           </div>
@@ -274,7 +323,9 @@ export default function ClientsPage() {
                             className="w-full flex items-center gap-4 p-5 text-left hover:bg-muted/50 transition-colors group"
                           >
                             <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground font-bold group-hover:bg-card transition-colors">
-                              {client.name?.charAt(0) || client.email?.charAt(0).toUpperCase() || "?"}
+                              {client.name?.charAt(0) ||
+                                client.email?.charAt(0).toUpperCase() ||
+                                "?"}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
@@ -287,7 +338,9 @@ export default function ClientsPage() {
                                   </span>
                                 )}
                               </div>
-                              <p className="text-sm text-muted-foreground truncate">{client.email || "No email provided"}</p>
+                              <p className="text-sm text-muted-foreground truncate">
+                                {client.email || "No email provided"}
+                              </p>
                             </div>
                             <div className="hidden md:flex flex-col items-end gap-1 px-4">
                               <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
@@ -308,9 +361,13 @@ export default function ClientsPage() {
                           <div className="p-4 bg-muted rounded-full w-fit mx-auto mb-4">
                             <Users className="w-8 h-8 text-muted-foreground" />
                           </div>
-                          <h4 className="text-foreground font-semibold mb-1">No clients found</h4>
+                          <h4 className="text-foreground font-semibold mb-1">
+                            No clients found
+                          </h4>
                           <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                            We couldn't find any clients matching your search. Try a different term or invite new clients to upload.
+                            We couldn't find any clients matching your search.
+                            Try a different term or invite new clients to
+                            upload.
                           </p>
                         </div>
                       )}
@@ -320,18 +377,29 @@ export default function ClientsPage() {
                   {activeTab === "activity" && (
                     <div className="divide-y divide-border">
                       {clients
-                        .sort((a, b) => new Date(b.lastUpload).getTime() - new Date(a.lastUpload).getTime())
+                        .sort(
+                          (a, b) =>
+                            new Date(b.lastUpload).getTime() -
+                            new Date(a.lastUpload).getTime(),
+                        )
                         .map((client, idx) => (
-                          <div key={idx} className="p-5 flex gap-4 transition-colors hover:bg-muted/30">
+                          <div
+                            key={idx}
+                            className="p-5 flex gap-4 transition-colors hover:bg-muted/30"
+                          >
                             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0 text-xl">
                               📄
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm text-foreground">
-                                <span className="font-bold">{client.name || client.email}</span> uploaded files
+                                <span className="font-bold">
+                                  {client.name || client.email}
+                                </span>{" "}
+                                uploaded files
                               </p>
                               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                                {formatDate(client.lastUpload)} · {client.totalFiles} files
+                                {formatDate(client.lastUpload)} ·{" "}
+                                {client.totalFiles} files
                               </p>
                             </div>
                             <button
@@ -350,20 +418,30 @@ export default function ClientsPage() {
                       <div className="p-6 bg-muted rounded-2xl border border-border inline-block mb-6">
                         <PieChart className="w-12 h-12 text-muted-foreground" />
                       </div>
-                      <h3 className="text-xl font-bold text-foreground mb-2">Detailed Insights</h3>
+                      <h3 className="text-xl font-bold text-foreground mb-2">
+                        Detailed Insights
+                      </h3>
                       <p className="text-muted-foreground text-sm max-w-md mx-auto mb-8">
-                        We are building advanced analytics to help you understand your client engagement better. Check back soon for growth charts and portal performance.
+                        We are building advanced analytics to help you
+                        understand your client engagement better. Check back
+                        soon for growth charts and portal performance.
                       </p>
                       <div className="flex flex-wrap justify-center gap-4">
                         <div className="bg-muted px-6 py-4 rounded-2xl border border-border min-w-[140px]">
-                          <p className="text-3xl font-extrabold text-foreground">{clients.length}</p>
-                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Total Reach</p>
+                          <p className="text-3xl font-extrabold text-foreground">
+                            {clients.length}
+                          </p>
+                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">
+                            Total Reach
+                          </p>
                         </div>
                         <div className="bg-muted px-6 py-4 rounded-2xl border border-border min-w-[140px]">
                           <p className="text-3xl font-extrabold text-foreground">
                             {clients.reduce((acc, c) => acc + c.totalFiles, 0)}
                           </p>
-                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Files Handled</p>
+                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">
+                            Files Handled
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -395,7 +473,8 @@ export default function ClientsPage() {
               <div className="p-8 border-b border-border bg-muted/50 flex justify-between items-start">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-card shadow-sm border border-border flex items-center justify-center text-xl font-bold text-foreground">
-                    {selectedClient.name?.charAt(0) || selectedClient.email?.charAt(0).toUpperCase()}
+                    {selectedClient.name?.charAt(0) ||
+                      selectedClient.email?.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold text-foreground leading-tight">
@@ -416,7 +495,11 @@ export default function ClientsPage() {
                           }`}
                           title="Copy email address"
                         >
-                          {copiedEmail ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                          {copiedEmail ? (
+                            <Check className="w-3 h-3" />
+                          ) : (
+                            <Copy className="w-3 h-3" />
+                          )}
                         </button>
                       )}
                     </div>
@@ -433,12 +516,20 @@ export default function ClientsPage() {
               <div className="p-8 overflow-y-auto flex-1">
                 <div className="grid grid-cols-2 gap-4 mb-8">
                   <div className="bg-muted p-4 rounded-2xl border border-border">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Files</p>
-                    <p className="text-xl font-bold text-foreground">{selectedClient.totalFiles}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                      Total Files
+                    </p>
+                    <p className="text-xl font-bold text-foreground">
+                      {selectedClient.totalFiles}
+                    </p>
                   </div>
                   <div className="bg-muted p-4 rounded-2xl border border-border">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Data</p>
-                    <p className="text-xl font-bold text-foreground">{formatFileSize(selectedClient.totalSize)}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                      Total Data
+                    </p>
+                    <p className="text-xl font-bold text-foreground">
+                      {formatFileSize(selectedClient.totalSize)}
+                    </p>
                   </div>
                 </div>
 
@@ -451,7 +542,9 @@ export default function ClientsPage() {
                   {loadingFiles ? (
                     <div className="py-12 text-center">
                       <div className="w-8 h-8 border-4 border-muted border-t-foreground rounded-full animate-spin mx-auto mb-2" />
-                      <p className="text-muted-foreground text-sm italic">Retrieving file history...</p>
+                      <p className="text-muted-foreground text-sm italic">
+                        Retrieving file history...
+                      </p>
                     </div>
                   ) : clientFiles.length > 0 ? (
                     clientFiles.map((file) => (
@@ -459,10 +552,16 @@ export default function ClientsPage() {
                         key={file.id}
                         className="flex items-center gap-3 p-3 bg-muted rounded-xl border border-border hover:bg-card transition-colors"
                       >
-                        <span className="text-2xl">{getFileIcon(file.mimeType)}</span>
+                        <span className="text-2xl">
+                          {getFileIcon(file.mimeType)}
+                        </span>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground text-sm truncate">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                          <p className="font-medium text-foreground text-sm truncate">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatFileSize(file.size)}
+                          </p>
                         </div>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Calendar className="w-3 h-3" />
@@ -473,8 +572,12 @@ export default function ClientsPage() {
                   ) : (
                     <div className="py-12 text-center">
                       <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-muted-foreground text-sm">No documents found</p>
-                      <p className="text-muted-foreground text-xs mt-1">This client hasn't uploaded any files yet.</p>
+                      <p className="text-muted-foreground text-sm">
+                        No documents found
+                      </p>
+                      <p className="text-muted-foreground text-xs mt-1">
+                        This client hasn't uploaded any files yet.
+                      </p>
                     </div>
                   )}
                 </div>
