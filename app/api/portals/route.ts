@@ -20,6 +20,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const limit = searchParams.get("limit");
+    const take = limit ? parseInt(limit, 10) : undefined;
+
     const portals = await prisma.portal.findMany({
       where: { userId: session.user.id },
       include: {
@@ -28,6 +32,7 @@ export async function GET(request: Request) {
         },
       },
       orderBy: { createdAt: "desc" },
+      take,
     });
 
     return NextResponse.json({ portals });

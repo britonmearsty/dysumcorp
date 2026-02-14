@@ -55,8 +55,8 @@ export default function DashboardPage() {
     async function fetchData() {
       try {
         const [portalsRes, filesRes] = await Promise.all([
-          fetch("/api/portals"),
-          fetch("/api/files"),
+          fetch("/api/portals?limit=5"),
+          fetch("/api/files?limit=5"),
         ]);
 
         if (portalsRes.ok && filesRes.ok) {
@@ -83,8 +83,8 @@ export default function DashboardPage() {
             recentActivityCount: recentFiles.length,
           });
 
-          setActivePortalsList(portals.slice(0, 5));
-          setRecentActivities(files.slice(0, 5));
+          setActivePortalsList(portals);
+          setRecentActivities(files);
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -115,7 +115,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-bg-base px-6 py-6">
+    <main className="min-h-screen px-6 py-6">
       {/* Header Section */}
       <header className="mb-10 flex items-start justify-between">
         <div>

@@ -28,7 +28,7 @@ export const AnimatedNavItem = forwardRef<
     <Link
       ref={ref}
       className={cn(
-        "flex items-center gap-3 px-4 py-2.5 my-0.5 transition-all duration-200 font-mono text-sm rounded-md group relative",
+        "flex items-center gap-3 px-5 py-3 my-0.5 transition-all duration-200 font-mono text-[0.85rem] rounded-md group relative",
         isActive
           ? "text-foreground"
           : "text-muted-foreground hover:text-foreground",
@@ -43,14 +43,14 @@ export const AnimatedNavItem = forwardRef<
       <div className="relative z-10">
         <Icon
           className={cn(
-            "h-5 w-5 flex-shrink-0 transition-colors duration-200",
+            "h-[22px] w-[22px] flex-shrink-0 transition-colors duration-200",
             isActive
               ? "text-primary"
               : isHovered
                 ? "text-foreground"
                 : "text-muted-foreground",
           )}
-          size={20}
+          size={22}
           isHovered={isHovered || isActive}
         />
       </div>
@@ -71,7 +71,7 @@ export const AnimatedNavItem = forwardRef<
 
       {/* Active indicator - left border */}
       {isActive && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-primary rounded-r-full" />
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 bg-primary rounded-r-full" />
       )}
     </Link>
   );
