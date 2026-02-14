@@ -6,6 +6,7 @@ function getResendClient() {
   if (!resend && process.env.RESEND_API_KEY) {
     resend = new Resend(process.env.RESEND_API_KEY);
   }
+
   return resend;
 }
 
@@ -165,12 +166,15 @@ export async function sendEmail({
   try {
     if (!process.env.RESEND_API_KEY) {
       console.warn("RESEND_API_KEY not configured, skipping email send");
+
       return { success: false, error: "Email service not configured" };
     }
 
     const resendClient = getResendClient();
+
     if (!resendClient) {
       console.warn("Failed to initialize Resend client");
+
       return { success: false, error: "Email service not configured" };
     }
 
@@ -183,12 +187,14 @@ export async function sendEmail({
 
     if (error) {
       console.error("Email send error:", error);
+
       return { success: false, error };
     }
 
     return { success: true, data };
   } catch (error) {
     console.error("Email service error:", error);
+
     return { success: false, error };
   }
 }

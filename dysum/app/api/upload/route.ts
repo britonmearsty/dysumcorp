@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Cloudinary upload error:", error);
+
     return NextResponse.json(
       { success: false, error: "Failed to upload image to Cloudinary" },
       { status: 500 },
@@ -112,6 +113,7 @@ export async function DELETE(request: NextRequest) {
     }
   } catch (error) {
     console.error("Cloudinary deletion error:", error);
+
     return NextResponse.json(
       { success: false, error: "Failed to delete image" },
       { status: 500 },

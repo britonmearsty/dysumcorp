@@ -121,6 +121,7 @@ export const auth = betterAuth({
         // Update user's subscription plan in the database
         try {
           const planId = metadata?.planId as string | undefined;
+
           if (planId && planId !== "free" && customer?.email) {
             await prisma.user.updateMany({
               where: { email: customer.email },

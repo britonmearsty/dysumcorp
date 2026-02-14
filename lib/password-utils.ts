@@ -15,6 +15,7 @@ export function verifyPassword(password: string, hash: string): boolean {
     .createHash("sha256")
     .update(password)
     .digest("hex");
+
   return passwordHash === hash;
 }
 
@@ -28,6 +29,7 @@ export function generateRandomPassword(length: number = 12): string {
 
   for (let i = 0; i < length; i++) {
     const randomIndex = crypto.randomInt(0, charset.length);
+
     password += charset[randomIndex];
   }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { PrismaClient } from "../../generated/prisma";
 
 const prisma = new PrismaClient();
@@ -20,6 +21,7 @@ function calculateReadingTime(htmlContent: string): number {
   const wordCount = plainText
     .split(/\s+/)
     .filter((word) => word.length > 0).length;
+
   return Math.ceil(wordCount / wordsPerMinute);
 }
 
@@ -59,6 +61,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching posts:", error);
+
     return NextResponse.json(
       { success: false, error: "Failed to fetch posts" },
       { status: 500 },
@@ -150,6 +153,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Error creating post:", error);
+
     return NextResponse.json(
       { success: false, error: "Failed to create post" },
       { status: 500 },
@@ -197,6 +201,7 @@ export async function PUT(request: NextRequest) {
 
     // Generate new slug if title changed
     let slug = existingPost.slug;
+
     if (title !== existingPost.title) {
       slug = generateSlug(title);
 
@@ -261,6 +266,7 @@ export async function PUT(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error updating post:", error);
+
     return NextResponse.json(
       { success: false, error: "Failed to update post" },
       { status: 500 },
@@ -304,6 +310,7 @@ export async function DELETE(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error deleting post:", error);
+
     return NextResponse.json(
       { success: false, error: "Failed to delete post" },
       { status: 500 },

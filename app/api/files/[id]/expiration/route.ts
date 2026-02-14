@@ -35,6 +35,7 @@ export async function PUT(
 
     // Validate expiration date is in the future
     const expirationDate = new Date(expiresAt);
+
     if (expirationDate <= new Date()) {
       return NextResponse.json(
         {
@@ -71,6 +72,7 @@ export async function PUT(
     });
   } catch (error) {
     console.error("Error setting file expiration:", error);
+
     return NextResponse.json(
       { error: "Failed to set expiration date" },
       { status: 500 },
@@ -119,6 +121,7 @@ export async function DELETE(
     });
   } catch (error) {
     console.error("Error removing file expiration:", error);
+
     return NextResponse.json(
       { error: "Failed to remove expiration date" },
       { status: 500 },

@@ -85,6 +85,7 @@ export default function ClientsPage() {
 
       if (response.ok) {
         const data = await response.json();
+
         setClients(data.clients);
       }
     } catch (error) {
@@ -96,10 +97,12 @@ export default function ClientsPage() {
 
   const formatFileSize = (bytes: string) => {
     const size = Number(bytes);
+
     if (size < 1024) return `${size} B`;
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
     if (size < 1024 * 1024 * 1024)
       return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+
     return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   };
 
@@ -135,6 +138,7 @@ export default function ClientsPage() {
       mimeType.includes("archive")
     )
       return "📦";
+
     return "📎";
   };
 
@@ -146,6 +150,7 @@ export default function ClientsPage() {
     // Fetch files for this client
     try {
       const response = await fetch("/api/files");
+
       if (response.ok) {
         const data = await response.json();
         // Filter files by client email
@@ -155,6 +160,7 @@ export default function ClientsPage() {
             client.email &&
             f.portal.name.toLowerCase().includes(client.email.toLowerCase()),
         );
+
         setClientFiles(filtered);
       }
     } catch (error) {
@@ -172,6 +178,7 @@ export default function ClientsPage() {
       `Hi ${client.name || "there"},\n\nI wanted to follow up regarding your recent uploads.\n\nBest regards`,
     );
     const mailtoLink = `mailto:${client.email}?subject=${subject}&body=${body}`;
+
     window.location.href = mailtoLink;
   };
 
@@ -224,15 +231,16 @@ export default function ClientsPage() {
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
+
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                     isActive
                       ? "bg-card shadow-sm border border-border text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
+                  onClick={() => setActiveTab(tab.id)}
                 >
                   <Icon
                     className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}
@@ -240,8 +248,8 @@ export default function ClientsPage() {
                   <span className="font-medium text-sm">{tab.name}</span>
                   {isActive && (
                     <motion.div
-                      layoutId="clients-active-indicator"
                       className="ml-auto"
+                      layoutId="clients-active-indicator"
                     >
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </motion.div>
@@ -252,7 +260,7 @@ export default function ClientsPage() {
           </nav>
 
           {/* Quick Stats Widget */}
-          <div className="mt-8 p-4 bg-muted border border-border rounded-2xl">
+          <div className="mt-8 p-4 bg-bg-card border border-border rounded-[14px]">
             <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">
               Quick Stats
             </h4>
@@ -282,12 +290,12 @@ export default function ClientsPage() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
             >
-              <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+              <div className="bg-bg-card rounded-[14px] border border-border overflow-hidden">
                 <div className="p-6 border-b border-border bg-muted/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <h2 className="text-xl font-semibold text-foreground">
@@ -302,11 +310,11 @@ export default function ClientsPage() {
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <input
-                        type="text"
+                        className="w-full md:w-64 pl-10 pr-4 py-2 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none text-sm text-foreground"
                         placeholder="Filter clients..."
+                        type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full md:w-64 pl-10 pr-4 py-2 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none text-sm text-foreground"
                       />
                     </div>
                   )}
@@ -319,10 +327,10 @@ export default function ClientsPage() {
                         filteredClients.map((client, idx) => (
                           <button
                             key={idx}
-                            onClick={() => handleClientClick(client)}
                             className="w-full flex items-center gap-4 p-5 text-left hover:bg-muted/50 transition-colors group"
+                            onClick={() => handleClientClick(client)}
                           >
-                            <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground font-bold group-hover:bg-card transition-colors">
+                            <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground font-bold group-hover:bg-bg-card transition-colors">
                               {client.name?.charAt(0) ||
                                 client.email?.charAt(0).toUpperCase() ||
                                 "?"}
@@ -403,8 +411,8 @@ export default function ClientsPage() {
                               </p>
                             </div>
                             <button
-                              onClick={() => handleClientClick(client)}
                               className="text-xs font-bold text-muted-foreground hover:text-foreground underline underline-offset-4"
+                              onClick={() => handleClientClick(client)}
                             >
                               View
                             </button>
@@ -458,17 +466,17 @@ export default function ClientsPage() {
         {selectedClient && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedClient(null)}
               className="absolute inset-0 bg-background/40 backdrop-blur-sm"
+              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }}
+              onClick={() => setSelectedClient(null)}
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="relative w-full max-w-2xl bg-bg-card rounded-[14px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-card rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
             >
               <div className="p-8 border-b border-border bg-muted/50 flex justify-between items-start">
                 <div className="flex items-center gap-4">
@@ -487,13 +495,13 @@ export default function ClientsPage() {
                       </p>
                       {selectedClient.email && (
                         <button
-                          onClick={() => copyToClipboard(selectedClient.email!)}
                           className={`p-1.5 rounded-lg transition-all border ${
                             copiedEmail
                               ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30"
                               : "bg-card text-muted-foreground hover:text-foreground hover:border-border border-border"
                           }`}
                           title="Copy email address"
+                          onClick={() => copyToClipboard(selectedClient.email!)}
                         >
                           {copiedEmail ? (
                             <Check className="w-3 h-3" />
@@ -506,8 +514,8 @@ export default function ClientsPage() {
                   </div>
                 </div>
                 <button
-                  onClick={() => setSelectedClient(null)}
                   className="p-2 hover:bg-muted rounded-xl transition-colors text-muted-foreground hover:text-foreground"
+                  onClick={() => setSelectedClient(null)}
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -515,7 +523,7 @@ export default function ClientsPage() {
 
               <div className="p-8 overflow-y-auto flex-1">
                 <div className="grid grid-cols-2 gap-4 mb-8">
-                  <div className="bg-muted p-4 rounded-2xl border border-border">
+                  <div className="bg-bg-card p-4 rounded-[14px] border border-border">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
                       Total Files
                     </p>
@@ -523,7 +531,7 @@ export default function ClientsPage() {
                       {selectedClient.totalFiles}
                     </p>
                   </div>
-                  <div className="bg-muted p-4 rounded-2xl border border-border">
+                  <div className="bg-bg-card p-4 rounded-[14px] border border-border">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
                       Total Data
                     </p>
@@ -550,7 +558,7 @@ export default function ClientsPage() {
                     clientFiles.map((file) => (
                       <div
                         key={file.id}
-                        className="flex items-center gap-3 p-3 bg-muted rounded-xl border border-border hover:bg-card transition-colors"
+                        className="flex items-center gap-3 p-3 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors"
                       >
                         <span className="text-2xl">
                           {getFileIcon(file.mimeType)}
@@ -585,15 +593,15 @@ export default function ClientsPage() {
 
               <div className="p-6 bg-muted border-t border-border flex justify-end gap-3">
                 <button
-                  onClick={() => setSelectedClient(null)}
                   className="px-6 py-2.5 bg-card border border-border rounded-2xl text-sm font-bold text-muted-foreground hover:bg-muted transition-all"
+                  onClick={() => setSelectedClient(null)}
                 >
                   Close
                 </button>
                 {selectedClient.email && (
                   <button
-                    onClick={() => handleContactClient(selectedClient)}
                     className="px-6 py-2.5 bg-foreground text-background rounded-2xl text-sm font-bold hover:opacity-90 shadow-sm transition-all flex items-center gap-2"
+                    onClick={() => handleContactClient(selectedClient)}
                   >
                     Contact Client <ArrowUpRight className="w-4 h-4" />
                   </button>

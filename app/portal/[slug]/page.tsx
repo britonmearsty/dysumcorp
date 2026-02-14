@@ -82,6 +82,7 @@ export default function PublicPortalPage() {
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!emailRegex.test(uploaderEmail)) {
       setErrorMessage("Please enter a valid email address");
 
@@ -111,6 +112,7 @@ export default function PublicPortalPage() {
           xhr.upload.addEventListener("progress", (e) => {
             if (e.lengthComputable) {
               const percentComplete = Math.round((e.loaded / e.total) * 100);
+
               setFileProgress((prev) => ({ ...prev, [i]: percentComplete }));
             }
           });
@@ -122,9 +124,8 @@ export default function PublicPortalPage() {
             } else {
               try {
                 const data = JSON.parse(xhr.responseText);
-                setErrorMessage(
-                  data.error || `Failed to upload ${file.name}`,
-                );
+
+                setErrorMessage(data.error || `Failed to upload ${file.name}`);
               } catch {
                 setErrorMessage(`Failed to upload ${file.name}`);
               }

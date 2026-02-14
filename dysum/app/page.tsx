@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import BlogPost from "./components/BlogPost";
@@ -18,6 +19,7 @@ export default function HomePage() {
         setLoading(true);
         setError(null);
         const publishedPosts = await getPublishedPosts();
+
         setPosts(publishedPosts);
       } catch (err) {
         console.error("Error loading posts:", err);
@@ -38,12 +40,12 @@ export default function HomePage() {
           <div className="animate-pulse space-y-8">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="bg-white rounded-lg p-6 shadow-sm">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-4" />
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2" />
                 <div className="space-y-2">
-                  <div className="h-3 bg-gray-200 rounded"></div>
-                  <div className="h-3 bg-gray-200 rounded"></div>
-                  <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                  <div className="h-3 bg-gray-200 rounded" />
+                  <div className="h-3 bg-gray-200 rounded" />
+                  <div className="h-3 bg-gray-200 rounded w-5/6" />
                 </div>
               </div>
             ))}
@@ -68,10 +70,10 @@ export default function HomePage() {
                 viewBox="0 0 24 24"
               >
                 <path
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
             </div>
@@ -80,8 +82,8 @@ export default function HomePage() {
             </h2>
             <p className="text-gray-600 mb-8">{error}</p>
             <button
-              onClick={() => window.location.reload()}
               className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={() => window.location.reload()}
             >
               Try Again
             </button>
@@ -121,10 +123,10 @@ export default function HomePage() {
                   viewBox="0 0 24 24"
                 >
                   <path
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                   />
                 </svg>
               </div>
@@ -136,8 +138,8 @@ export default function HomePage() {
                 custom CSS styling, and include a beautiful thumbnail image.
               </p>
               <a
-                href="/create"
                 className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                href="/create"
               >
                 <svg
                   className="w-5 h-5 mr-2"
@@ -146,10 +148,10 @@ export default function HomePage() {
                   viewBox="0 0 24 24"
                 >
                   <path
+                    d="M12 4v16m8-8H4"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 4v16m8-8H4"
                   />
                 </svg>
                 Create your first post
@@ -162,8 +164,8 @@ export default function HomePage() {
                   Latest Posts ({posts.length})
                 </h2>
                 <a
-                  href="/create"
                   className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  href="/create"
                 >
                   <svg
                     className="w-4 h-4 mr-2"
@@ -172,10 +174,10 @@ export default function HomePage() {
                     viewBox="0 0 24 24"
                   >
                     <path
+                      d="M12 4v16m8-8H4"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 4v16m8-8H4"
                     />
                   </svg>
                   New Post

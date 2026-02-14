@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+
 import { BlogPost as BlogPostType } from "../types";
 import { scopeCSS, sanitizeHTML } from "../lib/blogUtils";
 
@@ -15,6 +16,7 @@ export default function BlogPost({
 }: BlogPostProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -24,7 +26,9 @@ export default function BlogPost({
 
   const getExcerpt = (htmlContent: string, maxLength: number = 150) => {
     const plainText = htmlContent.replace(/<[^>]*>/g, "").trim();
+
     if (plainText.length <= maxLength) return plainText;
+
     return plainText.substring(0, maxLength).trim() + "...";
   };
 
@@ -47,9 +51,9 @@ export default function BlogPost({
       {post.thumbnailUrl && (
         <div className="aspect-video relative overflow-hidden">
           <img
-            src={post.thumbnailUrl}
             alt={post.title}
             className="w-full h-full object-cover"
+            src={post.thumbnailUrl}
           />
         </div>
       )}
@@ -87,8 +91,8 @@ export default function BlogPost({
             post.title
           ) : (
             <Link
-              href={`/post/${post.slug}`}
               className="hover:text-blue-600 transition-colors"
+              href={`/post/${post.slug}`}
             >
               {post.title}
             </Link>
@@ -102,9 +106,9 @@ export default function BlogPost({
         <div className="text-gray-700 leading-relaxed">
           {showFullContent ? (
             <div
-              id={postScopeId}
-              className="prose max-w-none"
               dangerouslySetInnerHTML={{ __html: sanitizedHTML }}
+              className="prose max-w-none"
+              id={postScopeId}
             />
           ) : (
             <p>{getExcerpt(post.htmlContent)}</p>
@@ -114,8 +118,8 @@ export default function BlogPost({
         {!showFullContent && (
           <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
             <Link
-              href={`/post/${post.slug}`}
               className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors"
+              href={`/post/${post.slug}`}
             >
               Read more
               <svg
@@ -125,18 +129,18 @@ export default function BlogPost({
                 viewBox="0 0 24 24"
               >
                 <path
+                  d="M9 5l7 7-7 7"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M9 5l7 7-7 7"
                 />
               </svg>
             </Link>
 
             <div className="flex items-center space-x-4 text-sm text-gray-500">
               <Link
-                href={`/post/${post.slug}/edit`}
                 className="hover:text-blue-600 transition-colors"
+                href={`/post/${post.slug}/edit`}
               >
                 Edit
               </Link>
@@ -148,8 +152,8 @@ export default function BlogPost({
           <div className="mt-8 pt-6 border-t border-gray-200 flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link
-                href="/"
                 className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                href="/"
               >
                 <svg
                   className="mr-1 w-4 h-4"
@@ -158,10 +162,10 @@ export default function BlogPost({
                   viewBox="0 0 24 24"
                 >
                   <path
+                    d="M15 19l-7-7 7-7"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
                   />
                 </svg>
                 Back to Home
@@ -170,8 +174,8 @@ export default function BlogPost({
 
             <div className="flex items-center space-x-4">
               <Link
-                href={`/post/${post.slug}/edit`}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                href={`/post/${post.slug}/edit`}
               >
                 Edit Post
               </Link>

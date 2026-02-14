@@ -6,7 +6,6 @@ import {
   Download,
   Trash2,
   Search,
-  Calendar,
   HardDrive,
   ExternalLink,
   Cloud,
@@ -15,7 +14,6 @@ import {
   Unlock,
   Eye,
   EyeOff,
-  Clock,
   AlertCircle,
   ChevronRight,
   LayoutGrid,
@@ -23,13 +21,9 @@ import {
   PieChart,
   TrendingUp,
   Server,
-  X,
   RefreshCw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 interface File {
   id: string;
@@ -90,8 +84,10 @@ export default function AssetsPage() {
   const fetchFiles = async () => {
     try {
       const response = await fetch("/api/files");
+
       if (response.ok) {
         const data = await response.json();
+
         setFiles(data.files);
       }
     } catch (error) {
@@ -112,6 +108,7 @@ export default function AssetsPage() {
     setDeleting(id);
     try {
       const response = await fetch(`/api/files/${id}`, { method: "DELETE" });
+
       if (response.ok) {
         setFiles(files.filter((f) => f.id !== id));
       } else {
@@ -131,15 +128,18 @@ export default function AssetsPage() {
         const password = prompt(
           "This file is password protected. Please enter the password:",
         );
+
         if (!password) return;
       }
       const response = await fetch(`/api/files/${file.id}/download`, {
         headers: file.passwordHash ? { "x-file-password": password || "" } : {},
       });
+
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
+
         a.href = url;
         a.download = file.name;
         document.body.appendChild(a);
@@ -176,6 +176,7 @@ export default function AssetsPage() {
       const response = await fetch(`/api/files/${file.id}/password`, {
         method: "DELETE",
       });
+
       if (response.ok) {
         setFiles(
           files.map((f) =>
@@ -195,10 +196,12 @@ export default function AssetsPage() {
   const handlePasswordSubmit = async () => {
     if (!selectedFile || !password.trim()) {
       setPasswordError("Password is required");
+
       return;
     }
     if (password.length < 8) {
       setPasswordError("Password must be at least 8 characters long");
+
       return;
     }
     setManagingPassword(selectedFile.id);
@@ -209,6 +212,7 @@ export default function AssetsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: password.trim() }),
       });
+
       if (response.ok) {
         setFiles(
           files.map((f) =>
@@ -221,6 +225,7 @@ export default function AssetsPage() {
         alert("Password protection added successfully");
       } else {
         const errorData = await response.json();
+
         setPasswordError(errorData.error || "Failed to set password");
       }
     } catch (error) {
@@ -244,20 +249,24 @@ export default function AssetsPage() {
     )
       return "dropbox";
     if (storageUrl.startsWith("http")) return "other";
+
     return "local";
   };
 
   const formatFileSize = (bytes: string) => {
     const size = Number(bytes);
+
     if (size < 1024) return `${size} B`;
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
     if (size < 1024 * 1024 * 1024)
       return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+
     return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -280,6 +289,7 @@ export default function AssetsPage() {
       mimeType.includes("archive")
     )
       return "📦";
+
     return "📎";
   };
 
@@ -326,6 +336,7 @@ export default function AssetsPage() {
     const matchesSearch = file.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
+
     return matchesSearch;
   });
 
@@ -334,7 +345,9 @@ export default function AssetsPage() {
     const byProvider = files.reduce(
       (acc, f) => {
         const type = getStorageType(f.storageUrl);
+
         acc[type] = (acc[type] || 0) + 1;
+
         return acc;
       },
       {} as Record<string, number>,
@@ -367,7 +380,7 @@ export default function AssetsPage() {
       {/* Password Modal */}
       {showPasswordModal && selectedFile && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card rounded-xl p-6 w-full max-w-md border border-border shadow-xl">
+          <div className="bg-bg-card rounded-[12px] p-6 w-full max-w-md border border-border shadow-xl">
             <h3 className="text-lg font-semibold text-foreground mb-4">
               Set Password for "{selectedFile.name}"
             </h3>
@@ -378,16 +391,16 @@ export default function AssetsPage() {
                 </label>
                 <div className="relative">
                   <input
+                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                    placeholder="Enter password (min 8 characters)"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
-                    placeholder="Enter password (min 8 characters)"
                   />
                   <button
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -406,21 +419,21 @@ export default function AssetsPage() {
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button
+                className="px-4 py-2.5 border border-border rounded-xl text-muted-foreground hover:bg-muted transition-colors font-medium text-sm"
+                disabled={managingPassword === selectedFile.id}
                 onClick={() => {
                   setShowPasswordModal(false);
                   setSelectedFile(null);
                   setPassword("");
                   setPasswordError("");
                 }}
-                className="px-4 py-2.5 border border-border rounded-xl text-muted-foreground hover:bg-muted transition-colors font-medium text-sm"
-                disabled={managingPassword === selectedFile.id}
               >
                 Cancel
               </button>
               <button
-                onClick={handlePasswordSubmit}
                 className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 font-bold text-sm"
                 disabled={managingPassword === selectedFile.id}
+                onClick={handlePasswordSubmit}
               >
                 {managingPassword === selectedFile.id
                   ? "Setting..."
@@ -449,15 +462,16 @@ export default function AssetsPage() {
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
+
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                     isActive
                       ? "bg-card shadow-sm border border-border text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
+                  onClick={() => setActiveTab(tab.id)}
                 >
                   <Icon
                     className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}
@@ -465,8 +479,8 @@ export default function AssetsPage() {
                   <span className="font-medium text-sm">{tab.name}</span>
                   {isActive && (
                     <motion.div
-                      layoutId="assets-active-indicator"
                       className="ml-auto"
+                      layoutId="assets-active-indicator"
                     >
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </motion.div>
@@ -477,7 +491,7 @@ export default function AssetsPage() {
           </nav>
 
           {/* Storage Pulse Widget */}
-          <div className="mt-8 p-6 bg-muted border border-border rounded-3xl">
+          <div className="mt-8 p-6 bg-bg-card border border-border rounded-[14px]">
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">
               Storage Pulse
             </h4>
@@ -493,13 +507,13 @@ export default function AssetsPage() {
                 </div>
                 <div className="h-1.5 w-full bg-border rounded-full overflow-hidden">
                   <motion.div
-                    initial={{ width: 0 }}
                     animate={{ width: "45%" }}
                     className="h-full bg-foreground"
+                    initial={{ width: 0 }}
                   />
                 </div>
               </div>
-              <div className="flex justify-between items-center bg-card p-3 rounded-xl border border-border">
+              <div className="flex justify-between items-center bg-bg-card p-3 rounded-[12px] border border-border">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400" />
                   <span className="text-xs text-muted-foreground">Dropbox</span>
@@ -508,7 +522,7 @@ export default function AssetsPage() {
                   {stats.byProvider["dropbox"] || 0}
                 </span>
               </div>
-              <div className="flex justify-between items-center bg-card p-3 rounded-xl border border-border">
+              <div className="flex justify-between items-center bg-bg-card p-3 rounded-[12px] border border-border">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
                   <span className="text-xs text-muted-foreground">
@@ -529,18 +543,18 @@ export default function AssetsPage() {
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
-                type="text"
+                className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-2xl focus:ring-2 focus:ring-ring transition-all outline-none text-sm text-foreground"
                 placeholder="Search assets..."
+                type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-2xl focus:ring-2 focus:ring-ring transition-all outline-none text-sm text-foreground"
               />
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => window.location.reload()}
                 className="flex items-center gap-2 px-3 py-2 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground rounded-lg transition-colors text-sm font-medium border border-border"
                 title="Refresh page"
+                onClick={() => window.location.reload()}
               >
                 <RefreshCw className="w-4 h-4" />
                 Refresh
@@ -548,22 +562,22 @@ export default function AssetsPage() {
 
               <div className="flex items-center gap-2 p-1 bg-muted border border-border rounded-xl w-fit">
                 <button
-                  onClick={() => setViewMode("grid")}
                   className={`p-2 rounded-lg transition-all ${
                     viewMode === "grid"
                       ? "bg-card text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
+                  onClick={() => setViewMode("grid")}
                 >
                   <LayoutGrid className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => setViewMode("list")}
                   className={`p-2 rounded-lg transition-all ${
                     viewMode === "list"
                       ? "bg-card text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
+                  onClick={() => setViewMode("list")}
                 >
                   <ListIcon className="w-4 h-4" />
                 </button>
@@ -574,12 +588,12 @@ export default function AssetsPage() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab + viewMode}
-              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
             >
-              <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
+              <div className="bg-bg-card rounded-[14px] border border-border shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-border bg-muted/30">
                   <h2 className="text-xl font-bold text-foreground">
                     {tabs.find((t) => t.id === activeTab)?.name}
@@ -644,10 +658,10 @@ export default function AssetsPage() {
                                       Portal:
                                     </span>
                                     <a
-                                      href={`/portal/${file.portal.slug}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
                                       className="text-xs text-primary hover:underline flex items-center gap-1"
+                                      href={`/portal/${file.portal.slug}`}
+                                      rel="noopener noreferrer"
+                                      target="_blank"
                                     >
                                       {file.portal.name}
                                       <ExternalLink className="w-3 h-3" />
@@ -656,36 +670,36 @@ export default function AssetsPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <button
-                                    onClick={() => handleDownload(file)}
                                     className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
                                     title="Download"
+                                    onClick={() => handleDownload(file)}
                                   >
                                     <Download className="w-4 h-4" />
                                   </button>
                                   {file.passwordHash ? (
                                     <button
-                                      onClick={() => handleRemovePassword(file)}
                                       className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
                                       title="Remove password"
+                                      onClick={() => handleRemovePassword(file)}
                                     >
                                       <Unlock className="w-4 h-4" />
                                     </button>
                                   ) : (
                                     <button
-                                      onClick={() => handleSetPassword(file)}
                                       className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
                                       title="Set password"
+                                      onClick={() => handleSetPassword(file)}
                                     >
                                       <Lock className="w-4 h-4" />
                                     </button>
                                   )}
                                   <button
+                                    className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all disabled:opacity-50"
+                                    disabled={deleting === file.id}
+                                    title="Delete"
                                     onClick={() =>
                                       handleDelete(file.id, file.name)
                                     }
-                                    disabled={deleting === file.id}
-                                    className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all disabled:opacity-50"
-                                    title="Delete"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -699,7 +713,7 @@ export default function AssetsPage() {
                           {filteredFiles.map((file) => (
                             <div
                               key={file.id}
-                              className="group bg-muted rounded-2xl border border-border hover:border-muted-foreground hover:shadow-lg transition-all p-4"
+                              className="group bg-bg-card rounded-[14px] border border-border hover:border-muted-foreground hover:shadow-lg transition-all p-4"
                             >
                               <div className="flex justify-between items-start mb-4">
                                 <div className="bg-card rounded-xl border border-border group-hover:bg-muted transition-colors p-3 text-2xl">
@@ -707,17 +721,17 @@ export default function AssetsPage() {
                                 </div>
                                 <div className="flex gap-1">
                                   <button
-                                    onClick={() => handleDownload(file)}
                                     className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
+                                    onClick={() => handleDownload(file)}
                                   >
                                     <Download className="w-4 h-4" />
                                   </button>
                                   <button
+                                    className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
+                                    disabled={deleting === file.id}
                                     onClick={() =>
                                       handleDelete(file.id, file.name)
                                     }
-                                    disabled={deleting === file.id}
-                                    className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -763,12 +777,13 @@ export default function AssetsPage() {
                           const providerFiles = filteredFiles.filter(
                             (f) => getStorageType(f.storageUrl) === provider,
                           );
+
                           if (providerFiles.length === 0) return null;
 
                           return (
                             <div
                               key={provider}
-                              className="bg-muted rounded-3xl border border-border overflow-hidden"
+                              className="bg-bg-card rounded-[14px] border border-border overflow-hidden"
                             >
                               <div className="p-4 bg-card border-b border-border flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -811,19 +826,19 @@ export default function AssetsPage() {
                                           </div>
                                           <div className="flex items-center gap-1">
                                             <button
+                                              className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
                                               onClick={() =>
                                                 handleDownload(file)
                                               }
-                                              className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
                                             >
                                               <Download className="w-4 h-4" />
                                             </button>
                                             <button
+                                              className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
+                                              disabled={deleting === file.id}
                                               onClick={() =>
                                                 handleDelete(file.id, file.name)
                                               }
-                                              disabled={deleting === file.id}
-                                              className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
                                             >
                                               <Trash2 className="w-4 h-4" />
                                             </button>
@@ -837,7 +852,7 @@ export default function AssetsPage() {
                                     {providerFiles.map((file) => (
                                       <div
                                         key={file.id}
-                                        className="bg-card rounded-xl border border-border hover:shadow-md transition-all p-3"
+                                        className="bg-bg-card rounded-[12px] border border-border hover:shadow-md transition-all p-3"
                                       >
                                         <div className="flex justify-between items-start mb-3">
                                           <div className="text-xl">
@@ -845,18 +860,18 @@ export default function AssetsPage() {
                                           </div>
                                           <div className="flex gap-1">
                                             <button
+                                              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
                                               onClick={() =>
                                                 handleDownload(file)
                                               }
-                                              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
                                             >
                                               <Download className="w-3.5 h-3.5" />
                                             </button>
                                             <button
+                                              className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
                                               onClick={() =>
                                                 handleDelete(file.id, file.name)
                                               }
-                                              className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
                                             >
                                               <Trash2 className="w-3.5 h-3.5" />
                                             </button>
@@ -939,7 +954,7 @@ export default function AssetsPage() {
                         }`}
                       >
                         <div
-                          className={`bg-muted rounded-3xl border border-border group hover:bg-card hover:border-border transition-all ${
+                          className={`bg-bg-card rounded-[14px] border border-border group hover:bg-bg-card hover:border-border transition-all ${
                             viewMode === "list" ? "p-4" : "p-6"
                           }`}
                         >
@@ -953,7 +968,7 @@ export default function AssetsPage() {
                           </p>
                         </div>
                         <div
-                          className={`bg-muted rounded-3xl border border-border group hover:bg-card hover:border-border transition-all ${
+                          className={`bg-bg-card rounded-[14px] border border-border group hover:bg-bg-card hover:border-border transition-all ${
                             viewMode === "list" ? "p-4" : "p-6"
                           }`}
                         >
@@ -967,7 +982,7 @@ export default function AssetsPage() {
                           </p>
                         </div>
                         <div
-                          className={`bg-muted rounded-3xl border border-border group hover:bg-card hover:border-border transition-all ${
+                          className={`bg-bg-card rounded-[14px] border border-border group hover:bg-bg-card hover:border-border transition-all ${
                             viewMode === "list" ? "p-4" : "p-6"
                           }`}
                         >
@@ -981,7 +996,7 @@ export default function AssetsPage() {
                           </p>
                         </div>
                         <div
-                          className={`bg-muted rounded-3xl border border-border group hover:bg-card hover:border-border transition-all ${
+                          className={`bg-bg-card rounded-[14px] border border-border group hover:bg-bg-card hover:border-border transition-all ${
                             viewMode === "list" ? "p-4" : "p-6"
                           }`}
                         >

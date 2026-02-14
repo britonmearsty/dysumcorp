@@ -171,6 +171,7 @@ export async function POST(request: NextRequest) {
     // Send email notification to portal owner
     try {
       const uploaderName = formData.get("uploaderName") as string;
+
       await sendFileUploadNotification({
         userEmail: portal.user.email,
         portalName: portal.name,

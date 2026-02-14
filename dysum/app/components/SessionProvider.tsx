@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, ReactNode } from "react";
+
 import { useSession } from "../lib/auth-client";
 
 interface SessionContextType {
@@ -22,8 +23,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
 export function useSessionContext() {
   const context = useContext(SessionContext);
+
   if (context === undefined) {
     throw new Error("useSessionContext must be used within a SessionProvider");
   }
+
   return context;
 }

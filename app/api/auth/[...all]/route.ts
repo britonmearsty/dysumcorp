@@ -11,9 +11,13 @@ export async function GET(request: NextRequest) {
     return await handler.GET(request);
   } catch (error) {
     console.error("Auth GET error:", error);
+
     return NextResponse.json(
-      { error: "Authentication error", details: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      {
+        error: "Authentication error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
     );
   }
 }
@@ -23,9 +27,13 @@ export async function POST(request: NextRequest) {
     return await handler.POST(request);
   } catch (error) {
     console.error("Auth POST error:", error);
+
     return NextResponse.json(
-      { error: "Authentication error", details: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      {
+        error: "Authentication error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
     );
   }
 }

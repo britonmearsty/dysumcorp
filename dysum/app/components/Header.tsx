@@ -1,13 +1,15 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Header() {
   const pathname = usePathname();
 
   const isActive = (path: string) => {
-    return pathname === path ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:text-blue-600';
+    return pathname === path
+      ? "text-blue-600 font-semibold"
+      : "text-gray-600 hover:text-blue-600";
   };
 
   return (
@@ -15,7 +17,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
+            <Link className="flex items-center space-x-2" href="/">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">D</span>
               </div>
@@ -24,13 +26,19 @@ export default function Header() {
           </div>
 
           <nav className="flex items-center space-x-8">
-            <Link href="/" className={`transition-colors ${isActive('/')}`}>
+            <Link className={`transition-colors ${isActive("/")}`} href="/">
               Home
             </Link>
-            <Link href="/create" className={`transition-colors ${isActive('/create')}`}>
+            <Link
+              className={`transition-colors ${isActive("/create")}`}
+              href="/create"
+            >
               Write
             </Link>
-            <Link href="/about" className={`transition-colors ${isActive('/about')}`}>
+            <Link
+              className={`transition-colors ${isActive("/about")}`}
+              href="/about"
+            >
               About
             </Link>
           </nav>

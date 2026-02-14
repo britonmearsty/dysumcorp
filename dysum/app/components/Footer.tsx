@@ -11,8 +11,8 @@ export default function Footer() {
               <span className="text-xl font-bold text-gray-900">Dysum</span>
             </div>
             <p className="text-gray-600 max-w-md">
-              A modern blog platform where thoughts meet words. Share your ideas,
-              stories, and insights with the world.
+              A modern blog platform where thoughts meet words. Share your
+              ideas, stories, and insights with the world.
             </p>
           </div>
 
@@ -22,17 +22,26 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2">
               <li>
-                <a href="/" className="text-gray-600 hover:text-blue-600 transition-colors">
+                <a
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                  href="/"
+                >
                   Home
                 </a>
               </li>
               <li>
-                <a href="/create" className="text-gray-600 hover:text-blue-600 transition-colors">
+                <a
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                  href="/create"
+                >
                   Write
                 </a>
               </li>
               <li>
-                <a href="/about" className="text-gray-600 hover:text-blue-600 transition-colors">
+                <a
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                  href="/about"
+                >
                   About
                 </a>
               </li>
@@ -45,17 +54,26 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">
+                <a
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                  href="#"
+                >
                   Twitter
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">
+                <a
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                  href="#"
+                >
                   GitHub
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">
+                <a
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                  href="#"
+                >
                   LinkedIn
                 </a>
               </li>

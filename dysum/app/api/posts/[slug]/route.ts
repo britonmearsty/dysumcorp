@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { PrismaClient } from "../../../generated/prisma";
 
 const prisma = new PrismaClient();
@@ -57,6 +58,7 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching post:", error);
+
     return NextResponse.json(
       { success: false, error: "Failed to fetch post" },
       { status: 500 },

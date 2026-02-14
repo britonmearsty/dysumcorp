@@ -4,7 +4,7 @@ import pg from "pg";
 
 import { auth } from "@/lib/auth-server";
 import { PrismaClient } from "@/lib/generated/prisma/client";
-import { triggerUsageTracking, getUserUsageStats } from "@/lib/usage-tracking";
+import { triggerUsageTracking } from "@/lib/usage-tracking";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -42,11 +42,10 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error triggering usage tracking:", error);
+
     return NextResponse.json(
       { error: "Failed to trigger usage tracking" },
       { status: 500 },
     );
   }
 }
-
-

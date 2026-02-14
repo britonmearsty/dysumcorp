@@ -14,9 +14,10 @@ import { Select, SelectItem } from "@heroui/select";
 import { Alert } from "@heroui/alert";
 import { useRouter } from "next/navigation";
 
-import { authClient, useSession } from "@/lib/auth-client";
-import { PRICING_PLANS, PricingPlan } from "@/config/pricing";
 import { CustomerPortalButton } from "./customer-portal-button";
+
+import { useSession } from "@/lib/auth-client";
+import { PRICING_PLANS } from "@/config/pricing";
 
 interface SubscriptionManagerProps {
   currentPlan: string;
@@ -60,6 +61,7 @@ export function SubscriptionManager({
           type: "error",
           text: data.error || "Failed to cancel subscription",
         });
+
         return;
       }
 
@@ -84,6 +86,7 @@ export function SubscriptionManager({
   const handleChangePlan = async () => {
     if (selectedPlan === currentPlan) {
       setShowChangePlanModal(false);
+
       return;
     }
 
@@ -102,12 +105,14 @@ export function SubscriptionManager({
           type: "error",
           text: data.error || "Failed to change plan",
         });
+
         return;
       }
 
       if (data.checkoutUrl) {
         // Redirect to checkout for new plan
         window.location.href = data.checkoutUrl;
+
         return;
       }
 
@@ -157,8 +162,8 @@ export function SubscriptionManager({
           <div className="grid gap-3">
             {/* Change Plan Button */}
             <Button
-              variant="flat"
               color="primary"
+              variant="flat"
               onPress={() => setShowChangePlanModal(true)}
             >
               Change Plan
@@ -166,15 +171,15 @@ export function SubscriptionManager({
 
             {/* Customer Portal - Manage Payment Methods */}
             <CustomerPortalButton
+              color="secondary"
               label="Manage Payment Methods"
               variant="flat"
-              color="secondary"
             />
 
             {/* Cancel Subscription */}
             <Button
-              variant="flat"
               color="danger"
+              variant="flat"
               onPress={() => setShowCancelModal(true)}
             >
               Cancel Subscription

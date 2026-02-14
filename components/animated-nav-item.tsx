@@ -50,8 +50,8 @@ export const AnimatedNavItem = forwardRef<
                 ? "text-foreground"
                 : "text-muted-foreground",
           )}
-          size={22}
           isHovered={isHovered || isActive}
+          size={22}
         />
       </div>
 

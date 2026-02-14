@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
+
 import Header from "../../../components/Header";
 import Footer from "../../../components/Footer";
 import {
@@ -31,6 +32,7 @@ export default function EditPostPage() {
   useEffect(() => {
     if (!slug || typeof slug !== "string") {
       setLoading(false);
+
       return;
     }
 
@@ -38,6 +40,7 @@ export default function EditPostPage() {
 
     if (!foundPost) {
       notFound();
+
       return;
     }
 
@@ -61,6 +64,7 @@ export default function EditPostPage() {
 
     if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
+
       setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -83,11 +87,13 @@ export default function EditPostPage() {
 
     if (!formData.title.trim()) {
       alert("Please enter a title for your post.");
+
       return;
     }
 
     if (!formData.content.trim()) {
       alert("Please enter some content for your post.");
+
       return;
     }
 
@@ -143,6 +149,7 @@ export default function EditPostPage() {
     setFormData((prev) => ({ ...prev, published: post?.published || false }));
     // The form submission will handle the actual saving
     const form = document.getElementById("edit-post-form") as HTMLFormElement;
+
     form?.requestSubmit();
   };
 
@@ -150,6 +157,7 @@ export default function EditPostPage() {
     setFormData((prev) => ({ ...prev, published: true }));
     // The form submission will handle the actual saving
     const form = document.getElementById("edit-post-form") as HTMLFormElement;
+
     form?.requestSubmit();
   };
 
@@ -157,6 +165,7 @@ export default function EditPostPage() {
     setFormData((prev) => ({ ...prev, published: false }));
     // The form submission will handle the actual saving
     const form = document.getElementById("edit-post-form") as HTMLFormElement;
+
     form?.requestSubmit();
   };
 
@@ -166,14 +175,14 @@ export default function EditPostPage() {
         <Header />
         <main className="max-w-4xl mx-auto px-4 py-12">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-8"></div>
+            <div className="h-8 bg-gray-200 rounded w-1/3 mb-8" />
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-6">
-              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-              <div className="h-12 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-              <div className="h-32 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-              <div className="h-64 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/4" />
+              <div className="h-12 bg-gray-200 rounded" />
+              <div className="h-4 bg-gray-200 rounded w-1/4" />
+              <div className="h-32 bg-gray-200 rounded" />
+              <div className="h-4 bg-gray-200 rounded w-1/4" />
+              <div className="h-64 bg-gray-200 rounded" />
             </div>
           </div>
         </main>
@@ -196,8 +205,8 @@ export default function EditPostPage() {
               removed.
             </p>
             <a
-              href="/"
               className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              href="/"
             >
               Back to Home
             </a>
@@ -220,54 +229,55 @@ export default function EditPostPage() {
           </p>
         </div>
 
-        <form id="edit-post-form" onSubmit={handleSubmit} className="space-y-6">
+        <form className="space-y-6" id="edit-post-form" onSubmit={handleSubmit}>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="space-y-6">
               {/* Title */}
               <div>
                 <label
-                  htmlFor="title"
                   className="block text-sm font-medium text-gray-700 mb-2"
+                  htmlFor="title"
                 >
                   Title *
                 </label>
                 <input
-                  type="text"
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
                   id="title"
                   name="title"
+                  placeholder="Enter your post title..."
+                  type="text"
                   value={formData.title}
                   onChange={handleInputChange}
-                  placeholder="Enter your post title..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                  required
                 />
               </div>
 
               {/* Featured Image */}
               <div>
                 <label
-                  htmlFor="featuredImage"
                   className="block text-sm font-medium text-gray-700 mb-2"
+                  htmlFor="featuredImage"
                 >
                   Featured Image URL
                 </label>
                 <input
-                  type="url"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   id="featuredImage"
                   name="featuredImage"
+                  placeholder="https://example.com/image.jpg"
+                  type="url"
                   value={formData.featuredImage}
                   onChange={handleInputChange}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 {formData.featuredImage && (
                   <div className="mt-3">
                     <img
-                      src={formData.featuredImage}
                       alt="Featured image preview"
                       className="w-full max-w-md h-48 object-cover rounded-lg"
+                      src={formData.featuredImage}
                       onError={(e) => {
                         const img = e.target as HTMLImageElement;
+
                         img.style.display = "none";
                       }}
                     />
@@ -278,19 +288,19 @@ export default function EditPostPage() {
               {/* Excerpt */}
               <div>
                 <label
-                  htmlFor="excerpt"
                   className="block text-sm font-medium text-gray-700 mb-2"
+                  htmlFor="excerpt"
                 >
                   Excerpt
                 </label>
                 <textarea
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
                   id="excerpt"
                   name="excerpt"
-                  value={formData.excerpt}
-                  onChange={handleInputChange}
                   placeholder="Write a brief summary of your post..."
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                  value={formData.excerpt}
+                  onChange={handleInputChange}
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   If left empty, an excerpt will be automatically generated from
@@ -301,20 +311,20 @@ export default function EditPostPage() {
               {/* Content */}
               <div>
                 <label
-                  htmlFor="content"
                   className="block text-sm font-medium text-gray-700 mb-2"
+                  htmlFor="content"
                 >
                   Content *
                 </label>
                 <textarea
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical font-mono text-sm"
                   id="content"
                   name="content"
-                  value={formData.content}
-                  onChange={handleInputChange}
                   placeholder="Start writing your post content..."
                   rows={15}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical font-mono text-sm"
-                  required
+                  value={formData.content}
+                  onChange={handleInputChange}
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   You can use HTML tags for formatting (e.g., &lt;p&gt;,
@@ -325,18 +335,18 @@ export default function EditPostPage() {
               {/* Tags */}
               <div>
                 <label
-                  htmlFor="tags"
                   className="block text-sm font-medium text-gray-700 mb-2"
+                  htmlFor="tags"
                 >
                   Tags
                 </label>
                 <input
-                  type="text"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   id="tags"
+                  placeholder="technology, web development, javascript"
+                  type="text"
                   value={tagsInput}
                   onChange={handleTagsChange}
-                  placeholder="technology, web development, javascript"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Separate tags with commas. Tags help organize and categorize
@@ -350,19 +360,19 @@ export default function EditPostPage() {
           <div className="flex items-center justify-between bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center space-x-4">
               <button
-                type="button"
-                onClick={() => router.push(`/post/${post.slug}`)}
                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                 disabled={saving}
+                type="button"
+                onClick={() => router.push(`/post/${post.slug}`)}
               >
                 Cancel
               </button>
 
               <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(true)}
                 className="px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors"
                 disabled={saving}
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
               >
                 Delete Post
               </button>
@@ -370,31 +380,31 @@ export default function EditPostPage() {
 
             <div className="flex items-center space-x-3">
               <button
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={saving}
                 type="button"
                 onClick={handleSaveChanges}
-                disabled={saving}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? "Saving..." : "Save Changes"}
               </button>
 
               {post.published ? (
                 <button
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  disabled={saving}
                   type="button"
                   onClick={handleUnpublish}
-                  disabled={saving}
-                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                   {saving ? "Unpublishing..." : "Unpublish"}
                 </button>
               ) : (
                 <button
-                  type="button"
-                  onClick={handlePublish}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                   disabled={
                     saving || !formData.title.trim() || !formData.content.trim()
                   }
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  type="button"
+                  onClick={handlePublish}
                 >
                   {saving ? "Publishing..." : "Publish Post"}
                 </button>
@@ -419,14 +429,14 @@ export default function EditPostPage() {
             </p>
             <div className="flex justify-end space-x-3">
               <button
-                onClick={() => setShowDeleteConfirm(false)}
                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                onClick={() => setShowDeleteConfirm(false)}
               >
                 Cancel
               </button>
               <button
-                onClick={handleDelete}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                onClick={handleDelete}
               >
                 Delete Post
               </button>

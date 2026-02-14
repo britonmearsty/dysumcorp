@@ -12,6 +12,7 @@ import {
   Lock,
   ChevronRight,
 } from "lucide-react";
+import { Checkbox } from "@heroui/react";
 
 import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -205,15 +206,16 @@ export default function SettingsPage() {
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
+
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                     isActive
                       ? "bg-card shadow-sm border border-border text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
+                  onClick={() => setActiveTab(tab.id)}
                 >
                   <Icon
                     className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}
@@ -221,8 +223,8 @@ export default function SettingsPage() {
                   <span className="font-medium text-sm">{tab.name}</span>
                   {isActive && (
                     <motion.div
-                      layoutId="settings-active-indicator"
                       className="ml-auto"
+                      layoutId="settings-active-indicator"
                     >
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </motion.div>
@@ -238,12 +240,12 @@ export default function SettingsPage() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
             >
-              <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+              <div className="bg-bg-card rounded-[14px] border border-border overflow-hidden">
                 <div className="p-6 border-b border-border bg-muted/30">
                   <h2 className="text-xl font-semibold text-foreground">
                     {tabs.find((t) => t.id === activeTab)?.name}
@@ -321,7 +323,7 @@ export default function SettingsPage() {
                   {activeTab === "notifications" && (
                     <div className="space-y-6">
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:bg-card transition-colors">
+                        <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
                           <div>
                             <p className="font-semibold text-sm text-foreground">
                               Email Notifications
@@ -330,17 +332,13 @@ export default function SettingsPage() {
                               Receive email updates
                             </p>
                           </div>
-                          <input
-                            checked={emailNotifications}
-                            className="w-5 h-5 cursor-pointer accent-primary"
-                            type="checkbox"
-                            onChange={(e) =>
-                              setEmailNotifications(e.target.checked)
-                            }
+                          <Checkbox
+                            isSelected={emailNotifications}
+                            onValueChange={setEmailNotifications}
                           />
                         </div>
 
-                        <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:bg-card transition-colors">
+                        <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
                           <div>
                             <p className="font-semibold text-sm text-foreground">
                               Push Notifications
@@ -349,17 +347,13 @@ export default function SettingsPage() {
                               Browser notifications
                             </p>
                           </div>
-                          <input
-                            checked={pushNotifications}
-                            className="w-5 h-5 cursor-pointer accent-primary"
-                            type="checkbox"
-                            onChange={(e) =>
-                              setPushNotifications(e.target.checked)
-                            }
+                          <Checkbox
+                            isSelected={pushNotifications}
+                            onValueChange={setPushNotifications}
                           />
                         </div>
 
-                        <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:bg-card transition-colors">
+                        <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
                           <div>
                             <p className="font-semibold text-sm text-foreground">
                               Weekly Reports
@@ -368,11 +362,9 @@ export default function SettingsPage() {
                               Activity summaries
                             </p>
                           </div>
-                          <input
-                            checked={weeklyReports}
-                            className="w-5 h-5 cursor-pointer accent-primary"
-                            type="checkbox"
-                            onChange={(e) => setWeeklyReports(e.target.checked)}
+                          <Checkbox
+                            isSelected={weeklyReports}
+                            onValueChange={setWeeklyReports}
                           />
                         </div>
                       </div>

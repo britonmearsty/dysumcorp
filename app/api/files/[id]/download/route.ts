@@ -118,6 +118,7 @@ export async function GET(
     // Check if file is password protected
     if (file.passwordHash) {
       const password = request.headers.get("x-file-password");
+
       if (!password) {
         return NextResponse.json(
           {
@@ -162,13 +163,16 @@ export async function GET(
         if (googleToken) {
           // Extract file ID from Google Drive URL
           let fileId = file.storageUrl;
+
           if (file.storageUrl.includes("drive.google.com")) {
             const match = file.storageUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+
             if (match) {
               fileId = match[1];
             }
           } else if (file.storageUrl.includes("docs.google.com")) {
             const match = file.storageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+
             if (match) {
               fileId = match[1];
             }

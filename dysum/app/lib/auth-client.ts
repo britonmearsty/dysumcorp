@@ -8,5 +8,6 @@ export const { signIn, signUp, signOut, useSession } = authClient;
 
 export const useUser = () => {
   const { data: session } = useSession();
+
   return { data: session?.user || null };
 };

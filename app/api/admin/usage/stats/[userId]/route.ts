@@ -43,6 +43,7 @@ export async function GET(
     return NextResponse.json(stats);
   } catch (error) {
     console.error("Error getting usage stats:", error);
+
     return NextResponse.json(
       { error: "Failed to get usage stats" },
       { status: 500 },

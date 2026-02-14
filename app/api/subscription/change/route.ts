@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { createCheckout } from "@creem_io/better-auth/server";
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
 
 import { auth } from "@/lib/auth-server";
 import { PRICING_PLANS } from "@/config/pricing";
 import { PrismaClient } from "@/lib/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);

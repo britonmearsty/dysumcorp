@@ -16,6 +16,7 @@ export async function POST(request: Request) {
 
     if (!session?.user) {
       console.log("❌ No session found");
+
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

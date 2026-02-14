@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, Tab } from "@heroui/tabs";
-import { Card, CardBody } from "@heroui/card";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { SubscriptionStatus } from "@/components/subscription-status";
@@ -163,7 +162,7 @@ export default function BillingPage() {
         </div>
 
         {/* Help Section */}
-        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+        <div className="bg-bg-card rounded-[12px] border border-border p-6 shadow-sm">
           <h2 className="font-bold text-xl mb-2 text-foreground">Need Help?</h2>
           <p className="text-sm text-muted-foreground mb-4">
             Having issues with your subscription? Contact our support team for

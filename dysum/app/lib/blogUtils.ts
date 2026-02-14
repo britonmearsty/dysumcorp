@@ -17,6 +17,7 @@ export function calculateReadingTime(htmlContent: string): number {
   const wordCount = plainText
     .split(/\s+/)
     .filter((word) => word.length > 0).length;
+
   return Math.ceil(wordCount / wordsPerMinute);
 }
 
@@ -48,6 +49,7 @@ export async function uploadImage(file: File): Promise<{
 }> {
   try {
     const formData = new FormData();
+
     formData.append("file", file);
 
     const response = await fetch("/api/upload", {
@@ -56,9 +58,11 @@ export async function uploadImage(file: File): Promise<{
     });
 
     const result = await response.json();
+
     return result;
   } catch (error) {
     console.error("Error uploading image:", error);
+
     return {
       success: false,
       error: "Failed to upload image",
@@ -79,9 +83,11 @@ export async function deleteImage(
     );
 
     const result = await response.json();
+
     return result;
   } catch (error) {
     console.error("Error deleting image:", error);
+
     return {
       success: false,
       error: "Failed to delete image",
@@ -93,6 +99,7 @@ export async function deleteImage(
 export async function getBlogPosts(published?: boolean): Promise<BlogPost[]> {
   try {
     const params = new URLSearchParams();
+
     if (published !== undefined) {
       params.append("published", published.toString());
     }
@@ -104,10 +111,12 @@ export async function getBlogPosts(published?: boolean): Promise<BlogPost[]> {
       return result.posts;
     } else {
       console.error("Error fetching posts:", result.error);
+
       return [];
     }
   } catch (error) {
     console.error("Error fetching posts:", error);
+
     return [];
   }
 }
@@ -119,6 +128,7 @@ export async function getBlogPostBySlug(
 ): Promise<BlogPost | null> {
   try {
     const params = new URLSearchParams();
+
     if (includeUnpublished) {
       params.append("includeUnpublished", "true");
     }
@@ -133,6 +143,7 @@ export async function getBlogPostBySlug(
     }
   } catch (error) {
     console.error("Error fetching post by slug:", error);
+
     return null;
   }
 }
@@ -157,6 +168,7 @@ export async function createBlogPost(
     // Upload thumbnail if provided
     if (formData.thumbnailFile) {
       const uploadResult = await uploadImage(formData.thumbnailFile);
+
       if (uploadResult.success && uploadResult.url) {
         postData.thumbnailUrl = uploadResult.url;
       } else {
@@ -176,9 +188,11 @@ export async function createBlogPost(
     });
 
     const result = await response.json();
+
     return result;
   } catch (error) {
     console.error("Error creating post:", error);
+
     return {
       success: false,
       error: "Failed to create post",
@@ -206,11 +220,13 @@ export async function updateBlogPost(
           // Extract public ID from Cloudinary URL
           const urlParts = currentThumbnailUrl.split("/");
           const uploadIndex = urlParts.findIndex((part) => part === "upload");
+
           if (uploadIndex !== -1 && urlParts[uploadIndex + 2]) {
             const publicIdWithExtension = urlParts
               .slice(uploadIndex + 2)
               .join("/");
             const publicId = publicIdWithExtension.split(".")[0];
+
             await deleteImage(publicId);
           }
         } catch (error) {
@@ -219,6 +235,7 @@ export async function updateBlogPost(
       }
 
       const uploadResult = await uploadImage(formData.thumbnailFile);
+
       if (uploadResult.success && uploadResult.url) {
         thumbnailUrl = uploadResult.url;
       } else {
@@ -249,9 +266,11 @@ export async function updateBlogPost(
     });
 
     const result = await response.json();
+
     return result;
   } catch (error) {
     console.error("Error updating post:", error);
+
     return {
       success: false,
       error: "Failed to update post",
@@ -269,9 +288,11 @@ export async function deleteBlogPost(
     });
 
     const result = await response.json();
+
     return result;
   } catch (error) {
     console.error("Error deleting post:", error);
+
     return {
       success: false,
       error: "Failed to delete post",
@@ -310,6 +331,7 @@ export async function searchPosts(query: string): Promise<BlogPost[]> {
 // Get posts by tag (client-side filtering for now)
 export async function getPostsByTag(tag: string): Promise<BlogPost[]> {
   const posts = await getBlogPosts(true);
+
   return posts.filter((post) => post.tags && post.tags.includes(tag));
 }
 

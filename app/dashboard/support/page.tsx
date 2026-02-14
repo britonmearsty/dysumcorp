@@ -14,6 +14,8 @@ import {
   AlertCircle,
   X,
 } from "lucide-react";
+import { Select, SelectItem } from "@heroui/react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -211,15 +213,16 @@ export default function SupportPage() {
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
+
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                     isActive
                       ? "bg-card shadow-sm border border-border text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
+                  onClick={() => setActiveTab(tab.id)}
                 >
                   <Icon
                     className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}
@@ -227,10 +230,10 @@ export default function SupportPage() {
                   <span className="font-medium text-sm">{tab.name}</span>
                   {isActive && (
                     <motion.div
-                      layoutId="support-active-indicator"
+                      animate={{ opacity: 1, x: 0 }}
                       className="ml-auto"
                       initial={{ opacity: 0, x: -5 }}
-                      animate={{ opacity: 1, x: 0 }}
+                      layoutId="support-active-indicator"
                     >
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </motion.div>
@@ -241,7 +244,7 @@ export default function SupportPage() {
           </nav>
 
           {/* Quick Stats */}
-          <div className="mt-6 p-4 bg-card rounded-xl border border-border">
+          <div className="mt-6 p-4 bg-bg-card rounded-[12px] border border-border">
             <h3 className="text-sm font-semibold text-foreground mb-3">
               Quick Stats
             </h3>
@@ -267,12 +270,12 @@ export default function SupportPage() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
             >
-              <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+              <div className="bg-bg-card rounded-[14px] border border-border overflow-hidden">
                 <div className="p-6 border-b border-border bg-muted/30">
                   <h2 className="text-xl font-semibold text-foreground">
                     {tabs.find((t) => t.id === activeTab)?.name}
@@ -302,7 +305,7 @@ export default function SupportPage() {
                             {tickets.map((ticket) => (
                               <div
                                 key={ticket.id}
-                                className="p-4 bg-muted rounded-xl border border-border hover:bg-card transition-colors cursor-pointer"
+                                className="p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors cursor-pointer"
                                 onClick={() => setSelectedTicket(ticket.id)}
                               >
                                 <div className="flex items-start justify-between">
@@ -344,8 +347,8 @@ export default function SupportPage() {
                               {resources.map((resource, index) => (
                                 <a
                                   key={index}
+                                  className="p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors group"
                                   href={resource.link}
-                                  className="p-4 bg-muted rounded-xl border border-border hover:bg-card transition-colors group"
                                 >
                                   <div className="flex items-start justify-between">
                                     <div>
@@ -370,6 +373,7 @@ export default function SupportPage() {
                               Create New Ticket
                             </h3>
                             <button
+                              className="text-muted-foreground hover:text-foreground transition-colors"
                               onClick={() => {
                                 setShowCreateTicket(false);
                                 setTicketSubject("");
@@ -377,7 +381,6 @@ export default function SupportPage() {
                                 setTicketPriority("Medium");
                                 setSubmitStatus("idle");
                               }}
-                              className="text-muted-foreground hover:text-foreground transition-colors"
                             >
                               <X className="w-5 h-5" />
                             </button>
@@ -407,18 +410,18 @@ export default function SupportPage() {
                             >
                               Priority
                             </Label>
-                            <select
-                              className="mt-2 w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                              id="priority"
-                              value={ticketPriority}
+                            <Select
+                              className="mt-2"
+                              label="Priority"
+                              selectedKeys={[ticketPriority]}
                               onChange={(e) =>
                                 setTicketPriority(e.target.value)
                               }
                             >
-                              <option value="Low">Low</option>
-                              <option value="Medium">Medium</option>
-                              <option value="High">High</option>
-                            </select>
+                              <SelectItem key="Low">Low</SelectItem>
+                              <SelectItem key="Medium">Medium</SelectItem>
+                              <SelectItem key="High">High</SelectItem>
+                            </Select>
                           </div>
 
                           <div>
@@ -482,8 +485,8 @@ export default function SupportPage() {
                         <div className="space-y-6">
                           <div className="flex items-center justify-between mb-4">
                             <button
-                              onClick={() => setSelectedTicket(null)}
                               className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                              onClick={() => setSelectedTicket(null)}
                             >
                               <ChevronRight className="w-4 h-4 rotate-180" />
                               <span className="text-sm font-medium">
@@ -496,6 +499,7 @@ export default function SupportPage() {
                             const ticket = tickets.find(
                               (t) => t.id === selectedTicket,
                             );
+
                             if (!ticket) return null;
 
                             return (
@@ -549,7 +553,7 @@ export default function SupportPage() {
                                     </div>
 
                                     {ticket.status !== "Open" && (
-                                      <div className="p-4 bg-card rounded-xl border border-border">
+                                      <div className="p-4 bg-bg-card rounded-[12px] border border-border">
                                         <div className="flex items-center gap-2 mb-2">
                                           <span className="text-sm font-semibold text-foreground">
                                             Support Team
@@ -610,8 +614,8 @@ export default function SupportPage() {
                           {[1, 2, 3, 4, 5].map((rating) => (
                             <button
                               key={rating}
-                              onClick={() => setFeedbackRating(rating)}
                               className="transition-transform hover:scale-110"
+                              onClick={() => setFeedbackRating(rating)}
                             >
                               <Star
                                 className={`w-8 h-8 ${

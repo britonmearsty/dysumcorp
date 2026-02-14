@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, notFound } from "next/navigation";
+
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import BlogPost from "../../components/BlogPost";
@@ -18,6 +19,7 @@ export default function BlogPostPage() {
     const loadPost = async () => {
       if (!slug || typeof slug !== "string") {
         setLoading(false);
+
         return;
       }
 
@@ -49,13 +51,13 @@ export default function BlogPostPage() {
         <main className="max-w-4xl mx-auto px-4 py-12">
           <div className="animate-pulse">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/4 mb-6"></div>
+              <div className="h-8 bg-gray-200 rounded w-3/4 mb-4" />
+              <div className="h-4 bg-gray-200 rounded w-1/4 mb-6" />
               <div className="space-y-3">
                 {[...Array(8)].map((_, i) => (
-                  <div key={i} className="h-4 bg-gray-200 rounded"></div>
+                  <div key={i} className="h-4 bg-gray-200 rounded" />
                 ))}
-                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3" />
               </div>
             </div>
           </div>
@@ -79,10 +81,10 @@ export default function BlogPostPage() {
                 viewBox="0 0 24 24"
               >
                 <path
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
             </div>
@@ -92,14 +94,14 @@ export default function BlogPostPage() {
             <p className="text-gray-600 mb-8">{error}</p>
             <div className="space-x-4">
               <button
-                onClick={() => window.location.reload()}
                 className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={() => window.location.reload()}
               >
                 Try Again
               </button>
               <a
-                href="/"
                 className="inline-flex items-center px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                href="/"
               >
                 <svg
                   className="w-5 h-5 mr-2"
@@ -108,10 +110,10 @@ export default function BlogPostPage() {
                   viewBox="0 0 24 24"
                 >
                   <path
+                    d="M15 19l-7-7 7-7"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
                   />
                 </svg>
                 Back to Home
@@ -138,10 +140,10 @@ export default function BlogPostPage() {
                 viewBox="0 0 24 24"
               >
                 <path
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
             </div>
@@ -153,8 +155,8 @@ export default function BlogPostPage() {
               removed.
             </p>
             <a
-              href="/"
               className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              href="/"
             >
               <svg
                 className="w-5 h-5 mr-2"
@@ -163,10 +165,10 @@ export default function BlogPostPage() {
                 viewBox="0 0 24 24"
               >
                 <path
+                  d="M15 19l-7-7 7-7"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
                 />
               </svg>
               Back to Home

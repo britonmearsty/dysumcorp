@@ -1,12 +1,5 @@
 "use client";
 
-import {
-  FolderOpen,
-  TrendingUp,
-  Settings,
-  HardDrive,
-  Plus,
-} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -46,6 +39,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const hour = new Date().getHours();
+
     if (hour < 12) setGreeting("Good morning");
     else if (hour < 18) setGreeting("Good afternoon");
     else setGreeting("Good evening");
@@ -129,8 +123,8 @@ export default function DashboardPage() {
         </div>
 
         <Link
-          href="/dashboard/portals/create"
           className="flex items-center gap-1.5 bg-primary text-primary-foreground border-none rounded-[10px] px-5 py-2.5 text-sm font-semibold cursor-pointer hover:opacity-90 transition-opacity"
+          href="/dashboard/portals/create"
         >
           <span className="text-lg font-medium">+</span> Create Portal
         </Link>
@@ -143,12 +137,12 @@ export default function DashboardPage() {
           <div className="w-9 h-9 mb-[18px]">
             <svg
               className="w-9 h-9 text-accent-blue"
-              viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeWidth="1.8"
+              viewBox="0 0 24 24"
             >
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
             </svg>
@@ -166,12 +160,12 @@ export default function DashboardPage() {
           <div className="w-9 h-9 mb-[18px]">
             <svg
               className="w-9 h-9 text-accent-green"
-              viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeWidth="1.8"
+              viewBox="0 0 24 24"
             >
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
             </svg>
@@ -189,12 +183,12 @@ export default function DashboardPage() {
           <div className="w-9 h-9 mb-[18px]">
             <svg
               className="w-9 h-9 text-accent-purple"
-              viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeWidth="1.8"
+              viewBox="0 0 24 24"
             >
               <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
               <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
@@ -213,12 +207,12 @@ export default function DashboardPage() {
           <div className="w-9 h-9 mb-[18px]">
             <svg
               className="w-9 h-9 text-accent-yellow"
-              viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeWidth="1.8"
+              viewBox="0 0 24 24"
             >
               <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
               <polyline points="17 6 23 6 23 12" />
@@ -242,8 +236,8 @@ export default function DashboardPage() {
               Active Client Portals
             </span>
             <Link
-              href="/dashboard/portals"
               className="text-xs text-text-muted hover:text-text-white transition-colors flex items-center gap-1"
+              href="/dashboard/portals"
             >
               View All Portals <span>→</span>
             </Link>
@@ -252,12 +246,12 @@ export default function DashboardPage() {
           <div className="bg-bg-card border border-border rounded-[14px] flex flex-col items-center justify-center py-[72px] px-10 min-h-[380px] text-center">
             <svg
               className="w-14 h-14 mb-6 opacity-45"
-              viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeWidth="1.5"
+              viewBox="0 0 24 24"
             >
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
             </svg>
@@ -285,20 +279,20 @@ export default function DashboardPage() {
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <Link
-                href="/dashboard/portals/create"
                 className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2.5"
+                href="/dashboard/portals/create"
               >
                 <svg
                   className="w-[26px] h-[26px] text-accent-green"
-                  viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
                 >
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <line x1="12" x2="12" y1="5" y2="19" />
+                  <line x1="5" x2="19" y1="12" y2="12" />
                 </svg>
                 <span className="text-sm font-semibold text-text-white">
                   New Portal
@@ -306,17 +300,17 @@ export default function DashboardPage() {
               </Link>
 
               <Link
-                href="/dashboard/portals"
                 className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2.5"
+                href="/dashboard/portals"
               >
                 <svg
                   className="w-[26px] h-[26px] text-accent-blue"
-                  viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.8"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  strokeWidth="1.8"
+                  viewBox="0 0 24 24"
                 >
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                 </svg>
@@ -326,17 +320,17 @@ export default function DashboardPage() {
               </Link>
 
               <Link
-                href="/dashboard/storage"
                 className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2.5"
+                href="/dashboard/storage"
               >
                 <svg
                   className="w-[26px] h-[26px] text-accent-purple"
-                  viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.8"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  strokeWidth="1.8"
+                  viewBox="0 0 24 24"
                 >
                   <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
                 </svg>
@@ -346,17 +340,17 @@ export default function DashboardPage() {
               </Link>
 
               <Link
-                href="/dashboard/settings"
                 className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2.5"
+                href="/dashboard/settings"
               >
                 <svg
                   className="w-[26px] h-[26px] text-accent-yellow"
-                  viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.8"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  strokeWidth="1.8"
+                  viewBox="0 0 24 24"
                 >
                   <circle cx="12" cy="12" r="3" />
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -375,8 +369,8 @@ export default function DashboardPage() {
                 Recent Activity
               </span>
               <Link
-                href="/dashboard/assets"
                 className="text-xs text-text-muted hover:text-text-white transition-colors"
+                href="/dashboard/assets"
               >
                 View All
               </Link>
@@ -384,12 +378,12 @@ export default function DashboardPage() {
             <div className="bg-bg-card border border-border rounded-[12px] flex flex-col items-center justify-center py-14 px-6 min-h-[200px] text-center">
               <svg
                 className="w-10 h-10 mb-4 opacity-40"
-                viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                strokeWidth="1.5"
+                viewBox="0 0 24 24"
               >
                 <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
                 <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />

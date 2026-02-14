@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Select, SelectItem } from "@heroui/react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,16 +59,15 @@ export function StorageUpload() {
 
       <div className="space-y-2">
         <Label htmlFor="provider">Storage Provider</Label>
-        <select
-          className="w-full p-2 border rounded"
+        <Select
           disabled={uploading}
-          id="provider"
-          value={provider}
+          label="Storage Provider"
+          selectedKeys={[provider]}
           onChange={(e) => setProvider(e.target.value as StorageProvider)}
         >
-          <option value="google">Google Drive</option>
-          <option value="dropbox">Dropbox</option>
-        </select>
+          <SelectItem key="google">Google Drive</SelectItem>
+          <SelectItem key="dropbox">Dropbox</SelectItem>
+        </Select>
       </div>
 
       <div className="space-y-2">

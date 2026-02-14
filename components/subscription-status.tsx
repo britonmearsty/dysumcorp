@@ -29,6 +29,7 @@ export function SubscriptionStatus() {
       try {
         // Check Creem subscription status
         const { data } = await authClient.creem.hasAccessGranted();
+
         setCreemStatus(data || null);
       } catch (err) {
         console.error("Failed to check subscription:", err);

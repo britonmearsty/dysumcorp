@@ -36,6 +36,7 @@ export async function PUT(
 
     // Validate password strength
     const validation = validatePassword(password);
+
     if (!validation.isValid) {
       return NextResponse.json(
         {
@@ -74,6 +75,7 @@ export async function PUT(
     });
   } catch (error) {
     console.error("Error setting file password:", error);
+
     return NextResponse.json(
       { error: "Failed to set password" },
       { status: 500 },
@@ -122,6 +124,7 @@ export async function DELETE(
     });
   } catch (error) {
     console.error("Error removing file password:", error);
+
     return NextResponse.json(
       { error: "Failed to remove password" },
       { status: 500 },
