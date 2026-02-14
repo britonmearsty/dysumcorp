@@ -1,0 +1,17 @@
+# https://dysumcorp.pro/robots.txt
+User-agent: *
+Allow: /
+
+# Block dashboard and authenticated routes
+Disallow: /dashboard/
+Disallow: /account/
+Disallow: /api/
+Disallow: /admin/
+Disallow: /portal/
+
+# Block auth routes from indexing
+Disallow: /auth
+Disallow: /signin
+Disallow: /signup
+
+Sitemap: https://dysumcorp.pro/sitemap.xml

@@ -9,54 +9,56 @@ import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000",
-  ),
+  metadataBase: new URL("https://dysumcorp.pro"),
   title: {
-    default: `${siteConfig.name} - Secure Client File Collection Portal | No Login Required`,
-    template: `%s - ${siteConfig.name}`,
+    default: `${siteConfig.name} - Collect Files from Clients | No Account Required`,
+    template: `%s | ${siteConfig.name}`,
   },
   description:
-    "Professional branded file collection portals for CPAs, lawyers, and consultants. Secure client document uploads with no account required. Bank-level encryption, custom branding, instant notifications.",
+    "Dysumcorp lets professionals collect files from clients directly to Google Drive or Dropbox. No client account needed. Secure, branded portals for CPAs, lawyers, consultants & agencies.",
   keywords: [
-    "client file collection",
+    "collect files from clients",
+    "client file upload",
+    "file collection portal",
+    "receive files from clients",
+    "google drive file collection",
+    "dropbox file collection",
+    "client document collection software",
+    "professional file request tool",
+    "no client account required",
     "secure file upload portal",
-    "branded file sharing",
-    "document collection software",
-    "client portal",
-    "secure file transfer",
-    "professional file sharing",
+    "branded client portal",
     "CPA document collection",
     "lawyer file portal",
-    "consultant file sharing",
-    "no login file upload",
-    "white label file portal",
+    "freelancer file management",
+    "client upload link",
   ],
-  authors: [{ name: siteConfig.name }],
-  creator: siteConfig.name,
+  authors: [{ name: "Dysumcorp" }],
+  creator: "Dysumcorp",
+  publisher: "Dysumcorp",
   openGraph: {
     type: "website",
     locale: "en_US",
     url: "https://dysumcorp.pro",
-    title: `${siteConfig.name} - Secure Client File Collection Portal`,
+    title: `${siteConfig.name} - Collect Files from Clients Directly to Google Drive or Dropbox`,
     description:
-      "Professional branded file collection portals with bank-level security. Clients upload files in seconds—no account required.",
+      "Professional file collection portal for freelancers, agencies & consultants. Clients upload directly to your cloud storage—no account required. Try it free.",
     siteName: siteConfig.name,
     images: [
       {
-        url: "/logo.svg",
+        url: "/og/homepage.png",
         width: 1200,
         height: 630,
-        alt: `${siteConfig.name} - Client File Collection Portal`,
+        alt: "Dysumcorp - Collect client files directly to Google Drive or Dropbox",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteConfig.name} - Secure Client File Collection Portal`,
+    title: `${siteConfig.name} - Collect Files from Clients`,
     description:
-      "Professional branded file collection portals with bank-level security. Clients upload files in seconds—no account required.",
-    images: ["/logo.svg"],
+      "Collect files from clients directly to Google Drive or Dropbox. No client account needed.",
+    images: ["/og/homepage.png"],
     creator: "@dysumcorp",
   },
   robots: {
@@ -69,6 +71,9 @@ export const metadata: Metadata = {
       "max-image-preview": "large",
       "max-snippet": -1,
     },
+  },
+  alternates: {
+    canonical: "https://dysumcorp.pro",
   },
   icons: {
     icon: "/favicon.ico",

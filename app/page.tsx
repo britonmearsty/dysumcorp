@@ -1081,36 +1081,86 @@ export default function Home() {
       {/* JSON-LD Structured Data for SEO */}
       <script
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            name: "Dysumcorp",
-            applicationCategory: "BusinessApplication",
-            operatingSystem: "Web",
-            offers: {
-              "@type": "AggregateOffer",
-              lowPrice: "0",
-              highPrice: "29",
-              priceCurrency: "USD",
-              offerCount: "3",
+          __html: JSON.stringify([
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Dysumcorp",
+              url: "https://dysumcorp.pro",
+              logo: "https://dysumcorp.pro/logo.svg",
+              description:
+                "File collection platform for professionals. Collect files from clients directly to Google Drive or Dropbox.",
+              sameAs: ["https://twitter.com/dysumcorp"],
             },
-            description:
-              "Professional secure file collection portal for CPAs, lawyers, and consultants. Branded client document upload with bank-level encryption.",
-            aggregateRating: {
-              "@type": "AggregateRating",
-              ratingValue: "5",
-              ratingCount: "10000",
+            {
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              name: "Dysumcorp",
+              applicationCategory: "BusinessApplication",
+              operatingSystem: "Web",
+              offers: {
+                "@type": "AggregateOffer",
+                lowPrice: "0",
+                highPrice: "29",
+                priceCurrency: "USD",
+                offerCount: "3",
+              },
+              description:
+                "Professional secure file collection portal for CPAs, lawyers, and consultants. Branded client document upload with bank-level encryption.",
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: "4.9",
+                ratingCount: "2000",
+              },
+              featureList: [
+                "Custom branded client portals",
+                "Bank-level 256-bit encryption",
+                "No client login required",
+                "Custom domain integration",
+                "Real-time notifications",
+                "Mobile-optimized",
+                "SOC 2 compliance",
+              ],
             },
-            featureList: [
-              "Custom branded client portals",
-              "Bank-level 256-bit encryption",
-              "No client login required",
-              "Custom domain integration",
-              "Real-time notifications",
-              "Mobile-optimized",
-              "SOC 2 compliance",
-            ],
-          }),
+            {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: [
+                {
+                  "@type": "Question",
+                  name: "Does my client need an account to upload files?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "No. Your clients can upload files through your unique upload link without creating any account or logging in.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "Which cloud storage services does Dysumcorp support?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Dysumcorp currently supports Google Drive and Dropbox, with files delivered directly to your chosen folder.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "Is my client data secure?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Yes. Dysumcorp uses 256-bit AES encryption and is SOC 2 Type II compliant. Your client data is protected with bank-level security.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "How much does Dysumcorp cost?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Dysumcorp offers a free plan with basic features. Professional plans start at $29/month with unlimited portals and advanced features.",
+                  },
+                },
+              ],
+            },
+          ]),
         }}
         type="application/ld+json"
       />

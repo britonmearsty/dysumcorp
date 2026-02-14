@@ -196,6 +196,50 @@ export default function PricingPage() {
           </button>
         </div>
       </div>
+
+      <script
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: [
+              {
+                "@type": "Question",
+                name: "Can I change plans later?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate any charges.",
+                },
+              },
+              {
+                "@type": "Question",
+                name: "What happens if I exceed my limits?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "You'll be notified when approaching your limits. To continue, you'll need to upgrade your plan or remove some content.",
+                },
+              },
+              {
+                "@type": "Question",
+                name: "Do you offer refunds?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "Yes, we offer a 14-day money-back guarantee on all paid plans. No questions asked.",
+                },
+              },
+              {
+                "@type": "Question",
+                name: "Is there a free trial?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "Our Free plan is available forever with no credit card required. You can upgrade to a paid plan anytime to unlock more features.",
+                },
+              },
+            ],
+          }),
+        }}
+        type="application/ld+json"
+      />
     </div>
   );
 }
