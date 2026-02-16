@@ -20,14 +20,13 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-// Configure body size limit to Vercel's maximum
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '4.5mb',
-    },
-  },
-};
+// Route segment config for App Router
+export const runtime = 'nodejs';
+export const maxDuration = 60; // 60 seconds timeout
+export const dynamic = 'force-dynamic';
+
+// Note: Body size limit in App Router is controlled by Vercel's platform limit (4.5 MB)
+// For larger files, use the direct upload endpoints
 
 // Helper function to format file size
 function formatFileSize(bytes: number): string {
@@ -102,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     const userId = portal.userId;
 
-    // Try to get Google Drive token first, fallback to Dropbox
+    // Get cloud storage token (Google Drive or Dropbox)
     let accessToken = await getValidToken(userId, "google");
     let provider: "google" | "dropbox" = "google";
 
@@ -111,42 +110,42 @@ export async function POST(request: NextRequest) {
       provider = "dropbox";
     }
 
-    // If no cloud storage connected, use local storage fallback
+    // Cloud storage is required - no local fallback
+    if (!accessToken) {
+      return NextResponse.json(
+        {
+          error:
+            "Cloud storage not connected. Please connect Google Drive or Dropbox in Settings to upload files.",
+        },
+        { status: 400 }
+      );
+    }
+
     const uploadedFiles = await Promise.all(
       files.map(async (file) => {
-        let storageUrl = `/uploads/${portalId}/${file.name}`; // Fallback
+        let storageUrl: string;
         let actualSize = file.size;
 
-        try {
-          if (accessToken) {
-            // Upload to cloud storage directly with the File object (Blob)
-            if (provider === "google") {
-              const result = await uploadToGoogleDrive(
-                accessToken,
-                `${portal.name}/${file.name}`,
-                file, // Pass File object directly
-                file.type || "application/octet-stream",
-              );
-
-              storageUrl = result.webViewLink || result.id;
-              actualSize = result.size ? Number(result.size) : file.size;
-            } else {
-              const result = await uploadToDropbox(
-                accessToken,
-                `/${portal.name}/${file.name}`,
-                file, // Pass File object directly
-              );
-
-              storageUrl = result.id;
-              actualSize = result.size ? Number(result.size) : file.size;
-            }
-          }
-        } catch (uploadError) {
-          console.error(
-            "Cloud upload failed, using local fallback:",
-            uploadError,
+        // Upload to cloud storage
+        if (provider === "google") {
+          const result = await uploadToGoogleDrive(
+            accessToken,
+            `${portal.name}/${file.name}`,
+            file,
+            file.type || "application/octet-stream",
           );
-          // Continue with local storage URL
+
+          storageUrl = result.webViewLink || result.id;
+          actualSize = result.size ? Number(result.size) : file.size;
+        } else {
+          const result = await uploadToDropbox(
+            accessToken,
+            `/${portal.name}/${file.name}`,
+            file,
+          );
+
+          storageUrl = result.id;
+          actualSize = result.size ? Number(result.size) : file.size;
         }
 
         // Store file metadata in database
@@ -202,7 +201,7 @@ export async function POST(request: NextRequest) {
           ...f,
           size: f.size.toString(), // Convert BigInt to string for JSON
         })),
-        provider: accessToken ? provider : "local",
+        provider,
       },
       {
         headers: {

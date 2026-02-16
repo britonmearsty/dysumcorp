@@ -183,11 +183,9 @@ const StorageSection: React.FC<StorageSectionProps> = ({
       const res = await fetch("/api/storage/connections");
       if (res.ok) {
         const data = await res.json();
-        console.log("Storage connections response:", data);
         // Show ALL accounts, not just connected ones
         // This way users can see disconnected accounts and know they need to reconnect
         const allAccounts = data.accounts || [];
-        console.log("All accounts:", allAccounts);
         setAccounts(allAccounts);
       } else {
         console.error("Failed to fetch storage connections:", res.status, await res.text());

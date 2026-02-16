@@ -1,5 +1,17 @@
 {
   "buildCommand": "prisma generate && next build",
   "framework": "nextjs",
-  "regions": ["iad1"]
+  "regions": ["iad1"],
+  "functions": {
+    "app/api/portals/upload/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "app/api/storage/direct-upload/route.ts": {
+      "maxDuration": 10
+    },
+    "app/api/storage/confirm-upload/route.ts": {
+      "maxDuration": 10
+    }
+  }
 }
