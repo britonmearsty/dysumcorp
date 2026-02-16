@@ -22,6 +22,8 @@ export interface UploadResult {
 
 const SIZE_THRESHOLD = 4 * 1024 * 1024; // 4 MB
 
+// Force rebuild: v2.0
+
 /**
  * Upload file using the appropriate method based on file size
  */
