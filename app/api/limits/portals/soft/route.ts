@@ -1,29 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { checkPortalLimit, getUserPlanType } from "@/lib/plan-limits";
-import { authClient } from "@/lib/auth-client";
-import { PlanType } from "@/config/pricing";
-
-export interface SoftLimitResponse {
-  allowed: boolean;
-  reason?: string;
-  current: number;
-  limit: number;
-  percentage: number;
-  softLimitLevel: "normal" | "warning" | "critical" | "exceeded";
-  canProceed: boolean;
-  requiresUpgrade: boolean;
-  graceUsed?: number;
-  graceTotal?: number;
-  recommendation?: {
-    suggestedPlan: PlanType;
-    message: string;
-  };
-}
-
-import { NextRequest, NextResponse } from "next/server";
-
-import { checkPortalLimit, getUserPlanType } from "@/lib/plan-limits";
 import { getSession } from "@/lib/auth-server";
 import { PlanType } from "@/config/pricing";
 
