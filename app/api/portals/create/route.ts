@@ -17,17 +17,30 @@ const prisma = new PrismaClient({ adapter });
 
 export async function POST(request: Request) {
   try {
+    console.log("[/api/portals/create] Starting portal creation");
+    
     const session = await getSessionFromRequest(request);
+
+    console.log("[/api/portals/create] Session:", {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userId: session?.user?.id,
+    });
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
+    
+    console.log("[/api/portals/create] Getting user plan type");
     const planType = await getUserPlanType(userId);
+    console.log("[/api/portals/create] Plan type:", planType);
 
     // Check portal limit
+    console.log("[/api/portals/create] Checking portal limit");
     const portalCheck = await checkPortalLimit(userId, planType);
+    console.log("[/api/portals/create] Portal check result:", portalCheck);
 
     if (!portalCheck.allowed) {
       return NextResponse.json(
@@ -40,7 +53,9 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log("[/api/portals/create] Parsing request body");
     const body = await request.json();
+    console.log("[/api/portals/create] Request body keys:", Object.keys(body));
     const {
       name,
       slug,
@@ -85,14 +100,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate file size
-    if (maxFileSize && maxFileSize <= 0) {
-      return NextResponse.json(
-        { error: "Maximum file size must be greater than 0" },
-        { status: 400 },
-      );
-    }
+    // Validate file size - make it optional with default
+    const finalMaxFileSize = maxFileSize && maxFileSize > 0 ? maxFileSize : 52428800; // Default 50MB
 
+    console.log("[/api/portals/create] Validation passed, checking slug uniqueness");
+    
     // Check if slug is already taken
     const existingPortal = await prisma.portal.findUnique({
       where: { slug },
@@ -145,6 +157,8 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log("[/api/portals/create] Creating portal in database");
+    
     // Create the portal
     const portal = await prisma.portal.create({
       data: {
@@ -168,7 +182,7 @@ export async function POST(request: Request) {
         password: password || null,
         requireClientName: requireClientName !== undefined ? requireClientName : true,
         requireClientEmail: requireClientEmail || false,
-        maxFileSize: maxFileSize ? BigInt(maxFileSize) : BigInt(52428800), // Default 50MB
+        maxFileSize: BigInt(finalMaxFileSize),
         allowedFileTypes: allowedFileTypes || [],
         // Messaging
         welcomeMessage: welcomeMessage || null,
@@ -177,14 +191,16 @@ export async function POST(request: Request) {
       },
     });
 
+    console.log("[/api/portals/create] Portal created successfully:", portal.id);
+
     return NextResponse.json({
       success: true,
       portal,
       message: "Portal created successfully",
     });
   } catch (error) {
-    console.error("Error creating portal:", error);
-    console.error("Error details:", {
+    console.error("[/api/portals/create] Error creating portal:", error);
+    console.error("[/api/portals/create] Error details:", {
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     });
