@@ -10,7 +10,7 @@ const redis = new Redis({
 // Create different rate limiters for different use cases
 export const uploadRateLimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(10, "60 s"), // 10 uploads per minute
+  limiter: Ratelimit.slidingWindow(50, "60 s"), // 50 uploads per minute (increased for development)
   analytics: true,
 });
 
@@ -70,7 +70,7 @@ class InMemoryRateLimit {
 }
 
 // Fallback rate limiters
-export const fallbackUploadLimit = new InMemoryRateLimit(10, 60);
+export const fallbackUploadLimit = new InMemoryRateLimit(50, 60);
 export const fallbackDownloadLimit = new InMemoryRateLimit(100, 60);
 export const fallbackAuthLimit = new InMemoryRateLimit(5, 60);
 export const fallbackApiLimit = new InMemoryRateLimit(1000, 60);
