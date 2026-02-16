@@ -16,6 +16,12 @@ export async function GET(request: Request) {
       headers: request.headers,
     });
 
+    console.log("[/api/portals] Session check:", {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userId: session?.user?.id,
+    });
+
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -23,6 +29,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get("limit");
     const take = limit ? parseInt(limit, 10) : undefined;
+
+    console.log("[/api/portals] Fetching portals for user:", session.user.id, "limit:", take);
 
     const portals = await prisma.portal.findMany({
       where: { userId: session.user.id },
@@ -34,6 +42,8 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
       take,
     });
+
+    console.log("[/api/portals] Found portals:", portals.length);
 
     return NextResponse.json({ portals });
   } catch (error) {
