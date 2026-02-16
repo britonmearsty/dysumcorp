@@ -55,6 +55,7 @@ export default function AssetsPage() {
   const [passwordError, setPasswordError] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [dateFilter, setDateFilter] = useState<string>("");
 
   const tabs = [
     {
@@ -336,9 +337,34 @@ export default function AssetsPage() {
     const matchesSearch = file.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
+    
+    const matchesDate = dateFilter
+      ? file.uploadedAt.startsWith(dateFilter)
+      : true;
 
-    return matchesSearch;
+    return matchesSearch && matchesDate;
   });
+
+  // Group files by date
+  const groupedByDate = useMemo(() => {
+    const groups: Record<string, File[]> = {};
+    
+    filteredFiles.forEach((file) => {
+      const date = new Date(file.uploadedAt);
+      const dateKey = date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(file);
+    });
+    
+    return groups;
+  }, [filteredFiles]);
 
   const stats = useMemo(() => {
     const totalSize = files.reduce((acc, file) => acc + Number(file.size), 0);
@@ -540,14 +566,23 @@ export default function AssetsPage() {
         {/* Content Area */}
         <main className="flex-1 min-w-0">
           <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="flex gap-3 flex-1">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-2xl focus:ring-2 focus:ring-ring transition-all outline-none text-sm text-foreground"
+                  placeholder="Search assets..."
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
               <input
-                className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-2xl focus:ring-2 focus:ring-ring transition-all outline-none text-sm text-foreground"
-                placeholder="Search assets..."
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                className="px-4 py-2.5 bg-card border border-border rounded-2xl focus:ring-2 focus:ring-ring transition-all outline-none text-sm text-foreground"
+                placeholder="Filter by date"
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
               />
             </div>
             <div className="flex items-center gap-3">
@@ -619,91 +654,100 @@ export default function AssetsPage() {
                           </p>
                         </div>
                       ) : viewMode === "list" ? (
-                        <div className="divide-y divide-border">
-                          {filteredFiles.map((file) => (
-                            <div
-                              key={file.id}
-                              className="py-4 hover:bg-muted/20 transition-colors px-4 -mx-4 rounded-xl"
-                            >
-                              <div className="flex items-center gap-4">
-                                <div className="flex-shrink-0 text-3xl">
-                                  {getFileIcon(file.mimeType)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-foreground truncate">
-                                    {file.name}
-                                  </h4>
-                                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                    <span className="flex items-center gap-1">
-                                      {getStorageIcon(
-                                        getStorageType(file.storageUrl),
-                                      )}
-                                      {getStorageLabel(
-                                        getStorageType(file.storageUrl),
-                                      )}
-                                    </span>
-                                    <span>•</span>
-                                    <span>{formatFileSize(file.size)}</span>
-                                    <span>•</span>
-                                    <span>{formatDate(file.uploadedAt)}</span>
-                                    {file.passwordHash && (
-                                      <>
-                                        <span>•</span>
-                                        <Lock className="w-3 h-3" />
-                                      </>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-xs text-muted-foreground">
-                                      Portal:
-                                    </span>
-                                    <a
-                                      className="text-xs text-primary hover:underline flex items-center gap-1"
-                                      href={`/portal/${file.portal.slug}`}
-                                      rel="noopener noreferrer"
-                                      target="_blank"
-                                    >
-                                      {file.portal.name}
-                                      <ExternalLink className="w-3 h-3" />
-                                    </a>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
-                                    title="Download"
-                                    onClick={() => handleDownload(file)}
+                        <div className="space-y-8">
+                          {Object.entries(groupedByDate).map(([date, dateFiles]) => (
+                            <div key={date}>
+                              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-primary" />
+                                {date}
+                                <span className="text-xs font-normal">({dateFiles.length} files)</span>
+                              </h3>
+                              <div className="divide-y divide-border">
+                                {dateFiles.map((file) => (
+                                  <div
+                                    key={file.id}
+                                    className="py-4 hover:bg-muted/20 transition-colors px-4 -mx-4 rounded-xl"
                                   >
-                                    <Download className="w-4 h-4" />
-                                  </button>
-                                  {file.passwordHash ? (
-                                    <button
-                                      className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
-                                      title="Remove password"
-                                      onClick={() => handleRemovePassword(file)}
-                                    >
-                                      <Unlock className="w-4 h-4" />
-                                    </button>
-                                  ) : (
-                                    <button
-                                      className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
-                                      title="Set password"
-                                      onClick={() => handleSetPassword(file)}
-                                    >
-                                      <Lock className="w-4 h-4" />
-                                    </button>
-                                  )}
-                                  <button
-                                    className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all disabled:opacity-50"
-                                    disabled={deleting === file.id}
-                                    title="Delete"
-                                    onClick={() =>
-                                      handleDelete(file.id, file.name)
-                                    }
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
+                                    <div className="flex items-center gap-4">
+                                      <div className="flex-shrink-0 text-3xl">
+                                        {getFileIcon(file.mimeType)}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-foreground truncate">
+                                          {file.name}
+                                        </h4>
+                                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                          <span className="flex items-center gap-1">
+                                            {getStorageIcon(
+                                              getStorageType(file.storageUrl),
+                                            )}
+                                            {getStorageLabel(
+                                              getStorageType(file.storageUrl),
+                                            )}
+                                          </span>
+                                          <span>•</span>
+                                          <span>{formatFileSize(file.size)}</span>
+                                          {file.passwordHash && (
+                                            <>
+                                              <span>•</span>
+                                              <Lock className="w-3 h-3" />
+                                            </>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <span className="text-xs text-muted-foreground">
+                                            Portal:
+                                          </span>
+                                          <a
+                                            className="text-xs text-primary hover:underline flex items-center gap-1"
+                                            href={`/portal/${file.portal.slug}`}
+                                            rel="noopener noreferrer"
+                                            target="_blank"
+                                          >
+                                            {file.portal.name}
+                                            <ExternalLink className="w-3 h-3" />
+                                          </a>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
+                                          title="Download"
+                                          onClick={() => handleDownload(file)}
+                                        >
+                                          <Download className="w-4 h-4" />
+                                        </button>
+                                        {file.passwordHash ? (
+                                          <button
+                                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
+                                            title="Remove password"
+                                            onClick={() => handleRemovePassword(file)}
+                                          >
+                                            <Unlock className="w-4 h-4" />
+                                          </button>
+                                        ) : (
+                                          <button
+                                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
+                                            title="Set password"
+                                            onClick={() => handleSetPassword(file)}
+                                          >
+                                            <Lock className="w-4 h-4" />
+                                          </button>
+                                        )}
+                                        <button
+                                          className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all disabled:opacity-50"
+                                          disabled={deleting === file.id}
+                                          title="Delete"
+                                          onClick={() =>
+                                            handleDelete(file.id, file.name)
+                                          }
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           ))}
