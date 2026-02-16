@@ -21,15 +21,38 @@ export interface SoftLimitResponse {
   };
 }
 
+import { NextRequest, NextResponse } from "next/server";
+
+import { checkPortalLimit, getUserPlanType } from "@/lib/plan-limits";
+import { getSession } from "@/lib/auth-server";
+import { PlanType } from "@/config/pricing";
+
+export interface SoftLimitResponse {
+  allowed: boolean;
+  reason?: string;
+  current: number;
+  limit: number;
+  percentage: number;
+  softLimitLevel: "normal" | "warning" | "critical" | "exceeded";
+  canProceed: boolean;
+  requiresUpgrade: boolean;
+  graceUsed?: number;
+  graceTotal?: number;
+  recommendation?: {
+    suggestedPlan: PlanType;
+    message: string;
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const session = await authClient.getSession();
+    const session = await getSession();
 
-    if (!session?.data?.user?.id) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session.data.user.id;
+    const userId = session.user.id;
     const userPlan = await getUserPlanType(userId);
 
     // Get basic limit check

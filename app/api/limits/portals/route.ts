@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { checkPortalLimit, getUserPlanType } from "@/lib/plan-limits";
-import { authClient } from "@/lib/auth-client";
+import { getSession } from "@/lib/auth-server";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await authClient.getSession();
+    const session = await getSession();
 
-    if (!session?.data?.user?.id) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session.data.user.id;
+    const userId = session.user.id;
     const planType = await getUserPlanType(userId);
     const portalLimit = await checkPortalLimit(userId, planType);
 
