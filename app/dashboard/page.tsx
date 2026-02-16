@@ -578,26 +578,60 @@ export default function DashboardPage() {
                 View All
               </Link>
             </div>
-            <div className="bg-bg-card border border-border rounded-[12px] flex flex-col items-center justify-center py-14 px-6 min-h-[200px] text-center">
-              <svg
-                className="w-10 h-10 mb-4 opacity-40"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.5"
-                viewBox="0 0 24 24"
-              >
-                <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
-                <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-              </svg>
-              <h3 className="text-sm font-semibold text-text-sub mb-1.5">
-                No recent activity detected.
-              </h3>
-              <p className="text-[0.78rem] text-text-muted leading-relaxed">
-                Files uploaded to your portals will appear here.
-              </p>
-            </div>
+            {recentActivities.length === 0 ? (
+              <div className="bg-bg-card border border-border rounded-[12px] flex flex-col items-center justify-center py-14 px-6 min-h-[200px] text-center">
+                <svg
+                  className="w-10 h-10 mb-4 opacity-40"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  viewBox="0 0 24 24"
+                >
+                  <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+                  <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+                </svg>
+                <h3 className="text-sm font-semibold text-text-sub mb-1.5">
+                  No recent activity detected.
+                </h3>
+                <p className="text-[0.78rem] text-text-muted leading-relaxed">
+                  Files uploaded to your portals will appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-bg-card border border-border rounded-[12px] overflow-hidden">
+                <div className="divide-y divide-border">
+                  {recentActivities.map((file: any) => (
+                    <div
+                      key={file.id}
+                      className="p-4 hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <FileText className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-text-white truncate">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-text-muted mt-0.5">
+                            {file.portal?.name || "Unknown Portal"}
+                          </p>
+                          <p className="text-xs text-text-muted mt-1">
+                            {new Date(file.uploadedAt).toLocaleDateString()} at{" "}
+                            {new Date(file.uploadedAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </aside>
       </div>
