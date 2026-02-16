@@ -102,6 +102,7 @@ model Portal {
   slug                  String   @unique
   customDomain          String?  @unique
   whiteLabeled          Boolean  @default(false)
+  isActive              Boolean  @default(true)
   userId                String
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   

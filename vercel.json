@@ -4,8 +4,7 @@
   "regions": ["iad1"],
   "functions": {
     "app/api/portals/upload/route.ts": {
-      "maxDuration": 60,
-      "memory": 1024
+      "maxDuration": 60
     },
     "app/api/storage/direct-upload/route.ts": {
       "maxDuration": 10

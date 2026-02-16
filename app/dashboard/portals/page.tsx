@@ -24,6 +24,7 @@ interface Portal {
   slug: string;
   customDomain: string | null;
   whiteLabeled: boolean;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
   _count: {
@@ -49,6 +50,9 @@ export default function PortalsPage() {
     [],
   );
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedPortal, setSelectedPortal] = useState<Portal | null>(null);
+  const [showFilesModal, setShowFilesModal] = useState(false);
+  const [portalFiles, setPortalFiles] = useState<any[]>([]);
 
   useEffect(() => {
     fetchPortals();
@@ -209,6 +213,42 @@ export default function PortalsPage() {
     setUploadingFiles([]);
   };
 
+  const fetchPortalFiles = async (portalId: string) => {
+    try {
+      const response = await fetch(`/api/portals/${portalId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setPortalFiles(data.portal?.files || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch portal files:", error);
+    }
+  };
+
+  const handlePortalClick = async (portal: Portal) => {
+    setSelectedPortal(portal);
+    setShowFilesModal(true);
+    await fetchPortalFiles(portal.id);
+  };
+
+  const handleToggleActive = async (portalId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/portals/${portalId}/toggle-active`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        // Refresh portals list
+        await fetchPortals();
+      } else {
+        alert("Failed to toggle portal status");
+      }
+    } catch (error) {
+      console.error("Failed to toggle portal status:", error);
+      alert("Failed to toggle portal status");
+    }
+  };
+
   const filteredPortals = portals.filter(
     (portal) =>
       portal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -292,26 +332,45 @@ export default function PortalsPage() {
               key={portal.id}
               className="bg-bg-card rounded-[12px] p-6 border border-border hover:shadow-md transition-shadow"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground truncate mb-1">
-                    {portal.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground truncate">
-                    /{portal.slug}
-                  </p>
-                  {portal.customDomain && (
-                    <p className="text-xs text-primary mt-1 truncate">
-                      {portal.customDomain}
+              {/* Portal Name - Clickable to open files modal */}
+              <div
+                className="cursor-pointer mb-4 group"
+                onClick={() => handlePortalClick(portal)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground truncate mb-1 group-hover:text-primary transition-colors">
+                      {portal.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground truncate">
+                      /{portal.slug}
                     </p>
-                  )}
+                    {portal.customDomain && (
+                      <p className="text-xs text-primary mt-1 truncate">
+                        {portal.customDomain}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                    {portal.isActive ? (
+                      <span className="text-xs px-2 py-1 rounded-md bg-green-50 text-green-600 dark:bg-green-950/50">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                        Inactive
+                      </span>
+                    )}
+                    {portal.whiteLabeled && (
+                      <span className="text-xs px-2 py-1 rounded-md bg-purple-50 text-purple-600 dark:bg-purple-950/50">
+                        Premium
+                      </span>
+                    )}
+                  </div>
                 </div>
-                {portal.whiteLabeled && (
-                  <span className="text-xs px-2 py-1 rounded-md bg-purple-50 text-purple-600 dark:bg-purple-950/50 flex-shrink-0 ml-2">
-                    Premium
-                  </span>
-                )}
               </div>
+
+              {/* Stats */}
               <div className="space-y-2 text-sm mb-4">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Files</span>
@@ -327,41 +386,96 @@ export default function PortalsPage() {
                   </span>
                 </div>
               </div>
+
+              {/* Action Buttons */}
               <div className="flex gap-2">
                 <Button
-                  className="flex-1 rounded-xl font-medium"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => router.push(`/portal/${portal.slug}`)}
-                >
-                  <ExternalLink className="w-3.5 h-3.5 mr-1" />
-                  View
-                </Button>
-                <Button
-                  className="rounded-xl font-medium"
+                  className="flex-1 rounded-xl font-medium text-xs h-8"
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    const input = document.createElement("input");
-
-                    input.type = "file";
-                    input.multiple = true;
-                    input.onchange = (e) =>
-                      handleFileSelect(
-                        e as unknown as React.ChangeEvent<HTMLInputElement>,
-                        portal.id,
-                      );
-                    input.click();
+                    const url = `${window.location.origin}/portal/${portal.slug}`;
+                    navigator.clipboard.writeText(url);
+                    alert("Portal link copied to clipboard!");
                   }}
                 >
-                  <Upload className="w-3.5 h-3.5" />
+                  Copy Link
                 </Button>
                 <Button
-                  className="rounded-xl font-medium text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                  className="rounded-xl font-medium text-xs h-8 px-3"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleToggleActive(portal.id, portal.isActive)}
+                  title={portal.isActive ? "Deactivate Portal" : "Activate Portal"}
+                >
+                  {portal.isActive ? (
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="15" x2="9" y1="9" y2="15" />
+                      <line x1="9" x2="15" y1="9" y2="15" />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <polyline points="9 11 12 14 22 4" />
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                    </svg>
+                  )}
+                </Button>
+                <Button
+                  className="rounded-xl font-medium text-xs h-8 px-3"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => router.push(`/portal/${portal.slug}`)}
+                  title="View Portal"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  className="rounded-xl font-medium text-xs h-8 px-3"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    // TODO: Implement edit functionality
+                    alert("Edit functionality coming soon!");
+                  }}
+                  title="Edit Portal"
+                >
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </Button>
+                <Button
+                  className="rounded-xl font-medium text-xs h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
                   disabled={deleting === portal.id}
                   size="sm"
                   variant="outline"
                   onClick={() => handleDelete(portal.id, portal.name)}
+                  title="Delete Portal"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
@@ -464,6 +578,78 @@ export default function PortalsPage() {
                     ? "Uploading..."
                     : "Close"}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Portal Files Modal */}
+      {showFilesModal && selectedPortal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background border rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b">
+              <div>
+                <h2 className="text-xl font-bold">{selectedPortal.name}</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {portalFiles.length} file{portalFiles.length !== 1 ? "s" : ""} uploaded
+                </p>
+              </div>
+              <Button
+                className="rounded-xl"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setShowFilesModal(false);
+                  setSelectedPortal(null);
+                  setPortalFiles([]);
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              {portalFiles.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <p className="text-muted-foreground">No files uploaded yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {portalFiles.map((file: any) => (
+                    <div
+                      key={file.id}
+                      className="flex items-center gap-4 p-4 border rounded-xl hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex-shrink-0">
+                        <FileText className="w-8 h-8 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{file.name}</p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                          <span>
+                            {(Number(file.size) / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                          <span>•</span>
+                          <span>
+                            {new Date(file.uploadedAt).toLocaleDateString()}
+                          </span>
+                          {file.uploaderName && (
+                            <>
+                              <span>•</span>
+                              <span>{file.uploaderName}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <span className="text-xs px-2 py-1 rounded-md bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                          {file.downloads || 0} downloads
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
