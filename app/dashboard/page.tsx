@@ -8,6 +8,7 @@ import { useSession } from "@/lib/auth-client";
 interface Portal {
   id: string;
   name: string;
+  slug: string;
   clientName?: string;
   createdAt: string;
   _count?: {
@@ -48,10 +49,18 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchData() {
       try {
+        console.log("[Dashboard] Starting fetch...");
         const [portalsRes, filesRes] = await Promise.all([
           fetch("/api/portals?limit=5"),
           fetch("/api/files?limit=5"),
         ]);
+
+        console.log("[Dashboard] Fetch responses:", {
+          portalsOk: portalsRes.ok,
+          portalsStatus: portalsRes.status,
+          filesOk: filesRes.ok,
+          filesStatus: filesRes.status,
+        });
 
         if (portalsRes.ok && filesRes.ok) {
           const portalsData = await portalsRes.json();
@@ -59,6 +68,9 @@ export default function DashboardPage() {
 
           const portals = portalsData.portals || [];
           const files = filesData.files || [];
+
+          console.log("[Dashboard] Portals data:", portals);
+          console.log("[Dashboard] Portals count:", portals.length);
 
           const fileCount = portals.reduce(
             (acc: number, p: any) => acc + (p._count?.files || 0),
@@ -79,6 +91,11 @@ export default function DashboardPage() {
 
           setActivePortalsList(portals);
           setRecentActivities(files);
+        } else {
+          console.error("[Dashboard] API error:", {
+            portalsStatus: portalsRes.status,
+            filesStatus: filesRes.status,
+          });
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -88,7 +105,10 @@ export default function DashboardPage() {
     }
 
     if (session) {
+      console.log("[Dashboard] Session exists, fetching data...");
       fetchData();
+    } else {
+      console.log("[Dashboard] No session yet...");
     }
   }, [session]);
 
@@ -243,31 +263,75 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="bg-bg-card border border-border rounded-[14px] flex flex-col items-center justify-center py-[72px] px-10 min-h-[380px] text-center">
-            <svg
-              className="w-14 h-14 mb-6 opacity-45"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.5"
-              viewBox="0 0 24 24"
-            >
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-            </svg>
-            <h2 className="text-[1.15rem] font-bold text-text-white mb-2.5">
-              Build your first portal
-            </h2>
-            <p className="text-sm text-text-muted leading-relaxed max-w-[280px] mb-7">
-              Start collecting files securely. It takes less than a minute to
-              set up.
-            </p>
-            <Link href="/dashboard/portals/create">
-              <button className="bg-primary text-primary-foreground border-none rounded-[10px] px-9 py-3 text-[0.9rem] font-bold cursor-pointer hover:opacity-90 transition-opacity">
-                Create Portal
-              </button>
-            </Link>
-          </div>
+          {(() => {
+            console.log("[Dashboard Render] activePortalsList:", activePortalsList);
+            console.log("[Dashboard Render] activePortalsList.length:", activePortalsList.length);
+            return null;
+          })()}
+
+          {activePortalsList.length === 0 ? (
+            <div className="bg-bg-card border border-border rounded-[14px] flex flex-col items-center justify-center py-[72px] px-10 min-h-[380px] text-center">
+              <svg
+                className="w-14 h-14 mb-6 opacity-45"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              </svg>
+              <h2 className="text-[1.15rem] font-bold text-text-white mb-2.5">
+                Build your first portal
+              </h2>
+              <p className="text-sm text-text-muted leading-relaxed max-w-[280px] mb-7">
+                Start collecting files securely. It takes less than a minute to
+                set up.
+              </p>
+              <Link href="/dashboard/portals/create">
+                <button className="bg-primary text-primary-foreground border-none rounded-[10px] px-9 py-3 text-[0.9rem] font-bold cursor-pointer hover:opacity-90 transition-opacity">
+                  Create Portal
+                </button>
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {activePortalsList.map((portal) => (
+                <Link
+                  key={portal.id}
+                  href={`/portal/${portal.slug}`}
+                  className="bg-bg-card border border-border rounded-[14px] p-6 hover:border-muted transition-all cursor-pointer"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-bold text-text-white text-base">
+                      {portal.name}
+                    </h3>
+                    <span className="text-xs px-2 py-1 rounded-md bg-accent-green/10 text-accent-green">
+                      Active
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-text-muted">
+                    <div className="flex items-center gap-1">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                        <polyline points="13 2 13 9 20 9" />
+                      </svg>
+                      <span>{portal._count?.files || 0} files</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Right Panel - Quick Actions + Recent Activity */}
