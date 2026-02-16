@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PlanType } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
+import { uploadFile } from "@/lib/upload-manager";
 
 interface Portal {
   id: string;
@@ -149,73 +150,53 @@ export default function PortalsPage() {
       );
 
       try {
-        const formData = new FormData();
-
-        formData.append("files", fileItem.file);
-        formData.append("portalId", portalId);
-
-        // Create XMLHttpRequest for progress tracking
-        await new Promise<void>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-
-          xhr.upload.addEventListener("progress", (e) => {
-            if (e.lengthComputable) {
-              const percentComplete = (e.loaded / e.total) * 100;
-
-              setUploadingFiles((prev) =>
-                prev.map((item, idx) =>
-                  idx === i ? { ...item, progress: percentComplete } : item,
-                ),
-              );
-            }
-          });
-
-          xhr.addEventListener("load", () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              setUploadingFiles((prev) =>
-                prev.map((item, idx) =>
-                  idx === i
-                    ? { ...item, status: "success", progress: 100 }
-                    : item,
-                ),
-              );
-              resolve();
-            } else {
-              setUploadingFiles((prev) =>
-                prev.map((item, idx) =>
-                  idx === i
-                    ? {
-                        ...item,
-                        status: "error",
-                        error: "Upload failed",
-                      }
-                    : item,
-                ),
-              );
-              reject(new Error("Upload failed"));
-            }
-          });
-
-          xhr.addEventListener("error", () => {
+        // Use the hybrid upload manager
+        const result = await uploadFile({
+          file: fileItem.file,
+          portalId,
+          onProgress: (progress) => {
             setUploadingFiles((prev) =>
               prev.map((item, idx) =>
-                idx === i
-                  ? {
-                      ...item,
-                      status: "error",
-                      error: "Network error",
-                    }
-                  : item,
+                idx === i ? { ...item, progress } : item,
               ),
             );
-            reject(new Error("Network error"));
-          });
-
-          xhr.open("POST", "/api/portals/upload");
-          xhr.send(formData);
+          },
         });
+
+        if (result.success) {
+          setUploadingFiles((prev) =>
+            prev.map((item, idx) =>
+              idx === i
+                ? { ...item, status: "success", progress: 100 }
+                : item,
+            ),
+          );
+        } else {
+          setUploadingFiles((prev) =>
+            prev.map((item, idx) =>
+              idx === i
+                ? {
+                    ...item,
+                    status: "error",
+                    error: result.error || "Upload failed",
+                  }
+                : item,
+            ),
+          );
+        }
       } catch (error) {
         console.error("Upload error:", error);
+        setUploadingFiles((prev) =>
+          prev.map((item, idx) =>
+            idx === i
+              ? {
+                  ...item,
+                  status: "error",
+                  error: error instanceof Error ? error.message : "Upload failed",
+                }
+              : item,
+          ),
+        );
       }
     }
 

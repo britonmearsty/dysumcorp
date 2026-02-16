@@ -20,6 +20,15 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
+// Configure body size limit to Vercel's maximum
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '4.5mb',
+    },
+  },
+};
+
 // Helper function to format file size
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 Bytes";

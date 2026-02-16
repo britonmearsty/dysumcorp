@@ -49,18 +49,10 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        console.log("[Dashboard] Starting fetch...");
         const [portalsRes, filesRes] = await Promise.all([
           fetch("/api/portals?limit=5"),
           fetch("/api/files?limit=5"),
         ]);
-
-        console.log("[Dashboard] Fetch responses:", {
-          portalsOk: portalsRes.ok,
-          portalsStatus: portalsRes.status,
-          filesOk: filesRes.ok,
-          filesStatus: filesRes.status,
-        });
 
         if (portalsRes.ok && filesRes.ok) {
           const portalsData = await portalsRes.json();
@@ -68,9 +60,6 @@ export default function DashboardPage() {
 
           const portals = portalsData.portals || [];
           const files = filesData.files || [];
-
-          console.log("[Dashboard] Portals data:", portals);
-          console.log("[Dashboard] Portals count:", portals.length);
 
           const fileCount = portals.reduce(
             (acc: number, p: any) => acc + (p._count?.files || 0),
@@ -91,11 +80,6 @@ export default function DashboardPage() {
 
           setActivePortalsList(portals);
           setRecentActivities(files);
-        } else {
-          console.error("[Dashboard] API error:", {
-            portalsStatus: portalsRes.status,
-            filesStatus: filesRes.status,
-          });
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -105,10 +89,7 @@ export default function DashboardPage() {
     }
 
     if (session) {
-      console.log("[Dashboard] Session exists, fetching data...");
       fetchData();
-    } else {
-      console.log("[Dashboard] No session yet...");
     }
   }, [session]);
 
@@ -262,12 +243,6 @@ export default function DashboardPage() {
               View All Portals <span>→</span>
             </Link>
           </div>
-
-          {(() => {
-            console.log("[Dashboard Render] activePortalsList:", activePortalsList);
-            console.log("[Dashboard Render] activePortalsList.length:", activePortalsList.length);
-            return null;
-          })()}
 
           {activePortalsList.length === 0 ? (
             <div className="bg-bg-card border border-border rounded-[14px] flex flex-col items-center justify-center py-[72px] px-10 min-h-[380px] text-center">
