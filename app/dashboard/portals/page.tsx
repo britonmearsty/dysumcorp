@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
   Trash2,
@@ -343,23 +344,6 @@ export default function PortalsPage() {
       return `${(size / (1024 * 1024)).toFixed(2)} MB`;
 
     return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-
-    if (hours < 1) return "Just now";
-    if (hours < 24) return `${hours} hours ago`;
-    if (hours < 48) return "Yesterday";
-
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
   };
 
   const filteredPortals = portals.filter(
