@@ -115,15 +115,17 @@ export default function AssetsPage() {
 
   const handleDownload = async (file: File) => {
     try {
+      let filePassword = "";
       if (file.passwordHash) {
-        const password = prompt(
+        const promptPassword = prompt(
           "This file is password protected. Please enter the password:",
         );
 
-        if (!password) return;
+        if (!promptPassword) return;
+        filePassword = promptPassword;
       }
       const response = await fetch(`/api/files/${file.id}/download`, {
-        headers: file.passwordHash ? { "x-file-password": password || "" } : {},
+        headers: file.passwordHash ? { "x-file-password": filePassword } : {},
       });
 
       if (response.ok) {
