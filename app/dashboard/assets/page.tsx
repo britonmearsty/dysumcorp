@@ -11,10 +11,6 @@ import {
   Cloud,
   Database,
   Lock,
-  Unlock,
-  Eye,
-  EyeOff,
-  AlertCircle,
   ChevronRight,
   LayoutGrid,
   List as ListIcon,
@@ -47,12 +43,6 @@ export default function AssetsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [managingPassword, setManagingPassword] = useState<string | null>(null);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [dateFilter, setDateFilter] = useState<string>("");
@@ -155,85 +145,6 @@ export default function AssetsPage() {
     } catch (error) {
       console.error("Failed to download file:", error);
       alert("Failed to download file");
-    }
-  };
-
-  const handleSetPassword = (file: File) => {
-    setSelectedFile(file);
-    setPassword("");
-    setPasswordError("");
-    setShowPasswordModal(true);
-  };
-
-  const handleRemovePassword = async (file: File) => {
-    if (
-      !confirm(
-        `Are you sure you want to remove password protection from "${file.name}"?`,
-      )
-    ) {
-      return;
-    }
-    try {
-      const response = await fetch(`/api/files/${file.id}/password`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setFiles(
-          files.map((f) =>
-            f.id === file.id ? { ...f, passwordHash: null } : f,
-          ),
-        );
-        alert("Password protection removed successfully");
-      } else {
-        alert("Failed to remove password protection");
-      }
-    } catch (error) {
-      console.error("Failed to remove password:", error);
-      alert("Failed to remove password protection");
-    }
-  };
-
-  const handlePasswordSubmit = async () => {
-    if (!selectedFile || !password.trim()) {
-      setPasswordError("Password is required");
-
-      return;
-    }
-    if (password.length < 8) {
-      setPasswordError("Password must be at least 8 characters long");
-
-      return;
-    }
-    setManagingPassword(selectedFile.id);
-    setPasswordError("");
-    try {
-      const response = await fetch(`/api/files/${selectedFile.id}/password`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: password.trim() }),
-      });
-
-      if (response.ok) {
-        setFiles(
-          files.map((f) =>
-            f.id === selectedFile.id ? { ...f, passwordHash: "set" } : f,
-          ),
-        );
-        setShowPasswordModal(false);
-        setSelectedFile(null);
-        setPassword("");
-        alert("Password protection added successfully");
-      } else {
-        const errorData = await response.json();
-
-        setPasswordError(errorData.error || "Failed to set password");
-      }
-    } catch (error) {
-      console.error("Failed to set password:", error);
-      setPasswordError("Failed to set password");
-    } finally {
-      setManagingPassword(null);
     }
   };
 
@@ -403,73 +314,6 @@ export default function AssetsPage() {
 
   return (
     <div>
-      {/* Password Modal */}
-      {showPasswordModal && selectedFile && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-bg-card rounded-[12px] p-6 w-full max-w-md border border-border shadow-xl">
-            <h3 className="text-lg font-semibold text-foreground mb-4">
-              Set Password for "{selectedFile.name}"
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
-                    placeholder="Enter password (min 8 characters)"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <button
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-                {passwordError && (
-                  <p className="text-destructive text-sm mt-2 flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" />
-                    {passwordError}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                className="px-4 py-2.5 border border-border rounded-xl text-muted-foreground hover:bg-muted transition-colors font-medium text-sm"
-                disabled={managingPassword === selectedFile.id}
-                onClick={() => {
-                  setShowPasswordModal(false);
-                  setSelectedFile(null);
-                  setPassword("");
-                  setPasswordError("");
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 font-bold text-sm"
-                disabled={managingPassword === selectedFile.id}
-                onClick={handlePasswordSubmit}
-              >
-                {managingPassword === selectedFile.id
-                  ? "Setting..."
-                  : "Set Password"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="mb-10">
         <h1 className="text-4xl font-black text-foreground tracking-tight">
@@ -717,23 +561,13 @@ export default function AssetsPage() {
                                         >
                                           <Download className="w-4 h-4" />
                                         </button>
-                                        {file.passwordHash ? (
-                                          <button
-                                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
-                                            title="Remove password"
-                                            onClick={() => handleRemovePassword(file)}
-                                          >
-                                            <Unlock className="w-4 h-4" />
-                                          </button>
-                                        ) : (
-                                          <button
-                                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
-                                            title="Set password"
-                                            onClick={() => handleSetPassword(file)}
-                                          >
-                                            <Lock className="w-4 h-4" />
-                                          </button>
-                                        )}
+                                        <button
+                                          className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
+                                          title="Open file"
+                                          onClick={() => window.open(file.storageUrl, '_blank')}
+                                        >
+                                          <ExternalLink className="w-4 h-4" />
+                                        </button>
                                         <button
                                           className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all disabled:opacity-50"
                                           disabled={deleting === file.id}
@@ -871,11 +705,19 @@ export default function AssetsPage() {
                                           <div className="flex items-center gap-1">
                                             <button
                                               className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
+                                              title="Download"
                                               onClick={() =>
                                                 handleDownload(file)
                                               }
                                             >
                                               <Download className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                              className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
+                                              title="Open file"
+                                              onClick={() => window.open(file.storageUrl, '_blank')}
+                                            >
+                                              <ExternalLink className="w-4 h-4" />
                                             </button>
                                             <button
                                               className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
