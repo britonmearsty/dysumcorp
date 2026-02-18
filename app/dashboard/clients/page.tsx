@@ -310,6 +310,7 @@ export default function ClientsPage() {
               return (
                 <button
                   key={tab.id}
+                  type="button"
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                     isActive
                       ? "bg-card shadow-sm border border-border text-foreground"
@@ -486,6 +487,7 @@ export default function ClientsPage() {
                               </p>
                             </div>
                             <button
+                              type="button"
                               className="text-xs font-bold text-muted-foreground hover:text-foreground underline underline-offset-4"
                               onClick={() => handleClientClick(client)}
                             >
@@ -589,6 +591,7 @@ export default function ClientsPage() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   className="p-2 hover:bg-muted rounded-xl transition-colors text-muted-foreground hover:text-foreground"
                   onClick={() => setSelectedClient(null)}
                 >
@@ -653,6 +656,7 @@ export default function ClientsPage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <button
+                            type="button"
                             className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
                             title="Download"
                             onClick={() => handleDownloadFile(file)}
@@ -660,6 +664,7 @@ export default function ClientsPage() {
                             <Download className="w-4 h-4" />
                           </button>
                           <button
+                            type="button"
                             className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
                             title="Open file"
                             onClick={() => window.open(file.storageUrl, '_blank')}
@@ -667,6 +672,7 @@ export default function ClientsPage() {
                             <ExternalLink className="w-4 h-4" />
                           </button>
                           <button
+                            type="button"
                             className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all disabled:opacity-50"
                             disabled={deletingFile === file.id}
                             title="Delete"
@@ -693,6 +699,7 @@ export default function ClientsPage() {
 
               <div className="p-6 bg-muted border-t border-border flex justify-end gap-3">
                 <button
+                  type="button"
                   className="px-6 py-2.5 bg-card border border-border rounded-2xl text-sm font-bold text-muted-foreground hover:bg-muted transition-all"
                   onClick={() => setSelectedClient(null)}
                 >
@@ -700,6 +707,7 @@ export default function ClientsPage() {
                 </button>
                 {selectedClient.email && (
                   <button
+                    type="button"
                     className="px-6 py-2.5 bg-foreground text-background rounded-2xl text-sm font-bold hover:opacity-90 shadow-sm transition-all flex items-center gap-2"
                     onClick={() => handleContactClient(selectedClient)}
                   >

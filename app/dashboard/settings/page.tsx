@@ -210,6 +210,7 @@ export default function SettingsPage() {
               return (
                 <button
                   key={tab.id}
+                  type="button"
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                     isActive
                       ? "bg-card shadow-sm border border-border text-foreground"
@@ -451,6 +452,7 @@ export default function SettingsPage() {
                             </p>
                           </div>
                           <Button
+                            type="button"
                             className="rounded-xl border-2 border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
                             variant="outline"
                             onClick={() => setShowDeleteConfirm(true)}
@@ -512,6 +514,7 @@ export default function SettingsPage() {
 
                           <div className="flex gap-3">
                             <Button
+                              type="button"
                               className="rounded-xl bg-red-600 text-white hover:bg-red-700"
                               disabled={
                                 deleteLoading || deleteConfirmText !== "DELETE"
@@ -522,6 +525,7 @@ export default function SettingsPage() {
                               {deleteLoading ? "Deleting..." : "Confirm Delete"}
                             </Button>
                             <Button
+                              type="button"
                               className="rounded-xl"
                               disabled={deleteLoading}
                               variant="outline"

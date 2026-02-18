@@ -275,6 +275,7 @@ export default function AssetsPage() {
               return (
                 <button
                   key={tab.id}
+                  type="button"
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                     isActive
                       ? "bg-card shadow-sm border border-border text-foreground"
@@ -353,14 +354,16 @@ export default function AssetsPage() {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
+                        type="button"
                         className="p-2 bg-muted hover:bg-muted/80 rounded-lg transition-colors border border-border"
                         title="Refresh"
-                        onClick={() => window.location.reload()}
+                        onClick={() => fetchFiles()}
                       >
                         <RefreshCw className="w-4 h-4" />
                       </button>
                       <div className="flex items-center gap-1 p-1 bg-muted border border-border rounded-lg">
                         <button
+                          type="button"
                           className={`p-2 rounded transition-all ${
                             viewMode === "grid" ? "bg-card shadow-sm" : "hover:bg-card/50"
                           }`}
@@ -369,6 +372,7 @@ export default function AssetsPage() {
                           <LayoutGrid className="w-4 h-4" />
                         </button>
                         <button
+                          type="button"
                           className={`p-2 rounded transition-all ${
                             viewMode === "list" ? "bg-card shadow-sm" : "hover:bg-card/50"
                           }`}

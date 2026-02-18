@@ -113,6 +113,7 @@ export default function SupportPage() {
               return (
                 <button
                   key={tab.id}
+                  type="button"
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                     isActive
                       ? "bg-card shadow-sm border border-border text-foreground"
@@ -150,20 +151,22 @@ export default function SupportPage() {
                 <Mail className="w-3.5 h-3.5" />
                 Email Support
               </a>
-              <a
-                href="#"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              <button
+                type="button"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+                onClick={() => {/* TODO: Add documentation link */}}
               >
                 <Book className="w-3.5 h-3.5" />
                 Documentation
-              </a>
-              <a
-                href="#"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              </button>
+              <button
+                type="button"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+                onClick={() => {/* TODO: Add feature request link */}}
               >
                 <Zap className="w-3.5 h-3.5" />
                 Feature Requests
-              </a>
+              </button>
             </div>
           </div>
         </aside>
@@ -333,6 +336,7 @@ export default function SupportPage() {
                           className="border border-border rounded-lg overflow-hidden bg-muted/30"
                         >
                           <button
+                            type="button"
                             onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
                             className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/50 transition-colors"
                           >
@@ -371,6 +375,7 @@ export default function SupportPage() {
                           Contact our support team and we'll be happy to help.
                         </p>
                         <button
+                          type="button"
                           onClick={() => setActiveTab("contact")}
                           className="px-4 py-2 bg-foreground text-background rounded-lg text-sm font-semibold hover:opacity-90 transition-all"
                         >
