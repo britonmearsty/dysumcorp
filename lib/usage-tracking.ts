@@ -132,16 +132,8 @@ export async function updateUsageTracking() {
  */
 function getPlanLimits(plan: string) {
   const limits = {
-    free: { storage: 5 * 1024 * 1024 * 1024, portals: 3 }, // 5GB
-    pro: { storage: 50 * 1024 * 1024 * 1024, portals: 10 }, // 50GB
-    business: {
-      storage: 500 * 1024 * 1024 * 1024,
-      portals: 50,
-    }, // 500GB
-    enterprise: {
-      storage: 5 * 1024 * 1024 * 1024 * 1024,
-      portals: 999,
-    }, // 5TB
+    free: { storage: 1 * 1024 * 1024 * 1024, portals: 1 }, // 1GB, 1 portal
+    pro: { storage: 500 * 1024 * 1024 * 1024, portals: 999999 }, // 500GB, unlimited portals
   };
 
   return limits[plan as keyof typeof limits] || limits.free;

@@ -46,26 +46,12 @@ export function PaywallModal({
   const getMinimumPlan = (): PlanType => {
     if (requiredPlan) return requiredPlan;
 
-    // Logic to determine minimum plan based on feature
-    if (feature.includes("Custom Domain") || feature.includes("White Label")) {
-      return "pro";
-    }
-    if (feature.includes("SSO") || feature.includes("Enterprise")) {
-      return "enterprise";
-    }
-
-    return "pro"; // Default to pro for most features
+    // All premium features require Pro plan
+    return "pro";
   };
 
   const minimumPlan = getMinimumPlan();
-  const recommendedPlan =
-    currentPlan === "free"
-      ? "pro"
-      : currentPlan === "pro"
-        ? "team"
-        : currentPlan === "team"
-          ? "enterprise"
-          : "enterprise";
+  const recommendedPlan = currentPlan === "free" ? "pro" : "pro";
 
   const plan = PRICING_PLANS[recommendedPlan];
   const minimumPlanDetails = PRICING_PLANS[minimumPlan];

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Tooltip } from "@heroui/tooltip";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -38,18 +40,31 @@ const navItems: NavItem[] = [
   { label: "SETTINGS", href: "/dashboard/settings", icon: SettingsIcon },
 ];
 
-function UserAccountSection({ onClose }: { onClose: () => void }) {
+function UserAccountSection({
+  onClose,
+  isCollapsed,
+}: {
+  onClose: () => void;
+  isCollapsed: boolean;
+}) {
   const { data: session, isPending } = useSession();
 
   if (isPending) {
     return (
-      <div className="px-4 py-3 animate-pulse">
-        <div className="flex items-center gap-3">
+      <div className={cn("px-4 py-3 animate-pulse", isCollapsed && "px-2")}>
+        <div
+          className={cn(
+            "flex items-center gap-3",
+            isCollapsed && "justify-center",
+          )}
+        >
           <div className="w-10 h-10 rounded-full bg-muted" />
-          <div className="flex-1 space-y-2">
-            <div className="h-3 bg-muted rounded w-24" />
-            <div className="h-2 bg-muted rounded w-32" />
-          </div>
+          {!isCollapsed && (
+            <div className="flex-1 space-y-2">
+              <div className="h-3 bg-muted rounded w-24" />
+              <div className="h-2 bg-muted rounded w-32" />
+            </div>
+          )}
         </div>
       </div>
     );
@@ -66,25 +81,51 @@ function UserAccountSection({ onClose }: { onClose: () => void }) {
     user?.email?.[0]?.toUpperCase() ||
     "U";
 
+  const avatarElement = user?.image ? (
+    <Image
+      alt={user.name || "User"}
+      className="rounded-full ring-2 ring-primary/20"
+      height={44}
+      src={user.image}
+      width={44}
+    />
+  ) : (
+    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center ring-2 ring-primary/20">
+      <span className="text-white text-sm font-mono font-bold">
+        {initials}
+      </span>
+    </div>
+  );
+
+  if (isCollapsed) {
+    return (
+      <div className="space-y-3 p-2">
+        <Tooltip
+          content={
+            <div className="px-1 py-0.5">
+              <p className="text-sm font-mono font-semibold">
+                {user?.name || "User"}
+              </p>
+              <p className="text-xs text-muted-foreground font-mono">
+                {user?.email || "No email"}
+              </p>
+            </div>
+          }
+          placement="right"
+        >
+          <div className="flex items-center justify-center cursor-pointer">
+            {avatarElement}
+          </div>
+        </Tooltip>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3 p-3">
       {/* User Info Card */}
       <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-sidebar-border/50">
-        {user?.image ? (
-          <Image
-            alt={user.name || "User"}
-            className="rounded-full ring-2 ring-primary/20"
-            height={44}
-            src={user.image}
-            width={44}
-          />
-        ) : (
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center ring-2 ring-primary/20">
-            <span className="text-white text-sm font-mono font-bold">
-              {initials}
-            </span>
-          </div>
-        )}
+        {avatarElement}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-mono font-semibold text-foreground truncate">
             {user?.name || "User"}
@@ -101,6 +142,22 @@ function UserAccountSection({ onClose }: { onClose: () => void }) {
 export function DashboardSidebar() {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Load collapsed state from localStorage on mount
+  useEffect(() => {
+    const savedState = localStorage.getItem("sidebar-collapsed");
+    if (savedState !== null) {
+      setIsCollapsed(savedState === "true");
+    }
+  }, []);
+
+  // Save collapsed state to localStorage
+  const toggleCollapsed = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem("sidebar-collapsed", String(newState));
+  };
 
   return (
     <>
@@ -136,13 +193,19 @@ export function DashboardSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-40 h-screen w-72 bg-sidebar backdrop-blur-sm border-r border-sidebar-border/30 transition-transform duration-300 ease-in-out",
+          "fixed lg:sticky top-0 left-0 z-40 h-screen bg-sidebar backdrop-blur-sm border-r border-sidebar-border/30 transition-all duration-300 ease-in-out",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          isCollapsed ? "w-16 lg:w-16" : "w-72",
         )}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full relative">
           {/* Logo */}
-          <div className="flex items-center gap-3 px-6 py-6 border-b border-sidebar-border/50 bg-sidebar/50 backdrop-blur-sm">
+          <div
+            className={cn(
+              "flex items-center gap-3 px-6 py-6 border-b border-sidebar-border/50 bg-sidebar/50 backdrop-blur-sm transition-all duration-300",
+              isCollapsed && "px-3 justify-center",
+            )}
+          >
             <div className="relative">
               <Image
                 alt="Dysumcorp Logo"
@@ -154,10 +217,33 @@ export function DashboardSidebar() {
               />
               <div className="absolute -inset-1 bg-primary/20 rounded-full blur-md -z-10" />
             </div>
-            <span className="font-mono text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+            <span
+              className={cn(
+                "font-mono text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent transition-all duration-300",
+                isCollapsed
+                  ? "opacity-0 w-0 overflow-hidden"
+                  : "opacity-100 w-auto",
+              )}
+            >
               Dysumcorp
             </span>
           </div>
+
+          {/* Toggle Button - Desktop only */}
+          <Button
+            className={cn(
+              "hidden lg:flex absolute -right-3 top-20 z-50 h-6 w-6 rounded-full bg-sidebar border border-sidebar-border/50 shadow-md hover:bg-muted transition-all duration-200 p-0 items-center justify-center",
+            )}
+            size="icon"
+            variant="ghost"
+            onClick={toggleCollapsed}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            ) : (
+              <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+          </Button>
 
           {/* Navigation */}
           <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto">
@@ -171,6 +257,7 @@ export function DashboardSidebar() {
                   Icon={Icon}
                   href={item.href}
                   isActive={isActive}
+                  isCollapsed={isCollapsed}
                   label={item.label}
                   onClick={() => setIsMobileOpen(false)}
                 />
@@ -180,7 +267,10 @@ export function DashboardSidebar() {
 
           {/* User section */}
           <div className="px-3 py-4 border-t border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm">
-            <UserAccountSection onClose={() => setIsMobileOpen(false)} />
+            <UserAccountSection
+              isCollapsed={isCollapsed}
+              onClose={() => setIsMobileOpen(false)}
+            />
           </div>
         </div>
       </aside>

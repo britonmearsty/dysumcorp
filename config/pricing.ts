@@ -1,4 +1,4 @@
-export type PlanType = "free" | "pro" | "team" | "enterprise";
+export type PlanType = "free" | "pro";
 
 export interface PlanLimits {
   portals: number;
@@ -10,7 +10,6 @@ export interface PlanLimits {
   analytics: boolean;
   apiAccess: boolean;
   prioritySupport: boolean;
-  sso: boolean;
   customBranding: boolean;
 }
 
@@ -30,14 +29,14 @@ export interface PricingPlan {
 export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
   free: {
     id: "free",
-    name: "Starter",
+    name: "Free",
     description: "Perfect for trying out the platform",
     price: 0,
     priceAnnual: 0,
     creemProductId: "", // No product ID for free plan
     creemProductIdAnnual: "",
     limits: {
-      portals: 5,
+      portals: 1,
       storage: 1, // 1GB
       customDomains: 0,
       whiteLabeling: false,
@@ -46,120 +45,49 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
       analytics: false,
       apiAccess: false,
       prioritySupport: false,
-      sso: false,
       customBranding: false,
     },
     features: [
-      "5 Portals",
+      "1 Portal",
       "1GB Storage",
-      "Unlimited downloads",
       "Basic file sharing",
       "Community support",
       "Powered by branding",
     ],
   },
-  // started
   pro: {
     id: "pro",
-    name: "Professional",
-    description: "For professionals and freelancers",
+    name: "Pro",
+    description: "For professionals and power users",
     price: 29,
-    priceAnnual: 276, // 20% discount (29 * 12 * 0.8)
+    priceAnnual: 278.4, // 20% discount (29 * 12 * 0.8 = 278.4)
     creemProductId: "prod_1Rz5XOjKFlcgahDws69WiH",
     creemProductIdAnnual: "prod_4TLbnNWJvTQcOReecnTIa0",
     limits: {
-      portals: 10,
-      storage: 50, // 50GB
-      customDomains: 1,
-      whiteLabeling: false,
-      passwordProtection: true,
-      expiringLinks: true,
-      analytics: true,
-      apiAccess: false,
-      prioritySupport: false,
-      sso: false,
-      customBranding: true,
-    },
-    features: [
-      "10 Portals",
-      "50GB Storage",
-      "Remove branding",
-      "1 Custom domain",
-      "Password protection",
-      "Expiring links",
-      "Basic analytics",
-      "Custom themes",
-      "Email support (24-48hr)",
-    ],
-  },
-  //started
-  team: {
-    id: "team",
-    name: "Business",
-    description: "For teams and growing businesses",
-    price: 99,
-    priceAnnual: 948, // 20% discount
-    creemProductId: "prod_1uP8M3NW4CUYkc2kDjl8hW", // Replace with actual Creem product ID
-    creemProductIdAnnual: "prod_hEDWuK7pCBAdyjAmKNHW2",
-    limits: {
-      portals: 50,
-      storage: 250, // 250GB
-      customDomains: 5,
-      whiteLabeling: true,
-      passwordProtection: true,
-      expiringLinks: true,
-      analytics: true,
-      apiAccess: true,
-      prioritySupport: true,
-      sso: false,
-      customBranding: true,
-    },
-    features: [
-      "50 Portals",
-      "250GB Storage",
-      "Full white-labeling",
-      "5 Custom domains",
-      "Client management",
-      "Advanced analytics",
-      "API access",
-      "Priority support (12hr)",
-    ],
-    popular: true,
-  },
-  //started
-  enterprise: {
-    id: "enterprise",
-    name: "Enterprise",
-    description: "For large organizations",
-    price: 299,
-    priceAnnual: 2868, // 20% discount
-    creemProductId: "prod_24QNadRVg2wfl1iJHW2Pvh", // Replace with actual Creem product ID
-    creemProductIdAnnual: "prod_bVrEmgO75kpsD3yrthToN",
-    limits: {
       portals: 999999, // Unlimited
-      storage: 1000, // 1TB
-      customDomains: 999999, // Unlimited
+      storage: 500, // 500GB
+      customDomains: 1,
       whiteLabeling: true,
       passwordProtection: true,
       expiringLinks: true,
       analytics: true,
       apiAccess: true,
       prioritySupport: true,
-      sso: true,
       customBranding: true,
     },
     features: [
       "Unlimited Portals",
-      "1TB Storage (expandable)",
-      "Unlimited custom domains",
+      "500GB Storage",
+      "1 Custom domain",
       "Full white-labeling",
-      "SSO/SAML authentication",
-      "Advanced security",
-      "Custom integrations",
-      "Dedicated account manager",
-      "99.9% SLA",
-      "Phone support (4hr)",
+      "Password protection",
+      "Expiring links",
+      "Advanced analytics",
+      "Custom branding & themes",
+      "API access",
+      "Priority email support",
     ],
+    popular: true,
   },
 };
 

@@ -32,10 +32,8 @@ export function UpgradePrompt({
   // Determine recommended upgrade
   const getRecommendedPlan = (): PlanType => {
     if (currentPlan === "free") return "pro";
-    if (currentPlan === "pro") return "team";
-    if (currentPlan === "team") return "enterprise";
 
-    return "enterprise";
+    return "pro"; // Only Pro plan available
   };
 
   const recommendedPlan = getRecommendedPlan();

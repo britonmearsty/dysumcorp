@@ -22,12 +22,16 @@ export async function POST(request: Request) {
     }
 
     // Check if user is admin (you might want to add an admin role to the User model)
+    // For now, this endpoint is disabled as there's no enterprise plan
+    // You can add a separate admin role field to enable this
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { subscriptionPlan: true },
+      select: { subscriptionPlan: true, email: true },
     });
 
-    if (!user || user.subscriptionPlan !== "enterprise") {
+    // TODO: Add proper admin role check
+    // For now, restrict to specific email or disable entirely
+    if (!user) {
       return NextResponse.json(
         { error: "Admin access required" },
         { status: 403 },

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { forwardRef, useState } from "react";
+import { Tooltip } from "@heroui/tooltip";
 
 import { cn } from "@/lib/utils";
 
@@ -9,6 +10,7 @@ interface AnimatedNavItemProps {
   href: string;
   label: string;
   isActive: boolean;
+  isCollapsed?: boolean;
   Icon: React.ComponentType<{
     className?: string;
     size?: number;
@@ -21,10 +23,10 @@ interface AnimatedNavItemProps {
 export const AnimatedNavItem = forwardRef<
   HTMLAnchorElement,
   AnimatedNavItemProps
->(({ href, label, isActive, Icon, onClick, className }, ref) => {
+>(({ href, label, isActive, isCollapsed, Icon, onClick, className }, ref) => {
   const [isHovered, setIsHovered] = useState(false);
 
-  return (
+  const linkContent = (
     <Link
       ref={ref}
       className={cn(
@@ -32,6 +34,7 @@ export const AnimatedNavItem = forwardRef<
         isActive
           ? "text-foreground"
           : "text-muted-foreground hover:text-foreground",
+        isCollapsed && "px-2 justify-center",
         className,
       )}
       href={href}
@@ -58,23 +61,41 @@ export const AnimatedNavItem = forwardRef<
       {/* Label */}
       <span
         className={cn(
-          "relative z-10 transition-colors duration-200",
+          "relative z-10 transition-all duration-200",
           isActive
             ? "text-foreground font-semibold"
             : isHovered
               ? "text-foreground"
               : "text-muted-foreground",
+          isCollapsed
+            ? "opacity-0 w-0 overflow-hidden"
+            : "opacity-100 w-auto",
         )}
       >
         {label}
       </span>
 
       {/* Active indicator - left border */}
-      {isActive && (
+      {isActive && !isCollapsed && (
         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 bg-primary rounded-r-full" />
+      )}
+
+      {/* Active indicator - dot for collapsed state */}
+      {isActive && isCollapsed && (
+        <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-primary rounded-full" />
       )}
     </Link>
   );
+
+  if (isCollapsed) {
+    return (
+      <Tooltip content={label} placement="right">
+        {linkContent}
+      </Tooltip>
+    );
+  }
+
+  return linkContent;
 });
 
 AnimatedNavItem.displayName = "AnimatedNavItem";

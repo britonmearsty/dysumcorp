@@ -148,7 +148,7 @@ export default function BillingPage() {
             </Tabs>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
             {Object.values(PRICING_PLANS).map((plan) => (
               <PricingCard
                 key={plan.id}

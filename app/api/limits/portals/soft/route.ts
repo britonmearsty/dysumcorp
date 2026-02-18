@@ -116,31 +116,23 @@ function getUpgradeRecommendation(
 ): { suggestedPlan: PlanType; message: string } {
   const planUpgrades: Record<PlanType, PlanType> = {
     free: "pro",
-    pro: "team",
-    team: "enterprise",
-    enterprise: "enterprise",
+    pro: "pro", // Already on highest plan
   };
 
   const suggestedPlan = planUpgrades[currentPlan];
 
   const resourceMessages: Record<string, Record<PlanType, string>> = {
     portals: {
-      free: "Upgrade to Professional for 10 portals",
-      pro: "Upgrade to Business for 50 portals",
-      team: "Upgrade to Enterprise for unlimited portals",
-      enterprise: "Contact support for additional resources",
+      free: "Upgrade to Pro for unlimited portals",
+      pro: "You already have unlimited portals",
     },
     storage: {
-      free: "Upgrade to Professional for 50GB storage",
-      pro: "Upgrade to Business for 250GB storage",
-      team: "Upgrade to Enterprise for 1TB storage",
-      enterprise: "Contact support for additional storage",
+      free: "Upgrade to Pro for 500GB storage",
+      pro: "You already have 500GB storage",
     },
     customDomains: {
-      free: "Upgrade to Professional for custom domains",
-      pro: "Upgrade to Business for 5 custom domains",
-      team: "Upgrade to Enterprise for unlimited custom domains",
-      enterprise: "You already have unlimited custom domains",
+      free: "Upgrade to Pro for 1 custom domain",
+      pro: "You already have 1 custom domain",
     },
   };
 
