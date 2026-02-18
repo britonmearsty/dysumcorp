@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import {
   Type,
   Palette,
@@ -148,21 +148,21 @@ const StorageSection: React.FC<StorageSectionProps> = ({
   const [folders, setFolders] = useState<StorageFolder[]>([]);
   const [isRunningHealthCheck, setIsRunningHealthCheck] = useState(false);
   const [healthCheckResults, setHealthCheckResults] = useState<any>(null);
-  const hasInitializedStorage = useRef(false);
 
   useEffect(() => {
     fetchAccounts();
   }, []);
 
-  // Auto-initialize storage when accounts are loaded (only once)
+  // Auto-initialize storage when accounts are loaded
   useEffect(() => {
     if (
       !loadingAccounts &&
       accounts.length > 0 &&
-      !hasInitializedStorage.current &&
-      !formData.storageProvider
+      (!formData.storageProvider ||
+        (!loadingFolders &&
+          folders.length === 0 &&
+          folderPath.length === 0))
     ) {
-      hasInitializedStorage.current = true;
       const firstAccount = accounts[0];
       if (firstAccount) {
         const storageProvider =
@@ -170,7 +170,13 @@ const StorageSection: React.FC<StorageSectionProps> = ({
         selectStorageProvider(storageProvider);
       }
     }
-  }, [loadingAccounts, accounts]);
+  }, [
+    loadingAccounts,
+    accounts,
+    formData.storageProvider,
+    folders.length,
+    folderPath.length,
+  ]);
 
   async function fetchAccounts() {
     try {
