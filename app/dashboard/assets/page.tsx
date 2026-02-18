@@ -493,9 +493,9 @@ export default function AssetsPage() {
                 >
                   {/* All Assets Tab */}
                   {activeTab === "all" && (
-                    <div className="p-6">
+                    <div className="p-0">
                       {filteredFiles.length === 0 ? (
-                        <div className="text-center py-12">
+                        <div className="text-center py-12 px-6">
                           <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
                           <h3 className="font-semibold text-lg mb-2 text-foreground">
                             No Assets Found
@@ -506,19 +506,19 @@ export default function AssetsPage() {
                           </p>
                         </div>
                       ) : viewMode === "list" ? (
-                        <div className="space-y-8">
+                        <div className="divide-y divide-border">
                           {Object.entries(groupedByDate).map(([date, dateFiles]) => (
-                            <div key={date}>
+                            <div key={date} className="p-6">
                               <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-primary" />
                                 {date}
                                 <span className="text-xs font-normal">({dateFiles.length} files)</span>
                               </h3>
-                              <div className="divide-y divide-border">
+                              <div className="space-y-2">
                                 {dateFiles.map((file) => (
                                   <div
                                     key={file.id}
-                                    className="py-4 hover:bg-muted/20 transition-colors px-4 -mx-4 rounded-xl"
+                                    className="py-4 hover:bg-muted/20 transition-colors px-4 rounded-xl"
                                   >
                                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 min-w-0">
                                       <div className="flex-shrink-0 text-3xl">
@@ -596,7 +596,8 @@ export default function AssetsPage() {
                           ))}
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="p-6">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {filteredFiles.map((file) => (
                             <div
                               key={file.id}
@@ -652,13 +653,14 @@ export default function AssetsPage() {
                             </div>
                           ))}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
+                  </div>
                   )}
 
                   {/* By Storage Tab */}
                   {activeTab === "storage" && (
-                    <div className="p-6 space-y-8">
+                    <div className="divide-y divide-border">
                       {["google", "dropbox", "local", "other"].map(
                         (provider) => {
                           const providerFiles = filteredFiles.filter(
@@ -668,11 +670,8 @@ export default function AssetsPage() {
                           if (providerFiles.length === 0) return null;
 
                           return (
-                            <div
-                              key={provider}
-                              className="bg-bg-card rounded-[14px] border border-border overflow-hidden"
-                            >
-                              <div className="p-4 bg-card border-b border-border flex items-center justify-between">
+                            <div key={provider} className="p-6">
+                              <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-3">
                                   <div className="p-2 bg-muted rounded-xl">
                                     {getProviderIcon(provider)}
@@ -685,13 +684,13 @@ export default function AssetsPage() {
                                   {providerFiles.length} items
                                 </span>
                               </div>
-                              <div className="p-4">
+                              <div>
                                 {viewMode === "list" ? (
-                                  <div className="divide-y divide-border">
+                                  <div className="space-y-2">
                                     {providerFiles.map((file) => (
                                       <div
                                         key={file.id}
-                                        className="py-3 hover:bg-card/50 transition-colors px-3 -mx-3 rounded-xl"
+                                        className="py-3 hover:bg-muted/20 transition-colors px-3 rounded-xl"
                                       >
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
                                           <div className="flex-shrink-0 text-2xl">
