@@ -13,6 +13,7 @@
   "dependencies": {
     "@creem_io/better-auth": "^0.0.13",
     "@eslint/compat": "^2.0.2",
+    "creem": "^0.4.0",
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
     "@heroui/accordion": "2.2.27",
