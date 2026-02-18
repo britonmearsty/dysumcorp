@@ -51,9 +51,9 @@ export function UsageDashboard() {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="bg-card border border-border rounded-xl" shadow="none">
         <CardBody>
-          <p className="text-center text-default-500">Loading usage data...</p>
+          <p className="text-center text-muted-foreground">Loading usage data...</p>
         </CardBody>
       </Card>
     );
@@ -82,7 +82,7 @@ export function UsageDashboard() {
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {usageItems.map((item) => {
         const percentage =
           item.limit === 999999 ? 0 : (item.used / item.limit) * 100;
@@ -95,11 +95,11 @@ export function UsageDashboard() {
               : "success";
 
         return (
-          <Card key={item.label}>
+          <Card key={item.label} className="bg-card border border-border rounded-xl" shadow="none">
             <CardBody className="gap-3">
               <div className="flex justify-between items-start">
                 <p className="text-sm font-medium">{item.label}</p>
-                <p className="text-xs text-default-500">
+                <p className="text-xs text-muted-foreground">
                   {isUnlimited ? (
                     "Unlimited"
                   ) : (

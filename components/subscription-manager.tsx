@@ -132,9 +132,9 @@ export function SubscriptionManager({
 
   if (isFreePlan) {
     return (
-      <Card>
+      <Card className="bg-card border border-border rounded-xl" shadow="none">
         <CardBody className="text-center py-8">
-          <p className="text-default-500 mb-4">You are on the Free plan</p>
+          <p className="text-muted-foreground mb-4">You are on the Free plan</p>
           <Button color="primary" onPress={() => router.push("#pricing")}>
             Upgrade Now
           </Button>
@@ -145,10 +145,10 @@ export function SubscriptionManager({
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex flex-col items-start gap-1">
+      <Card className="bg-card border border-border rounded-xl" shadow="none">
+        <CardHeader className="flex flex-col items-start gap-1 bg-muted/30">
           <h3 className="text-lg font-semibold">Manage Subscription</h3>
-          <p className="text-small text-default-500">
+          <p className="text-small text-muted-foreground">
             Current Plan: {currentPlanDetails?.name}
           </p>
         </CardHeader>

@@ -45,9 +45,9 @@ export function SubscriptionStatus() {
 
   if (loading || isPending) {
     return (
-      <Card>
+      <Card className="bg-card border border-border rounded-xl" shadow="none">
         <CardBody>
-          <p className="text-sm text-default-500">
+          <p className="text-sm text-muted-foreground">
             Loading subscription status...
           </p>
         </CardBody>
@@ -66,7 +66,7 @@ export function SubscriptionStatus() {
   const isActive = (hasPaidPlan && isUserActive) || hasCreemAccess;
 
   return (
-    <Card>
+    <Card className="bg-card border border-border rounded-xl" shadow="none">
       <CardBody className="gap-2">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Current Plan</span>
@@ -87,14 +87,14 @@ export function SubscriptionStatus() {
         </div>
 
         {userPlan !== "free" && (
-          <div className="text-xs text-default-500 mt-1">
+          <div className="text-xs text-muted-foreground mt-1">
             <p>Plan: {planDetails?.name}</p>
             <p>Status from DB: {userStatus}</p>
           </div>
         )}
 
         {creemStatus?.expiresAt && (
-          <p className="text-xs text-default-500">
+          <p className="text-xs text-muted-foreground">
             Expires: {new Date(creemStatus.expiresAt).toLocaleDateString()}
           </p>
         )}
