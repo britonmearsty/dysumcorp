@@ -167,62 +167,91 @@ export default function TestimonialsSection() {
       </div>
 
       <style jsx>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
         .testimonials-section {
-          background: #ffffff;
-          padding: 56px 48px 52px;
+          background: linear-gradient(180deg, #FFFFFF 0%, #F5F8FA 100%);
+          padding: 100px 20px;
           width: 100%;
-          font-family:
-            ui-sans-serif,
-            system-ui,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            Roboto,
-            "Helvetica Neue",
-            Arial,
-            sans-serif;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
           overflow: hidden;
           position: relative;
         }
 
+        .testimonials-section::before,
+        .testimonials-section::after {
+          content: '';
+          position: absolute;
+          background: rgba(255, 255, 255, 0.4);
+          border-radius: 50%;
+          pointer-events: none;
+        }
+
+        .testimonials-section::before {
+          width: 500px;
+          height: 500px;
+          top: -150px;
+          right: -100px;
+        }
+
+        .testimonials-section::after {
+          width: 600px;
+          height: 600px;
+          bottom: -200px;
+          left: -150px;
+        }
+
         .header {
           text-align: center;
-          margin-bottom: 48px;
+          margin-bottom: 80px;
+          position: relative;
+          z-index: 1;
         }
 
         .title {
-          font-size: clamp(1.8rem, 4vw, 2.5rem);
+          font-size: clamp(40px, 6vw, 72px);
           font-weight: 700;
-          color: #0f172a;
-          margin: 0 0 12px;
+          color: #1a1a1a;
+          margin: 0 0 20px;
+          letter-spacing: -0.02em;
+          line-height: 1.1;
         }
 
         .subtitle {
-          font-size: 1rem;
-          color: #64748b;
+          font-size: 18px;
+          color: #4a4a4a;
           line-height: 1.6;
-          margin: 0 0 24px;
+          margin: 0 0 32px;
+          max-width: 600px;
+          margin-left: auto;
+          margin-right: auto;
         }
 
         .cta-btn {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          background: #0f172a;
-          color: #fff;
-          font-size: 0.875rem;
-          font-weight: 500;
-          padding: 12px 24px;
-          border-radius: 999px;
+          background: #1a1a1a;
+          color: white;
+          font-size: 15px;
+          font-weight: 600;
+          padding: 16px 32px;
+          border-radius: 12px;
           text-decoration: none;
-          transition:
-            background 0.2s ease,
-            transform 0.15s ease;
+          transition: all 0.3s;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
         }
 
         .cta-btn:hover {
-          background: #1e293b;
-          transform: translateY(-1px);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+          background: #2a2a2a;
         }
 
         .cta-icon {
@@ -232,17 +261,15 @@ export default function TestimonialsSection() {
 
         .avatar-stage {
           position: relative;
-          height: 180px;
-          margin-bottom: 40px;
+          height: 160px;
+          margin-bottom: 60px;
+          max-width: 900px;
+          margin-left: auto;
+          margin-right: auto;
         }
 
         .wave-svg {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          pointer-events: none;
+          display: none;
         }
 
         .avatars {
@@ -253,7 +280,8 @@ export default function TestimonialsSection() {
           height: 100%;
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          justify-content: center;
+          gap: 20px;
           padding: 0 24px;
         }
 
@@ -263,36 +291,33 @@ export default function TestimonialsSection() {
           cursor: pointer;
           padding: 0;
           flex-shrink: 0;
+          transition: all 0.3s;
         }
 
         .avatar-ring {
           border-radius: 50%;
-          padding: 3px;
-          background: transparent;
+          padding: 4px;
+          background: white;
           border: 3px solid transparent;
-          transition:
-            transform 0.3s ease,
-            border-color 0.3s ease,
-            box-shadow 0.3s ease;
+          transition: all 0.3s;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
         }
 
         .avatar-btn:hover .avatar-ring {
-          transform: translateY(var(--offset, 0px)) scale(1.08);
+          transform: scale(1.1);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
         }
 
         .ring-active {
-          border-color: #e53e3e;
-          box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.15);
+          border-color: #1a1a1a;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
         }
 
         .avatar-img {
           display: block;
           border-radius: 50%;
           object-fit: cover;
-          transition:
-            width 0.3s ease,
-            height 0.3s ease,
-            opacity 0.3s ease;
+          transition: all 0.3s;
         }
 
         .avatar-active .avatar-img {
@@ -302,55 +327,57 @@ export default function TestimonialsSection() {
         }
 
         .avatar-inactive .avatar-img {
-          width: 60px;
-          height: 60px;
-          opacity: 0.55;
+          width: 64px;
+          height: 64px;
+          opacity: 0.6;
         }
 
         .avatar-inactive:hover .avatar-img {
-          opacity: 0.85;
+          opacity: 0.9;
         }
 
         .quote-area {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 20px;
-          padding: 0 8px;
+          gap: 24px;
+          padding: 0 20px;
+          max-width: 900px;
+          margin: 0 auto;
         }
 
         .nav-btn {
-          background: #fff;
-          border: 1.5px solid #e2e8f0;
+          background: white;
+          border: none;
           border-radius: 50%;
-          width: 44px;
-          height: 44px;
-          font-size: 1.4rem;
-          color: #475569;
+          width: 48px;
+          height: 48px;
+          font-size: 24px;
+          color: #1a1a1a;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
           line-height: 1;
-          transition:
-            border-color 0.2s ease,
-            background 0.2s ease,
-            transform 0.15s ease;
+          transition: all 0.3s;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
         }
 
         .nav-btn:hover {
-          border-color: #0f172a;
-          background: #f8fafc;
-          transform: scale(1.05);
+          transform: scale(1.1);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+          background: #f8f9fa;
         }
 
         .quote-wrap {
           text-align: center;
-          max-width: 560px;
-          transition:
-            opacity 0.28s ease,
-            transform 0.28s ease;
+          max-width: 600px;
+          background: white;
+          border-radius: 24px;
+          padding: 40px;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+          transition: opacity 0.3s, transform 0.3s;
         }
 
         .quote-visible {
@@ -360,44 +387,59 @@ export default function TestimonialsSection() {
 
         .quote-hidden {
           opacity: 0;
-          transform: translateY(6px);
+          transform: translateY(10px);
         }
 
         .quote-text {
-          font-size: clamp(0.95rem, 2vw, 1.1rem);
-          color: #334155;
-          line-height: 1.65;
-          margin: 0 0 8px;
+          font-size: 18px;
+          color: #1a1a1a;
+          line-height: 1.7;
+          margin: 0 0 20px;
+          font-weight: 500;
         }
 
         .quote-author {
-          font-size: 0.8rem;
-          color: #94a3b8;
-          font-weight: 400;
+          font-size: 14px;
+          color: #666;
+          font-weight: 600;
           margin: 0;
         }
 
         .quote-role {
-          color: #64748b;
+          color: #999;
+          font-weight: 400;
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
           .testimonials-section {
-            padding: 40px 20px 40px;
+            padding: 60px 20px;
           }
 
           .avatar-active .avatar-img {
-            width: 60px;
-            height: 60px;
+            width: 64px;
+            height: 64px;
           }
 
           .avatar-inactive .avatar-img {
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
           }
 
           .avatar-stage {
-            height: 150px;
+            height: 140px;
+            margin-bottom: 40px;
+          }
+
+          .avatars {
+            gap: 12px;
+          }
+
+          .quote-wrap {
+            padding: 32px 24px;
+          }
+
+          .quote-text {
+            font-size: 16px;
           }
         }
       `}</style>

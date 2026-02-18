@@ -666,57 +666,40 @@ function FeatureCard({ feature, style = {} }: { feature: any; style?: React.CSSP
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: feature.dark ? "#0f172a" : "#fff",
-        border: `1.5px solid ${feature.dark ? "#1e293b" : hovered ? "#111827" : "#e9ecef"}`,
-        borderRadius: "20px",
-        padding: "28px",
+        background: feature.dark ? "#1a1a1a" : "white",
+        borderRadius: "24px",
+        padding: "32px",
         display: "flex",
         flexDirection: "column",
-        transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
-        transform: hovered ? "translateY(-3px)" : "translateY(0)",
+        transition: "all 0.3s",
+        transform: hovered ? "translateY(-8px)" : "translateY(0)",
         boxShadow: hovered
-          ? "0 20px 60px rgba(0,0,0,0.10)"
-          : "0 1px 3px rgba(0,0,0,0.04)",
+          ? "0 12px 40px rgba(0, 0, 0, 0.12)"
+          : "0 4px 24px rgba(0, 0, 0, 0.08)",
         cursor: "default",
         overflow: "hidden",
         position: "relative",
         ...style,
       }}
     >
-      {hovered && (
-        <div
-          style={{
-            position: "absolute",
-            top: "-40px",
-            right: "-40px",
-            width: "120px",
-            height: "120px",
-            borderRadius: "50%",
-            background: feature.accentGlow || "rgba(17,24,39,0.06)",
-            filter: "blur(40px)",
-            pointerEvents: "none",
-          }}
-        />
-      )}
-
       <div
         style={{
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "space-between",
-          marginBottom: "18px",
+          marginBottom: "20px",
         }}
       >
         <div
           style={{
-            width: "44px",
-            height: "44px",
+            width: "48px",
+            height: "48px",
             borderRadius: "12px",
-            background: feature.dark ? "#1e293b" : "#f3f4f6",
+            background: feature.dark ? "#2a2a2a" : "#f8f9fa",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: feature.dark ? "#e2e8f0" : "#374151",
+            color: feature.dark ? "#e5e5e5" : "#1a1a1a",
             flexShrink: 0,
           }}
         >
@@ -725,13 +708,12 @@ function FeatureCard({ feature, style = {} }: { feature: any; style?: React.CSSP
         {feature.stat && (
           <div
             style={{
-              background: feature.dark ? "#1e293b" : "#f3f4f6",
-              border: `1px solid ${feature.dark ? "#334155" : "#e5e7eb"}`,
+              background: feature.dark ? "#2a2a2a" : "#f8f9fa",
               borderRadius: "20px",
-              padding: "4px 12px",
-              fontSize: "12px",
-              fontWeight: 700,
-              color: feature.dark ? "#94a3b8" : "#374151",
+              padding: "6px 14px",
+              fontSize: "13px",
+              fontWeight: 600,
+              color: feature.dark ? "#999" : "#666",
               display: "flex",
               alignItems: "center",
               gap: "4px",
@@ -739,8 +721,9 @@ function FeatureCard({ feature, style = {} }: { feature: any; style?: React.CSSP
           >
             <span
               style={{
-                color: feature.dark ? "#818cf8" : "#111827",
-                fontSize: "15px",
+                color: feature.dark ? "white" : "#1a1a1a",
+                fontSize: "16px",
+                fontWeight: 700,
               }}
             >
               {feature.statValue}
@@ -752,12 +735,12 @@ function FeatureCard({ feature, style = {} }: { feature: any; style?: React.CSSP
 
       <h3
         style={{
-          fontSize: "17px",
+          fontSize: "20px",
           fontWeight: 700,
-          color: feature.dark ? "#f1f5f9" : "#111827",
-          margin: "0 0 8px 0",
+          color: feature.dark ? "white" : "#1a1a1a",
+          margin: "0 0 12px 0",
           lineHeight: 1.3,
-          fontFamily: "'DM Sans', 'Satoshi', system-ui, sans-serif",
+          fontFamily: "'Inter', sans-serif",
         }}
       >
         {feature.title}
@@ -765,35 +748,18 @@ function FeatureCard({ feature, style = {} }: { feature: any; style?: React.CSSP
 
       <p
         style={{
-          fontSize: "13.5px",
+          fontSize: "15px",
           lineHeight: 1.6,
-          color: feature.dark ? "#94a3b8" : "#6b7280",
+          color: feature.dark ? "#999" : "#666",
           margin: 0,
           flex: 1,
-          fontFamily: "'DM Sans', system-ui, sans-serif",
+          fontFamily: "'Inter', sans-serif",
         }}
       >
         {feature.description}
       </p>
 
       {feature.visual && <feature.visual />}
-
-      <div
-        style={{
-          marginTop: "20px",
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-          fontSize: "12px",
-          fontWeight: 600,
-          color: feature.dark ? "#818cf8" : "#374151",
-          opacity: hovered ? 1 : 0,
-          transform: hovered ? "translateX(0)" : "translateX(-6px)",
-          transition: "all 0.3s",
-        }}
-      >
-        Learn more <ArrowUpRightIcon />
-      </div>
     </div>
   );
 }
@@ -864,64 +830,81 @@ export default function FeaturesSection() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        * { box-sizing: border-box; }
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
 
         .features-section {
-          font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
-          background: #f5f5f7;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+          background: linear-gradient(180deg, #F5F8FA 0%, #FFFFFF 100%);
           min-height: 100vh;
-          padding: 80px 24px;
+          padding: 100px 20px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .features-section::before,
+        .features-section::after {
+          content: '';
+          position: absolute;
+          background: rgba(255, 255, 255, 0.4);
+          border-radius: 50%;
+          pointer-events: none;
+        }
+
+        .features-section::before {
+          width: 600px;
+          height: 600px;
+          top: -200px;
+          left: -150px;
+        }
+
+        .features-section::after {
+          width: 500px;
+          height: 500px;
+          bottom: -150px;
+          right: -100px;
         }
 
         .features-inner {
-          max-width: 1160px;
+          max-width: 1200px;
           margin: 0 auto;
+          position: relative;
+          z-index: 1;
         }
 
         .features-header {
           text-align: center;
-          margin-bottom: 64px;
+          margin-bottom: 80px;
         }
 
         .features-label {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: #fff;
-          border: 1.5px solid #e5e7eb;
-          border-radius: 20px;
-          padding: 6px 14px;
-          font-size: 12px;
+          display: inline-block;
+          font-size: 14px;
           font-weight: 600;
-          color: #374151;
-          letter-spacing: 0.04em;
+          color: #666;
+          margin-bottom: 16px;
           text-transform: uppercase;
-          margin-bottom: 20px;
+          letter-spacing: 0.1em;
         }
 
         .features-title {
-          font-size: clamp(32px, 5vw, 52px);
-          font-weight: 800;
-          color: #0f172a;
+          font-size: clamp(40px, 6vw, 72px);
+          font-weight: 700;
+          color: #1a1a1a;
           line-height: 1.1;
-          margin: 0 0 16px 0;
-          letter-spacing: -0.03em;
-        }
-
-        .features-title em {
-          font-style: normal;
-          background: linear-gradient(135deg, #111827 0%, #4b5563 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          margin-bottom: 20px;
+          letter-spacing: -0.02em;
         }
 
         .features-subtitle {
-          font-size: 17px;
-          color: #6b7280;
-          max-width: 520px;
+          font-size: 18px;
+          color: #4a4a4a;
+          max-width: 600px;
           margin: 0 auto;
           line-height: 1.6;
         }
@@ -929,48 +912,45 @@ export default function FeaturesSection() {
         .stats-bar {
           display: flex;
           justify-content: center;
-          gap: 0;
-          margin-bottom: 56px;
-          background: #fff;
-          border: 1.5px solid #e9ecef;
-          border-radius: 16px;
-          overflow: hidden;
-          max-width: 680px;
-          margin-left: auto;
-          margin-right: auto;
-          margin-bottom: 56px;
+          gap: 24px;
+          margin-bottom: 60px;
+          flex-wrap: wrap;
         }
 
         .stat-item {
-          flex: 1;
-          padding: 20px 24px;
+          background: white;
+          border-radius: 16px;
+          padding: 24px 32px;
           text-align: center;
-          border-right: 1.5px solid #f3f4f6;
-          transition: background 0.2s;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+          transition: all 0.3s;
+          min-width: 140px;
         }
 
-        .stat-item:last-child { border-right: none; }
-        .stat-item:hover { background: #fafafa; }
+        .stat-item:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        }
 
         .stat-number {
-          font-size: 28px;
-          font-weight: 800;
-          color: #0f172a;
-          letter-spacing: -0.03em;
+          font-size: 32px;
+          font-weight: 700;
+          color: #1a1a1a;
+          letter-spacing: -0.02em;
           line-height: 1;
-          margin-bottom: 4px;
+          margin-bottom: 8px;
         }
 
         .stat-label {
           font-size: 12px;
-          color: #9ca3af;
+          color: #666;
           font-weight: 500;
         }
 
         .bento-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 16px;
+          gap: 24px;
         }
 
         @media (max-width: 1024px) {
@@ -979,78 +959,67 @@ export default function FeaturesSection() {
 
         @media (max-width: 640px) {
           .bento-grid { grid-template-columns: 1fr; }
-          .features-section { padding: 48px 16px; }
+          .features-section { padding: 60px 20px; }
+          .stats-bar { gap: 16px; }
         }
 
         .bottom-cta {
-          margin-top: 56px;
+          margin-top: 60px;
           text-align: center;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 14px;
+          gap: 16px;
           flex-wrap: wrap;
         }
 
         .cta-primary {
-          background: #0f172a;
-          color: #fff;
+          background: #1a1a1a;
+          color: white;
           border: none;
           border-radius: 12px;
-          padding: 14px 28px;
-          font-size: 14px;
+          padding: 16px 32px;
+          font-size: 15px;
           font-weight: 600;
           font-family: inherit;
           cursor: pointer;
-          transition: all 0.2s;
-          letter-spacing: -0.01em;
+          transition: all 0.3s;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
         }
 
         .cta-primary:hover {
-          background: #1e293b;
-          transform: translateY(-1px);
-          box-shadow: 0 8px 24px rgba(15,23,42,0.2);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+          background: #2a2a2a;
         }
 
         .cta-secondary {
-          background: #fff;
-          color: #374151;
-          border: 1.5px solid #e5e7eb;
+          background: white;
+          color: #1a1a1a;
+          border: 2px solid #e5e5e5;
           border-radius: 12px;
-          padding: 14px 28px;
-          font-size: 14px;
+          padding: 16px 32px;
+          font-size: 15px;
           font-weight: 600;
           font-family: inherit;
           cursor: pointer;
-          transition: all 0.2s;
-          letter-spacing: -0.01em;
+          transition: all 0.3s;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
         }
 
         .cta-secondary:hover {
-          border-color: #9ca3af;
-          transform: translateY(-1px);
+          border-color: #1a1a1a;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
         }
       `}</style>
 
-      <section className="features-section">
+      <section id="features" className="features-section">
         <div className="features-inner">
           <div className="features-header">
-            <div className="features-label">
-              <span
-                style={{
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "50%",
-                  background: "#22c55e",
-                  display: "inline-block",
-                }}
-              />
-              Enterprise Document Collection
-            </div>
+            <div className="features-label">Features</div>
             <h2 className="features-title">
-              Everything you need to collect
-              <br />
-              <em>documents from clients</em>
+              Everything you need
             </h2>
             <p className="features-subtitle">
               Enterprise-grade features designed to streamline your client
@@ -1081,10 +1050,18 @@ export default function FeaturesSection() {
           </div>
 
           <div className="bottom-cta">
-            <button className="cta-primary">
+            <button
+              className="cta-primary"
+              onClick={() => window.location.href = '/auth'}
+            >
               Start collecting documents →
             </button>
-            <button className="cta-secondary">View live demo</button>
+            <button
+              className="cta-secondary"
+              onClick={() => window.location.href = '#how-it-works'}
+            >
+              View live demo
+            </button>
           </div>
         </div>
       </section>
