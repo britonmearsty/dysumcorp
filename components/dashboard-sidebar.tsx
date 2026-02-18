@@ -67,29 +67,29 @@ function UserAccountSection({ onClose }: { onClose: () => void }) {
     "U";
 
   return (
-    <div className="space-y-3 p-3">
+    <div className="space-y-3 p-2">
       {/* User Info Card */}
-      <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-sidebar-border/50">
+      <div className="flex items-center gap-3 p-3 rounded-lg bg-sidebar-hover border border-sidebar-border/50 transition-all duration-200 hover:bg-sidebar-active">
         {user?.image ? (
           <Image
             alt={user.name || "User"}
-            className="rounded-full ring-2 ring-primary/20"
-            height={44}
+            className="rounded-full ring-2 ring-sidebar-primary/20"
+            height={40}
             src={user.image}
-            width={44}
+            width={40}
           />
         ) : (
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center ring-2 ring-primary/20">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center ring-2 ring-sidebar-primary/20">
             <span className="text-white text-sm font-mono font-bold">
               {initials}
             </span>
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-mono font-semibold text-foreground truncate">
+          <p className="text-sm font-mono font-semibold text-sidebar-foreground truncate">
             {user?.name || "User"}
           </p>
-          <p className="text-xs text-muted-foreground font-mono truncate">
+          <p className="text-xs text-sidebar-foreground/60 font-mono truncate">
             {user?.email || "No email"}
           </p>
         </div>
@@ -106,22 +106,22 @@ export function DashboardSidebar() {
     <>
       {/* Mobile menu button */}
       <Button
-        className="lg:hidden fixed top-4 left-4 z-50 bg-sidebar/80 backdrop-blur-sm border border-sidebar-border/50 shadow-lg"
+        className="lg:hidden fixed top-4 left-4 z-50 macos-sidebar border border-sidebar-border shadow-lg hover:bg-sidebar-hover"
         size="icon"
         variant="outline"
         onClick={() => setIsMobileOpen(!isMobileOpen)}
       >
         {isMobileOpen ? (
-          <XIcon className="h-5 w-5" />
+          <XIcon className="h-5 w-5 text-sidebar-foreground" />
         ) : (
-          <MenuIcon className="h-5 w-5" />
+          <MenuIcon className="h-5 w-5 text-sidebar-foreground" />
         )}
       </Button>
 
       {/* Overlay for mobile */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 lg:hidden transition-opacity duration-300"
           role="button"
           tabIndex={0}
           onClick={() => setIsMobileOpen(false)}
@@ -136,13 +136,13 @@ export function DashboardSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-40 h-screen w-72 bg-sidebar backdrop-blur-sm border-r border-sidebar-border/30 transition-transform duration-300 ease-in-out",
+          "fixed lg:sticky top-0 left-0 z-40 h-screen w-72 macos-sidebar border-r border-sidebar-border transition-transform duration-300 ease-in-out",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-3 px-6 py-6 border-b border-sidebar-border/50 bg-sidebar/50 backdrop-blur-sm">
+          <div className="flex items-center gap-3 px-6 py-6 border-b border-sidebar-border macos-sidebar-section">
             <div className="relative">
               <Image
                 alt="Dysumcorp Logo"
@@ -152,15 +152,15 @@ export function DashboardSidebar() {
                 style={{ width: "auto", height: "auto" }}
                 width={36}
               />
-              <div className="absolute -inset-1 bg-primary/20 rounded-full blur-md -z-10" />
+              <div className="absolute -inset-1 bg-sidebar-primary/10 rounded-full blur-md -z-10" />
             </div>
-            <span className="font-mono text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+            <span className="font-mono text-xl font-bold text-sidebar-foreground">
               Dysumcorp
             </span>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto">
+          <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-hide">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
@@ -179,7 +179,7 @@ export function DashboardSidebar() {
           </nav>
 
           {/* User section */}
-          <div className="px-3 py-4 border-t border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm">
+          <div className="px-3 py-4 border-t border-sidebar-border macos-sidebar-section">
             <UserAccountSection onClose={() => setIsMobileOpen(false)} />
           </div>
         </div>

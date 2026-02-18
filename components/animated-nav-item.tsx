@@ -28,10 +28,10 @@ export const AnimatedNavItem = forwardRef<
     <Link
       ref={ref}
       className={cn(
-        "flex items-center gap-3 px-5 py-3 my-0.5 transition-all duration-200 font-mono text-[0.85rem] rounded-md group relative",
+        "flex items-center gap-3 px-4 py-2.5 my-0.5 font-mono text-[0.85rem] rounded-lg group relative macos-nav-item-hover",
         isActive
-          ? "text-foreground"
-          : "text-muted-foreground hover:text-foreground",
+          ? "macos-nav-item-active text-sidebar-accent-foreground font-medium"
+          : "text-sidebar-foreground/70 hover:text-sidebar-foreground",
         className,
       )}
       href={href}
@@ -43,35 +43,35 @@ export const AnimatedNavItem = forwardRef<
       <div className="relative z-10">
         <Icon
           className={cn(
-            "h-[22px] w-[22px] flex-shrink-0 transition-colors duration-200",
+            "h-[20px] w-[20px] flex-shrink-0 transition-colors duration-200",
             isActive
-              ? "text-primary"
+              ? "text-sidebar-primary"
               : isHovered
-                ? "text-foreground"
-                : "text-muted-foreground",
+                ? "text-sidebar-foreground"
+                : "text-sidebar-foreground/60",
           )}
           isHovered={isHovered || isActive}
-          size={22}
+          size={20}
         />
       </div>
 
       {/* Label */}
       <span
         className={cn(
-          "relative z-10 transition-colors duration-200",
+          "relative z-10 transition-colors duration-200 tracking-wide",
           isActive
-            ? "text-foreground font-semibold"
+            ? "text-sidebar-foreground font-semibold"
             : isHovered
-              ? "text-foreground"
-              : "text-muted-foreground",
+              ? "text-sidebar-foreground"
+              : "text-sidebar-foreground/70",
         )}
       >
         {label}
       </span>
 
-      {/* Active indicator - left border */}
+      {/* Active indicator - subtle dot on the right */}
       {isActive && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 bg-primary rounded-r-full" />
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-sidebar-primary rounded-full" />
       )}
     </Link>
   );
