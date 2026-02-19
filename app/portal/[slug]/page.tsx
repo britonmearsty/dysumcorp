@@ -89,6 +89,22 @@ export default function PublicPortalPage() {
       return;
     }
 
+    // Check file sizes - Vercel/Next.js has a 4.5MB limit for API routes
+    const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB to be safe
+    const oversizedFiles = files.filter(f => f.size > MAX_FILE_SIZE);
+    
+    if (oversizedFiles.length > 0) {
+      const fileList = oversizedFiles.map(f => 
+        `${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)`
+      ).join(', ');
+      
+      setErrorMessage(
+        `The following files exceed the 4MB size limit: ${fileList}. ` +
+        `Please contact the portal owner for alternative upload methods for large files.`
+      );
+      return;
+    }
+
     setUploading(true);
     setFileProgress({});
     setUploadStatus("idle");
@@ -267,7 +283,7 @@ export default function PublicPortalPage() {
                   Drag and drop files here, or click to select
                 </p>
                 <p className="text-sm text-muted-foreground font-mono mb-4">
-                  Maximum file size: 50MB per file
+                  Maximum file size: 4MB per file
                 </p>
                 <Input
                   multiple

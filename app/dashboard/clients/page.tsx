@@ -529,7 +529,6 @@ export default function ClientsPage() {
               animate={{ opacity: 1 }}
               className="absolute inset-0 bg-background/40 backdrop-blur-sm"
               exit={{ opacity: 0 }}
-              initial={{ opacity: 0 }}
               onClick={() => setSelectedClient(null)}
             />
             <motion.div
@@ -537,7 +536,6 @@ export default function ClientsPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               className="relative w-full max-w-2xl bg-bg-card rounded-[14px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
             >
               <div className="p-8 border-b border-border bg-muted/50 flex justify-between items-start">
                 <div className="flex items-center gap-4">

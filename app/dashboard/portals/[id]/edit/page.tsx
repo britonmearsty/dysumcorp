@@ -1271,6 +1271,10 @@ export default function EditPortalPage() {
       ? formData.maxFileSize 
       : 50; // Default 50MB
 
+    console.log("[Edit Portal] Form data maxFileSize:", formData.maxFileSize);
+    console.log("[Edit Portal] Final maxFileSize (MB):", finalMaxFileSize);
+    console.log("[Edit Portal] Final maxFileSize (bytes):", finalMaxFileSize * 1024 * 1024);
+
     setSaving(true);
 
     try {
@@ -1286,38 +1290,42 @@ export default function EditPortalPage() {
         }
       }
 
+      const requestBody = {
+        // Identity
+        name: formData.portalName,
+        
+        // Branding
+        primaryColor: formData.primaryColor,
+        textColor: formData.textColor,
+        backgroundColor: formData.backgroundColor,
+        cardBackgroundColor: formData.cardBackgroundColor,
+        logoUrl: logoUrl,
+        
+        // Storage
+        storageProvider: formData.storageProvider,
+        storageFolderId: formData.storageFolderId,
+        storageFolderPath: formData.storageFolderPath,
+        useClientFolders: formData.useClientFolders,
+        
+        // Security
+        password: formData.password || null,
+        requireClientName: formData.requireClientName,
+        requireClientEmail: formData.requireClientEmail,
+        maxFileSize: Math.floor(finalMaxFileSize * 1024 * 1024), // Convert MB to bytes, ensure integer
+        allowedFileTypes: formData.allowedFileTypes,
+        
+        // Messaging
+        welcomeMessage: formData.welcomeMessage || null,
+        submitButtonText: formData.submitButtonText,
+        successMessage: formData.successMessage,
+      };
+
+      console.log("[Edit Portal] Request body:", JSON.stringify(requestBody, null, 2));
+
       const response = await fetch(`/api/portals/${portalId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          // Identity
-          name: formData.portalName,
-          
-          // Branding
-          primaryColor: formData.primaryColor,
-          textColor: formData.textColor,
-          backgroundColor: formData.backgroundColor,
-          cardBackgroundColor: formData.cardBackgroundColor,
-          logoUrl: logoUrl,
-          
-          // Storage
-          storageProvider: formData.storageProvider,
-          storageFolderId: formData.storageFolderId,
-          storageFolderPath: formData.storageFolderPath,
-          useClientFolders: formData.useClientFolders,
-          
-          // Security
-          password: formData.password || null,
-          requireClientName: formData.requireClientName,
-          requireClientEmail: formData.requireClientEmail,
-          maxFileSize: finalMaxFileSize * 1024 * 1024, // Convert MB to bytes
-          allowedFileTypes: formData.allowedFileTypes,
-          
-          // Messaging
-          welcomeMessage: formData.welcomeMessage || null,
-          submitButtonText: formData.submitButtonText,
-          successMessage: formData.successMessage,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
