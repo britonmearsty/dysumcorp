@@ -71,12 +71,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log("[Portal Upload] Starting upload process...");
     const formData = await request.formData();
+    console.log("[Portal Upload] FormData parsed successfully");
     const portalId = formData.get("portalId") as string;
     const files = formData.getAll("files") as File[];
     const passwords = formData.getAll("passwords") as string[];
 
+    console.log(`[Portal Upload] Portal ID: ${portalId}, Files: ${files.length}`);
+
     if (!portalId) {
+      console.log("[Portal Upload] Error: Missing portal ID");
       return NextResponse.json(
         { error: "Portal ID is required" },
         { status: 400 },
@@ -84,10 +89,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (files.length === 0) {
+      console.log("[Portal Upload] Error: No files provided");
       return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
+    // Log file sizes
+    files.forEach((file, i) => {
+      console.log(`[Portal Upload] File ${i + 1}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+    });
+
     // Verify portal exists and get owner info
+    console.log("[Portal Upload] Fetching portal from database...");
     const portal = await prisma.portal.findUnique({
       where: { id: portalId },
       include: {
@@ -96,22 +108,27 @@ export async function POST(request: NextRequest) {
     });
 
     if (!portal) {
+      console.log("[Portal Upload] Error: Portal not found");
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
+    console.log(`[Portal Upload] Portal found: ${portal.name}, Owner: ${portal.user.email}`);
     const userId = portal.userId;
 
     // Get cloud storage token (Google Drive or Dropbox)
+    console.log("[Portal Upload] Checking for Google Drive connection...");
     let accessToken = await getValidToken(userId, "google");
     let provider: "google" | "dropbox" = "google";
 
     if (!accessToken) {
+      console.log("[Portal Upload] No Google Drive, checking Dropbox...");
       accessToken = await getValidToken(userId, "dropbox");
       provider = "dropbox";
     }
 
     // Cloud storage is required - no local fallback
     if (!accessToken) {
+      console.log("[Portal Upload] Error: No cloud storage connected");
       return NextResponse.json(
         {
           error:
@@ -121,31 +138,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log(`[Portal Upload] Using ${provider} for storage`);
+
+    console.log("[Portal Upload] Starting file uploads...");
     const uploadedFiles = await Promise.all(
-      files.map(async (file) => {
+      files.map(async (file, index) => {
+        console.log(`[Portal Upload] Uploading file ${index + 1}/${files.length}: ${file.name}`);
         let storageUrl: string;
         let actualSize = file.size;
 
         // Upload to cloud storage
-        if (provider === "google") {
-          const result = await uploadToGoogleDrive(
-            accessToken,
-            `${portal.name}/${file.name}`,
-            file,
-            file.type || "application/octet-stream",
-          );
+        try {
+          if (provider === "google") {
+            console.log(`[Portal Upload] Uploading to Google Drive: ${file.name}`);
+            const result = await uploadToGoogleDrive(
+              accessToken,
+              `${portal.name}/${file.name}`,
+              file,
+              file.type || "application/octet-stream",
+            );
 
-          storageUrl = result.webViewLink || result.id;
-          actualSize = result.size ? Number(result.size) : file.size;
-        } else {
-          const result = await uploadToDropbox(
-            accessToken,
-            `/${portal.name}/${file.name}`,
-            file,
-          );
+            storageUrl = result.webViewLink || result.id;
+            actualSize = result.size ? Number(result.size) : file.size;
+            console.log(`[Portal Upload] Google Drive upload successful: ${file.name}`);
+          } else {
+            console.log(`[Portal Upload] Uploading to Dropbox: ${file.name}`);
+            const result = await uploadToDropbox(
+              accessToken,
+              `/${portal.name}/${file.name}`,
+              file,
+            );
 
-          storageUrl = result.id;
-          actualSize = result.size ? Number(result.size) : file.size;
+            storageUrl = result.id;
+            actualSize = result.size ? Number(result.size) : file.size;
+            console.log(`[Portal Upload] Dropbox upload successful: ${file.name}`);
+          }
+        } catch (uploadError) {
+          console.error(`[Portal Upload] Failed to upload ${file.name}:`, uploadError);
+          throw uploadError;
         }
 
         // Store file metadata in database
