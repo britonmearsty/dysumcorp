@@ -146,8 +146,8 @@ export default function PublicPortalPage() {
         console.log(`[Upload] Upload credentials received for ${file.name}, provider: ${uploadData.provider}`);
 
         // Step 2: Upload directly to cloud storage
-        let storageUrl: string;
-        let storageFileId: string;
+        let storageUrl: string = "";
+        let storageFileId: string = "";
 
         if (uploadData.provider === "google" && uploadData.method === "chunked") {
           // Google Drive chunked upload through our server
@@ -195,6 +195,11 @@ export default function PublicPortalPage() {
               storageFileId = chunkResult.storageFileId;
               console.log(`[Upload] Chunked upload complete for ${file.name}`);
             }
+          }
+          
+          // Ensure we have the values
+          if (!storageUrl || !storageFileId) {
+            throw new Error("Upload completed but no storage information received");
           }
         } else {
           // Dropbox upload (direct from browser)
