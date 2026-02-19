@@ -310,36 +310,70 @@ export default function PublicPortalPage() {
                     Selected Files ({files.length})
                   </h3>
                   <div className="space-y-2">
-                    {files.map((file, index) => (
-                      <div
-                        key={index}
-                        className="p-3 border border-border rounded"
-                      >
-                        <div className="flex items-center gap-3 mb-2">
-                          <FileText className="w-5 h-5 text-[#334155]" />
-                          <div className="flex-1">
-                            <p className="font-mono text-sm">{file.name}</p>
-                            <p className="text-xs text-muted-foreground font-mono">
-                              {(file.size / 1024 / 1024).toFixed(2)} MB
-                            </p>
+                    {files.map((file, index) => {
+                      const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
+                      const isOversized = file.size > MAX_FILE_SIZE;
+                      
+                      return (
+                        <div
+                          key={index}
+                          className={`p-3 border rounded ${
+                            isOversized 
+                              ? 'border-red-500 bg-red-50 dark:bg-red-900/20' 
+                              : 'border-border'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <FileText className={`w-5 h-5 ${
+                              isOversized ? 'text-red-500' : 'text-[#334155]'
+                            }`} />
+                            <div className="flex-1">
+                              <p className={`font-mono text-sm ${
+                                isOversized ? 'text-red-700 dark:text-red-400' : ''
+                              }`}>
+                                {file.name}
+                                {isOversized && (
+                                  <span className="ml-2 text-xs font-bold">
+                                    ⚠️ TOO LARGE
+                                  </span>
+                                )}
+                              </p>
+                              <p className={`text-xs font-mono ${
+                                isOversized 
+                                  ? 'text-red-600 dark:text-red-400 font-semibold' 
+                                  : 'text-muted-foreground'
+                              }`}>
+                                {(file.size / 1024 / 1024).toFixed(2)} MB
+                                {isOversized && ' (Max: 4MB)'}
+                              </p>
+                            </div>
+                            {uploading && fileProgress[index] !== undefined && (
+                              <span className="text-sm font-mono font-medium">
+                                {fileProgress[index]}%
+                              </span>
+                            )}
                           </div>
                           {uploading && fileProgress[index] !== undefined && (
-                            <span className="text-sm font-mono font-medium">
-                              {fileProgress[index]}%
-                            </span>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                              <div
+                                className="bg-[#334155] h-full transition-all duration-300 ease-out"
+                                style={{ width: `${fileProgress[index]}%` }}
+                              />
+                            </div>
                           )}
                         </div>
-                        {uploading && fileProgress[index] !== undefined && (
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                            <div
-                              className="bg-[#334155] h-full transition-all duration-300 ease-out"
-                              style={{ width: `${fileProgress[index]}%` }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
+                  
+                  {/* Oversized files warning */}
+                  {files.some(f => f.size > 4 * 1024 * 1024) && (
+                    <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
+                      <p className="text-red-700 dark:text-red-400 font-mono text-xs">
+                        ⚠️ Some files exceed the 4MB limit. Please remove them or contact the portal owner for alternative upload methods.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -359,7 +393,8 @@ export default function PublicPortalPage() {
                   files.length === 0 ||
                   uploading ||
                   !uploaderName.trim() ||
-                  !uploaderEmail.trim()
+                  !uploaderEmail.trim() ||
+                  files.some(f => f.size > 4 * 1024 * 1024) // Disable if any file is too large
                 }
                 onClick={handleUpload}
               >
