@@ -23,6 +23,13 @@ export async function GET(
         slug: true,
         customDomain: true,
         whiteLabeled: true,
+        maxFileSize: true,
+        allowedFileTypes: true,
+        requireClientName: true,
+        requireClientEmail: true,
+        welcomeMessage: true,
+        submitButtonText: true,
+        userId: true, // Needed to get storage credentials
       },
     });
 
@@ -30,7 +37,13 @@ export async function GET(
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ portal });
+    // Serialize BigInt
+    const serializedPortal = {
+      ...portal,
+      maxFileSize: portal.maxFileSize.toString(),
+    };
+
+    return NextResponse.json({ portal: serializedPortal });
   } catch (error) {
     console.error("Error fetching portal:", error);
 

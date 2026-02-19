@@ -13,6 +13,13 @@ interface Portal {
   slug: string;
   customDomain: string | null;
   whiteLabeled: boolean;
+  maxFileSize: string; // BigInt as string
+  allowedFileTypes: string[] | null;
+  requireClientName: boolean;
+  requireClientEmail: boolean;
+  welcomeMessage: string | null;
+  submitButtonText: string;
+  userId: string;
 }
 
 export default function PublicPortalPage() {
@@ -89,18 +96,37 @@ export default function PublicPortalPage() {
       return;
     }
 
-    // Check file sizes - Vercel/Next.js has a 4.5MB limit for API routes
-    const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB to be safe
-    const oversizedFiles = files.filter(f => f.size > MAX_FILE_SIZE);
+    // Check file sizes
+    // Note: Portal allows up to portal.maxFileSize, but current implementation
+    // is limited by Vercel's 4.5MB API route body size limit
+    // TODO: Implement direct upload to cloud storage for files > 4MB
+    const portalMaxSize = parseInt(portal.maxFileSize); // in bytes
+    const apiRouteLimit = 4 * 1024 * 1024; // 4MB - Vercel's limit
+    const effectiveLimit = Math.min(portalMaxSize, apiRouteLimit);
     
-    if (oversizedFiles.length > 0) {
-      const fileList = oversizedFiles.map(f => 
+    const oversizedForPortal = files.filter(f => f.size > portalMaxSize);
+    const oversizedForApi = files.filter(f => f.size > apiRouteLimit && f.size <= portalMaxSize);
+    
+    if (oversizedForPortal.length > 0) {
+      const fileList = oversizedForPortal.map(f => 
         `${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)`
       ).join(', ');
       
       setErrorMessage(
-        `The following files exceed the 4MB size limit: ${fileList}. ` +
-        `Please contact the portal owner for alternative upload methods for large files.`
+        `The following files exceed the portal's ${(portalMaxSize / 1024 / 1024).toFixed(0)}MB size limit: ${fileList}`
+      );
+      return;
+    }
+    
+    if (oversizedForApi.length > 0) {
+      const fileList = oversizedForApi.map(f => 
+        `${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)`
+      ).join(', ');
+      
+      setErrorMessage(
+        `The following files exceed the current 4MB upload limit: ${fileList}. ` +
+        `This portal allows files up to ${(portalMaxSize / 1024 / 1024).toFixed(0)}MB, but the upload system ` +
+        `currently supports files up to 4MB. Please contact the portal owner for alternative upload methods.`
       );
       return;
     }
@@ -283,7 +309,12 @@ export default function PublicPortalPage() {
                   Drag and drop files here, or click to select
                 </p>
                 <p className="text-sm text-muted-foreground font-mono mb-4">
-                  Maximum file size: 4MB per file
+                  Maximum file size: {portal ? `${(parseInt(portal.maxFileSize) / 1024 / 1024).toFixed(0)}MB` : '4MB'} per file
+                  {portal && parseInt(portal.maxFileSize) > 4 * 1024 * 1024 && (
+                    <span className="block text-xs mt-1 text-yellow-600 dark:text-yellow-400">
+                      (Current upload system supports up to 4MB)
+                    </span>
+                  )}
                 </p>
                 <Input
                   multiple
@@ -304,15 +335,18 @@ export default function PublicPortalPage() {
               </div>
 
               {/* Selected Files */}
-              {files.length > 0 && (
+              {files.length > 0 && portal && (
                 <div className="mb-6">
                   <h3 className="font-mono font-semibold mb-3">
                     Selected Files ({files.length})
                   </h3>
                   <div className="space-y-2">
                     {files.map((file, index) => {
-                      const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
-                      const isOversized = file.size > MAX_FILE_SIZE;
+                      const portalMaxSize = parseInt(portal.maxFileSize);
+                      const apiRouteLimit = 4 * 1024 * 1024; // 4MB
+                      const isOversizedForPortal = file.size > portalMaxSize;
+                      const isOversizedForApi = file.size > apiRouteLimit && file.size <= portalMaxSize;
+                      const isOversized = isOversizedForPortal || isOversizedForApi;
                       
                       return (
                         <div
@@ -344,7 +378,8 @@ export default function PublicPortalPage() {
                                   : 'text-muted-foreground'
                               }`}>
                                 {(file.size / 1024 / 1024).toFixed(2)} MB
-                                {isOversized && ' (Max: 4MB)'}
+                                {isOversizedForPortal && ` (Portal Max: ${(portalMaxSize / 1024 / 1024).toFixed(0)}MB)`}
+                                {isOversizedForApi && ` (Current Limit: 4MB, Portal Allows: ${(portalMaxSize / 1024 / 1024).toFixed(0)}MB)`}
                               </p>
                             </div>
                             {uploading && fileProgress[index] !== undefined && (
@@ -367,10 +402,20 @@ export default function PublicPortalPage() {
                   </div>
                   
                   {/* Oversized files warning */}
-                  {files.some(f => f.size > 4 * 1024 * 1024) && (
+                  {portal && files.some(f => {
+                    const portalMaxSize = parseInt(portal.maxFileSize);
+                    const apiRouteLimit = 4 * 1024 * 1024;
+                    return f.size > portalMaxSize || (f.size > apiRouteLimit && f.size <= portalMaxSize);
+                  }) && (
                     <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
                       <p className="text-red-700 dark:text-red-400 font-mono text-xs">
-                        ⚠️ Some files exceed the 4MB limit. Please remove them or contact the portal owner for alternative upload methods.
+                        ⚠️ Some files exceed size limits. 
+                        {files.some(f => f.size > parseInt(portal.maxFileSize)) && 
+                          ` Portal maximum: ${(parseInt(portal.maxFileSize) / 1024 / 1024).toFixed(0)}MB.`
+                        }
+                        {files.some(f => f.size > 4 * 1024 * 1024 && f.size <= parseInt(portal.maxFileSize)) && 
+                          ` Current upload system supports up to 4MB. Contact portal owner for larger files.`
+                        }
                       </p>
                     </div>
                   )}
@@ -394,7 +439,11 @@ export default function PublicPortalPage() {
                   uploading ||
                   !uploaderName.trim() ||
                   !uploaderEmail.trim() ||
-                  files.some(f => f.size > 4 * 1024 * 1024) // Disable if any file is too large
+                  (portal && files.some(f => {
+                    const portalMaxSize = parseInt(portal.maxFileSize);
+                    const apiRouteLimit = 4 * 1024 * 1024;
+                    return f.size > portalMaxSize || f.size > apiRouteLimit;
+                  }))
                 }
                 onClick={handleUpload}
               >
