@@ -14,6 +14,10 @@ export async function middleware(request: NextRequest) {
   const isWebhookApi = pathname.startsWith("/api/webhooks");
   const isPublicPortalApi = pathname.startsWith("/api/portals/public");
   const isPublicUploadApi = pathname.startsWith("/api/portals/upload");
+  const isPublicUploadUrlApi = pathname.startsWith("/api/portals/upload-url");
+  const isPublicConfirmUploadApi = pathname.startsWith(
+    "/api/portals/confirm-upload",
+  );
 
   // Public Page routes
   const isAuthPage = pathname.startsWith("/auth");
@@ -45,7 +49,9 @@ export async function middleware(request: NextRequest) {
     !isAuthApi &&
     !isWebhookApi &&
     !isPublicPortalApi &&
-    !isPublicUploadApi
+    !isPublicUploadApi &&
+    !isPublicUploadUrlApi &&
+    !isPublicConfirmUploadApi
   ) {
     if (!sessionToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

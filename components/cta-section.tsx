@@ -3,37 +3,40 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Box, Twitter, Linkedin } from "lucide-react";
+import { FadeIn } from "./animations";
 
 export default function CTASection() {
   return (
     <>
       {/* Final CTA Section */}
       <section className="py-32 px-6">
-        <div className="max-w-6xl mx-auto bg-[#1c1917] rounded-[4rem] p-16 md:p-24 text-center text-stone-50 relative overflow-hidden">
-          <div className="relative z-10">
-            <span className="inline-block mb-6 px-6 py-2 bg-white/10 backdrop-blur rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border border-white/10">
-              Secure Document Exchange
-            </span>
-            <h2 className="text-5xl md:text-7xl font-bold mb-10 serif-font">
-              Ready to transform your file collection?
-            </h2>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-              <Button
-                onClick={() => (window.location.href = "/auth")}
-                className="w-full sm:w-auto px-12 py-6 bg-stone-50 text-[#1c1917] rounded-xl font-bold text-xl hover:scale-105 transition-transform premium-shadow"
-              >
-                Create portal free
-              </Button>
-              <Link
-                href="#pricing"
-                className="w-full sm:w-auto px-12 py-6 bg-white/5 backdrop-blur border border-white/20 rounded-xl font-bold text-xl hover:bg-white/10 transition-colors text-stone-100"
-              >
-                View pricing
-              </Link>
+        <FadeIn delay={0.1}>
+          <div className="max-w-6xl mx-auto bg-[#1c1917] rounded-[4rem] p-16 md:p-24 text-center text-stone-50 relative overflow-hidden">
+            <div className="relative z-10">
+              <span className="inline-block mb-6 px-6 py-2 bg-white/10 backdrop-blur rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border border-white/10">
+                Secure Document Exchange
+              </span>
+              <h2 className="text-5xl md:text-7xl font-bold mb-10 serif-font">
+                Ready to transform your file collection?
+              </h2>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
+                <Button
+                  onClick={() => (window.location.href = "/auth")}
+                  className="w-full sm:w-auto px-12 py-6 bg-stone-50 text-[#1c1917] rounded-xl font-bold text-xl hover:scale-105 transition-transform premium-shadow"
+                >
+                  Create portal free
+                </Button>
+                <Link
+                  href="#pricing"
+                  className="w-full sm:w-auto px-12 py-6 bg-white/5 backdrop-blur border border-white/20 rounded-xl font-bold text-xl hover:bg-white/10 transition-colors text-stone-100"
+                >
+                  View pricing
+                </Link>
+              </div>
             </div>
+            <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-white/[0.03] rounded-full blur-[100px] -mr-64 -mt-64"></div>
           </div>
-          <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-white/[0.03] rounded-full blur-[100px] -mr-64 -mt-64"></div>
-        </div>
+        </FadeIn>
       </section>
 
       {/* Footer */}

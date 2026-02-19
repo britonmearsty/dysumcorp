@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
-
-import { PrismaClient } from "@/lib/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
 import {
   getValidToken,
   uploadToGoogleDrive,
@@ -16,14 +13,10 @@ import {
 import { sendFileUploadNotification } from "@/lib/email-service";
 import { hashPassword } from "@/lib/password-utils";
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-
 // Route segment config for App Router
-export const runtime = 'nodejs';
+export const runtime = "nodejs";
 export const maxDuration = 60; // 60 seconds timeout
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 // Note: Body size limit in App Router is controlled by Vercel's platform limit (4.5 MB)
 // For larger files, use the direct upload endpoints
@@ -117,7 +110,7 @@ export async function POST(request: NextRequest) {
           error:
             "Cloud storage not connected. Please connect Google Drive or Dropbox in Settings to upload files.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -213,13 +206,18 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Portal upload error:", error);
-    
+
     // Provide more detailed error message
-    const errorMessage = error instanceof Error ? error.message : "Upload failed";
-    
-    return NextResponse.json({ 
-      error: "Upload failed", 
-      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined 
-    }, { status: 500 });
+    const errorMessage =
+      error instanceof Error ? error.message : "Upload failed";
+
+    return NextResponse.json(
+      {
+        error: "Upload failed",
+        details:
+          process.env.NODE_ENV === "development" ? errorMessage : undefined,
+      },
+      { status: 500 },
+    );
   }
 }

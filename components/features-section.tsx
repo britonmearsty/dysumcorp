@@ -9,8 +9,8 @@ import {
   Zap,
   CheckCircle,
 } from "lucide-react";
-import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
+import { FadeIn, Stagger, StaggerItem, ScaleIn } from "./animations";
 
 const useCases = [
   {
@@ -112,95 +112,105 @@ export default function FeaturesSection() {
       {/* Use Cases Section */}
       <section id="use-cases" className="py-32 px-6 bg-[#fafaf9]">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs">
-              Industries
-            </span>
-            <h2 className="text-4xl md:text-5xl font-bold mt-4 serif-font text-[#1c1917]">
-              Designed for professionals
-            </h2>
-            <p className="text-stone-700 mt-6 max-w-xl mx-auto text-lg leading-relaxed">
-              Tailored document collection workflows for high-stakes industries
-              where security and client experience are paramount.
-            </p>
-          </div>
+          <FadeIn delay={0.1}>
+            <div className="text-center mb-20">
+              <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs">
+                Industries
+              </span>
+              <h2 className="text-4xl md:text-5xl font-bold mt-4 serif-font text-[#1c1917]">
+                Designed for professionals
+              </h2>
+              <p className="text-stone-700 mt-6 max-w-xl mx-auto text-lg leading-relaxed">
+                Tailored document collection workflows for high-stakes
+                industries where security and client experience are paramount.
+              </p>
+            </div>
+          </FadeIn>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <Stagger
+            delay={0.08}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+          >
             {useCases.map((useCase, index) => (
-              <div
-                key={index}
-                className="bg-white p-10 rounded-[2.5rem] border border-stone-100 premium-shadow-hover"
-              >
-                <useCase.icon className="text-4xl text-stone-900 mb-6" />
-                <h3 className="text-2xl font-bold mb-4 serif-font text-[#1c1917]">
-                  {useCase.title}
-                </h3>
-                <p className="text-stone-600 text-sm leading-relaxed mb-6">
-                  {useCase.desc}
-                </p>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">
-                  {useCase.tag}
-                </span>
-              </div>
+              <StaggerItem key={index}>
+                <div className="bg-white p-10 rounded-[2.5rem] border border-stone-100 premium-shadow-hover h-full">
+                  <useCase.icon className="text-4xl text-stone-900 mb-6" />
+                  <h3 className="text-2xl font-bold mb-4 serif-font text-[#1c1917]">
+                    {useCase.title}
+                  </h3>
+                  <p className="text-stone-600 text-sm leading-relaxed mb-6">
+                    {useCase.desc}
+                  </p>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">
+                    {useCase.tag}
+                  </span>
+                </div>
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
       {/* Features Section */}
       <section id="features" className="py-32 bg-stone-100">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
-            <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs">
-              Capabilities
-            </span>
-            <h2 className="text-4xl md:text-5xl font-bold mt-4 serif-font text-[#1c1917]">
-              Everything you need
-            </h2>
-          </div>
+          <FadeIn>
+            <div className="text-center mb-20">
+              <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs">
+                Capabilities
+              </span>
+              <h2 className="text-4xl md:text-5xl font-bold mt-4 serif-font text-[#1c1917]">
+                Everything you need
+              </h2>
+            </div>
+          </FadeIn>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <Stagger
+            delay={0.1}
+            className="grid grid-cols-1 md:grid-cols-3 gap-10"
+          >
             {features.map((feature, index) => (
-              <div
-                key={index}
-                className={`p-10 rounded-[2.5rem] border border-stone-100 flex flex-col justify-between premium-shadow-hover ${
-                  feature.dark ? "bg-[#1c1917] text-stone-50" : "bg-white"
-                }`}
-              >
-                <div>
-                  <div
-                    className={`inline-flex items-center gap-2 ${
-                      feature.dark
-                        ? "bg-white/10 text-stone-200"
-                        : "bg-stone-100 text-stone-700"
-                    } text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-8`}
-                  >
-                    {feature.dark ? (
-                      <CheckCircle className="w-3 h-3" />
-                    ) : feature.icon ? (
-                      <feature.icon className="w-3 h-3" />
-                    ) : (
-                      <TrendingUp className="w-3 h-3" />
-                    )}
-                    {feature.stat} {feature.statLabel}
+              <StaggerItem key={index}>
+                <div
+                  className={`p-10 rounded-[2.5rem] border border-stone-100 flex flex-col justify-between premium-shadow-hover h-full ${
+                    feature.dark ? "bg-[#1c1917] text-stone-50" : "bg-white"
+                  }`}
+                >
+                  <div>
+                    <div
+                      className={`inline-flex items-center gap-2 ${
+                        feature.dark
+                          ? "bg-white/10 text-stone-200"
+                          : "bg-stone-100 text-stone-700"
+                      } text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-8`}
+                    >
+                      {feature.dark ? (
+                        <CheckCircle className="w-3 h-3" />
+                      ) : feature.icon ? (
+                        <feature.icon className="w-3 h-3" />
+                      ) : (
+                        <TrendingUp className="w-3 h-3" />
+                      )}
+                      {feature.stat} {feature.statLabel}
+                    </div>
+                    <h3
+                      className={`text-2xl font-bold mb-4 serif-font ${feature.dark ? "text-stone-50" : "text-[#1c1917]"}`}
+                    >
+                      {feature.title}
+                    </h3>
+                    <p
+                      className={`leading-relaxed mb-10 ${
+                        feature.dark ? "text-stone-300" : "text-stone-600"
+                      }`}
+                    >
+                      {feature.desc}
+                    </p>
                   </div>
-                  <h3
-                    className={`text-2xl font-bold mb-4 serif-font ${feature.dark ? "text-stone-50" : "text-[#1c1917]"}`}
-                  >
-                    {feature.title}
-                  </h3>
-                  <p
-                    className={`leading-relaxed mb-10 ${
-                      feature.dark ? "text-stone-300" : "text-stone-600"
-                    }`}
-                  >
-                    {feature.desc}
-                  </p>
+                  {feature.visual}
                 </div>
-                {feature.visual}
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
     </>

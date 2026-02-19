@@ -20,7 +20,7 @@ export interface UploadResult {
   method: "api" | "direct";
 }
 
-const SIZE_THRESHOLD = 4 * 1024 * 1024; // 4 MB
+const SIZE_THRESHOLD = 0; // Force all files through direct upload to bypass Vercel limits
 
 // Force rebuild: v2.0
 
@@ -28,9 +28,17 @@ const SIZE_THRESHOLD = 4 * 1024 * 1024; // 4 MB
  * Upload file using the appropriate method based on file size
  */
 export async function uploadFile(
-  options: UploadOptions
+  options: UploadOptions,
 ): Promise<UploadResult> {
-  const { file, portalId, password, uploaderName, uploaderEmail, onProgress, provider } = options;
+  const {
+    file,
+    portalId,
+    password,
+    uploaderName,
+    uploaderEmail,
+    onProgress,
+    provider,
+  } = options;
 
   // Decide upload method based on file size
   if (file.size < SIZE_THRESHOLD) {
@@ -46,13 +54,14 @@ export async function uploadFile(
  * Upload via API route (for files < 4MB)
  */
 async function uploadViaAPI(options: UploadOptions): Promise<UploadResult> {
-  const { file, portalId, password, uploaderName, uploaderEmail, onProgress } = options;
+  const { file, portalId, password, uploaderName, uploaderEmail, onProgress } =
+    options;
 
   try {
     const formData = new FormData();
     formData.append("files", file);
     formData.append("portalId", portalId);
-    
+
     if (password) formData.append("passwords", password);
     if (uploaderName) formData.append("uploaderName", uploaderName);
     if (uploaderEmail) formData.append("uploaderEmail", uploaderEmail);
@@ -102,12 +111,22 @@ async function uploadViaAPI(options: UploadOptions): Promise<UploadResult> {
 /**
  * Upload directly to cloud storage (for files >= 4MB)
  */
-async function uploadDirectToCloud(options: UploadOptions): Promise<UploadResult> {
-  const { file, portalId, password, uploaderName, uploaderEmail, onProgress, provider } = options;
+async function uploadDirectToCloud(
+  options: UploadOptions,
+): Promise<UploadResult> {
+  const {
+    file,
+    portalId,
+    password,
+    uploaderName,
+    uploaderEmail,
+    onProgress,
+    provider,
+  } = options;
 
   try {
-    // Step 1: Get upload URL from API
-    const uploadUrlResponse = await fetch("/api/storage/direct-upload", {
+    // Step 1: Get upload URL from public API (works for unauthenticated portal visitors)
+    const uploadUrlResponse = await fetch("/api/portals/upload-url", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -121,43 +140,49 @@ async function uploadDirectToCloud(options: UploadOptions): Promise<UploadResult
 
     if (!uploadUrlResponse.ok) {
       const errorData = await uploadUrlResponse.json();
-      
+
       // If no storage connected, show helpful error
-      if (uploadUrlResponse.status === 400 && errorData.error?.includes("storage connected")) {
+      if (
+        uploadUrlResponse.status === 400 &&
+        errorData.error?.includes("storage connected")
+      ) {
         throw new Error(
-          "Cloud storage not connected. Please connect Google Drive or Dropbox in Settings to upload files larger than 4 MB."
+          "Cloud storage not connected. This portal cannot accept uploads at this time.",
         );
       }
-      
+
       throw new Error(errorData.error || "Failed to get upload URL");
     }
 
     const uploadData = await uploadUrlResponse.json();
 
-    // Step 2: Upload directly to cloud storage
+    // Step 2: Upload directly to cloud storage (bypasses Vercel)
     let storageUrl: string;
+    let storageFileId: string;
 
     if (uploadData.provider === "google") {
       // Google Drive resumable upload
       const uploadResult = await uploadToGoogleDrive(
         uploadData.uploadUrl,
         file,
-        onProgress
+        onProgress,
       );
-      storageUrl = uploadResult.webViewLink || uploadResult.id;
+      storageUrl = uploadResult.webViewLink || "";
+      storageFileId = uploadResult.id;
     } else {
       // Dropbox upload
       const uploadResult = await uploadToDropbox(
         uploadData.accessToken,
         uploadData.path,
         file,
-        onProgress
+        onProgress,
       );
-      storageUrl = uploadResult.id;
+      storageUrl = "";
+      storageFileId = uploadResult.id;
     }
 
-    // Step 3: Confirm upload and save metadata
-    const confirmResponse = await fetch("/api/storage/confirm-upload", {
+    // Step 3: Confirm upload and save metadata (public endpoint)
+    const confirmResponse = await fetch("/api/portals/confirm-upload", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -166,6 +191,7 @@ async function uploadDirectToCloud(options: UploadOptions): Promise<UploadResult
         fileSize: file.size,
         mimeType: file.type,
         storageUrl,
+        storageFileId,
         password,
         uploaderName,
         uploaderEmail,
@@ -199,7 +225,7 @@ async function uploadDirectToCloud(options: UploadOptions): Promise<UploadResult
 async function uploadToGoogleDrive(
   uploadUrl: string,
   file: File,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
 ): Promise<any> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -224,7 +250,10 @@ async function uploadToGoogleDrive(
     });
 
     xhr.open("PUT", uploadUrl);
-    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.setRequestHeader(
+      "Content-Type",
+      file.type || "application/octet-stream",
+    );
     xhr.send(file);
   });
 }
@@ -236,7 +265,7 @@ async function uploadToDropbox(
   accessToken: string,
   path: string,
   file: File,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
 ): Promise<any> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -269,7 +298,7 @@ async function uploadToDropbox(
         mode: "add",
         autorename: true,
         mute: false,
-      })
+      }),
     );
     xhr.setRequestHeader("Content-Type", "application/octet-stream");
     xhr.send(file);
@@ -281,7 +310,7 @@ async function uploadToDropbox(
  */
 export async function uploadFiles(
   files: File[],
-  options: Omit<UploadOptions, "file">
+  options: Omit<UploadOptions, "file">,
 ): Promise<UploadResult[]> {
   const results: UploadResult[] = [];
 

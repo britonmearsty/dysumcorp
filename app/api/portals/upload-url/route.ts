@@ -1,18 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getValidToken } from "@/lib/storage-api";
-import { getSessionFromRequest } from "@/lib/auth-server";
+import {
+  getRateLimit,
+  uploadRateLimit,
+  fallbackUploadLimit,
+} from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 
-// POST /api/storage/direct-upload - Get presigned URL for direct upload
+// POST /api/portals/upload-url - Get direct upload URL for public portal (no auth required)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSessionFromRequest(request);
+    const ip =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const rateLimitResult = await getRateLimit(
+      uploadRateLimit,
+      fallbackUploadLimit,
+      `upload-url:${ip}`,
+    );
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many upload requests. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": rateLimitResult.limit.toString(),
+            "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+            "X-RateLimit-Reset": rateLimitResult.reset.toString(),
+          },
+        },
+      );
     }
 
     const body = await request.json();
@@ -25,38 +49,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify portal exists and belongs to user
+    // Verify portal exists and is active
     const portal = await prisma.portal.findUnique({
       where: { id: portalId },
+      include: { user: true },
     });
 
     if (!portal) {
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
-    if (portal.userId !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!portal.isActive) {
+      return NextResponse.json(
+        { error: "Portal is not accepting uploads" },
+        { status: 403 },
+      );
     }
 
-    // Get access token for the specified provider
+    // Get the portal owner's storage token
     const accessToken = await getValidToken(
-      session.user.id,
+      portal.userId,
       provider || "google",
     );
 
     if (!accessToken) {
       return NextResponse.json(
-        { error: `No ${provider || "google"} storage connected` },
+        {
+          error:
+            "Cloud storage not connected. This portal cannot accept uploads at this time.",
+        },
         { status: 400 },
       );
     }
 
     // Generate upload URL based on provider
     let uploadUrl: string;
-    let uploadMetadata: any = {};
+    let uploadMetadata: Record<string, any> = {};
 
     if (provider === "dropbox") {
-      // Dropbox doesn't use presigned URLs, return token for client-side SDK
       uploadMetadata = {
         accessToken,
         path: `/${portal.name}/${fileName}`,
@@ -96,11 +126,17 @@ export async function POST(request: NextRequest) {
       ...uploadMetadata,
       portalId,
       fileName,
+      fileSize,
+      rateLimit: {
+        limit: rateLimitResult.limit,
+        remaining: rateLimitResult.remaining,
+        reset: rateLimitResult.reset,
+      },
     });
   } catch (error) {
-    console.error("Direct upload URL generation error:", error);
+    console.error("Public upload URL error:", error);
     return NextResponse.json(
-      { error: "Failed to generate upload URL" },
+      { error: "Failed to get upload URL" },
       { status: 500 },
     );
   }

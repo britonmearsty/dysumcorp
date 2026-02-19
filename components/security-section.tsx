@@ -1,6 +1,7 @@
 "use client";
 
 import { ShieldCheck, Lock, Server, Building } from "lucide-react";
+import { FadeIn, Stagger, StaggerItem } from "./animations";
 
 const certifications = [
   {
@@ -25,7 +26,7 @@ export default function SecuritySection() {
     <section id="security" className="py-32 px-6 bg-[#fafaf9]">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-16 items-center">
-          <div className="flex-1">
+          <FadeIn direction="left" className="flex-1">
             <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs">
               Security First
             </span>
@@ -63,33 +64,32 @@ export default function SecuritySection() {
                 </p>
               </div>
             </div>
-          </div>
+          </FadeIn>
 
-          <div className="flex-1 w-full">
+          <FadeIn direction="right" delay={0.2} className="flex-1 w-full">
             <div className="bg-white rounded-[2.5rem] p-12 premium-shadow">
               <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500 mb-10">
                 Compliance Certifications
               </h4>
-              <div className="space-y-10">
+              <Stagger delay={0.15} className="space-y-10">
                 {certifications.map((cert, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-8 border-b border-stone-100 pb-8 last:border-0 last:pb-0"
-                  >
-                    <div className="w-16 h-16 bg-stone-50 flex items-center justify-center rounded-xl">
-                      <cert.icon className="text-4xl text-stone-900" />
+                  <StaggerItem key={index}>
+                    <div className="flex items-center gap-8 border-b border-stone-100 pb-8 last:border-0 last:pb-0">
+                      <div className="w-16 h-16 bg-stone-50 flex items-center justify-center rounded-xl">
+                        <cert.icon className="text-4xl text-stone-900" />
+                      </div>
+                      <div>
+                        <h5 className="font-bold serif-font text-xl text-[#1c1917]">
+                          {cert.title}
+                        </h5>
+                        <p className="text-sm text-stone-600">{cert.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h5 className="font-bold serif-font text-xl text-[#1c1917]">
-                        {cert.title}
-                      </h5>
-                      <p className="text-sm text-stone-600">{cert.desc}</p>
-                    </div>
-                  </div>
+                  </StaggerItem>
                 ))}
-              </div>
+              </Stagger>
             </div>
-          </div>
+          </FadeIn>
         </div>
       </div>
     </section>

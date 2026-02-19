@@ -1,6 +1,6 @@
 "use client";
 
-import { HardDrive, Cloud, FolderSync, Database } from "lucide-react";
+import { FadeIn, Stagger, StaggerItem } from "./animations";
 
 const integrations = [
   {
@@ -174,27 +174,33 @@ export default function IntegrationsSection() {
   return (
     <section id="integrations" className="py-32 px-6 bg-[#fafaf9]">
       <div className="max-w-7xl mx-auto text-center">
-        <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs">
-          Sync & Automate
-        </span>
-        <h2 className="text-4xl md:text-5xl font-bold mt-4 serif-font mb-20 text-[#1c1917]">
-          Integrated with your stack
-        </h2>
+        <FadeIn>
+          <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs">
+            Sync & Automate
+          </span>
+          <h2 className="text-4xl md:text-5xl font-bold mt-4 serif-font mb-20 text-[#1c1917]">
+            Integrated with your stack
+          </h2>
+        </FadeIn>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <Stagger
+          delay={0.1}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+        >
           {integrations.map((integration, index) => (
-            <div
-              key={index}
-              className="p-10 rounded-[2.5rem] border border-stone-100 bg-white hover:premium-shadow transition-all duration-500 group text-center"
-            >
-              <div className="mb-6 flex justify-center">{integration.icon}</div>
-              <h4 className="font-bold serif-font text-xl mb-2 text-[#1c1917]">
-                {integration.name}
-              </h4>
-              <p className="text-xs text-stone-600">{integration.desc}</p>
-            </div>
+            <StaggerItem key={index}>
+              <div className="p-10 rounded-[2.5rem] border border-stone-100 bg-white hover:premium-shadow transition-all duration-500 group text-center h-full">
+                <div className="mb-6 flex justify-center">
+                  {integration.icon}
+                </div>
+                <h4 className="font-bold serif-font text-xl mb-2 text-[#1c1917]">
+                  {integration.name}
+                </h4>
+                <p className="text-xs text-stone-600">{integration.desc}</p>
+              </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </div>
     </section>
   );
