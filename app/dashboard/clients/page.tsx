@@ -525,6 +525,7 @@ export default function ClientsPage() {
         {selectedClient && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
+              initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="absolute inset-0 bg-background/40 backdrop-blur-sm"
               exit={{ opacity: 0 }}
@@ -532,6 +533,7 @@ export default function ClientsPage() {
               onClick={() => setSelectedClient(null)}
             />
             <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               className="relative w-full max-w-2xl bg-bg-card rounded-[14px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
               exit={{ opacity: 0, scale: 0.95, y: 20 }}

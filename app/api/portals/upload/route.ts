@@ -213,7 +213,13 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Portal upload error:", error);
-
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    
+    // Provide more detailed error message
+    const errorMessage = error instanceof Error ? error.message : "Upload failed";
+    
+    return NextResponse.json({ 
+      error: "Upload failed", 
+      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined 
+    }, { status: 500 });
   }
 }
