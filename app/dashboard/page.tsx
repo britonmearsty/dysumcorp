@@ -561,7 +561,7 @@ export default function DashboardPage() {
                       title="View Portal"
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/portal/${portal.slug}`);
+                        window.open(`/portal/${portal.slug}`, "_blank");
                       }}
                     >
                       <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />

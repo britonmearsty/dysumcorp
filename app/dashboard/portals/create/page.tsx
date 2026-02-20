@@ -15,6 +15,7 @@ import {
   Upload,
   FolderOpen,
   Hash,
+  ExternalLink,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -908,9 +909,32 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-foreground mb-2">
-          Allowed File Types
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-semibold text-foreground">
+            Allowed File Types
+          </label>
+          <button
+            type="button"
+            className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+            onClick={() => {
+              const allTypes = FILE_TYPE_OPTIONS.map((opt) => opt.value);
+              const allSelected = allTypes.every((type) =>
+                formData.allowedFileTypes.includes(type),
+              );
+              if (allSelected) {
+                updateFormData("allowedFileTypes", []);
+              } else {
+                updateFormData("allowedFileTypes", allTypes);
+              }
+            }}
+          >
+            {FILE_TYPE_OPTIONS.every((opt) =>
+              formData.allowedFileTypes.includes(opt.value),
+            )
+              ? "Deselect All"
+              : "Select All"}
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-muted p-4 rounded-xl border border-border">
           {FILE_TYPE_OPTIONS.map((opt) => {
             const isSelected = formData.allowedFileTypes.includes(opt.value);
@@ -1018,7 +1042,11 @@ export default function CreatePortalPage() {
       "image/*",
       "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv",
-    ] as string[], // Default: Images, Documents, Spreadsheets
+      "application/zip,application/x-rar-compressed,application/x-7z-compressed",
+      "video/*",
+      "audio/*",
+      "text/*",
+    ] as string[], // Default: All file types
 
     // Messaging
     welcomeMessage: "",
@@ -2033,6 +2061,21 @@ export default function CreatePortalPage() {
                           >
                             Cancel
                           </Link>
+                          {formData.portalUrl && (
+                            <button
+                              type="button"
+                              className="px-4 py-3 border border-border rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-all font-bold text-sm flex items-center gap-2"
+                              onClick={() =>
+                                window.open(
+                                  `/portal/${formData.portalUrl}`,
+                                  "_blank",
+                                )
+                              }
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                              View Portal
+                            </button>
+                          )}
                           <button
                             className="flex items-center justify-center gap-2 px-6 lg:px-8 py-2.5 lg:py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all shadow-md active:scale-95 disabled:opacity-50 font-bold text-sm"
                             disabled={loading}

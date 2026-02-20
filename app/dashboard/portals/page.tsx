@@ -533,7 +533,9 @@ export default function PortalsPage() {
                   size="sm"
                   title="View Portal"
                   variant="outline"
-                  onClick={() => router.push(`/portal/${portal.slug}`)}
+                  onClick={() =>
+                    window.open(`/portal/${portal.slug}`, "_blank")
+                  }
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                 </Button>
