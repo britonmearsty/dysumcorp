@@ -166,7 +166,7 @@ export async function PATCH(
       updateData.useClientFolders = useClientFolders;
 
     // Security
-    if (password !== undefined) updateData.passwordHash = password || null;
+    if (password !== undefined) updateData.password = password || null;
     if (requireClientName !== undefined)
       updateData.requireClientName = requireClientName;
     if (requireClientEmail !== undefined)
