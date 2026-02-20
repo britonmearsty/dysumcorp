@@ -91,6 +91,7 @@ export function SubscriptionManager({
     }
 
     setIsLoading(true);
+    setMessage(null);
     try {
       const response = await fetch("/api/subscription/change", {
         method: "POST",
@@ -101,17 +102,39 @@ export function SubscriptionManager({
       const data = await response.json();
 
       if (!response.ok) {
-        setMessage({
-          type: "error",
-          text: data.error || "Failed to change plan",
-        });
+        throw new Error(data.error || "Failed to change plan");
+      }
+
+      if (data.checkoutUrl) {
+        // Redirect to checkout for new plan (from free)
+        window.location.href = data.checkoutUrl;
 
         return;
       }
 
-      if (data.checkoutUrl) {
-        // Redirect to checkout for new plan
-        window.location.href = data.checkoutUrl;
+      if (data.redirectToPortal) {
+        // If API tells us to use the portal for plan change
+        setMessage({
+          type: "success",
+          text: "Redirecting to subscription portal to manage your plan...",
+        });
+
+        // Use the auth client to get the portal URL
+        const { authClient } = await import("@/lib/auth-client");
+        const { data: portalData, error: portalError } =
+          await authClient.creem.createPortal();
+
+        if (portalError || !portalData || "error" in portalData) {
+          throw new Error(
+            (portalError as any)?.message ||
+            (portalData as any)?.error ||
+            "Failed to open customer portal",
+          );
+        }
+
+        if ("url" in portalData && portalData.url) {
+          window.location.href = portalData.url;
+        }
 
         return;
       }
@@ -123,8 +146,12 @@ export function SubscriptionManager({
       setTimeout(() => {
         window.location.reload();
       }, 1500);
-    } catch (error) {
-      setMessage({ type: "error", text: "Failed to change plan" });
+    } catch (error: any) {
+      console.error("Change plan error:", error);
+      setMessage({
+        type: "error",
+        text: error.message || "Failed to change plan",
+      });
     } finally {
       setIsLoading(false);
     }

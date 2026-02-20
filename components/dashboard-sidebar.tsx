@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import { Tooltip } from "@heroui/tooltip";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useSession } from "@/lib/auth-client";
+import { useSession, signOut } from "@/lib/auth-client";
 import { AnimatedNavItem } from "@/components/animated-nav-item";
 
 // Animated Icons
@@ -271,6 +271,38 @@ export function DashboardSidebar() {
               isCollapsed={isCollapsed}
               onClose={() => setIsMobileOpen(false)}
             />
+          </div>
+
+          {/* Logout Button */}
+          <div className="px-3 pb-4">
+            {isCollapsed ? (
+              <Tooltip content="Log Out" placement="right">
+                <button
+                  className="w-full flex items-center justify-center px-2 py-2.5 rounded-xl transition-all duration-200 group text-muted-foreground hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400"
+                  type="button"
+                  onClick={() => {
+                    if (confirm("Are you sure you want to log out?")) {
+                      signOut();
+                    }
+                  }}
+                >
+                  <LogOut className="w-5 h-5 flex-shrink-0" />
+                </button>
+              </Tooltip>
+            ) : (
+              <button
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-muted-foreground hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400"
+                type="button"
+                onClick={() => {
+                  if (confirm("Are you sure you want to log out?")) {
+                    signOut();
+                  }
+                }}
+              >
+                <LogOut className="w-5 h-5 flex-shrink-0" />
+                <span className="font-medium text-sm">Log Out</span>
+              </button>
+            )}
           </div>
         </div>
       </aside>

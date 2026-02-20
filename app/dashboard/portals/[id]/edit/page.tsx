@@ -913,13 +913,14 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
             Allowed File Types
           </label>
           <button
-            type="button"
             className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+            type="button"
             onClick={() => {
               const allTypes = FILE_TYPE_OPTIONS.map((opt) => opt.value);
               const allSelected = allTypes.every((type) =>
                 formData.allowedFileTypes.includes(type),
               );
+
               if (allSelected) {
                 updateFormData("allowedFileTypes", []);
               } else {
@@ -1993,8 +1994,8 @@ export default function EditPortalPage() {
                               </Link>
                               {formData.portalUrl && (
                                 <button
-                                  type="button"
                                   className="px-4 py-3 border border-border rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-all font-bold text-sm flex items-center gap-2"
+                                  type="button"
                                   onClick={() =>
                                     window.open(
                                       `/portal/${formData.portalUrl}`,

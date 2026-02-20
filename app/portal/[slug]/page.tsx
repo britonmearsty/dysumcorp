@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
   Upload,
   FileText,
@@ -103,6 +103,7 @@ export default function PublicPortalPage() {
 
     if (!portalPassword.trim()) {
       setPasswordError("Please enter the password");
+
       return;
     }
 
@@ -136,6 +137,7 @@ export default function PublicPortalPage() {
 
       // Filter files by allowed types
       let validFiles = selectedFiles;
+
       if (portalAllowedTypes.length > 0) {
         validFiles = selectedFiles.filter((file) => {
           const fileType = file.type.toLowerCase();
@@ -145,8 +147,10 @@ export default function PublicPortalPage() {
             // Handle wildcard types like "image/*"
             if (allowedType.endsWith("/*")) {
               const baseType = allowedType.replace("/*", "");
+
               return fileType.startsWith(baseType);
             }
+
             // Handle exact MIME types or extensions
             return (
               fileType === allowedType.toLowerCase() ||
@@ -165,6 +169,7 @@ export default function PublicPortalPage() {
 
       // Filter by size
       const oversizedFiles = validFiles.filter((f) => f.size > portalMaxSize);
+
       if (oversizedFiles.length > 0) {
         setErrorMessage(
           `Some files exceed the ${(portalMaxSize / 1024 / 1024).toFixed(0)}MB limit`,
@@ -185,28 +190,34 @@ export default function PublicPortalPage() {
   const handleUpload = async () => {
     if (files.length === 0) {
       setErrorMessage("Please select at least one file");
+
       return;
     }
 
     if (!portal) {
       setErrorMessage("Portal information not loaded");
+
       return;
     }
 
     // Validate required fields based on portal config
     if (portal.requireClientName && !uploaderName.trim()) {
       setErrorMessage("Please enter your name");
+
       return;
     }
 
     if (portal.requireClientEmail) {
       if (!uploaderEmail.trim()) {
         setErrorMessage("Please enter your email");
+
         return;
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
       if (!emailRegex.test(uploaderEmail)) {
         setErrorMessage("Please enter a valid email address");
+
         return;
       }
     }
@@ -249,6 +260,7 @@ export default function PublicPortalPage() {
 
         if (!directUploadResponse.ok) {
           const errorData = await directUploadResponse.json();
+
           throw new Error(errorData.error || "Failed to prepare upload");
         }
 
@@ -283,6 +295,7 @@ export default function PublicPortalPage() {
             const chunk = file.slice(start, end);
 
             const chunkFormData = new FormData();
+
             chunkFormData.append("chunk", chunk);
             chunkFormData.append("portalId", portal.id);
             chunkFormData.append("fileName", file.name);
@@ -302,6 +315,7 @@ export default function PublicPortalPage() {
 
             if (!chunkResponse.ok) {
               const errorData = await chunkResponse.json();
+
               throw new Error(
                 errorData.error || `Failed to upload chunk ${chunkIndex + 1}`,
               );
@@ -351,6 +365,7 @@ export default function PublicPortalPage() {
                 if (xhr.status >= 200 && xhr.status < 300) {
                   try {
                     const response = JSON.parse(xhr.responseText);
+
                     resolve({
                       url: response.id,
                       id: response.id,
@@ -413,6 +428,7 @@ export default function PublicPortalPage() {
 
         if (!confirmResponse.ok) {
           const errorData = await confirmResponse.json();
+
           throw new Error(errorData.error || "Failed to confirm upload");
         }
 
@@ -443,6 +459,7 @@ export default function PublicPortalPage() {
   // Apply branding styles
   const getBrandingStyles = () => {
     if (!portal) return {};
+
     return {
       "--primary-color": portal.primaryColor || "#3b82f6",
       "--text-color": portal.textColor || "#0f172a",
@@ -467,6 +484,7 @@ export default function PublicPortalPage() {
 
   if (!portal) {
     const defaultColors = { primaryColor: "#3b82f6", textColor: "#0f172a" };
+
     return (
       <div
         className="min-h-screen flex items-center justify-center"
@@ -506,9 +524,9 @@ export default function PublicPortalPage() {
           <div className="text-center mb-6">
             {portal.logoUrl && (
               <img
-                src={portal.logoUrl}
                 alt={portal.name}
                 className="w-16 h-16 mx-auto mb-4 object-contain"
+                src={portal.logoUrl}
               />
             )}
             <h1
@@ -522,21 +540,21 @@ export default function PublicPortalPage() {
             </p>
           </div>
 
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+          <form className="space-y-4" onSubmit={handlePasswordSubmit}>
             <div className="relative">
               <Lock
                 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50"
                 style={{ color: portal.textColor }}
               />
               <input
-                type="password"
                 className="w-full pl-12 pr-4 py-3 rounded-xl border"
+                placeholder="Enter password"
                 style={{
                   backgroundColor: portal.backgroundColor,
                   borderColor: portal.primaryColor + "30",
                   color: portal.textColor,
                 }}
-                placeholder="Enter password"
+                type="password"
                 value={portalPassword}
                 onChange={(e) => setPortalPassword(e.target.value)}
               />
@@ -545,10 +563,10 @@ export default function PublicPortalPage() {
               <p className="text-sm text-red-500">{passwordError}</p>
             )}
             <Button
-              type="submit"
               className="w-full rounded-xl"
-              style={{ backgroundColor: portal.primaryColor }}
               disabled={authenticating}
+              style={{ backgroundColor: portal.primaryColor }}
+              type="submit"
             >
               {authenticating ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -576,9 +594,9 @@ export default function PublicPortalPage() {
           <div className="flex items-center gap-4">
             {portal.logoUrl && (
               <img
-                src={portal.logoUrl}
                 alt={portal.name}
                 className="w-12 h-12 object-contain"
+                src={portal.logoUrl}
               />
             )}
             <div>
@@ -671,11 +689,11 @@ export default function PublicPortalPage() {
                         </label>
                         <Input
                           className="rounded-xl"
+                          placeholder="John Doe"
                           style={{
                             borderColor: portal.primaryColor + "30",
                             color: portal.textColor,
                           }}
-                          placeholder="John Doe"
                           type="text"
                           value={uploaderName}
                           onChange={(e) => setUploaderName(e.target.value)}
@@ -692,11 +710,11 @@ export default function PublicPortalPage() {
                         </label>
                         <Input
                           className="rounded-xl"
+                          placeholder="john@example.com"
                           style={{
                             borderColor: portal.primaryColor + "30",
                             color: portal.textColor,
                           }}
-                          placeholder="john@example.com"
                           type="email"
                           value={uploaderEmail}
                           onChange={(e) => setUploaderEmail(e.target.value)}
@@ -754,11 +772,11 @@ export default function PublicPortalPage() {
                   />
                   <Button
                     className="rounded-xl"
-                    variant="outline"
                     style={{
                       borderColor: portal.primaryColor,
                       color: portal.primaryColor,
                     }}
+                    variant="outline"
                     onClick={() =>
                       document.getElementById("file-upload")?.click()
                     }
@@ -835,9 +853,9 @@ export default function PublicPortalPage() {
                                   </span>
                                 )}
                               <button
-                                onClick={() => removeFile(index)}
                                 className="p-1 hover:bg-red-50 rounded"
                                 disabled={uploading}
+                                onClick={() => removeFile(index)}
                               >
                                 <X className="w-4 h-4 text-red-500" />
                               </button>
@@ -862,13 +880,13 @@ export default function PublicPortalPage() {
                 {/* Upload Button */}
                 <Button
                   className="w-full rounded-xl"
-                  style={{ backgroundColor: portal.primaryColor }}
                   disabled={
                     files.length === 0 ||
                     uploading ||
                     (portal.requireClientName && !uploaderName.trim()) ||
                     (portal.requireClientEmail && !uploaderEmail.trim())
                   }
+                  style={{ backgroundColor: portal.primaryColor }}
                   onClick={handleUpload}
                 >
                   {uploading ? (

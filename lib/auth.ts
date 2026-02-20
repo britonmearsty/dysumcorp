@@ -154,6 +154,7 @@ export const auth = betterAuth({
       },
       onGrantAccess: async ({ customer, metadata }) => {
         const planId = metadata?.planId as string | undefined;
+
         if (planId && planId !== "free" && customer?.email) {
           await prisma.user.updateMany({
             where: { email: customer.email },

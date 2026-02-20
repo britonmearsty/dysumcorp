@@ -32,11 +32,11 @@ export function EmailLayout({ previewText, children }: EmailLayoutProps) {
           <Container className="mx-auto my-10 max-w-[600px] rounded-lg bg-white p-8">
             <Section className="mt-4">
               <Img
-                src={`${baseUrl}/logo.svg`}
-                width="40"
-                height="40"
                 alt="DysumCorp"
                 className="mx-auto"
+                height="40"
+                src={`${baseUrl}/logo.svg`}
+                width="40"
               />
             </Section>
             {children}

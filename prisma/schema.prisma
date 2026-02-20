@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
@@ -14,20 +8,20 @@ datasource db {
 }
 
 model User {
-  id              String    @id @default(cuid())
-  name            String?
-  email           String    @unique
-  emailVerified   Boolean   @default(false)
-  image           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  sessions        Session[]
-  accounts        Account[]
-  creemCustomerId String?
-  hadTrial        Boolean?  @default(false)
-  subscriptionPlan String?  @default("free")
-  subscriptionStatus String? @default("active")
-  portals         Portal[]
+  id                 String    @id @default(cuid())
+  name               String?
+  email              String    @unique
+  emailVerified      Boolean   @default(false)
+  image              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  creemCustomerId    String?
+  hadTrial           Boolean?  @default(false)
+  subscriptionPlan   String?   @default("free")
+  subscriptionStatus String?   @default("active")
+  accounts           Account[]
+  portals            Portal[]
+  sessions           Session[]
 
   @@map("user")
 }
@@ -97,78 +91,69 @@ model Creem_subscription {
 }
 
 model Portal {
-  id                    String   @id @default(cuid())
-  name                  String
-  slug                  String   @unique
-  customDomain          String?  @unique
-  whiteLabeled          Boolean  @default(false)
-  isActive              Boolean  @default(true)
-  userId                String
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Branding
-  primaryColor          String   @default("#3b82f6")
-  textColor             String   @default("#0f172a")
-  backgroundColor       String   @default("#ffffff")
-  cardBackgroundColor   String   @default("#ffffff")
-  logoUrl               String?
-  
-  // Storage
-  storageProvider       String?  // "google_drive" or "dropbox"
-  storageFolderId       String?
-  storageFolderPath     String?
-  useClientFolders      Boolean  @default(false)
-  
-  // Security
-  password              String?
-  requireClientName     Boolean  @default(true)
-  requireClientEmail    Boolean  @default(false)
-  maxFileSize           BigInt   @default(52428800) // 50MB in bytes
-  allowedFileTypes      String[] @default([])
-  
-  // Messaging
-  welcomeMessage        String?
-  submitButtonText      String   @default("Initialize Transfer")
-  successMessage        String   @default("Transmission Verified")
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  files                 File[]
-  
+  id                  String   @id @default(cuid())
+  name                String
+  slug                String   @unique
+  customDomain        String?  @unique
+  whiteLabeled        Boolean  @default(false)
+  isActive            Boolean  @default(true)
+  userId              String
+  primaryColor        String   @default("#3b82f6")
+  textColor           String   @default("#0f172a")
+  backgroundColor     String   @default("#ffffff")
+  cardBackgroundColor String   @default("#ffffff")
+  logoUrl             String?
+  storageProvider     String?
+  storageFolderId     String?
+  storageFolderPath   String?
+  useClientFolders    Boolean  @default(false)
+  password            String?
+  requireClientName   Boolean  @default(true)
+  requireClientEmail  Boolean  @default(false)
+  maxFileSize         BigInt   @default(52428800)
+  allowedFileTypes    String[] @default([])
+  welcomeMessage      String?
+  submitButtonText    String   @default("Initialize Transfer")
+  successMessage      String   @default("Transmission Verified")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  files               File[]
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@map("portal")
 }
 
 model File {
-  id              String   @id @default(cuid())
-  name            String
-  size            BigInt   // Size in bytes
-  mimeType        String
-  storageUrl      String
-  portalId        String
-  portal          Portal   @relation(fields: [portalId], references: [id], onDelete: Cascade)
-  uploadedAt      DateTime @default(now())
-  expiresAt       DateTime?
-  passwordHash    String?
-  downloads       Int      @default(0)
-  uploaderName    String?  // Client/uploader name
-  uploaderEmail   String?  // Client/uploader email
-  
+  id            String    @id @default(cuid())
+  name          String
+  size          BigInt
+  mimeType      String
+  storageUrl    String
+  portalId      String
+  uploadedAt    DateTime  @default(now())
+  expiresAt     DateTime?
+  passwordHash  String?
+  downloads     Int       @default(0)
+  uploaderName  String?
+  uploaderEmail String?
+  portal        Portal    @relation(fields: [portalId], references: [id], onDelete: Cascade)
+
   @@index([portalId])
   @@index([uploaderEmail])
   @@map("file")
 }
 
 model UsageTracking {
-  id              String   @id @default(cuid())
-  userId          String
-  month           String   // Format: YYYY-MM
-  storageUsed     BigInt   @default(0) // Bytes
-  portalsCreated  Int      @default(0)
-  filesUploaded   Int      @default(0)
-  bandwidth       BigInt   @default(0) // Bytes transferred
-  updatedAt       DateTime @updatedAt
-  
+  id             String   @id @default(cuid())
+  userId         String
+  month          String
+  storageUsed    BigInt   @default(0)
+  portalsCreated Int      @default(0)
+  filesUploaded  Int      @default(0)
+  bandwidth      BigInt   @default(0)
+  updatedAt      DateTime @updatedAt
+
   @@unique([userId, month])
   @@index([userId])
   @@map("usage_tracking")

@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { render } from "@react-email/render";
+
 import {
   WelcomeEmail,
   SignInEmail,
@@ -15,6 +16,7 @@ function getResendClient() {
   if (!resend && process.env.RESEND_API_KEY) {
     resend = new Resend(process.env.RESEND_API_KEY);
   }
+
   return resend;
 }
 
@@ -42,12 +44,15 @@ async function sendEmailInternal({
   try {
     if (!process.env.RESEND_API_KEY) {
       console.warn("RESEND_API_KEY not configured, skipping email send");
+
       return { success: false, error: "Email service not configured" };
     }
 
     const resendClient = getResendClient();
+
     if (!resendClient) {
       console.warn("Failed to initialize Resend client");
+
       return { success: false, error: "Email service not configured" };
     }
 
@@ -60,12 +65,14 @@ async function sendEmailInternal({
 
     if (error) {
       console.error("Email send error:", error);
+
       return { success: false, error };
     }
 
     return { success: true, data };
   } catch (error) {
     console.error("Email service error:", error);
+
     return { success: false, error };
   }
 }
@@ -283,6 +290,7 @@ export async function sendFileUploadNotification({
 
 function parseFileSize(size: string): number {
   const match = size.match(/^([\d.]+)\s*(B|KB|MB|GB|TB)?$/i);
+
   if (!match) return 0;
   const value = parseFloat(match[1]);
   const unit = (match[2] || "B").toUpperCase();
@@ -293,6 +301,7 @@ function parseFileSize(size: string): number {
     GB: 1024 * 1024 * 1024,
     TB: 1024 * 1024 * 1024 * 1024,
   };
+
   return value * (units[unit] || 1);
 }
 

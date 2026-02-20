@@ -1,14 +1,6 @@
 import { NextResponse } from "next/server";
 import { cancelSubscription } from "@creem_io/better-auth/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
-
-import { auth } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import { auth, prisma } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -20,48 +12,88 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user's Creem subscription
-    const creemSubscription = await prisma.creem_subscription.findFirst({
-      where: { referenceId: session.user.id },
+    // Get user's current data
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        creemCustomerId: true,
+        subscriptionStatus: true,
+      },
     });
 
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Get user's Creem subscription
+    // First try by referenceId (which should be the user's ID)
+    let creemSubscription = await prisma.creem_subscription.findFirst({
+      where: { referenceId: user.id },
+      orderBy: { periodEnd: "desc" },
+    });
+
+    // If not found, try by creemCustomerId
+    if (!creemSubscription && user.creemCustomerId) {
+      creemSubscription = await prisma.creem_subscription.findFirst({
+        where: { creemCustomerId: user.creemCustomerId },
+        orderBy: { periodEnd: "desc" },
+      });
+    }
+
     if (!creemSubscription?.creemSubscriptionId) {
+      console.error("❌ No active subscription found for user:", user.id);
+
       return NextResponse.json(
-        { error: "No active subscription found" },
+        {
+          error:
+            "No active subscription found in our records. If you believe this is an error, please use the Customer Portal to manage your subscription.",
+        },
         { status: 404 },
       );
     }
 
     // Cancel subscription in Creem
-    const result = await cancelSubscription(
-      {
-        apiKey: process.env.CREEM_API_KEY!,
-        testMode: process.env.NODE_ENV === "development",
-      },
-      creemSubscription.creemSubscriptionId,
-    );
+    try {
+      const result = await cancelSubscription(
+        {
+          apiKey: process.env.CREEM_API_KEY!,
+          testMode: process.env.NODE_ENV === "development",
+        },
+        creemSubscription.creemSubscriptionId,
+      );
 
-    if (!result) {
+      if (!result) {
+        throw new Error("Creem returned failure when cancelling");
+      }
+    } catch (creemError: any) {
+      console.error("❌ Creem cancellation error:", creemError);
+
       return NextResponse.json(
-        { error: "Failed to cancel subscription" },
+        {
+          error: `Failed to cancel via payment provider: ${creemError.message || "Unknown error"}`,
+        },
         { status: 500 },
       );
     }
 
     // Update local database
     await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: user.id },
       data: {
         subscriptionStatus: "cancelled",
       },
     });
 
-    await prisma.creem_subscription.update({
-      where: { id: creemSubscription.id },
-      data: {
-        cancelAtPeriodEnd: true,
-      },
-    });
+    if (creemSubscription.id) {
+      await prisma.creem_subscription.update({
+        where: { id: creemSubscription.id },
+        data: {
+          cancelAtPeriodEnd: true,
+          status: "cancelled",
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,

@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { Box } from "lucide-react";
 import Link from "next/link";
 
-import { useSession, signIn } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
 export default function AuthPage() {
@@ -30,12 +30,15 @@ export default function AuthPage() {
       });
 
       const location = response.headers.get("location");
+
       if (location) {
         window.location.href = location;
+
         return;
       }
 
       const data = await response.json();
+
       if (data?.url) {
         window.location.href = data.url;
       } else if (data?.data?.url) {

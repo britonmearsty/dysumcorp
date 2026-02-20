@@ -1,15 +1,7 @@
 import { NextResponse } from "next/server";
 import { createCheckout } from "@creem_io/better-auth/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
-
-import { auth } from "@/lib/auth-server";
+import { auth, prisma } from "@/lib/auth";
 import { PRICING_PLANS } from "@/config/pricing";
-import { PrismaClient } from "@/lib/generated/prisma/client";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
 
 export async function POST(request: Request) {
   try {

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
 interface ConnectionStatus {
@@ -49,33 +48,38 @@ export default function StoragePage() {
     }
   };
 
-  const handleConnect = (provider: "google" | "dropbox") => {
+  const handleConnect = async (provider: "google" | "dropbox") => {
     setActionLoading(provider);
-    signIn
-      .social({
-        provider,
-        callbackURL: "/dashboard/storage",
-      })
-      .then((response: any) => {
-        if (response?.data) {
-          const data =
-            typeof response.data === "string"
-              ? JSON.parse(response.data)
-              : response.data;
-          if (data?.url) {
-            window.location.href = data.url;
-            return;
-          }
-        }
-        setActionLoading(null);
-      })
-      .catch((err: any) => {
-        console.error("Failed to connect:", err);
-        setActionLoading(null);
+
+    try {
+      const response = await fetch("/api/auth/sign-in/social", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider, callbackURL: "/dashboard/storage" }),
       });
-    setTimeout(() => {
-      setActionLoading((prev) => (prev ? null : prev));
-    }, 5000);
+
+      const location = response.headers.get("location");
+
+      if (location) {
+        window.location.href = location;
+
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else if (data?.data?.url) {
+        window.location.href = data.data.url;
+      } else {
+        console.error("No redirect URL found:", data);
+        setActionLoading(null);
+      }
+    } catch (err) {
+      console.error("Failed to connect:", err);
+      setActionLoading(null);
+    }
   };
 
   const handleDisconnect = async (provider: "google" | "dropbox") => {
