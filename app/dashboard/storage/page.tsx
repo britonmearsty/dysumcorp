@@ -59,23 +59,15 @@ export default function StoragePage() {
       });
 
       const location = response.headers.get("location");
-<<<<<<< HEAD
 
       if (location) {
         window.location.href = location;
 
-=======
-      if (location) {
-        window.location.href = location;
->>>>>>> cff97652f7703b9f577d3f6f28f1f0c0bc171070
         return;
       }
 
       const data = await response.json();
-<<<<<<< HEAD
 
-=======
->>>>>>> cff97652f7703b9f577d3f6f28f1f0c0bc171070
       if (data?.url) {
         window.location.href = data.url;
       } else if (data?.data?.url) {
@@ -88,13 +80,10 @@ export default function StoragePage() {
       console.error("Failed to connect:", err);
       setActionLoading(null);
     }
-<<<<<<< HEAD
-=======
 
     setTimeout(() => {
       setActionLoading((prev) => (prev ? null : prev));
     }, 10000);
->>>>>>> cff97652f7703b9f577d3f6f28f1f0c0bc171070
   };
 
   const handleDisconnect = async (provider: "google" | "dropbox") => {
