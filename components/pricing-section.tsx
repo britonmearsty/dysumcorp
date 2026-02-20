@@ -1,8 +1,10 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
 import { FadeIn, Stagger, StaggerItem } from "./animations";
+
+import { Button } from "@/components/ui/button";
 
 const pricingPlans = [
   {
@@ -51,28 +53,34 @@ const pricingPlans = [
 
 export default function PricingSection() {
   return (
-    <section id="pricing" className="py-32 px-6 bg-[#fafaf9]">
+    <section
+      className="py-16 sm:py-24 lg:py-32 px-4 sm:px-6 bg-[#fafaf9]"
+      id="pricing"
+    >
       <div className="max-w-7xl mx-auto">
         <FadeIn>
-          <div className="text-center mb-20">
+          <div className="text-center mb-12 sm:mb-20">
             <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs">
               Pricing Plans
             </span>
-            <h2 className="text-4xl md:text-5xl font-bold mt-4 serif-font text-[#1c1917]">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mt-4 serif-font text-[#1c1917]">
               Transparent investment
             </h2>
-            <p className="text-stone-700 mt-6 max-w-xl mx-auto text-lg leading-relaxed">
+            <p className="text-stone-700 mt-4 sm:mt-6 max-w-xl mx-auto text-base sm:text-lg leading-relaxed px-2 sm:px-0">
               Scale your collection process with plans designed for individuals,
               growing teams, and large institutions.
             </p>
           </div>
         </FadeIn>
 
-        <Stagger delay={0.15} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <Stagger
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8"
+          delay={0.15}
+        >
           {pricingPlans.map((plan, index) => (
             <StaggerItem key={index}>
               <div
-                className={`p-12 rounded-[2.5rem] flex flex-col border premium-shadow-hover relative h-full ${
+                className={`p-6 sm:p-8 lg:p-12 rounded-2xl lg:rounded-[2.5rem] flex flex-col border premium-shadow-hover relative h-full ${
                   plan.dark
                     ? "bg-[#1c1917] text-stone-50 border-transparent"
                     : plan.popular

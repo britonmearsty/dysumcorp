@@ -12,18 +12,13 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
-  Eye,
-  EyeOff,
   Upload,
   FolderOpen,
-  RefreshCw,
   Hash,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Select, SelectItem } from "@heroui/react";
-import { Checkbox } from "@heroui/react";
 
 import { Button } from "@/components/ui/button";
 import { usePaywall } from "@/components/paywall-modal";
@@ -72,20 +67,28 @@ const FolderNode: React.FC<FolderNodeProps> = ({
 
   return (
     <div className="pl-4">
-      <div className={`flex items-center justify-between py-2 hover:bg-muted/50 transition-colors group rounded-lg pr-2 ${
-        isSelected ? 'bg-primary/10 border-l-2 border-primary' : ''
-      }`}>
+      <div
+        className={`flex items-center justify-between py-2 hover:bg-muted/50 transition-colors group rounded-lg pr-2 ${
+          isSelected ? "bg-primary/10 border-l-2 border-primary" : ""
+        }`}
+      >
         <button
+          className="flex items-center gap-2 text-left flex-1"
           type="button"
           onClick={() => navigateToFolder(folder)}
-          className="flex items-center gap-2 text-left flex-1"
         >
-          <FolderOpen className={`w-4 h-4 flex-shrink-0 ${
-            isSelected ? 'text-primary' : 'text-warning'
-          }`} />
-          <span className={`text-sm font-medium truncate ${
-            isSelected ? 'text-primary font-semibold' : 'text-muted-foreground group-hover:text-foreground'
-          }`}>
+          <FolderOpen
+            className={`w-4 h-4 flex-shrink-0 ${
+              isSelected ? "text-primary" : "text-warning"
+            }`}
+          />
+          <span
+            className={`text-sm font-medium truncate ${
+              isSelected
+                ? "text-primary font-semibold"
+                : "text-muted-foreground group-hover:text-foreground"
+            }`}
+          >
             {folder.name}
           </span>
           {isSelected && (
@@ -95,9 +98,9 @@ const FolderNode: React.FC<FolderNodeProps> = ({
 
         {subfolders.length > 0 && (
           <button
+            className="p-1 hover:bg-muted rounded-md transition-colors"
             type="button"
             onClick={() => toggleFolder(folder.id)}
-            className="p-1 hover:bg-muted rounded-md transition-colors"
           >
             <ChevronRight
               className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`}
@@ -111,11 +114,11 @@ const FolderNode: React.FC<FolderNodeProps> = ({
           {subfolders.map((sub: StorageFolder) => (
             <FolderNode
               key={sub.id}
+              expandedFolders={expandedFolders}
               folder={sub}
               navigateToFolder={navigateToFolder}
-              expandedFolders={expandedFolders}
-              toggleFolder={toggleFolder}
               selectedFolderId={selectedFolderId}
+              toggleFolder={toggleFolder}
             />
           ))}
         </div>
@@ -139,7 +142,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -159,14 +162,14 @@ const StorageSection: React.FC<StorageSectionProps> = ({
       !loadingAccounts &&
       accounts.length > 0 &&
       (!formData.storageProvider ||
-        (!loadingFolders &&
-          folders.length === 0 &&
-          folderPath.length === 0))
+        (!loadingFolders && folders.length === 0 && folderPath.length === 0))
     ) {
       const firstAccount = accounts[0];
+
       if (firstAccount) {
         const storageProvider =
           firstAccount.provider === "google" ? "google_drive" : "dropbox";
+
         selectStorageProvider(storageProvider);
       }
     }
@@ -181,14 +184,20 @@ const StorageSection: React.FC<StorageSectionProps> = ({
   async function fetchAccounts() {
     try {
       const res = await fetch("/api/storage/connections");
+
       if (res.ok) {
         const data = await res.json();
         // Show ALL accounts, not just connected ones
         // This way users can see disconnected accounts and know they need to reconnect
         const allAccounts = data.accounts || [];
+
         setAccounts(allAccounts);
       } else {
-        console.error("Failed to fetch storage connections:", res.status, await res.text());
+        console.error(
+          "Failed to fetch storage connections:",
+          res.status,
+          await res.text(),
+        );
       }
     } catch (error) {
       console.error("Error fetching accounts:", error);
@@ -207,10 +216,12 @@ const StorageSection: React.FC<StorageSectionProps> = ({
 
     try {
       const rootRes = await fetch(
-        `/api/storage/list?provider=${provider}&rootOnly=true`
+        `/api/storage/list?provider=${provider}&rootOnly=true`,
       );
+
       if (rootRes.ok) {
         const rootFolder = await rootRes.json();
+
         if (rootFolder && rootFolder.id) {
           setFolderPath([rootFolder]);
           updateFormData("storageFolderId", rootFolder.id);
@@ -229,12 +240,15 @@ const StorageSection: React.FC<StorageSectionProps> = ({
     setLoadingFolders(true);
     try {
       const params = new URLSearchParams({ provider });
+
       if (parentFolderId) {
         params.set("parentFolderId", parentFolderId);
       }
       const res = await fetch(`/api/storage/list?${params}`);
+
       if (res.ok) {
         const data = await res.json();
+
         setFolders(data);
       }
     } catch (error) {
@@ -265,6 +279,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
 
       if (res.ok) {
         const newFolder = await res.json();
+
         setNewFolderName("");
         setIsCreatingFolder(false);
         await fetchFolders(formData.storageProvider, parentId);
@@ -280,6 +295,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
   function navigateToBreadcrumb(index: number) {
     const newPath = folderPath.slice(0, index + 1);
     const currentFolder = newPath[newPath.length - 1];
+
     setFolderPath(newPath);
     updateFormData("storageFolderId", currentFolder.id);
     updateFormData("storageFolderPath", currentFolder.path);
@@ -288,20 +304,20 @@ const StorageSection: React.FC<StorageSectionProps> = ({
 
   function navigateToFolder(folder: StorageFolder) {
     const newPath = [...folderPath, folder];
+
     setFolderPath(newPath);
     updateFormData("storageFolderId", folder.id);
-    updateFormData(
-      "storageFolderPath",
-      newPath.map((f) => f.name).join("/")
-    );
+    updateFormData("storageFolderPath", newPath.map((f) => f.name).join("/"));
     fetchFolders(formData.storageProvider, folder.id);
   }
 
   const toggleFolder = (id: string) => {
     setExpandedFolders((prev) => {
       const newSet = new Set(prev);
+
       if (newSet.has(id)) newSet.delete(id);
       else newSet.add(id);
+
       return newSet;
     });
   };
@@ -319,6 +335,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
       });
 
       const data = await response.json();
+
       setHealthCheckResults(data);
 
       if (data.success && data.createdAccounts > 0) {
@@ -347,7 +364,8 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                   Storage Account Issues Detected
                 </h4>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Your storage accounts need to be reconnected. Please go to Settings to fix this issue.
+                  Your storage accounts need to be reconnected. Please go to
+                  Settings to fix this issue.
                 </p>
                 <div className="space-y-2">
                   {accounts
@@ -384,8 +402,8 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                 </div>
                 <div className="mt-4 flex items-center gap-3">
                   <Link
-                    href="/dashboard/storage"
                     className="inline-flex items-center gap-2 px-4 py-2 bg-warning text-warning-foreground rounded-lg text-sm font-medium hover:bg-warning/90 transition-colors"
+                    href="/dashboard/storage"
                   >
                     Reconnect Storage
                     <ChevronRight className="w-4 h-4" />
@@ -407,7 +425,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
             name: "Google Drive",
             icon: Cloud,
             disabled: !accounts.find(
-              (a) => a.provider === "google" && a.storageStatus === "ACTIVE"
+              (a) => a.provider === "google" && a.storageStatus === "ACTIVE",
             ),
           },
           {
@@ -415,7 +433,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
             name: "Dropbox",
             icon: Cloud,
             disabled: !accounts.find(
-              (a) => a.provider === "dropbox" && a.storageStatus === "ACTIVE"
+              (a) => a.provider === "dropbox" && a.storageStatus === "ACTIVE",
             ),
           },
         ].map((provider) => {
@@ -424,23 +442,23 @@ const StorageSection: React.FC<StorageSectionProps> = ({
           const account = accounts.find(
             (a) =>
               (a.provider === "google" ? "google_drive" : "dropbox") ===
-              provider.id
+              provider.id,
           );
           const hasAccount = !!account;
 
           return (
             <button
               key={provider.id}
-              type="button"
-              disabled={provider.disabled}
-              onClick={() =>
-                selectStorageProvider(provider.id as "google_drive" | "dropbox")
-              }
               className={`relative p-5 rounded-2xl border-2 transition-all flex flex-col items-center gap-3 ${
                 isActive
                   ? "border-primary bg-muted"
                   : "border-border bg-card hover:border-muted-foreground hover:bg-muted"
               } ${provider.disabled ? "opacity-40 grayscale cursor-not-allowed" : ""}`}
+              disabled={provider.disabled}
+              type="button"
+              onClick={() =>
+                selectStorageProvider(provider.id as "google_drive" | "dropbox")
+              }
             >
               <div
                 className={`p-3 rounded-xl ${isActive ? "bg-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground"}`}
@@ -547,12 +565,12 @@ const StorageSection: React.FC<StorageSectionProps> = ({
               Navigation Tree
             </span>
             <button
+              className="flex items-center gap-1.5 px-3 py-1 bg-card border border-border rounded-lg text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-all shadow-sm"
               type="button"
               onClick={() => {
                 setIsCreatingFolder(true);
                 setNewFolderName(formData.portalName || "New Portal Folder");
               }}
-              className="flex items-center gap-1.5 px-3 py-1 bg-card border border-border rounded-lg text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-all shadow-sm"
             >
               <FolderOpen className="w-3 h-3 text-warning" />
               New Folder
@@ -562,26 +580,23 @@ const StorageSection: React.FC<StorageSectionProps> = ({
           {/* Breadcrumbs */}
           <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
             <button
+              className="p-1.5 hover:bg-card rounded-md transition-colors"
               type="button"
               onClick={() => selectStorageProvider(formData.storageProvider)}
-              className="p-1.5 hover:bg-card rounded-md transition-colors"
             >
               <Cloud className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
             {folderPath.map((folder, idx) => (
-              <div
-                key={folder.id}
-                className="flex items-center gap-1 shrink-0"
-              >
+              <div key={folder.id} className="flex items-center gap-1 shrink-0">
                 <ChevronRight className="w-3 h-3 text-muted" />
                 <button
-                  type="button"
-                  onClick={() => navigateToBreadcrumb(idx)}
                   className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all ${
                     idx === folderPath.length - 1
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-card hover:text-foreground"
                   }`}
+                  type="button"
+                  onClick={() => navigateToBreadcrumb(idx)}
                 >
                   {folder.name}
                 </button>
@@ -594,10 +609,10 @@ const StorageSection: React.FC<StorageSectionProps> = ({
           <AnimatePresence>
             {isCreatingFolder && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
                 className="absolute inset-x-0 top-0 z-10 p-4 bg-card border-b border-border shadow-xl"
+                exit={{ opacity: 0, y: -10 }}
+                initial={{ opacity: 0, y: -10 }}
               >
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
@@ -605,8 +620,8 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                       Creation Module
                     </h4>
                     <button
-                      onClick={() => setIsCreatingFolder(false)}
                       className="text-muted-foreground hover:text-foreground"
+                      onClick={() => setIsCreatingFolder(false)}
                     >
                       <ArrowLeft className="w-3.5 h-3.5 rotate-90" />
                     </button>
@@ -614,18 +629,18 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                   <div className="flex gap-2">
                     <input
                       autoFocus
+                      className="flex-1 px-3 py-2 bg-muted border border-border rounded-lg text-sm font-semibold focus:ring-2 focus:ring-ring outline-none text-foreground"
+                      placeholder="Enter folder identifier..."
                       value={newFolderName}
                       onChange={(e) => setNewFolderName(e.target.value)}
-                      placeholder="Enter folder identifier..."
-                      className="flex-1 px-3 py-2 bg-muted border border-border rounded-lg text-sm font-semibold focus:ring-2 focus:ring-ring outline-none text-foreground"
                       onKeyDown={(e) =>
                         e.key === "Enter" && handleCreateFolder()
                       }
                     />
                     <button
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors"
                       type="button"
                       onClick={handleCreateFolder}
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors"
                     >
                       Create
                     </button>
@@ -657,11 +672,11 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                 {folders.map((folder) => (
                   <FolderNode
                     key={folder.id}
+                    expandedFolders={expandedFolders}
                     folder={folder}
                     navigateToFolder={navigateToFolder}
-                    expandedFolders={expandedFolders}
-                    toggleFolder={toggleFolder}
                     selectedFolderId={formData.storageFolderId}
+                    toggleFolder={toggleFolder}
                   />
                 ))}
               </div>
@@ -673,12 +688,12 @@ const StorageSection: React.FC<StorageSectionProps> = ({
           <label className="flex items-center gap-3 cursor-pointer group">
             <div className="relative flex items-center">
               <input
-                type="checkbox"
                 checked={formData.useClientFolders}
+                className="peer sr-only"
+                type="checkbox"
                 onChange={(e) =>
                   updateFormData("useClientFolders", e.target.checked)
                 }
-                className="peer sr-only"
               />
               <div className="w-10 h-5 bg-muted-foreground/20 rounded-full peer peer-checked:bg-primary transition-colors" />
               <div className="absolute left-1 top-1 w-3 h-3 bg-card rounded-full peer-checked:translate-x-5 transition-transform" />
@@ -699,16 +714,16 @@ const StorageSection: React.FC<StorageSectionProps> = ({
         <div />
         <div className="flex gap-3">
           <button
+            className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
             type="button"
             onClick={() => setCurrentStep("messaging")}
-            className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
           >
             Jump to Finish
           </button>
           <button
+            className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors"
             type="button"
             onClick={() => setCurrentStep("security")}
-            className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors"
           >
             Next: Security
           </button>
@@ -785,6 +800,11 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
             ].map((template) => (
               <button
                 key={template.size}
+                className={`p-3 rounded-xl border text-center transition-all ${
+                  formData.maxFileSize === template.size
+                    ? "border-primary bg-primary text-primary-foreground shadow-md"
+                    : "border-border bg-card text-muted-foreground hover:border-muted-foreground"
+                }`}
                 type="button"
                 onClick={() => {
                   updateFormData("maxFileSize", template.size);
@@ -792,11 +812,6 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
                     setError("");
                   }
                 }}
-                className={`p-3 rounded-xl border text-center transition-all ${
-                  formData.maxFileSize === template.size
-                    ? "border-primary bg-primary text-primary-foreground shadow-md"
-                    : "border-border bg-card text-muted-foreground hover:border-muted-foreground"
-                }`}
               >
                 <div className="font-bold text-lg">{template.size}MB</div>
                 <div className="text-[10px] font-bold uppercase tracking-wider opacity-75">
@@ -812,11 +827,14 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
           <div className="relative">
             <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
+              className={`w-full pl-10 pr-4 py-3 bg-card border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground ${!formData.maxFileSize ? "border-warning" : "border-border"}`}
+              placeholder="Custom size..."
               type="number"
               value={formData.maxFileSize}
               onChange={(e) => {
                 const newSize =
                   e.target.value === "" ? 0 : parseInt(e.target.value) || 0;
+
                 updateFormData("maxFileSize", newSize);
                 if (
                   newSize > 0 &&
@@ -825,8 +843,6 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
                   setError("");
                 }
               }}
-              placeholder="Custom size..."
-              className={`w-full pl-10 pr-4 py-3 bg-card border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground ${!formData.maxFileSize ? "border-warning" : "border-border"}`}
             />
           </div>
           {!formData.maxFileSize && (
@@ -843,11 +859,11 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
+              className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
+              placeholder="Set new key..."
               type="password"
               value={formData.password}
               onChange={(e) => updateFormData("password", e.target.value)}
-              placeholder="Set new key..."
-              className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
             />
           </div>
         </div>
@@ -872,18 +888,18 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
           ].map((req) => (
             <button
               key={req.id}
-              type="button"
-              onClick={() =>
-                updateFormData(
-                  req.key,
-                  !formData[req.key as keyof typeof formData]
-                )
-              }
               className={`flex-1 px-4 py-3 rounded-xl border font-bold text-sm transition-all ${
                 formData[req.key as keyof typeof formData]
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-card text-muted-foreground hover:border-muted-foreground"
               }`}
+              type="button"
+              onClick={() =>
+                updateFormData(
+                  req.key,
+                  !formData[req.key as keyof typeof formData],
+                )
+              }
             >
               {req.label}
             </button>
@@ -898,25 +914,26 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-muted p-4 rounded-xl border border-border">
           {FILE_TYPE_OPTIONS.map((opt) => {
             const isSelected = formData.allowedFileTypes.includes(opt.value);
+
             return (
               <label
                 key={opt.value}
                 className="flex items-center gap-3 p-2 rounded-lg hover:bg-card cursor-pointer transition-colors"
               >
                 <input
-                  type="checkbox"
                   checked={isSelected}
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                  type="checkbox"
                   onChange={() =>
                     updateFormData(
                       "allowedFileTypes",
                       isSelected
                         ? formData.allowedFileTypes.filter(
-                            (v: string) => v !== opt.value
+                            (v: string) => v !== opt.value,
                           )
-                        : [...formData.allowedFileTypes, opt.value]
+                        : [...formData.allowedFileTypes, opt.value],
                     )
                   }
-                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                 />
                 <span
                   className={`text-sm font-medium ${isSelected ? "text-foreground" : "text-muted-foreground"}`}
@@ -933,16 +950,16 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
         <div />
         <div className="flex gap-3">
           <button
+            className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
             type="button"
             onClick={() => setCurrentStep("messaging")}
-            className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
           >
             Jump to Finish
           </button>
           <button
+            className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors"
             type="button"
             onClick={() => setCurrentStep("messaging")}
-            className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors"
           >
             Next: Messaging
           </button>
@@ -962,7 +979,7 @@ export default function CreatePortalPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [requiresUpgrade, setRequiresUpgrade] = useState(false);
-  
+
   // Slug validation state
   const [slugValidation, setSlugValidation] = useState<{
     isValid: boolean;
@@ -1050,20 +1067,34 @@ export default function CreatePortalPage() {
   const handleLogoSelect = (file: File | null) => {
     if (!file) {
       updateFormData("logo", null);
+
       return;
     }
 
     // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp'];
+    const validTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/svg+xml",
+      "image/webp",
+    ];
+
     if (!validTypes.includes(file.type)) {
-      setError('Invalid file type. Please upload an image (JPG, PNG, GIF, SVG, or WebP)');
+      setError(
+        "Invalid file type. Please upload an image (JPG, PNG, GIF, SVG, or WebP)",
+      );
+
       return;
     }
 
     // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+
     if (file.size > maxSize) {
-      setError('File too large. Maximum size is 5MB');
+      setError("File too large. Maximum size is 5MB");
+
       return;
     }
 
@@ -1075,31 +1106,33 @@ export default function CreatePortalPage() {
   const uploadLogo = async (file: File): Promise<string | null> => {
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('provider', 'google'); // Default to Google Drive
 
-      const response = await fetch('/api/storage/upload', {
-        method: 'POST',
+      formData.append("file", file);
+      formData.append("provider", "google"); // Default to Google Drive
+
+      const response = await fetch("/api/storage/upload", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to upload logo');
+
+        throw new Error(errorData.error || "Failed to upload logo");
       }
 
       const data = await response.json();
-      
+
       // Return the file URL or ID from the response
       if (data.file?.webViewLink) {
         return data.file.webViewLink; // Google Drive
       } else if (data.file?.id) {
         return data.file.id; // Fallback to ID
       }
-      
-      throw new Error('No file URL returned from upload');
+
+      throw new Error("No file URL returned from upload");
     } catch (error) {
-      console.error('Logo upload error:', error);
+      console.error("Logo upload error:", error);
       throw error;
     }
   };
@@ -1108,28 +1141,33 @@ export default function CreatePortalPage() {
   useEffect(() => {
     const checkSlug = async () => {
       const slug = formData.portalUrl;
-      
+
       if (!slug) {
         setSlugValidation({ isValid: false, isChecking: false });
+
         return;
       }
 
       // First, validate format
       const formatValidation = validateSlug(slug);
+
       if (!formatValidation.isValid) {
         setSlugValidation({
           isValid: false,
           isChecking: false,
           error: formatValidation.error,
         });
+
         return;
       }
 
       // Then check availability
       setSlugValidation({ isValid: false, isChecking: true });
-      
+
       try {
-        const response = await fetch(`/api/portals/check-slug?slug=${encodeURIComponent(slug)}`);
+        const response = await fetch(
+          `/api/portals/check-slug?slug=${encodeURIComponent(slug)}`,
+        );
         const data = await response.json();
 
         if (data.available && data.valid) {
@@ -1158,16 +1196,21 @@ export default function CreatePortalPage() {
 
     // Debounce the check
     const timeoutId = setTimeout(checkSlug, 500);
+
     return () => clearTimeout(timeoutId);
   }, [formData.portalUrl]);
 
   // Auto-generate slug from portal name
   const handleNameChange = (name: string) => {
     updateFormData("portalName", name);
-    
+
     // Auto-generate slug if it's empty or matches the previous name
-    if (!formData.portalUrl || formData.portalUrl === sanitizeSlug(formData.portalName)) {
+    if (
+      !formData.portalUrl ||
+      formData.portalUrl === sanitizeSlug(formData.portalName)
+    ) {
       const newSlug = sanitizeSlug(name);
+
       updateFormData("portalUrl", newSlug);
     }
   };
@@ -1208,45 +1251,53 @@ export default function CreatePortalPage() {
   };
 
   // Get section completion status
-  const getSectionStatus = (sectionId: Step): 'complete' | 'incomplete' | 'current' => {
-    if (sectionId === currentStep) return 'current';
-    
+  const getSectionStatus = (
+    sectionId: Step,
+  ): "complete" | "incomplete" | "current" => {
+    if (sectionId === currentStep) return "current";
+
     switch (sectionId) {
-      case 'identity':
-        return validateIdentitySection() ? 'complete' : 'incomplete';
-      case 'branding':
-        return validateBrandingSection() ? 'complete' : 'incomplete';
-      case 'storage':
-        return validateStorageSection() ? 'complete' : 'incomplete';
-      case 'security':
-        return validateSecuritySection() ? 'complete' : 'incomplete';
-      case 'messaging':
-        return validateMessagingSection() ? 'complete' : 'incomplete';
+      case "identity":
+        return validateIdentitySection() ? "complete" : "incomplete";
+      case "branding":
+        return validateBrandingSection() ? "complete" : "incomplete";
+      case "storage":
+        return validateStorageSection() ? "complete" : "incomplete";
+      case "security":
+        return validateSecuritySection() ? "complete" : "incomplete";
+      case "messaging":
+        return validateMessagingSection() ? "complete" : "incomplete";
       default:
-        return 'incomplete';
+        return "incomplete";
     }
   };
 
   // Check if can proceed to next section
   const canProceedToSection = (targetSection: Step): boolean => {
-    const sections: Step[] = ['identity', 'branding', 'storage', 'security', 'messaging'];
+    const sections: Step[] = [
+      "identity",
+      "branding",
+      "storage",
+      "security",
+      "messaging",
+    ];
     const currentIndex = sections.indexOf(currentStep);
     const targetIndex = sections.indexOf(targetSection);
-    
+
     // Can always go back
     if (targetIndex < currentIndex) return true;
-    
+
     // Can go forward if current section is valid
     switch (currentStep) {
-      case 'identity':
+      case "identity":
         return validateIdentitySection();
-      case 'branding':
+      case "branding":
         return validateBrandingSection();
-      case 'storage':
+      case "storage":
         return validateStorageSection();
-      case 'security':
+      case "security":
         return validateSecuritySection();
-      case 'messaging':
+      case "messaging":
         return validateMessagingSection();
       default:
         return false;
@@ -1258,22 +1309,27 @@ export default function CreatePortalPage() {
     if (!canProceedToSection(targetSection)) {
       // Show error for current section
       switch (currentStep) {
-        case 'identity':
-          setError('Please complete the Identity section before proceeding');
+        case "identity":
+          setError("Please complete the Identity section before proceeding");
           break;
-        case 'storage':
-          setError('Please select a storage provider and folder before proceeding');
+        case "storage":
+          setError(
+            "Please select a storage provider and folder before proceeding",
+          );
           break;
-        case 'security':
-          setError('Please set a maximum file size and select allowed file types');
+        case "security":
+          setError(
+            "Please set a maximum file size and select allowed file types",
+          );
           break;
         default:
-          setError('Please complete the current section before proceeding');
+          setError("Please complete the current section before proceeding");
       }
+
       return;
     }
-    
-    setError('');
+
+    setError("");
     setCurrentStep(targetSection);
   };
 
@@ -1284,12 +1340,14 @@ export default function CreatePortalPage() {
     if (!formData.portalName.trim()) {
       setError("Portal name is required");
       setCurrentStep("identity");
+
       return;
     }
 
     if (!formData.portalUrl.trim()) {
       setError("Portal URL slug is required");
       setCurrentStep("identity");
+
       return;
     }
 
@@ -1297,33 +1355,42 @@ export default function CreatePortalPage() {
     if (!slugValidation.isValid) {
       setError(slugValidation.error || "Invalid portal URL slug");
       setCurrentStep("identity");
+
       return;
     }
 
     // Validate storage configuration - make it optional
     // If storage is provided, folder must be selected
     if (formData.storageProvider && !formData.storageFolderId) {
-      setError("Storage folder must be selected when storage provider is specified");
+      setError(
+        "Storage folder must be selected when storage provider is specified",
+      );
       setCurrentStep("storage");
+
       return;
     }
 
     // Max file size is optional, will default to 50MB on server
-    const finalMaxFileSize = formData.maxFileSize && formData.maxFileSize > 0 
-      ? formData.maxFileSize 
-      : 50; // Default 50MB
+    const finalMaxFileSize =
+      formData.maxFileSize && formData.maxFileSize > 0
+        ? formData.maxFileSize
+        : 50; // Default 50MB
 
     setLoading(true);
 
     try {
       // Upload logo file if present
       let logoUrl = null;
+
       if (formData.logo) {
         try {
           logoUrl = await uploadLogo(formData.logo);
         } catch (uploadError) {
-          setError("Failed to upload logo. Please try again or remove the logo to continue.");
+          setError(
+            "Failed to upload logo. Please try again or remove the logo to continue.",
+          );
           setCurrentStep("branding");
+
           return;
         }
       }
@@ -1335,32 +1402,32 @@ export default function CreatePortalPage() {
           // Identity
           name: formData.portalName,
           slug: formData.portalUrl,
-          
+
           // Branding
           primaryColor: formData.primaryColor,
           textColor: formData.textColor,
           backgroundColor: formData.backgroundColor,
           cardBackgroundColor: formData.cardBackgroundColor,
           logoUrl: logoUrl,
-          
+
           // Storage
           storageProvider: formData.storageProvider,
           storageFolderId: formData.storageFolderId,
           storageFolderPath: formData.storageFolderPath,
           useClientFolders: formData.useClientFolders,
-          
+
           // Security
           password: formData.password || null,
           requireClientName: formData.requireClientName,
           requireClientEmail: formData.requireClientEmail,
           maxFileSize: finalMaxFileSize * 1024 * 1024, // Convert MB to bytes
           allowedFileTypes: formData.allowedFileTypes,
-          
+
           // Messaging
           welcomeMessage: formData.welcomeMessage || null,
           submitButtonText: formData.submitButtonText,
           successMessage: formData.successMessage,
-          
+
           whiteLabeled: false,
         }),
       });
@@ -1370,7 +1437,10 @@ export default function CreatePortalPage() {
       if (!response.ok) {
         if (data.upgrade) {
           // Show error message with upgrade option
-          setError(data.error || "Portal limit reached. Please upgrade your plan to continue.");
+          setError(
+            data.error ||
+              "Portal limit reached. Please upgrade your plan to continue.",
+          );
           setRequiresUpgrade(true);
           setCurrentStep("identity"); // Go back to first step to show error
         } else {
@@ -1432,16 +1502,18 @@ export default function CreatePortalPage() {
                   <Icon
                     className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}
                   />
-                  <span className="font-medium text-sm flex-1 text-left">{step.label}</span>
-                  
+                  <span className="font-medium text-sm flex-1 text-left">
+                    {step.label}
+                  </span>
+
                   {/* Completion Indicator */}
-                  {status === 'complete' && !isActive && (
+                  {status === "complete" && !isActive && (
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
                   )}
-                  {status === 'incomplete' && !isActive && (
+                  {status === "incomplete" && !isActive && (
                     <AlertCircle className="w-4 h-4 text-muted-foreground/40" />
                   )}
-                  
+
                   {isActive && (
                     <motion.div
                       animate={{ opacity: 1, x: 0 }}
@@ -1490,16 +1562,23 @@ export default function CreatePortalPage() {
                       )}
                       {currentStep !== "identity" && (
                         <button
+                          className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                          title="Return to Previous Section"
                           type="button"
                           onClick={() => {
-                            const stepIds: Step[] = ["identity", "branding", "storage", "security", "messaging"];
+                            const stepIds: Step[] = [
+                              "identity",
+                              "branding",
+                              "storage",
+                              "security",
+                              "messaging",
+                            ];
                             const currentIndex = stepIds.indexOf(currentStep);
+
                             if (currentIndex > 0) {
                               setCurrentStep(stepIds[currentIndex - 1]);
                             }
                           }}
-                          className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                          title="Return to Previous Section"
                         >
                           <ArrowLeft className="w-4 h-4" />
                         </button>
@@ -1536,22 +1615,25 @@ export default function CreatePortalPage() {
                             <input
                               required
                               className={`flex-1 px-4 py-3 bg-card border border-border rounded-r-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground ${
-                                formData.portalUrl && !slugValidation.isValid && !slugValidation.isChecking
-                                  ? 'border-red-300 focus:ring-red-500'
+                                formData.portalUrl &&
+                                !slugValidation.isValid &&
+                                !slugValidation.isChecking
+                                  ? "border-red-300 focus:ring-red-500"
                                   : formData.portalUrl && slugValidation.isValid
-                                    ? 'border-green-300 focus:ring-green-500'
-                                    : ''
+                                    ? "border-green-300 focus:ring-green-500"
+                                    : ""
                               }`}
                               placeholder="custom-address"
                               type="text"
                               value={formData.portalUrl}
                               onChange={(e) => {
                                 const sanitized = sanitizeSlug(e.target.value);
+
                                 updateFormData("portalUrl", sanitized);
                               }}
                             />
                           </div>
-                          
+
                           {/* Validation Feedback */}
                           {formData.portalUrl && (
                             <div className="mt-2">
@@ -1563,7 +1645,8 @@ export default function CreatePortalPage() {
                               ) : slugValidation.isValid ? (
                                 <p className="text-sm text-green-600 flex items-center gap-1">
                                   <CheckCircle2 className="w-4 h-4" />
-                                  Available! Your portal will be at /portal/{formData.portalUrl}
+                                  Available! Your portal will be at /portal/
+                                  {formData.portalUrl}
                                 </p>
                               ) : slugValidation.error ? (
                                 <p className="text-sm text-red-600 flex items-center gap-1">
@@ -1573,10 +1656,11 @@ export default function CreatePortalPage() {
                               ) : null}
                             </div>
                           )}
-                          
+
                           {!formData.portalUrl && (
                             <p className="text-xs text-muted-foreground mt-2">
-                              Enter a portal name above to auto-generate a URL slug
+                              Enter a portal name above to auto-generate a URL
+                              slug
                             </p>
                           )}
                         </div>
@@ -1593,8 +1677,8 @@ export default function CreatePortalPage() {
                             </button>
                             <button
                               className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              type="button"
                               disabled={!validateIdentitySection()}
+                              type="button"
                               onClick={() => navigateToSection("branding")}
                             >
                               Next: Branding
@@ -1621,7 +1705,9 @@ export default function CreatePortalPage() {
                               className="hidden"
                               id="logo"
                               type="file"
-                              onChange={(e) => handleLogoSelect(e.target.files?.[0] || null)}
+                              onChange={(e) =>
+                                handleLogoSelect(e.target.files?.[0] || null)
+                              }
                             />
                             <Button
                               className="rounded-xl"
@@ -1643,7 +1729,9 @@ export default function CreatePortalPage() {
                         </div>
 
                         <div className="space-y-4">
-                          <h3 className="text-sm font-semibold text-foreground">Colors</h3>
+                          <h3 className="text-sm font-semibold text-foreground">
+                            Colors
+                          </h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Primary Color */}
                             <div>
@@ -1654,16 +1742,25 @@ export default function CreatePortalPage() {
                                 <div className="relative group">
                                   <div
                                     className="w-12 h-12 rounded-xl border-2 border-border cursor-pointer transition-all hover:scale-105"
-                                    style={{ backgroundColor: formData.primaryColor }}
-                                    onClick={() => document.getElementById("primaryColorInput")?.click()}
+                                    style={{
+                                      backgroundColor: formData.primaryColor,
+                                    }}
+                                    onClick={() =>
+                                      document
+                                        .getElementById("primaryColorInput")
+                                        ?.click()
+                                    }
                                   />
                                   <input
-                                    id="primaryColorInput"
                                     className="absolute inset-0 opacity-0 cursor-pointer"
+                                    id="primaryColorInput"
                                     type="color"
                                     value={formData.primaryColor}
                                     onChange={(e) =>
-                                      updateFormData("primaryColor", e.target.value)
+                                      updateFormData(
+                                        "primaryColor",
+                                        e.target.value,
+                                      )
                                     }
                                   />
                                 </div>
@@ -1672,7 +1769,10 @@ export default function CreatePortalPage() {
                                   type="text"
                                   value={formData.primaryColor}
                                   onChange={(e) =>
-                                    updateFormData("primaryColor", e.target.value)
+                                    updateFormData(
+                                      "primaryColor",
+                                      e.target.value,
+                                    )
                                   }
                                 />
                               </div>
@@ -1687,16 +1787,25 @@ export default function CreatePortalPage() {
                                 <div className="relative group">
                                   <div
                                     className="w-12 h-12 rounded-xl border-2 border-border cursor-pointer transition-all hover:scale-105"
-                                    style={{ backgroundColor: formData.textColor }}
-                                    onClick={() => document.getElementById("textColorInput")?.click()}
+                                    style={{
+                                      backgroundColor: formData.textColor,
+                                    }}
+                                    onClick={() =>
+                                      document
+                                        .getElementById("textColorInput")
+                                        ?.click()
+                                    }
                                   />
                                   <input
-                                    id="textColorInput"
                                     className="absolute inset-0 opacity-0 cursor-pointer"
+                                    id="textColorInput"
                                     type="color"
                                     value={formData.textColor}
                                     onChange={(e) =>
-                                      updateFormData("textColor", e.target.value)
+                                      updateFormData(
+                                        "textColor",
+                                        e.target.value,
+                                      )
                                     }
                                   />
                                 </div>
@@ -1720,16 +1829,25 @@ export default function CreatePortalPage() {
                                 <div className="relative group">
                                   <div
                                     className="w-12 h-12 rounded-xl border-2 border-border cursor-pointer transition-all hover:scale-105"
-                                    style={{ backgroundColor: formData.backgroundColor }}
-                                    onClick={() => document.getElementById("backgroundColorInput")?.click()}
+                                    style={{
+                                      backgroundColor: formData.backgroundColor,
+                                    }}
+                                    onClick={() =>
+                                      document
+                                        .getElementById("backgroundColorInput")
+                                        ?.click()
+                                    }
                                   />
                                   <input
-                                    id="backgroundColorInput"
                                     className="absolute inset-0 opacity-0 cursor-pointer"
+                                    id="backgroundColorInput"
                                     type="color"
                                     value={formData.backgroundColor}
                                     onChange={(e) =>
-                                      updateFormData("backgroundColor", e.target.value)
+                                      updateFormData(
+                                        "backgroundColor",
+                                        e.target.value,
+                                      )
                                     }
                                   />
                                 </div>
@@ -1738,7 +1856,10 @@ export default function CreatePortalPage() {
                                   type="text"
                                   value={formData.backgroundColor}
                                   onChange={(e) =>
-                                    updateFormData("backgroundColor", e.target.value)
+                                    updateFormData(
+                                      "backgroundColor",
+                                      e.target.value,
+                                    )
                                   }
                                 />
                               </div>
@@ -1753,16 +1874,28 @@ export default function CreatePortalPage() {
                                 <div className="relative group">
                                   <div
                                     className="w-12 h-12 rounded-xl border-2 border-border cursor-pointer transition-all hover:scale-105"
-                                    style={{ backgroundColor: formData.cardBackgroundColor }}
-                                    onClick={() => document.getElementById("cardBackgroundColorInput")?.click()}
+                                    style={{
+                                      backgroundColor:
+                                        formData.cardBackgroundColor,
+                                    }}
+                                    onClick={() =>
+                                      document
+                                        .getElementById(
+                                          "cardBackgroundColorInput",
+                                        )
+                                        ?.click()
+                                    }
                                   />
                                   <input
-                                    id="cardBackgroundColorInput"
                                     className="absolute inset-0 opacity-0 cursor-pointer"
+                                    id="cardBackgroundColorInput"
                                     type="color"
                                     value={formData.cardBackgroundColor}
                                     onChange={(e) =>
-                                      updateFormData("cardBackgroundColor", e.target.value)
+                                      updateFormData(
+                                        "cardBackgroundColor",
+                                        e.target.value,
+                                      )
                                     }
                                   />
                                 </div>
@@ -1771,7 +1904,10 @@ export default function CreatePortalPage() {
                                   type="text"
                                   value={formData.cardBackgroundColor}
                                   onChange={(e) =>
-                                    updateFormData("cardBackgroundColor", e.target.value)
+                                    updateFormData(
+                                      "cardBackgroundColor",
+                                      e.target.value,
+                                    )
                                   }
                                 />
                               </div>
@@ -1805,19 +1941,19 @@ export default function CreatePortalPage() {
                     {currentStep === "storage" && (
                       <StorageSection
                         formData={formData}
-                        updateFormData={updateFormData}
                         setCurrentStep={setCurrentStep}
+                        updateFormData={updateFormData}
                       />
                     )}
 
                     {/* Security Section */}
                     {currentStep === "security" && (
                       <SecuritySection
-                        formData={formData}
-                        updateFormData={updateFormData}
-                        setCurrentStep={setCurrentStep}
                         error={error}
+                        formData={formData}
+                        setCurrentStep={setCurrentStep}
                         setError={setError}
+                        updateFormData={updateFormData}
                       />
                     )}
 
@@ -1845,15 +1981,15 @@ export default function CreatePortalPage() {
                               Submit Button Label
                             </label>
                             <input
+                              className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
                               type="text"
                               value={formData.submitButtonText}
                               onChange={(e) =>
                                 updateFormData(
                                   "submitButtonText",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
-                              className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
                             />
                           </div>
 
@@ -1862,12 +1998,12 @@ export default function CreatePortalPage() {
                               Success Message
                             </label>
                             <input
+                              className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
                               type="text"
                               value={formData.successMessage}
                               onChange={(e) =>
                                 updateFormData("successMessage", e.target.value)
                               }
-                              className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
                             />
                           </div>
                         </div>
@@ -1934,19 +2070,19 @@ export default function CreatePortalPage() {
                     {requiresUpgrade && (
                       <div className="mt-3 flex items-center gap-3">
                         <Link
-                          href="/dashboard/billing"
                           className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                          href="/dashboard/billing"
                         >
                           Upgrade Plan
                           <ChevronRight className="w-4 h-4" />
                         </Link>
                         <button
+                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                           type="button"
                           onClick={() => {
                             setError("");
                             setRequiresUpgrade(false);
                           }}
-                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                         >
                           Dismiss
                         </button>

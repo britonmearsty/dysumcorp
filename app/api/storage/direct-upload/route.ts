@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 import { getValidToken } from "@/lib/storage-api";
 import { getSessionFromRequest } from "@/lib/auth-server";
@@ -99,6 +100,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Direct upload URL generation error:", error);
+
     return NextResponse.json(
       { error: "Failed to generate upload URL" },
       { status: 500 },

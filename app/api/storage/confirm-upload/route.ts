@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { sendFileUploadNotification } from "@/lib/email-service";
@@ -10,6 +11,7 @@ function formatFileSize(bytes: number): string {
   const k = 1024;
   const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
@@ -60,6 +62,7 @@ export async function POST(request: NextRequest) {
 
     // Hash password if provided
     let passwordHash = null;
+
     if (password && password.trim() !== "") {
       passwordHash = hashPassword(password.trim());
     }
@@ -105,6 +108,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Confirm upload error:", error);
+
     return NextResponse.json(
       { error: "Failed to confirm upload" },
       { status: 500 },

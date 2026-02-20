@@ -20,6 +20,7 @@ import {
   Cloud,
   HardDrive,
 } from "lucide-react";
+
 import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
 
 interface File {
@@ -76,8 +77,10 @@ export default function AssetsPage() {
   const fetchFiles = async () => {
     try {
       const response = await fetch("/api/files");
+
       if (response.ok) {
         const data = await response.json();
+
         setFiles(data.files);
       }
     } catch (error) {
@@ -88,12 +91,17 @@ export default function AssetsPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${name}"? This action cannot be undone.`,
+      )
+    ) {
       return;
     }
     setDeleting(id);
     try {
       const response = await fetch(`/api/files/${id}`, { method: "DELETE" });
+
       if (response.ok) {
         setFiles(files.filter((f) => f.id !== id));
       } else {
@@ -110,8 +118,12 @@ export default function AssetsPage() {
   const handleDownload = async (file: File) => {
     try {
       let filePassword = "";
+
       if (file.passwordHash) {
-        const promptPassword = prompt("This file is password protected. Please enter the password:");
+        const promptPassword = prompt(
+          "This file is password protected. Please enter the password:",
+        );
+
         if (!promptPassword) return;
         filePassword = promptPassword;
       }
@@ -123,6 +135,7 @@ export default function AssetsPage() {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
+
         a.href = url;
         a.download = file.name;
         document.body.appendChild(a);
@@ -134,6 +147,7 @@ export default function AssetsPage() {
       } else {
         try {
           const errorData = await response.json();
+
           alert(errorData.error || "Failed to download file");
         } catch {
           alert("Failed to download file");
@@ -147,9 +161,14 @@ export default function AssetsPage() {
 
   // Helper functions
   const getStorageType = (storageUrl: string): string => {
-    if (storageUrl.includes("drive.google.com") || storageUrl.includes("googleapis.com")) return "google";
+    if (
+      storageUrl.includes("drive.google.com") ||
+      storageUrl.includes("googleapis.com")
+    )
+      return "google";
     if (storageUrl.includes("dropbox.com")) return "dropbox";
     if (storageUrl.startsWith("/uploads")) return "local";
+
     return "other";
   };
 
@@ -160,6 +179,7 @@ export default function AssetsPage() {
       local: "Local Storage",
       other: "Other",
     };
+
     return labels[type] || "Unknown";
   };
 
@@ -167,26 +187,34 @@ export default function AssetsPage() {
     if (type === "google") return <Cloud className="w-3.5 h-3.5" />;
     if (type === "dropbox") return <Cloud className="w-3.5 h-3.5" />;
     if (type === "local") return <HardDrive className="w-3.5 h-3.5" />;
+
     return <Server className="w-3.5 h-3.5" />;
   };
 
   const getProviderIcon = (type: string) => {
-    if (type === "google") return <Cloud className="w-5 h-5 text-emerald-500" />;
+    if (type === "google")
+      return <Cloud className="w-5 h-5 text-emerald-500" />;
     if (type === "dropbox") return <Cloud className="w-5 h-5 text-blue-500" />;
-    if (type === "local") return <HardDrive className="w-5 h-5 text-gray-500" />;
+    if (type === "local")
+      return <HardDrive className="w-5 h-5 text-gray-500" />;
+
     return <Server className="w-5 h-5 text-purple-500" />;
   };
 
   const formatFileSize = (bytes: string) => {
     const size = Number(bytes);
+
     if (size < 1024) return `${size} B`;
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
-    if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+    if (size < 1024 * 1024 * 1024)
+      return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+
     return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -197,14 +225,20 @@ export default function AssetsPage() {
   // Filtered and grouped data
   const filteredFiles = useMemo(() => {
     return files.filter((file) => {
-      const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesDate = dateFilter ? file.uploadedAt.startsWith(dateFilter) : true;
+      const matchesSearch = file.name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      const matchesDate = dateFilter
+        ? file.uploadedAt.startsWith(dateFilter)
+        : true;
+
       return matchesSearch && matchesDate;
     });
   }, [files, searchQuery, dateFilter]);
 
   const groupedByDate = useMemo(() => {
     const groups: Record<string, File[]> = {};
+
     filteredFiles.forEach((file) => {
       const date = new Date(file.uploadedAt);
       const dateKey = date.toLocaleDateString("en-US", {
@@ -212,21 +246,28 @@ export default function AssetsPage() {
         month: "long",
         day: "numeric",
       });
+
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
       groups[dateKey].push(file);
     });
+
     return groups;
   }, [filteredFiles]);
 
   const stats = useMemo(() => {
     const totalSize = files.reduce((acc, file) => acc + Number(file.size), 0);
-    const byProvider = files.reduce((acc, f) => {
-      const type = getStorageType(f.storageUrl);
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const byProvider = files.reduce(
+      (acc, f) => {
+        const type = getStorageType(f.storageUrl);
+
+        acc[type] = (acc[type] || 0) + 1;
+
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return {
       totalFiles: files.length,
@@ -238,8 +279,12 @@ export default function AssetsPage() {
   if (loading) {
     return (
       <div className="w-full">
-        <h1 className="text-3xl font-bold text-foreground">Assets</h1>
-        <p className="text-muted-foreground mt-2">Loading your files...</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+          Assets
+        </h1>
+        <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">
+          Loading your files...
+        </p>
       </div>
     );
   }
@@ -247,32 +292,36 @@ export default function AssetsPage() {
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Assets</h1>
-        <p className="text-muted-foreground mt-2">
-          A centralized, secure command center for all client documents across your connected cloud storage ecosystems.
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+          Assets
+        </h1>
+        <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">
+          A centralized, secure command center for all client documents across
+          your connected cloud storage ecosystems.
         </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
         {/* Sidebar */}
-        <aside className="lg:w-64 flex-shrink-0">
+        <aside className="lg:w-64 flex-shrink-0 order-2 lg:order-1">
           <nav className="space-y-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
+
               return (
                 <button
                   key={tab.id}
-                  type="button"
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all ${
                     isActive
                       ? "bg-card shadow-sm border border-border text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
+                  type="button"
                   onClick={() => setActiveTab(tab.id)}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 sm:w-5 h-4 sm:h-5" />
                   <span className="font-medium text-sm">{tab.name}</span>
                   {isActive && (
                     <motion.div className="ml-auto" layoutId="assets-indicator">
@@ -285,86 +334,102 @@ export default function AssetsPage() {
           </nav>
 
           {/* Stats Widget */}
-          <div className="mt-6 p-4 bg-card border border-border rounded-xl">
-            <h4 className="text-xs font-bold uppercase text-muted-foreground mb-3">Storage Pulse</h4>
-            <div className="space-y-3">
+          <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-card border border-border rounded-xl">
+            <h4 className="text-[10px] sm:text-xs font-bold uppercase text-muted-foreground mb-2 sm:mb-3">
+              Storage Pulse
+            </h4>
+            <div className="space-y-2 sm:space-y-3">
               <div>
-                <div className="flex justify-between text-xs mb-2">
+                <div className="flex justify-between text-[10px] sm:text-xs mb-1.5 sm:mb-2">
                   <span className="text-muted-foreground">Total Volume</span>
-                  <span className="text-foreground font-bold">{stats.totalSizeMB} MB</span>
+                  <span className="text-foreground font-bold">
+                    {stats.totalSizeMB} MB
+                  </span>
                 </div>
-                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                <div className="h-1.5 sm:h-2 w-full bg-muted rounded-full overflow-hidden">
                   <motion.div
-                    initial={{ width: 0 }}
                     animate={{ width: "45%" }}
                     className="h-full bg-primary"
+                    initial={{ width: 0 }}
                   />
                 </div>
               </div>
-              <div className="flex justify-between items-center p-2 bg-muted rounded-lg">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  <span className="text-xs text-muted-foreground">Dropbox</span>
+              <div className="flex justify-between items-center p-1.5 sm:p-2 bg-muted rounded-lg">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-blue-500" />
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">
+                    Dropbox
+                  </span>
                 </div>
-                <span className="text-xs font-bold">{stats.byProvider["dropbox"] || 0}</span>
+                <span className="text-[10px] sm:text-xs font-bold">
+                  {stats.byProvider["dropbox"] || 0}
+                </span>
               </div>
-              <div className="flex justify-between items-center p-2 bg-muted rounded-lg">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-xs text-muted-foreground">Google Drive</span>
+              <div className="flex justify-between items-center p-1.5 sm:p-2 bg-muted rounded-lg">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-emerald-500" />
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">
+                    Google Drive
+                  </span>
                 </div>
-                <span className="text-xs font-bold">{stats.byProvider["google"] || 0}</span>
+                <span className="text-[10px] sm:text-xs font-bold">
+                  {stats.byProvider["google"] || 0}
+                </span>
               </div>
             </div>
           </div>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0">
+        <main className="flex-1 min-w-0 order-1 lg:order-2">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
             >
               <div className="bg-card rounded-xl border border-border overflow-hidden">
                 {/* Card Header */}
-                <div className="p-4 sm:p-6 border-b border-border bg-muted/30">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                <div className="p-3 sm:p-4 lg:p-6 border-b border-border bg-muted/30">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
                     <div className="min-w-0">
-                      <h2 className="text-xl font-semibold text-foreground">
+                      <h2 className="text-lg sm:text-xl font-semibold text-foreground">
                         {tabs.find((t) => t.id === activeTab)?.name}
                       </h2>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                         {tabs.find((t) => t.id === activeTab)?.description}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
-                        type="button"
                         className="p-2 bg-muted hover:bg-muted/80 rounded-lg transition-colors border border-border"
                         title="Refresh"
+                        type="button"
                         onClick={() => fetchFiles()}
                       >
                         <RefreshCw className="w-4 h-4" />
                       </button>
                       <div className="flex items-center gap-1 p-1 bg-muted border border-border rounded-lg">
                         <button
-                          type="button"
                           className={`p-2 rounded transition-all ${
-                            viewMode === "grid" ? "bg-card shadow-sm" : "hover:bg-card/50"
+                            viewMode === "grid"
+                              ? "bg-card shadow-sm"
+                              : "hover:bg-card/50"
                           }`}
+                          type="button"
                           onClick={() => setViewMode("grid")}
                         >
                           <LayoutGrid className="w-4 h-4" />
                         </button>
                         <button
-                          type="button"
                           className={`p-2 rounded transition-all ${
-                            viewMode === "list" ? "bg-card shadow-sm" : "hover:bg-card/50"
+                            viewMode === "list"
+                              ? "bg-card shadow-sm"
+                              : "hover:bg-card/50"
                           }`}
+                          type="button"
                           onClick={() => setViewMode("list")}
                         >
                           <ListIcon className="w-4 h-4" />
@@ -374,22 +439,22 @@ export default function AssetsPage() {
                   </div>
 
                   {/* Search Filters */}
-                  <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <div className="relative flex-1 min-w-0">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <input
-                        type="text"
+                        className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm"
                         placeholder="Search assets..."
+                        type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm"
                       />
                     </div>
                     <input
+                      className="w-full sm:w-auto sm:flex-shrink-0 px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm"
                       type="date"
                       value={dateFilter}
                       onChange={(e) => setDateFilter(e.target.value)}
-                      className="w-full sm:w-auto sm:flex-shrink-0 px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm"
                     />
                   </div>
                 </div>
@@ -400,94 +465,125 @@ export default function AssetsPage() {
                   {activeTab === "all" && (
                     <>
                       {filteredFiles.length === 0 ? (
-                        <div className="text-center py-20 px-6">
-                          <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                          <h3 className="font-semibold text-lg mb-2">No Assets Found</h3>
-                          <p className="text-muted-foreground text-sm">
-                            Your vault is empty or no files match your current search criteria.
+                        <div className="text-center py-12 sm:py-20 px-4 sm:px-6">
+                          <FileText className="w-10 sm:w-16 h-10 sm:h-16 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
+                          <h3 className="font-semibold text-base sm:text-lg mb-2">
+                            No Assets Found
+                          </h3>
+                          <p className="text-muted-foreground text-xs sm:text-sm">
+                            Your vault is empty or no files match your current
+                            search criteria.
                           </p>
                         </div>
                       ) : viewMode === "list" ? (
                         <>
-                          {Object.entries(groupedByDate).map(([date, dateFiles]) => (
-                            <div key={date}>
-                              <div className="p-4 sm:p-6 bg-muted/30 border-b border-border">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                                    {date}
-                                  </h3>
-                                  <span className="text-[10px] font-normal text-muted-foreground">({dateFiles.length} files)</span>
+                          {Object.entries(groupedByDate).map(
+                            ([date, dateFiles]) => (
+                              <div key={date}>
+                                <div className="p-3 sm:p-4 lg:p-6 bg-muted/30 border-b border-border">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                      {date}
+                                    </h3>
+                                    <span className="text-[10px] font-normal text-muted-foreground">
+                                      ({dateFiles.length} files)
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="divide-y divide-border">
-                                {dateFiles.map((file) => (
-                                  <div
-                                    key={file.id}
-                                    className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-5 hover:bg-muted/50 transition-colors"
-                                  >
-                                    <div className={`flex-shrink-0 ${getFileIconColor(file.mimeType)}`}>
-                                      {getFileIcon(file.mimeType, "w-6 h-6")}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <h4 className="font-semibold text-sm truncate">{file.name}</h4>
-                                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
-                                        <span className="flex items-center gap-1">
-                                          {getStorageIcon(getStorageType(file.storageUrl))}
-                                          {getStorageLabel(getStorageType(file.storageUrl))}
-                                        </span>
-                                        <span>•</span>
-                                        <span>{formatFileSize(file.size)}</span>
-                                        {file.passwordHash && (
-                                          <>
-                                            <span>•</span>
-                                            <Lock className="w-3 h-3" />
-                                          </>
+                                <div className="divide-y divide-border">
+                                  {dateFiles.map((file) => (
+                                    <div
+                                      key={file.id}
+                                      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 sm:p-5 hover:bg-muted/50 transition-colors"
+                                    >
+                                      <div
+                                        className={`flex-shrink-0 ${getFileIconColor(file.mimeType)}`}
+                                      >
+                                        {getFileIcon(
+                                          file.mimeType,
+                                          "w-5 sm:w-6 h-5 sm:h-6",
                                         )}
                                       </div>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        <span className="text-xs text-muted-foreground">Portal:</span>
-                                        <a
-                                          href={`/portal/${file.portal.slug}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-xs text-primary hover:underline flex items-center gap-1 truncate"
-                                          title={file.portal.name}
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-sm truncate">
+                                          {file.name}
+                                        </h4>
+                                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
+                                          <span className="flex items-center gap-1">
+                                            {getStorageIcon(
+                                              getStorageType(file.storageUrl),
+                                            )}
+                                            {getStorageLabel(
+                                              getStorageType(file.storageUrl),
+                                            )}
+                                          </span>
+                                          <span>•</span>
+                                          <span>
+                                            {formatFileSize(file.size)}
+                                          </span>
+                                          {file.passwordHash && (
+                                            <>
+                                              <span>•</span>
+                                              <Lock className="w-3 h-3" />
+                                            </>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <span className="text-xs text-muted-foreground">
+                                            Portal:
+                                          </span>
+                                          <a
+                                            className="text-xs text-primary hover:underline flex items-center gap-1 truncate"
+                                            href={`/portal/${file.portal.slug}`}
+                                            rel="noopener noreferrer"
+                                            target="_blank"
+                                            title={file.portal.name}
+                                          >
+                                            <span className="truncate">
+                                              {file.portal.name}
+                                            </span>
+                                            <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                          </a>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-1 flex-shrink-0">
+                                        <button
+                                          className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
+                                          title="Download"
+                                          onClick={() => handleDownload(file)}
                                         >
-                                          <span className="truncate">{file.portal.name}</span>
-                                          <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                        </a>
+                                          <Download className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
+                                          title="Open file"
+                                          onClick={() =>
+                                            window.open(
+                                              file.storageUrl,
+                                              "_blank",
+                                            )
+                                          }
+                                        >
+                                          <ExternalLink className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all disabled:opacity-50"
+                                          disabled={deleting === file.id}
+                                          title="Delete"
+                                          onClick={() =>
+                                            handleDelete(file.id, file.name)
+                                          }
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-1 flex-shrink-0">
-                                      <button
-                                        onClick={() => handleDownload(file)}
-                                        className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
-                                        title="Download"
-                                      >
-                                        <Download className="w-4 h-4" />
-                                      </button>
-                                      <button
-                                        onClick={() => window.open(file.storageUrl, "_blank")}
-                                        className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
-                                        title="Open file"
-                                      >
-                                        <ExternalLink className="w-4 h-4" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDelete(file.id, file.name)}
-                                        disabled={deleting === file.id}
-                                        className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all disabled:opacity-50"
-                                        title="Delete"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ),
+                          )}
                         </>
                       ) : (
                         <div className="p-4 sm:p-6">
@@ -498,36 +594,51 @@ export default function AssetsPage() {
                                 className="bg-muted/50 rounded-lg border border-border hover:shadow-md transition-all p-4"
                               >
                                 <div className="flex justify-between items-start mb-3">
-                                  <div className={getFileIconColor(file.mimeType)}>
+                                  <div
+                                    className={getFileIconColor(file.mimeType)}
+                                  >
                                     {getFileIcon(file.mimeType, "w-7 h-7")}
                                   </div>
                                   <div className="flex gap-1">
                                     <button
-                                      onClick={() => handleDownload(file)}
                                       className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-card rounded transition-all"
+                                      onClick={() => handleDownload(file)}
                                     >
                                       <Download className="w-3.5 h-3.5" />
                                     </button>
                                     <button
-                                      onClick={() => handleDelete(file.id, file.name)}
-                                      disabled={deleting === file.id}
                                       className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition-all"
+                                      disabled={deleting === file.id}
+                                      onClick={() =>
+                                        handleDelete(file.id, file.name)
+                                      }
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </button>
                                   </div>
                                 </div>
-                                <h4 className="font-bold text-sm truncate" title={file.name}>
+                                <h4
+                                  className="font-bold text-sm truncate"
+                                  title={file.name}
+                                >
                                   {file.name}
                                 </h4>
-                                <div className="text-xs text-muted-foreground truncate mt-1">{file.portal.name}</div>
+                                <div className="text-xs text-muted-foreground truncate mt-1">
+                                  {file.portal.name}
+                                </div>
                                 <div className="flex items-center gap-2 mt-2">
-                                  <span className="text-xs font-bold text-muted-foreground">{formatFileSize(file.size)}</span>
+                                  <span className="text-xs font-bold text-muted-foreground">
+                                    {formatFileSize(file.size)}
+                                  </span>
                                   <span className="w-1 h-1 bg-border rounded-full" />
                                   <div className="flex items-center gap-1">
-                                    {getStorageIcon(getStorageType(file.storageUrl))}
+                                    {getStorageIcon(
+                                      getStorageType(file.storageUrl),
+                                    )}
                                     <span className="text-xs text-muted-foreground">
-                                      {getStorageLabel(getStorageType(file.storageUrl))}
+                                      {getStorageLabel(
+                                        getStorageType(file.storageUrl),
+                                      )}
                                     </span>
                                   </div>
                                 </div>
@@ -542,110 +653,150 @@ export default function AssetsPage() {
                   {/* By Storage Tab */}
                   {activeTab === "storage" && (
                     <>
-                      {["google", "dropbox", "local", "other"].map((provider) => {
-                        const providerFiles = filteredFiles.filter((f) => getStorageType(f.storageUrl) === provider);
-                        if (providerFiles.length === 0) return null;
+                      {["google", "dropbox", "local", "other"].map(
+                        (provider) => {
+                          const providerFiles = filteredFiles.filter(
+                            (f) => getStorageType(f.storageUrl) === provider,
+                          );
 
-                        return (
-                          <div key={provider}>
-                            <div className="p-4 sm:p-6 bg-muted/30 border-b border-border">
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className="p-2 bg-card rounded-lg border border-border flex-shrink-0">{getProviderIcon(provider)}</div>
-                                  <h3 className="font-bold text-foreground capitalize truncate">{getStorageLabel(provider)}</h3>
-                                </div>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex-shrink-0">
-                                  {providerFiles.length} items
-                                </span>
-                              </div>
-                            </div>
-                            {viewMode === "list" ? (
-                              <div className="divide-y divide-border">
-                                {providerFiles.map((file) => (
-                                  <div
-                                    key={file.id}
-                                    className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-5 hover:bg-muted/50 transition-colors"
-                                  >
-                                    <div className={`flex-shrink-0 ${getFileIconColor(file.mimeType)}`}>
-                                      {getFileIcon(file.mimeType, "w-6 h-6")}
+                          if (providerFiles.length === 0) return null;
+
+                          return (
+                            <div key={provider}>
+                              <div className="p-4 sm:p-6 bg-muted/30 border-b border-border">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div className="p-2 bg-card rounded-lg border border-border flex-shrink-0">
+                                      {getProviderIcon(provider)}
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                      <h4 className="font-semibold text-sm truncate">{file.name}</h4>
-                                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
-                                        <span>{formatFileSize(file.size)}</span>
-                                        <span>•</span>
-                                        <span>{formatDate(file.uploadedAt)}</span>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-1 flex-shrink-0">
-                                      <button
-                                        onClick={() => handleDownload(file)}
-                                        className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
-                                        title="Download"
-                                      >
-                                        <Download className="w-4 h-4" />
-                                      </button>
-                                      <button
-                                        onClick={() => window.open(file.storageUrl, "_blank")}
-                                        className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
-                                        title="Open file"
-                                      >
-                                        <ExternalLink className="w-4 h-4" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDelete(file.id, file.name)}
-                                        disabled={deleting === file.id}
-                                        className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all disabled:opacity-50"
-                                        title="Delete"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </button>
-                                    </div>
+                                    <h3 className="font-bold text-foreground capitalize truncate">
+                                      {getStorageLabel(provider)}
+                                    </h3>
                                   </div>
-                                ))}
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex-shrink-0">
+                                    {providerFiles.length} items
+                                  </span>
+                                </div>
                               </div>
-                            ) : (
-                              <div className="p-4 sm:p-6">
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                              {viewMode === "list" ? (
+                                <div className="divide-y divide-border">
                                   {providerFiles.map((file) => (
                                     <div
                                       key={file.id}
-                                      className="bg-muted/50 rounded-lg border border-border hover:shadow-md transition-all p-3"
+                                      className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-5 hover:bg-muted/50 transition-colors"
                                     >
-                                      <div className="flex justify-between items-start mb-2">
-                                        <div className={getFileIconColor(file.mimeType)}>
-                                          {getFileIcon(file.mimeType, "w-6 h-6")}
-                                        </div>
-                                        <div className="flex gap-1">
-                                          <button
-                                            onClick={() => handleDownload(file)}
-                                            className="p-1 text-muted-foreground hover:text-foreground hover:bg-card rounded transition-all"
-                                            title="Download"
-                                          >
-                                            <Download className="w-3 h-3" />
-                                          </button>
-                                          <button
-                                            onClick={() => handleDelete(file.id, file.name)}
-                                            disabled={deleting === file.id}
-                                            className="p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition-all disabled:opacity-50"
-                                            title="Delete"
-                                          >
-                                            <Trash2 className="w-3 h-3" />
-                                          </button>
+                                      <div
+                                        className={`flex-shrink-0 ${getFileIconColor(file.mimeType)}`}
+                                      >
+                                        {getFileIcon(file.mimeType, "w-6 h-6")}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-sm truncate">
+                                          {file.name}
+                                        </h4>
+                                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
+                                          <span>
+                                            {formatFileSize(file.size)}
+                                          </span>
+                                          <span>•</span>
+                                          <span>
+                                            {formatDate(file.uploadedAt)}
+                                          </span>
                                         </div>
                                       </div>
-                                      <h4 className="font-bold text-xs truncate" title={file.name}>
-                                        {file.name}
-                                      </h4>
-                                      <div className="text-xs text-muted-foreground mt-1">{formatFileSize(file.size)}</div>
+                                      <div className="flex items-center gap-1 flex-shrink-0">
+                                        <button
+                                          className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
+                                          title="Download"
+                                          onClick={() => handleDownload(file)}
+                                        >
+                                          <Download className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
+                                          title="Open file"
+                                          onClick={() =>
+                                            window.open(
+                                              file.storageUrl,
+                                              "_blank",
+                                            )
+                                          }
+                                        >
+                                          <ExternalLink className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all disabled:opacity-50"
+                                          disabled={deleting === file.id}
+                                          title="Delete"
+                                          onClick={() =>
+                                            handleDelete(file.id, file.name)
+                                          }
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                              ) : (
+                                <div className="p-4 sm:p-6">
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {providerFiles.map((file) => (
+                                      <div
+                                        key={file.id}
+                                        className="bg-muted/50 rounded-lg border border-border hover:shadow-md transition-all p-3"
+                                      >
+                                        <div className="flex justify-between items-start mb-2">
+                                          <div
+                                            className={getFileIconColor(
+                                              file.mimeType,
+                                            )}
+                                          >
+                                            {getFileIcon(
+                                              file.mimeType,
+                                              "w-6 h-6",
+                                            )}
+                                          </div>
+                                          <div className="flex gap-1">
+                                            <button
+                                              className="p-1 text-muted-foreground hover:text-foreground hover:bg-card rounded transition-all"
+                                              title="Download"
+                                              onClick={() =>
+                                                handleDownload(file)
+                                              }
+                                            >
+                                              <Download className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                              className="p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition-all disabled:opacity-50"
+                                              disabled={deleting === file.id}
+                                              title="Delete"
+                                              onClick={() =>
+                                                handleDelete(file.id, file.name)
+                                              }
+                                            >
+                                              <Trash2 className="w-3 h-3" />
+                                            </button>
+                                          </div>
+                                        </div>
+                                        <h4
+                                          className="font-bold text-xs truncate"
+                                          title={file.name}
+                                        >
+                                          {file.name}
+                                        </h4>
+                                        <div className="text-xs text-muted-foreground mt-1">
+                                          {formatFileSize(file.size)}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        },
+                      )}
                     </>
                   )}
 
@@ -658,30 +809,45 @@ export default function AssetsPage() {
                           <TrendingUp className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-foreground" />
                         </div>
                       </div>
-                      <h3 className="text-xl sm:text-2xl font-black text-foreground mb-2">Storage Intelligence</h3>
+                      <h3 className="text-xl sm:text-2xl font-black text-foreground mb-2">
+                        Storage Intelligence
+                      </h3>
                       <p className="text-sm text-muted-foreground max-w-md mx-auto mb-8 sm:mb-10">
-                        Monitor how your storage is distributed across your connected cloud ecosystems.
+                        Monitor how your storage is distributed across your
+                        connected cloud ecosystems.
                       </p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
                         <div className="bg-muted/50 rounded-xl border border-border p-4 sm:p-6">
-                          <p className="text-2xl sm:text-3xl font-black text-foreground">{stats.totalFiles}</p>
-                          <p className="text-xs font-bold text-muted-foreground uppercase mt-2">Files Collected</p>
+                          <p className="text-2xl sm:text-3xl font-black text-foreground">
+                            {stats.totalFiles}
+                          </p>
+                          <p className="text-xs font-bold text-muted-foreground uppercase mt-2">
+                            Files Collected
+                          </p>
                         </div>
                         <div className="bg-muted/50 rounded-xl border border-border p-4 sm:p-6">
                           <p className="text-2xl sm:text-3xl font-black text-foreground">
                             {Math.round(parseFloat(stats.totalSizeMB))}
                           </p>
-                          <p className="text-xs font-bold text-muted-foreground uppercase mt-2">MB Utilized</p>
+                          <p className="text-xs font-bold text-muted-foreground uppercase mt-2">
+                            MB Utilized
+                          </p>
                         </div>
                         <div className="bg-muted/50 rounded-xl border border-border p-4 sm:p-6">
                           <p className="text-2xl sm:text-3xl font-black text-foreground">
                             {Object.keys(stats.byProvider).length}
                           </p>
-                          <p className="text-xs font-bold text-muted-foreground uppercase mt-2">Providers</p>
+                          <p className="text-xs font-bold text-muted-foreground uppercase mt-2">
+                            Providers
+                          </p>
                         </div>
                         <div className="bg-muted/50 rounded-xl border border-border p-4 sm:p-6">
-                          <p className="text-2xl sm:text-3xl font-black text-foreground">100%</p>
-                          <p className="text-xs font-bold text-muted-foreground uppercase mt-2">Secure</p>
+                          <p className="text-2xl sm:text-3xl font-black text-foreground">
+                            100%
+                          </p>
+                          <p className="text-xs font-bold text-muted-foreground uppercase mt-2">
+                            Secure
+                          </p>
                         </div>
                       </div>
                     </div>

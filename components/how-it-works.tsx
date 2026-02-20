@@ -22,7 +22,7 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="py-32 bg-stone-100">
+    <section className="py-32 bg-stone-100" id="how-it-works">
       <div className="max-w-7xl mx-auto px-6">
         <FadeIn delay={0.1}>
           <div className="text-center mb-20">
@@ -36,8 +36,8 @@ export default function HowItWorks() {
         </FadeIn>
 
         <Stagger
-          delay={0.12}
           className="grid grid-cols-1 md:grid-cols-3 gap-16"
+          delay={0.12}
         >
           {steps.map((step, index) => (
             <StaggerItem key={index}>

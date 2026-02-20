@@ -16,12 +16,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { fileName, fileSize, mimeType, portalId } = body;
 
-    console.log("[Portal Direct Upload] Request:", { fileName, fileSize, portalId });
+    console.log("[Portal Direct Upload] Request:", {
+      fileName,
+      fileSize,
+      portalId,
+    });
 
     if (!fileName || !fileSize || !portalId) {
       return NextResponse.json(
         { error: "Missing required fields: fileName, fileSize, portalId" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -38,23 +42,33 @@ export async function POST(request: NextRequest) {
 
     if (!portal) {
       console.log("[Portal Direct Upload] Portal not found:", portalId);
+
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
     // Validate file size against portal limit
     if (BigInt(fileSize) > portal.maxFileSize) {
-      console.log("[Portal Direct Upload] File too large:", fileSize, "Max:", portal.maxFileSize.toString());
+      console.log(
+        "[Portal Direct Upload] File too large:",
+        fileSize,
+        "Max:",
+        portal.maxFileSize.toString(),
+      );
+
       return NextResponse.json(
-        { 
+        {
           error: `File size exceeds portal limit of ${(Number(portal.maxFileSize) / 1024 / 1024).toFixed(0)}MB`,
-          maxSize: portal.maxFileSize.toString()
+          maxSize: portal.maxFileSize.toString(),
         },
-        { status: 413 }
+        { status: 413 },
       );
     }
 
     // Get cloud storage token for portal owner (Google Drive or Dropbox)
-    console.log("[Portal Direct Upload] Getting storage token for user:", portal.userId);
+    console.log(
+      "[Portal Direct Upload] Getting storage token for user:",
+      portal.userId,
+    );
     let accessToken = await getValidToken(portal.userId, "google");
     let provider: "google" | "dropbox" = "google";
 
@@ -65,10 +79,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!accessToken) {
-      console.log("[Portal Direct Upload] No cloud storage connected for user:", portal.userId);
+      console.log(
+        "[Portal Direct Upload] No cloud storage connected for user:",
+        portal.userId,
+      );
+
       return NextResponse.json(
         { error: "Portal owner has not connected cloud storage" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -86,7 +104,9 @@ export async function POST(request: NextRequest) {
         chunkSize: 4 * 1024 * 1024, // 4MB chunks
       };
 
-      console.log("[Portal Direct Upload] Google Drive will use chunked upload");
+      console.log(
+        "[Portal Direct Upload] Google Drive will use chunked upload",
+      );
     } else {
       // For Dropbox, return the access token (client will upload directly)
       uploadData = {
@@ -107,15 +127,17 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[Portal Direct Upload] Error:", error);
-    
-    const errorMessage = error instanceof Error ? error.message : "Failed to prepare upload";
-    
+
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to prepare upload";
+
     return NextResponse.json(
-      { 
+      {
         error: "Failed to prepare upload",
-        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+        details:
+          process.env.NODE_ENV === "development" ? errorMessage : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

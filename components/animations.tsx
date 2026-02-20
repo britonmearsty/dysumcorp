@@ -35,16 +35,16 @@ export function FadeIn({
 
   return (
     <motion.div
+      className={className}
       initial={{ opacity: 0, ...directions[direction] }}
-      whileInView={{ opacity: 1, x: 0, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
       transition={{
         duration,
         delay,
         ease: naturalEase,
         ...springTransition,
       }}
-      className={className}
+      viewport={{ once: true, margin: "-50px" }}
+      whileInView={{ opacity: 1, x: 0, y: 0 }}
     >
       {children}
     </motion.div>
@@ -64,9 +64,8 @@ export function Stagger({
 }: StaggerProps) {
   return (
     <motion.div
+      className={className}
       initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-50px" }}
       variants={{
         visible: {
           transition: {
@@ -76,7 +75,8 @@ export function Stagger({
         },
         hidden: {},
       }}
-      className={className}
+      viewport={{ once: true, margin: "-50px" }}
+      whileInView="visible"
     >
       {children}
     </motion.div>
@@ -106,6 +106,7 @@ export function StaggerItem({
 
   return (
     <motion.div
+      className={className}
       variants={{
         visible: {
           opacity: 1,
@@ -119,7 +120,6 @@ export function StaggerItem({
         },
         hidden: { opacity: 0, ...directions[direction] },
       }}
-      className={className}
     >
       {children}
     </motion.div>
@@ -135,16 +135,16 @@ interface ScaleInProps {
 export function ScaleIn({ children, delay = 0, className = "" }: ScaleInProps) {
   return (
     <motion.div
+      className={className}
       initial={{ opacity: 0, scale: 0.8 }}
-      whileInView={{ opacity: 1, scale: 1 }}
-      viewport={{ once: true, margin: "-50px" }}
       transition={{
         duration: 0.6,
         delay,
         ease: naturalEase,
         ...springTransition,
       }}
-      className={className}
+      viewport={{ once: true, margin: "-50px" }}
+      whileInView={{ opacity: 1, scale: 1 }}
     >
       {children}
     </motion.div>

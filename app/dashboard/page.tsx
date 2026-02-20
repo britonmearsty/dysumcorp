@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ExternalLink, FileText, X } from "lucide-react";
 import { Download, Calendar, Trash2, FolderOpen } from "lucide-react";
-import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
 
+import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
 import { useSession } from "@/lib/auth-client";
 
 interface Portal {
@@ -76,7 +76,9 @@ export default function DashboardPage() {
           const files = filesData.files || [];
 
           // Filter only active portals for overview
-          const activePortals = portals.filter((p: Portal) => p.isActive !== false);
+          const activePortals = portals.filter(
+            (p: Portal) => p.isActive !== false,
+          );
 
           const fileCount = activePortals.reduce(
             (acc: number, p: any) => acc + (p._count?.files || 0),
@@ -113,8 +115,10 @@ export default function DashboardPage() {
   const fetchPortalFiles = async (portalId: string) => {
     try {
       const response = await fetch(`/api/portals/${portalId}`);
+
       if (response.ok) {
         const data = await response.json();
+
         setPortalFiles(data.portal?.files || []);
       }
     } catch (error) {
@@ -128,7 +132,11 @@ export default function DashboardPage() {
     await fetchPortalFiles(portal.id);
   };
 
-  const handleToggleActive = async (portalId: string, currentStatus: boolean, e: React.MouseEvent) => {
+  const handleToggleActive = async (
+    portalId: string,
+    currentStatus: boolean,
+    e: React.MouseEvent,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     try {
@@ -139,10 +147,14 @@ export default function DashboardPage() {
       if (response.ok) {
         // Refresh the portals list
         const portalsRes = await fetch("/api/portals?limit=5");
+
         if (portalsRes.ok) {
           const portalsData = await portalsRes.json();
           const portals = portalsData.portals || [];
-          const activePortals = portals.filter((p: Portal) => p.isActive !== false);
+          const activePortals = portals.filter(
+            (p: Portal) => p.isActive !== false,
+          );
+
           setActivePortalsList(activePortals);
         }
       } else {
@@ -157,6 +169,7 @@ export default function DashboardPage() {
   const handleDownloadFile = async (file: any) => {
     try {
       let filePassword = "";
+
       if (file.passwordHash) {
         const promptPassword = prompt(
           "This file is password protected. Please enter the password:",
@@ -186,6 +199,7 @@ export default function DashboardPage() {
         // Try to get error message from response
         try {
           const errorData = await response.json();
+
           alert(errorData.error || "Failed to download file");
         } catch {
           alert("Failed to download file");
@@ -207,7 +221,9 @@ export default function DashboardPage() {
     }
     setDeletingFile(fileId);
     try {
-      const response = await fetch(`/api/files/${fileId}`, { method: "DELETE" });
+      const response = await fetch(`/api/files/${fileId}`, {
+        method: "DELETE",
+      });
 
       if (response.ok) {
         setPortalFiles(portalFiles.filter((f) => f.id !== fileId));
@@ -253,14 +269,14 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen px-6 py-6">
-        <div className="space-y-8 animate-pulse">
-          <div className="h-8 w-48 bg-bg-card rounded-xl" />
-          <div className="grid grid-cols-4 gap-4">
-            <div className="h-32 bg-bg-card rounded-xl" />
-            <div className="h-32 bg-bg-card rounded-xl" />
-            <div className="h-32 bg-bg-card rounded-xl" />
-            <div className="h-32 bg-bg-card rounded-xl" />
+      <div className="min-h-screen px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+        <div className="space-y-6 sm:space-y-8 animate-pulse">
+          <div className="h-8 w-32 sm:w-48 bg-bg-card rounded-xl" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="h-24 sm:h-32 bg-bg-card rounded-xl" />
+            <div className="h-24 sm:h-32 bg-bg-card rounded-xl" />
+            <div className="h-24 sm:h-32 bg-bg-card rounded-xl" />
+            <div className="h-24 sm:h-32 bg-bg-card rounded-xl hidden lg:block" />
           </div>
         </div>
       </div>
@@ -268,34 +284,36 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen px-6 py-6">
+    <main className="min-h-screen px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
       {/* Header Section */}
-      <header className="mb-10 flex items-start justify-between">
+      <header className="mb-6 sm:mb-8 lg:mb-10 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-[1.75rem] font-bold text-text-white tracking-tight mb-2">
+          <h1 className="text-xl sm:text-[1.75rem] font-bold text-text-white tracking-tight mb-1 sm:mb-2">
             {greeting}, {session?.user?.name?.split(" ")[0] || "User"}
           </h1>
-          <p className="text-sm text-text-muted">
+          <p className="text-xs sm:text-sm text-text-muted">
             Manage your secure file collection and track client uploads in
             real-time.
           </p>
         </div>
 
         <Link
-          className="flex items-center gap-1.5 bg-primary text-primary-foreground border-none rounded-[10px] px-5 py-2.5 text-sm font-semibold cursor-pointer hover:opacity-90 transition-opacity"
+          className="flex items-center justify-center gap-1.5 bg-primary text-primary-foreground border-none rounded-[10px] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold cursor-pointer hover:opacity-90 transition-opacity w-full sm:w-auto"
           href="/dashboard/portals/create"
         >
-          <span className="text-lg font-medium">+</span> Create Portal
+          <span className="text-lg font-medium">+</span>{" "}
+          <span className="sm:hidden">New</span>
+          <span className="hidden sm:inline">Create Portal</span>
         </Link>
       </header>
 
       {/* Stats Grid - 4 columns */}
-      <section className="grid grid-cols-4 gap-6 mb-12">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-8 sm:mb-10 lg:mb-12">
         {/* Total Portals */}
-        <div className="bg-bg-card border border-border rounded-[14px] p-[22px_24px_24px]">
-          <div className="w-9 h-9 mb-[18px]">
+        <div className="bg-bg-card border border-border rounded-[14px] p-4 sm:p-5 lg:p-[22px_24px_24px]">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 mb-3 sm:mb-4 lg:mb-[18px]">
             <svg
-              className="w-9 h-9 text-accent-blue"
+              className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 text-accent-blue"
               fill="none"
               stroke="currentColor"
               strokeLinecap="round"
@@ -306,19 +324,19 @@ export default function DashboardPage() {
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
             </svg>
           </div>
-          <p className="text-[0.8rem] text-text-muted font-medium mb-1.5 tracking-wide">
+          <p className="text-[0.65rem] sm:text-[0.8rem] text-text-muted font-medium mb-1 sm:mb-1.5 tracking-wide">
             Total Portals
           </p>
-          <p className="text-[2rem] font-bold text-text-white leading-none">
+          <p className="text-xl sm:text-2xl lg:text-[2rem] font-bold text-text-white leading-none">
             {stats.totalPortals}
           </p>
         </div>
 
         {/* Active Portals */}
-        <div className="bg-bg-card border border-border rounded-[14px] p-[22px_24px_24px]">
-          <div className="w-9 h-9 mb-[18px]">
+        <div className="bg-bg-card border border-border rounded-[14px] p-4 sm:p-5 lg:p-[22px_24px_24px]">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 mb-3 sm:mb-4 lg:mb-[18px]">
             <svg
-              className="w-9 h-9 text-accent-green"
+              className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 text-accent-green"
               fill="none"
               stroke="currentColor"
               strokeLinecap="round"
@@ -329,19 +347,19 @@ export default function DashboardPage() {
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
             </svg>
           </div>
-          <p className="text-[0.8rem] text-text-muted font-medium mb-1.5 tracking-wide">
+          <p className="text-[0.65rem] sm:text-[0.8rem] text-text-muted font-medium mb-1 sm:mb-1.5 tracking-wide">
             Active Portals
           </p>
-          <p className="text-[2rem] font-bold text-text-white leading-none">
+          <p className="text-xl sm:text-2xl lg:text-[2rem] font-bold text-text-white leading-none">
             {stats.activePortals}
           </p>
         </div>
 
         {/* Files Received */}
-        <div className="bg-bg-card border border-border rounded-[14px] p-[22px_24px_24px]">
-          <div className="w-9 h-9 mb-[18px]">
+        <div className="bg-bg-card border border-border rounded-[14px] p-4 sm:p-5 lg:p-[22px_24px_24px]">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 mb-3 sm:mb-4 lg:mb-[18px]">
             <svg
-              className="w-9 h-9 text-accent-purple"
+              className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 text-accent-purple"
               fill="none"
               stroke="currentColor"
               strokeLinecap="round"
@@ -353,19 +371,19 @@ export default function DashboardPage() {
               <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
             </svg>
           </div>
-          <p className="text-[0.8rem] text-text-muted font-medium mb-1.5 tracking-wide">
+          <p className="text-[0.65rem] sm:text-[0.8rem] text-text-muted font-medium mb-1 sm:mb-1.5 tracking-wide">
             Files Received
           </p>
-          <p className="text-[2rem] font-bold text-text-white leading-none">
+          <p className="text-xl sm:text-2xl lg:text-[2rem] font-bold text-text-white leading-none">
             {stats.totalFilesReceived}
           </p>
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-bg-card border border-border rounded-[14px] p-[22px_24px_24px]">
-          <div className="w-9 h-9 mb-[18px]">
+        <div className="bg-bg-card border border-border rounded-[14px] p-4 sm:p-5 lg:p-[22px_24px_24px]">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 mb-3 sm:mb-4 lg:mb-[18px]">
             <svg
-              className="w-9 h-9 text-accent-yellow"
+              className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 text-accent-yellow"
               fill="none"
               stroke="currentColor"
               strokeLinecap="round"
@@ -377,17 +395,17 @@ export default function DashboardPage() {
               <polyline points="17 6 23 6 23 12" />
             </svg>
           </div>
-          <p className="text-[0.8rem] text-text-muted font-medium mb-1.5 tracking-wide">
+          <p className="text-[0.65rem] sm:text-[0.8rem] text-text-muted font-medium mb-1 sm:mb-1.5 tracking-wide">
             Recent Activity
           </p>
-          <p className="text-[2rem] font-bold text-text-white leading-none">
+          <p className="text-xl sm:text-2xl lg:text-[2rem] font-bold text-text-white leading-none">
             {stats.recentActivityCount}
           </p>
         </div>
       </section>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-[1fr_400px] gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 lg:gap-8 items-start">
         {/* Left Panel - Active Client Portals */}
         <section className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
@@ -491,6 +509,7 @@ export default function DashboardPage() {
                       onClick={(e) => {
                         e.stopPropagation();
                         const url = `${window.location.origin}/portal/${portal.slug}`;
+
                         navigator.clipboard.writeText(url);
                         alert("Portal link copied to clipboard!");
                       }}
@@ -499,8 +518,14 @@ export default function DashboardPage() {
                     </button>
                     <button
                       className="rounded-xl font-medium text-xs h-8 px-3 border border-border hover:bg-muted transition-colors"
-                      onClick={(e) => handleToggleActive(portal.id, portal.isActive, e)}
-                      title={portal.isActive ? "Deactivate Portal" : "Activate Portal"}
+                      title={
+                        portal.isActive
+                          ? "Deactivate Portal"
+                          : "Activate Portal"
+                      }
+                      onClick={(e) =>
+                        handleToggleActive(portal.id, portal.isActive, e)
+                      }
                     >
                       {portal.isActive ? (
                         <svg
@@ -533,21 +558,21 @@ export default function DashboardPage() {
                     </button>
                     <button
                       className="rounded-xl font-medium text-xs h-8 px-3 border border-border hover:bg-muted transition-colors"
+                      title="View Portal"
                       onClick={(e) => {
                         e.stopPropagation();
                         router.push(`/portal/${portal.slug}`);
                       }}
-                      title="View Portal"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </button>
                     <button
                       className="rounded-xl font-medium text-xs h-8 px-3 border border-border hover:bg-muted transition-colors"
+                      title="Edit Portal"
                       onClick={(e) => {
                         e.stopPropagation();
                         router.push(`/dashboard/portals/${portal.id}/edit`);
                       }}
-                      title="Edit Portal"
                     >
                       <svg
                         className="w-3.5 h-3.5"
@@ -704,7 +729,9 @@ export default function DashboardPage() {
                       className="p-4 hover:bg-muted/30 transition-colors"
                     >
                       <div className="flex items-start gap-3">
-                        <div className={`flex-shrink-0 mt-0.5 ${getFileIconColor(file.mimeType)}`}>
+                        <div
+                          className={`flex-shrink-0 mt-0.5 ${getFileIconColor(file.mimeType)}`}
+                        >
                           {getFileIcon(file.mimeType, "w-5 h-5")}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -736,10 +763,10 @@ export default function DashboardPage() {
       {showFilesModal && selectedPortal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <motion.div
-            initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="absolute inset-0 bg-background/40 backdrop-blur-sm"
             exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
             onClick={() => {
               setShowFilesModal(false);
               setSelectedPortal(null);
@@ -747,10 +774,10 @@ export default function DashboardPage() {
             }}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className="relative w-full max-w-2xl bg-bg-card rounded-[14px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
           >
             <div className="p-8 border-b border-border bg-muted/50 flex justify-between items-start">
               <div className="flex items-center gap-4">
@@ -796,7 +823,7 @@ export default function DashboardPage() {
                     {formatFileSize(
                       portalFiles
                         .reduce((acc, f) => acc + Number(f.size || 0), 0)
-                        .toString()
+                        .toString(),
                     )}
                   </p>
                 </div>
@@ -814,7 +841,9 @@ export default function DashboardPage() {
                       key={file.id}
                       className="flex items-center gap-3 p-3 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors"
                     >
-                      <span className={`flex-shrink-0 ${getFileIconColor(file.mimeType)}`}>
+                      <span
+                        className={`flex-shrink-0 ${getFileIconColor(file.mimeType)}`}
+                      >
                         {getFileIcon(file.mimeType, "w-5 h-5")}
                       </span>
                       <div className="flex-1 min-w-0">
@@ -847,7 +876,7 @@ export default function DashboardPage() {
                         <button
                           className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
                           title="Open file"
-                          onClick={() => window.open(file.storageUrl, '_blank')}
+                          onClick={() => window.open(file.storageUrl, "_blank")}
                         >
                           <ExternalLink className="w-4 h-4" />
                         </button>
@@ -889,7 +918,9 @@ export default function DashboardPage() {
               </button>
               <button
                 className="px-6 py-2.5 bg-foreground text-background rounded-2xl text-sm font-bold hover:opacity-90 shadow-sm transition-all flex items-center gap-2"
-                onClick={() => window.open(`/portal/${selectedPortal.slug}`, '_blank')}
+                onClick={() =>
+                  window.open(`/portal/${selectedPortal.slug}`, "_blank")
+                }
               >
                 View Portal <ExternalLink className="w-4 h-4" />
               </button>

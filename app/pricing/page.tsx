@@ -121,8 +121,9 @@ export default function PricingPage() {
                 Can I upgrade or downgrade later?
               </h3>
               <p className="text-default-500">
-                Yes! You can upgrade from Free to Pro or cancel your Pro subscription at any time.
-                Changes take effect immediately, and we&apos;ll prorate any charges.
+                Yes! You can upgrade from Free to Pro or cancel your Pro
+                subscription at any time. Changes take effect immediately, and
+                we&apos;ll prorate any charges.
               </p>
             </div>
 
@@ -131,9 +132,9 @@ export default function PricingPage() {
                 What happens if I exceed my limits on the Free plan?
               </h3>
               <p className="text-default-500">
-                You&apos;ll be notified when you reach your portal or storage limit.
-                To continue creating portals or uploading files, you&apos;ll need to upgrade to Pro
-                or remove some content.
+                You&apos;ll be notified when you reach your portal or storage
+                limit. To continue creating portals or uploading files,
+                you&apos;ll need to upgrade to Pro or remove some content.
               </p>
             </div>
 
@@ -142,8 +143,8 @@ export default function PricingPage() {
                 Do you offer refunds?
               </h3>
               <p className="text-default-500">
-                Yes, we offer a 14-day money-back guarantee on the Pro plan.
-                No questions asked.
+                Yes, we offer a 14-day money-back guarantee on the Pro plan. No
+                questions asked.
               </p>
             </div>
 
@@ -163,8 +164,8 @@ export default function PricingPage() {
               </h3>
               <p className="text-default-500">
                 Our Free plan is available forever with no credit card required.
-                You can try the platform and upgrade to Pro anytime to unlock unlimited portals,
-                500GB storage, and all premium features.
+                You can try the platform and upgrade to Pro anytime to unlock
+                unlimited portals, 500GB storage, and all premium features.
               </p>
             </div>
 
@@ -174,8 +175,8 @@ export default function PricingPage() {
               </h3>
               <p className="text-default-500">
                 Absolutely! You can cancel your Pro subscription at any time.
-                You&apos;ll retain access to Pro features until the end of your billing period,
-                then automatically move to the Free plan.
+                You&apos;ll retain access to Pro features until the end of your
+                billing period, then automatically move to the Free plan.
               </p>
             </div>
           </div>

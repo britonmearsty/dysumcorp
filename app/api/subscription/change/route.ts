@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     // Validate environment variables
     if (!process.env.CREEM_API_KEY) {
       console.error("❌ CREEM_API_KEY is not configured");
+
       return NextResponse.json(
         { error: "Payment system not configured. Please contact support." },
         { status: 500 },
@@ -24,6 +25,7 @@ export async function POST(request: Request) {
 
     if (!process.env.NEXT_PUBLIC_BETTER_AUTH_URL) {
       console.error("❌ NEXT_PUBLIC_BETTER_AUTH_URL is not configured");
+
       return NextResponse.json(
         { error: "Application URL not configured. Please contact support." },
         { status: 500 },
@@ -40,6 +42,7 @@ export async function POST(request: Request) {
 
     if (!session.user.email) {
       console.error("❌ User has no email address");
+
       return NextResponse.json(
         { error: "User email is required for checkout" },
         { status: 400 },
@@ -89,6 +92,7 @@ export async function POST(request: Request) {
 
       if (!productId) {
         console.error("❌ Product ID not configured for plan:", newPlanId);
+
         return NextResponse.json(
           { error: "Product ID not configured" },
           { status: 500 },
@@ -127,6 +131,7 @@ export async function POST(request: Request) {
 
       if (!result || !result.url) {
         console.error("❌ No URL returned from Creem:", result);
+
         return NextResponse.json(
           { error: "Failed to create checkout" },
           { status: 500 },
@@ -160,17 +165,22 @@ export async function POST(request: Request) {
 
     // Check for common error patterns
     if (error?.message?.includes("API key")) {
-      errorMessage = "Payment system configuration error. Please contact support.";
+      errorMessage =
+        "Payment system configuration error. Please contact support.";
     } else if (error?.message?.includes("product")) {
       errorMessage = "Invalid product configuration. Please contact support.";
-    } else if (error?.message?.includes("network") || error?.message?.includes("fetch")) {
+    } else if (
+      error?.message?.includes("network") ||
+      error?.message?.includes("fetch")
+    ) {
       errorMessage = "Unable to connect to payment service. Please try again.";
     }
 
     return NextResponse.json(
       {
         error: errorMessage,
-        details: process.env.NODE_ENV === "development" ? error?.message : undefined
+        details:
+          process.env.NODE_ENV === "development" ? error?.message : undefined,
       },
       { status: 500 },
     );

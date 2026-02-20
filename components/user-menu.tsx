@@ -18,18 +18,23 @@ export function UserMenu() {
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <span className="text-sm">
+    <div className="flex items-center gap-2 sm:gap-4">
+      <span className="text-xs sm:text-sm hidden sm:inline">
         Welcome, {session.user?.name || session.user?.email}
+      </span>
+      <span className="text-xs sm:text-sm sm:hidden">
+        {session.user?.name?.split(" ")[0] || "User"}
       </span>
       <Button
         variant="outline"
+        size="sm"
         onClick={async () => {
           await signOut();
           router.push("/");
         }}
       >
-        Sign Out
+        <span className="hidden sm:inline">Sign Out</span>
+        <span className="sm:hidden">Out</span>
       </Button>
     </div>
   );

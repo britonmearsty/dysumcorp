@@ -52,7 +52,10 @@ export async function POST(request: NextRequest) {
         const metadata = {
           name: folderName,
           mimeType: "application/vnd.google-apps.folder",
-          parents: parentFolderId && parentFolderId !== "root" ? [parentFolderId] : ["root"],
+          parents:
+            parentFolderId && parentFolderId !== "root"
+              ? [parentFolderId]
+              : ["root"],
         };
 
         const response = await fetch(
@@ -68,10 +71,13 @@ export async function POST(request: NextRequest) {
         );
 
         if (!response.ok) {
-          throw new Error(`Google Drive folder creation failed: ${response.statusText}`);
+          throw new Error(
+            `Google Drive folder creation failed: ${response.statusText}`,
+          );
         }
 
         const folder = await response.json();
+
         return NextResponse.json({
           id: folder.id,
           name: folder.name,
@@ -96,10 +102,13 @@ export async function POST(request: NextRequest) {
         );
 
         if (!response.ok) {
-          throw new Error(`Dropbox folder creation failed: ${response.statusText}`);
+          throw new Error(
+            `Dropbox folder creation failed: ${response.statusText}`,
+          );
         }
 
         const data = await response.json();
+
         return NextResponse.json({
           id: data.metadata.path_lower,
           name: data.metadata.name,
@@ -108,7 +117,10 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      return NextResponse.json({ error: "Unsupported provider" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Unsupported provider" },
+        { status: 400 },
+      );
     }
 
     // File upload (existing logic)

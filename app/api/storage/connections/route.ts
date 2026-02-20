@@ -43,7 +43,9 @@ export async function GET() {
       },
     });
 
-    console.log(`[Storage Connections] Found ${accounts.length} accounts for user ${session.user.id}`);
+    console.log(
+      `[Storage Connections] Found ${accounts.length} accounts for user ${session.user.id}`,
+    );
 
     // Transform accounts and auto-refresh expired tokens
     const connectedAccounts = await Promise.all(
@@ -54,26 +56,41 @@ export async function GET() {
 
         // Auto-refresh if token is expired and refresh token exists
         if (isExpired && account.refreshToken) {
-          console.log(`[Storage Connections] Token expired for ${account.providerId}, attempting refresh...`);
-          
+          console.log(
+            `[Storage Connections] Token expired for ${account.providerId}, attempting refresh...`,
+          );
+
           try {
-            const newToken = await refreshAccessToken(account.providerId as "google" | "dropbox", account);
+            const newToken = await refreshAccessToken(
+              account.providerId as "google" | "dropbox",
+              account,
+            );
+
             if (newToken) {
-              console.log(`[Storage Connections] Successfully refreshed token for ${account.providerId}`);
+              console.log(
+                `[Storage Connections] Successfully refreshed token for ${account.providerId}`,
+              );
               accessToken = newToken.accessToken;
               expiresAt = newToken.expiresAt;
               isExpired = false;
             } else {
-              console.log(`[Storage Connections] Failed to refresh token for ${account.providerId}`);
+              console.log(
+                `[Storage Connections] Failed to refresh token for ${account.providerId}`,
+              );
             }
           } catch (error) {
-            console.error(`[Storage Connections] Error refreshing token for ${account.providerId}:`, error);
+            console.error(
+              `[Storage Connections] Error refreshing token for ${account.providerId}:`,
+              error,
+            );
           }
         }
 
         const hasValidToken = !!(accessToken && !isExpired);
 
-        console.log(`[Storage Connections] ${account.providerId}: hasToken=${!!accessToken}, expiresAt=${expiresAt}, isValid=${hasValidToken}`);
+        console.log(
+          `[Storage Connections] ${account.providerId}: hasToken=${!!accessToken}, expiresAt=${expiresAt}, isValid=${hasValidToken}`,
+        );
 
         return {
           provider: account.providerId as "google" | "dropbox",
@@ -83,10 +100,12 @@ export async function GET() {
           storageStatus: hasValidToken ? "ACTIVE" : "DISCONNECTED",
           hasValidOAuth: hasValidToken,
         };
-      })
+      }),
     );
 
-    console.log(`[Storage Connections] Returning ${connectedAccounts.length} accounts, ${connectedAccounts.filter(a => a.isConnected).length} connected`);
+    console.log(
+      `[Storage Connections] Returning ${connectedAccounts.length} accounts, ${connectedAccounts.filter((a) => a.isConnected).length} connected`,
+    );
 
     return NextResponse.json({
       accounts: connectedAccounts,
@@ -104,7 +123,7 @@ export async function GET() {
 // Helper function to refresh access token
 async function refreshAccessToken(
   provider: "google" | "dropbox",
-  account: { id: string; refreshToken: string | null }
+  account: { id: string; refreshToken: string | null },
 ): Promise<{ accessToken: string; expiresAt: Date | null } | null> {
   if (!account.refreshToken) {
     return null;
@@ -138,7 +157,13 @@ async function refreshAccessToken(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Token refresh failed for ${provider}:`, response.status, errorText);
+
+      console.error(
+        `Token refresh failed for ${provider}:`,
+        response.status,
+        errorText,
+      );
+
       return null;
     }
 
@@ -163,6 +188,7 @@ async function refreshAccessToken(
     };
   } catch (error) {
     console.error(`Failed to refresh ${provider} token:`, error);
+
     return null;
   }
 }

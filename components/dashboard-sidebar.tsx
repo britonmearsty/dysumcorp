@@ -91,9 +91,7 @@ function UserAccountSection({
     />
   ) : (
     <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center ring-2 ring-primary/20">
-      <span className="text-white text-sm font-mono font-bold">
-        {initials}
-      </span>
+      <span className="text-white text-sm font-mono font-bold">{initials}</span>
     </div>
   );
 
@@ -147,6 +145,7 @@ export function DashboardSidebar() {
   // Load collapsed state from localStorage on mount
   useEffect(() => {
     const savedState = localStorage.getItem("sidebar-collapsed");
+
     if (savedState !== null) {
       setIsCollapsed(savedState === "true");
     }
@@ -155,6 +154,7 @@ export function DashboardSidebar() {
   // Save collapsed state to localStorage
   const toggleCollapsed = () => {
     const newState = !isCollapsed;
+
     setIsCollapsed(newState);
     localStorage.setItem("sidebar-collapsed", String(newState));
   };
@@ -163,8 +163,8 @@ export function DashboardSidebar() {
     <>
       {/* Mobile menu button */}
       <Button
-        className="lg:hidden fixed top-4 left-4 z-50 bg-sidebar/80 backdrop-blur-sm border border-sidebar-border/50 shadow-lg"
-        size="icon"
+        className="lg:hidden fixed top-3 left-3 z-50 bg-sidebar/80 backdrop-blur-sm border border-sidebar-border/50 shadow-lg"
+        size="sm"
         variant="outline"
         onClick={() => setIsMobileOpen(!isMobileOpen)}
       >

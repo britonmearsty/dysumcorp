@@ -18,7 +18,7 @@ const prisma = new PrismaClient({ adapter });
 export async function POST(request: Request) {
   try {
     console.log("[/api/portals/create] Starting portal creation");
-    
+
     const session = await getSessionFromRequest(request);
 
     console.log("[/api/portals/create] Session:", {
@@ -32,14 +32,16 @@ export async function POST(request: Request) {
     }
 
     const userId = session.user.id;
-    
+
     console.log("[/api/portals/create] Getting user plan type");
     const planType = await getUserPlanType(userId);
+
     console.log("[/api/portals/create] Plan type:", planType);
 
     // Check portal limit
     console.log("[/api/portals/create] Checking portal limit");
     const portalCheck = await checkPortalLimit(userId, planType);
+
     console.log("[/api/portals/create] Portal check result:", portalCheck);
 
     if (!portalCheck.allowed) {
@@ -55,6 +57,7 @@ export async function POST(request: Request) {
 
     console.log("[/api/portals/create] Parsing request body");
     const body = await request.json();
+
     console.log("[/api/portals/create] Request body keys:", Object.keys(body));
     const {
       name,
@@ -95,16 +98,22 @@ export async function POST(request: Request) {
     // Storage is now optional - if provided, validate it
     if (storageProvider && (!storageFolderId || !storageFolderPath)) {
       return NextResponse.json(
-        { error: "Storage folder must be selected when storage provider is specified" },
+        {
+          error:
+            "Storage folder must be selected when storage provider is specified",
+        },
         { status: 400 },
       );
     }
 
     // Validate file size - make it optional with default
-    const finalMaxFileSize = maxFileSize && maxFileSize > 0 ? maxFileSize : 52428800; // Default 50MB
+    const finalMaxFileSize =
+      maxFileSize && maxFileSize > 0 ? maxFileSize : 52428800; // Default 50MB
 
-    console.log("[/api/portals/create] Validation passed, checking slug uniqueness");
-    
+    console.log(
+      "[/api/portals/create] Validation passed, checking slug uniqueness",
+    );
+
     // Check if slug is already taken
     const existingPortal = await prisma.portal.findUnique({
       where: { slug },
@@ -158,7 +167,7 @@ export async function POST(request: Request) {
     }
 
     console.log("[/api/portals/create] Creating portal in database");
-    
+
     // Create the portal
     const portal = await prisma.portal.create({
       data: {
@@ -180,7 +189,8 @@ export async function POST(request: Request) {
         useClientFolders: useClientFolders || false,
         // Security
         password: password || null,
-        requireClientName: requireClientName !== undefined ? requireClientName : true,
+        requireClientName:
+          requireClientName !== undefined ? requireClientName : true,
         requireClientEmail: requireClientEmail || false,
         maxFileSize: BigInt(finalMaxFileSize),
         allowedFileTypes: allowedFileTypes || [],
@@ -191,7 +201,10 @@ export async function POST(request: Request) {
       },
     });
 
-    console.log("[/api/portals/create] Portal created successfully:", portal.id);
+    console.log(
+      "[/api/portals/create] Portal created successfully:",
+      portal.id,
+    );
 
     // Convert BigInt to string for JSON serialization
     const portalResponse = {
@@ -212,7 +225,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(
-      { 
+      {
         error: "Failed to create portal",
         details: error instanceof Error ? error.message : String(error),
       },

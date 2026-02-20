@@ -54,8 +54,8 @@ export function StorageUpload() {
   };
 
   return (
-    <div className="space-y-4 p-6 border rounded-lg">
-      <h2 className="text-2xl font-bold">Upload to Cloud Storage</h2>
+    <div className="space-y-3 sm:space-y-4 p-4 sm:border rounded-lg border-border">
+      <h2 className="text-lg sm:text-2xl font-bold">Upload to Cloud Storage</h2>
 
       <div className="space-y-2">
         <Label htmlFor="provider">Storage Provider</Label>
@@ -80,20 +80,26 @@ export function StorageUpload() {
         />
       </div>
 
-      <Button disabled={!file || uploading} onClick={handleUpload}>
+      <Button
+        disabled={!file || uploading}
+        onClick={handleUpload}
+        className="w-full sm:w-auto"
+      >
         {uploading ? "Uploading..." : "Upload"}
       </Button>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700">
+        <div className="p-3 sm:p-4 bg-red-50 border border-red-200 rounded text-red-700 text-xs sm:text-sm">
           {error}
         </div>
       )}
 
       {result && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded">
-          <p className="font-semibold text-green-700">Upload successful!</p>
-          <pre className="mt-2 text-sm overflow-auto">
+        <div className="p-3 sm:p-4 bg-green-50 border border-green-200 rounded">
+          <p className="font-semibold text-green-700 text-sm">
+            Upload successful!
+          </p>
+          <pre className="mt-2 text-xs sm:text-sm overflow-auto">
             {JSON.stringify(result, null, 2)}
           </pre>
         </div>

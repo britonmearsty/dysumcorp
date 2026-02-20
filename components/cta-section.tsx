@@ -1,9 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Box, Twitter, Linkedin } from "lucide-react";
+
 import { FadeIn } from "./animations";
+
+import { Button } from "@/components/ui/button";
 
 export default function CTASection() {
   return (
@@ -21,20 +23,20 @@ export default function CTASection() {
               </h2>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
                 <Button
-                  onClick={() => (window.location.href = "/auth")}
                   className="w-full sm:w-auto px-12 py-6 bg-stone-50 text-[#1c1917] rounded-xl font-bold text-xl hover:scale-105 transition-transform premium-shadow"
+                  onClick={() => (window.location.href = "/auth")}
                 >
                   Create portal free
                 </Button>
                 <Link
-                  href="#pricing"
                   className="w-full sm:w-auto px-12 py-6 bg-white/5 backdrop-blur border border-white/20 rounded-xl font-bold text-xl hover:bg-white/10 transition-colors text-stone-100"
+                  href="#pricing"
                 >
                   View pricing
                 </Link>
               </div>
             </div>
-            <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-white/[0.03] rounded-full blur-[100px] -mr-64 -mt-64"></div>
+            <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-white/[0.03] rounded-full blur-[100px] -mr-64 -mt-64" />
           </div>
         </FadeIn>
       </section>
@@ -66,24 +68,24 @@ export default function CTASection() {
                 <ul className="space-y-3">
                   <li>
                     <a
-                      href="#features"
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
+                      href="#features"
                     >
                       Features
                     </a>
                   </li>
                   <li>
                     <a
-                      href="#pricing"
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
+                      href="#pricing"
                     >
                       Pricing
                     </a>
                   </li>
                   <li>
                     <a
-                      href="#"
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
+                      href="#"
                     >
                       API
                     </a>
@@ -97,24 +99,24 @@ export default function CTASection() {
                 <ul className="space-y-3">
                   <li>
                     <a
-                      href="#"
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
+                      href="#"
                     >
                       Privacy
                     </a>
                   </li>
                   <li>
                     <a
-                      href="#"
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
+                      href="#"
                     >
                       Terms
                     </a>
                   </li>
                   <li>
                     <a
-                      href="#security"
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
+                      href="#security"
                     >
                       Security
                     </a>
@@ -128,8 +130,8 @@ export default function CTASection() {
                 <ul className="space-y-3">
                   <li>
                     <a
-                      href="#"
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors flex items-center gap-2"
+                      href="#"
                     >
                       <Twitter className="w-4 h-4" />
                       Twitter
@@ -137,8 +139,8 @@ export default function CTASection() {
                   </li>
                   <li>
                     <a
-                      href="#"
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors flex items-center gap-2"
+                      href="#"
                     >
                       <Linkedin className="w-4 h-4" />
                       LinkedIn
@@ -154,7 +156,7 @@ export default function CTASection() {
               © 2024 Dysumcorp Inc. Crafted for excellence.
             </p>
             <div className="flex items-center gap-4">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <div className="w-2 h-2 rounded-full bg-green-500" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">
                 System Status: Operational
               </span>

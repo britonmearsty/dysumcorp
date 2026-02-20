@@ -1,6 +1,7 @@
 "use client";
 
 import { Quote } from "lucide-react";
+
 import { FadeIn } from "./animations";
 
 const testimonial = {
@@ -28,9 +29,9 @@ export default function TestimonialsSection() {
           <div className="flex flex-col items-center gap-6">
             <div className="w-20 h-20 rounded-full border-4 border-white shadow-xl overflow-hidden">
               <img
-                src={testimonial.image}
                 alt={testimonial.name}
                 className="w-full h-full object-cover grayscale"
+                src={testimonial.image}
               />
             </div>
             <div className="text-center">

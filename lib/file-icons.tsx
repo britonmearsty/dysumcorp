@@ -83,11 +83,24 @@ export function getFileIconColor(mimeType: string): string {
   if (mimeType.startsWith("video/")) return "text-red-500";
   if (mimeType.startsWith("audio/")) return "text-green-500";
   if (mimeType.includes("pdf")) return "text-red-600";
-  if (mimeType.includes("word") || mimeType.includes("document")) return "text-blue-500";
-  if (mimeType.includes("sheet") || mimeType.includes("excel")) return "text-emerald-600";
-  if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return "text-orange-500";
-  if (mimeType.includes("zip") || mimeType.includes("rar") || mimeType.includes("archive")) return "text-yellow-600";
-  if (mimeType.includes("javascript") || mimeType.includes("typescript") || mimeType.includes("json")) return "text-yellow-500";
-  
+  if (mimeType.includes("word") || mimeType.includes("document"))
+    return "text-blue-500";
+  if (mimeType.includes("sheet") || mimeType.includes("excel"))
+    return "text-emerald-600";
+  if (mimeType.includes("presentation") || mimeType.includes("powerpoint"))
+    return "text-orange-500";
+  if (
+    mimeType.includes("zip") ||
+    mimeType.includes("rar") ||
+    mimeType.includes("archive")
+  )
+    return "text-yellow-600";
+  if (
+    mimeType.includes("javascript") ||
+    mimeType.includes("typescript") ||
+    mimeType.includes("json")
+  )
+    return "text-yellow-500";
+
   return "text-muted-foreground";
 }

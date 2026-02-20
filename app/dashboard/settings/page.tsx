@@ -178,10 +178,12 @@ export default function SettingsPage() {
     return (
       <div>
         <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
             Settings
           </h1>
-          <p className="text-muted-foreground mt-2 text-lg">Loading...</p>
+          <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-lg">
+            Loading...
+          </p>
         </div>
       </div>
     );
@@ -190,18 +192,18 @@ export default function SettingsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">
+      <div className="mb-6 sm:mb-8 lg:mb-10">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
           Settings
         </h1>
-        <p className="text-muted-foreground mt-2 text-lg">
+        <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-lg">
           Manage your account preferences and application settings
         </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Navigation Sidebar */}
-        <aside className="lg:w-64 flex-shrink-0">
+        <aside className="lg:w-64 flex-shrink-0 order-2 lg:order-1">
           <nav className="space-y-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -210,16 +212,16 @@ export default function SettingsPage() {
               return (
                 <button
                   key={tab.id}
-                  type="button"
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                  className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 group ${
                     isActive
                       ? "bg-card shadow-sm border border-border text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
+                  type="button"
                   onClick={() => setActiveTab(tab.id)}
                 >
                   <Icon
-                    className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}
+                    className={`w-4 sm:w-5 h-4 sm:h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}
                   />
                   <span className="font-medium text-sm">{tab.name}</span>
                   {isActive && (
@@ -237,7 +239,7 @@ export default function SettingsPage() {
         </aside>
 
         {/* Content Area */}
-        <main className="flex-1">
+        <main className="flex-1 order-1 lg:order-2">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -247,19 +249,22 @@ export default function SettingsPage() {
               transition={{ duration: 0.2 }}
             >
               <div className="bg-bg-card rounded-[14px] border border-border overflow-hidden">
-                <div className="p-6 border-b border-border bg-muted/30">
-                  <h2 className="text-xl font-semibold text-foreground">
+                <div className="p-4 sm:p-6 border-b border-border bg-muted/30">
+                  <h2 className="text-lg sm:text-xl font-semibold text-foreground">
                     {tabs.find((t) => t.id === activeTab)?.name}
                   </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                     {tabs.find((t) => t.id === activeTab)?.description}
                   </p>
                 </div>
 
-                <div className="p-8">
+                <div className="p-4 sm:p-6 lg:p-8">
                   {/* Profile Settings */}
                   {activeTab === "profile" && (
-                    <form className="space-y-6" onSubmit={handleProfileUpdate}>
+                    <form
+                      className="space-y-4 sm:space-y-6"
+                      onSubmit={handleProfileUpdate}
+                    >
                       <div>
                         <Label
                           className="text-sm font-semibold text-foreground"
@@ -268,7 +273,7 @@ export default function SettingsPage() {
                           Full Name
                         </Label>
                         <Input
-                          className="mt-2 rounded-xl"
+                          className="mt-1.5 sm:mt-2 rounded-xl"
                           id="name"
                           placeholder="John Doe"
                           type="text"
@@ -285,20 +290,20 @@ export default function SettingsPage() {
                         </Label>
                         <Input
                           disabled
-                          className="mt-2 rounded-xl opacity-60"
+                          className="mt-1.5 sm:mt-2 rounded-xl opacity-60"
                           id="email"
                           placeholder="john@example.com"
                           type="email"
                           value={email}
                         />
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="text-xs text-muted-foreground mt-1.5 sm:mt-2">
                           Email is managed by your OAuth provider
                         </p>
                       </div>
 
                       {profileStatus !== "idle" && (
                         <div
-                          className={`p-4 rounded-xl text-sm font-medium ${
+                          className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${
                             profileStatus === "success"
                               ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
                               : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
@@ -322,14 +327,14 @@ export default function SettingsPage() {
 
                   {/* Notifications */}
                   {activeTab === "notifications" && (
-                    <div className="space-y-6">
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="space-y-3 sm:space-y-4">
+                        <div className="flex items-center justify-between p-3 sm:p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
                           <div>
                             <p className="font-semibold text-sm text-foreground">
                               Email Notifications
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
                               Receive email updates
                             </p>
                           </div>
@@ -339,12 +344,12 @@ export default function SettingsPage() {
                           />
                         </div>
 
-                        <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
+                        <div className="flex items-center justify-between p-3 sm:p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
                           <div>
                             <p className="font-semibold text-sm text-foreground">
                               Push Notifications
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
                               Browser notifications
                             </p>
                           </div>
@@ -354,12 +359,12 @@ export default function SettingsPage() {
                           />
                         </div>
 
-                        <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
+                        <div className="flex items-center justify-between p-3 sm:p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
                           <div>
                             <p className="font-semibold text-sm text-foreground">
                               Weekly Reports
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
                               Activity summaries
                             </p>
                           </div>
@@ -372,7 +377,7 @@ export default function SettingsPage() {
 
                       {notificationsStatus !== "idle" && (
                         <div
-                          className={`p-4 rounded-xl text-sm font-medium ${
+                          className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${
                             notificationsStatus === "success"
                               ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
                               : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
@@ -405,12 +410,12 @@ export default function SettingsPage() {
 
                   {/* Security */}
                   {activeTab === "security" && (
-                    <div className="space-y-4">
-                      <div className="p-4 bg-muted rounded-xl border border-border">
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="p-3 sm:p-4 bg-muted rounded-xl border border-border">
                         <p className="font-semibold text-sm text-foreground">
                           Authentication Method
                         </p>
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="text-xs text-muted-foreground mt-1 sm:mt-2">
                           OAuth via{" "}
                           {session?.user?.email?.includes("gmail")
                             ? "Google"
@@ -418,18 +423,18 @@ export default function SettingsPage() {
                         </p>
                       </div>
 
-                      <div className="p-4 bg-muted rounded-xl border border-border">
+                      <div className="p-3 sm:p-4 bg-muted rounded-xl border border-border">
                         <p className="font-semibold text-sm text-foreground">
                           Connected Email
                         </p>
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="text-xs text-muted-foreground mt-1 sm:mt-2 break-all">
                           {session?.user?.email}
                         </p>
                       </div>
 
-                      <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                      <div className="p-3 sm:p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800">
                         <div className="flex items-center gap-2">
-                          <CheckCircle className="text-emerald-600 dark:text-emerald-400 h-5 w-5" />
+                          <CheckCircle className="text-emerald-600 dark:text-emerald-400 h-4 sm:h-5 w-4 sm:w-5" />
                           <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
                             Account Secured by OAuth
                           </p>
@@ -440,9 +445,9 @@ export default function SettingsPage() {
 
                   {/* Danger Zone */}
                   {activeTab === "danger" && (
-                    <div className="space-y-6">
+                    <div className="space-y-4 sm:space-y-6">
                       {!showDeleteConfirm ? (
-                        <div className="flex items-center justify-between p-6 rounded-xl border-2 border-red-500/50 bg-red-50 dark:bg-red-950/20">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-xl border-2 border-red-500/50 bg-red-50 dark:bg-red-950/20">
                           <div>
                             <p className="font-semibold text-sm text-foreground">
                               Delete Account
@@ -452,8 +457,8 @@ export default function SettingsPage() {
                             </p>
                           </div>
                           <Button
+                            className="rounded-xl border-2 border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 w-full sm:w-auto"
                             type="button"
-                            className="rounded-xl border-2 border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
                             variant="outline"
                             onClick={() => setShowDeleteConfirm(true)}
                           >
@@ -461,12 +466,12 @@ export default function SettingsPage() {
                           </Button>
                         </div>
                       ) : (
-                        <div className="space-y-4 p-6 rounded-xl border-2 border-red-500/50 bg-red-50 dark:bg-red-950/20">
+                        <div className="space-y-4 p-4 sm:p-6 rounded-xl border-2 border-red-500/50 bg-red-50 dark:bg-red-950/20">
                           <div>
                             <p className="font-bold text-red-600 dark:text-red-400">
                               Are you absolutely sure?
                             </p>
-                            <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+                            <p className="text-xs sm:text-sm text-red-600 dark:text-red-400 mt-1 sm:mt-2">
                               This action cannot be undone. This will
                               permanently delete your account and remove all
                               your data from our servers.
@@ -485,7 +490,7 @@ export default function SettingsPage() {
                               to confirm
                             </Label>
                             <Input
-                              className="mt-2 rounded-xl border-2 border-red-500/50 focus:border-red-500"
+                              className="mt-1.5 sm:mt-2 rounded-xl border-2 border-red-500/50 focus:border-red-500"
                               id="deleteConfirm"
                               placeholder="DELETE"
                               type="text"
@@ -498,7 +503,7 @@ export default function SettingsPage() {
 
                           {notificationsStatus !== "idle" && (
                             <div
-                              className={`p-4 rounded-xl text-sm font-medium ${
+                              className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${
                                 notificationsStatus === "success"
                                   ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
                                   : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
@@ -512,22 +517,22 @@ export default function SettingsPage() {
                             </div>
                           )}
 
-                          <div className="flex gap-3">
+                          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                             <Button
-                              type="button"
-                              className="rounded-xl bg-red-600 text-white hover:bg-red-700"
+                              className="rounded-xl bg-red-600 text-white hover:bg-red-700 w-full sm:w-auto"
                               disabled={
                                 deleteLoading || deleteConfirmText !== "DELETE"
                               }
+                              type="button"
                               variant="default"
                               onClick={handleDeleteAccount}
                             >
                               {deleteLoading ? "Deleting..." : "Confirm Delete"}
                             </Button>
                             <Button
-                              type="button"
-                              className="rounded-xl"
+                              className="rounded-xl w-full sm:w-auto"
                               disabled={deleteLoading}
+                              type="button"
                               variant="outline"
                               onClick={() => {
                                 setShowDeleteConfirm(false);

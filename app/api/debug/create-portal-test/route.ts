@@ -22,6 +22,7 @@ export async function GET(request: Request) {
     diagnostics.checks.session = { status: "checking" };
     try {
       const session = await getSessionFromRequest(request);
+
       diagnostics.checks.session = {
         status: session?.user ? "success" : "failed",
         hasSession: !!session,
@@ -53,7 +54,10 @@ export async function GET(request: Request) {
     if (diagnostics.checks.session.userId) {
       diagnostics.checks.planType = { status: "checking" };
       try {
-        const planType = await getUserPlanType(diagnostics.checks.session.userId);
+        const planType = await getUserPlanType(
+          diagnostics.checks.session.userId,
+        );
+
         diagnostics.checks.planType = {
           status: "success",
           planType,
@@ -72,8 +76,9 @@ export async function GET(request: Request) {
         try {
           const limitCheck = await checkPortalLimit(
             diagnostics.checks.session.userId,
-            diagnostics.checks.planType.planType
+            diagnostics.checks.planType.planType,
           );
+
           diagnostics.checks.portalLimit = {
             status: "success",
             ...limitCheck,
@@ -94,10 +99,15 @@ export async function GET(request: Request) {
           where: { userId: diagnostics.checks.session.userId },
           select: { id: true, name: true, slug: true },
         });
+
         diagnostics.checks.existingPortals = {
           status: "success",
           count: portals.length,
-          portals: portals.map(p => ({ id: p.id, name: p.name, slug: p.slug })),
+          portals: portals.map((p) => ({
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+          })),
         };
       } catch (error) {
         diagnostics.checks.existingPortals = {
@@ -109,11 +119,14 @@ export async function GET(request: Request) {
     }
 
     // 6. Test portal creation (dry run)
-    if (diagnostics.checks.session.userId && diagnostics.checks.portalLimit?.allowed) {
+    if (
+      diagnostics.checks.session.userId &&
+      diagnostics.checks.portalLimit?.allowed
+    ) {
       diagnostics.checks.portalCreationDryRun = { status: "checking" };
       try {
         const testSlug = `test-${Date.now()}`;
-        
+
         // Check if slug is available
         const existing = await prisma.portal.findUnique({
           where: { slug: testSlug },
@@ -147,10 +160,11 @@ export async function GET(request: Request) {
     diagnostics.summary = {
       totalChecks: Object.keys(diagnostics.checks).length,
       successfulChecks: Object.values(diagnostics.checks).filter(
-        (c: any) => c.status === "success"
+        (c: any) => c.status === "success",
       ).length,
       failedChecks: diagnostics.errors.length,
-      overallStatus: diagnostics.errors.length === 0 ? "healthy" : "issues_detected",
+      overallStatus:
+        diagnostics.errors.length === 0 ? "healthy" : "issues_detected",
     };
 
     return NextResponse.json(diagnostics, { status: 200 });

@@ -4,12 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, Tab } from "@heroui/tabs";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  CreditCard,
-  BarChart3,
-  Package,
-  ChevronRight,
-} from "lucide-react";
+import { CreditCard, BarChart3, Package, ChevronRight } from "lucide-react";
 
 import { SubscriptionStatus } from "@/components/subscription-status";
 import { SubscriptionManager } from "@/components/subscription-manager";
@@ -116,50 +111,58 @@ export default function BillingPage() {
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Billing & Usage</h1>
-        <p className="text-muted-foreground mt-2">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+          Billing & Usage
+        </h1>
+        <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">
           Manage your subscription, view usage, and upgrade your plan
         </p>
       </div>
 
       {/* Success/Canceled Messages */}
       {showSuccess && (
-        <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-6 py-4 rounded-xl mb-6">
-          <p className="font-bold">Payment successful! 🎉</p>
-          <p className="text-sm mt-1">
+        <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-4 sm:px-6 py-3 sm:py-4 rounded-xl mb-4 sm:mb-6">
+          <p className="font-bold text-sm sm:text-base">Payment successful!</p>
+          <p className="text-xs sm:text-sm mt-0.5 sm:mt-1">
             Your subscription has been activated.
           </p>
         </div>
       )}
       {showCanceled && (
-        <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-400 px-6 py-4 rounded-xl mb-6">
-          <p className="font-bold">Payment canceled</p>
-          <p className="text-sm mt-1">You can try again anytime.</p>
+        <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-400 px-4 sm:px-6 py-3 sm:py-4 rounded-xl mb-4 sm:mb-6">
+          <p className="font-bold text-sm sm:text-base">Payment canceled</p>
+          <p className="text-xs sm:text-sm mt-0.5 sm:mt-1">
+            You can try again anytime.
+          </p>
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
         {/* Sidebar */}
-        <aside className="lg:w-64 flex-shrink-0">
+        <aside className="lg:w-64 flex-shrink-0 order-2 lg:order-1">
           <nav className="space-y-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
+
               return (
                 <button
                   key={tab.id}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all ${
                     isActive
                       ? "bg-card border border-border text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                   onClick={() => setActiveTab(tab.id)}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 sm:w-5 h-4 sm:h-5" />
                   <span className="font-medium text-sm">{tab.name}</span>
                   {isActive && (
-                    <motion.div className="ml-auto" layoutId="billing-indicator">
+                    <motion.div
+                      className="ml-auto"
+                      layoutId="billing-indicator"
+                    >
                       <ChevronRight className="w-4 h-4" />
                     </motion.div>
                   )}
@@ -174,9 +177,9 @@ export default function BillingPage() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
             >
               <div className="bg-card rounded-xl border border-border overflow-visible">
@@ -211,8 +214,8 @@ export default function BillingPage() {
                           Need Help?
                         </h2>
                         <p className="text-sm text-muted-foreground mb-4">
-                          Having issues with your subscription? Contact our support
-                          team for assistance.
+                          Having issues with your subscription? Contact our
+                          support team for assistance.
                         </p>
                         <p className="text-sm text-muted-foreground">
                           Email: support@dysumcorp.com

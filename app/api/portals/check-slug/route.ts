@@ -17,12 +17,13 @@ export async function GET(request: Request) {
     if (!slug) {
       return NextResponse.json(
         { error: "Slug parameter is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Validate slug format
     const validation = validateSlug(slug);
+
     if (!validation.isValid) {
       return NextResponse.json({
         available: false,
@@ -51,9 +52,10 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Error checking slug:", error);
+
     return NextResponse.json(
       { error: "Failed to check slug availability" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

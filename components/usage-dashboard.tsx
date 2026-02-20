@@ -53,7 +53,9 @@ export function UsageDashboard() {
     return (
       <Card className="bg-card border border-border rounded-xl" shadow="none">
         <CardBody>
-          <p className="text-center text-muted-foreground">Loading usage data...</p>
+          <p className="text-center text-muted-foreground">
+            Loading usage data...
+          </p>
         </CardBody>
       </Card>
     );
@@ -82,7 +84,7 @@ export function UsageDashboard() {
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
       {usageItems.map((item) => {
         const percentage =
           item.limit === 999999 ? 0 : (item.used / item.limit) * 100;
@@ -95,11 +97,15 @@ export function UsageDashboard() {
               : "success";
 
         return (
-          <Card key={item.label} className="bg-card border border-border rounded-xl" shadow="none">
-            <CardBody className="gap-3">
+          <Card
+            key={item.label}
+            className="bg-card border border-border rounded-xl"
+            shadow="none"
+          >
+            <CardBody className="gap-2 sm:gap-3">
               <div className="flex justify-between items-start">
-                <p className="text-sm font-medium">{item.label}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs sm:text-sm font-medium">{item.label}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
                   {isUnlimited ? (
                     "Unlimited"
                   ) : (
@@ -122,7 +128,7 @@ export function UsageDashboard() {
               )}
 
               {!isUnlimited && percentage >= 80 && (
-                <p className="text-xs text-warning">
+                <p className="text-[10px] sm:text-xs text-warning">
                   {percentage >= 90 ? "Almost at limit!" : "Approaching limit"}
                 </p>
               )}

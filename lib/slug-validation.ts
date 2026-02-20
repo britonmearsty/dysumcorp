@@ -5,42 +5,42 @@
 
 // Reserved slugs that cannot be used
 const RESERVED_SLUGS = [
-  'api',
-  'admin',
-  'dashboard',
-  'auth',
-  'login',
-  'logout',
-  'signup',
-  'register',
-  'settings',
-  'profile',
-  'portal',
-  'portals',
-  'file',
-  'files',
-  'upload',
-  'download',
-  'static',
-  'public',
-  'assets',
-  'images',
-  'css',
-  'js',
-  'fonts',
-  'favicon',
-  'robots',
-  'sitemap',
-  'about',
-  'contact',
-  'help',
-  'support',
-  'terms',
-  'privacy',
-  'pricing',
-  'blog',
-  'docs',
-  'documentation',
+  "api",
+  "admin",
+  "dashboard",
+  "auth",
+  "login",
+  "logout",
+  "signup",
+  "register",
+  "settings",
+  "profile",
+  "portal",
+  "portals",
+  "file",
+  "files",
+  "upload",
+  "download",
+  "static",
+  "public",
+  "assets",
+  "images",
+  "css",
+  "js",
+  "fonts",
+  "favicon",
+  "robots",
+  "sitemap",
+  "about",
+  "contact",
+  "help",
+  "support",
+  "terms",
+  "privacy",
+  "pricing",
+  "blog",
+  "docs",
+  "documentation",
 ];
 
 export interface SlugValidationResult {
@@ -61,10 +61,10 @@ export function sanitizeSlug(input: string): string {
   return input
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/[^a-z0-9-]/g, '') // Remove special characters
-    .replace(/-+/g, '-') // Replace consecutive hyphens with single hyphen
-    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/[^a-z0-9-]/g, "") // Remove special characters
+    .replace(/-+/g, "-") // Replace consecutive hyphens with single hyphen
+    .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
 }
 
 /**
@@ -75,7 +75,7 @@ export function validateSlug(slug: string): SlugValidationResult {
   if (!slug || slug.trim().length === 0) {
     return {
       isValid: false,
-      error: 'Slug cannot be empty',
+      error: "Slug cannot be empty",
     };
   }
 
@@ -83,7 +83,7 @@ export function validateSlug(slug: string): SlugValidationResult {
   if (slug.length < 3) {
     return {
       isValid: false,
-      error: 'Slug must be at least 3 characters long',
+      error: "Slug must be at least 3 characters long",
     };
   }
 
@@ -91,7 +91,7 @@ export function validateSlug(slug: string): SlugValidationResult {
   if (slug.length > 50) {
     return {
       isValid: false,
-      error: 'Slug must be 50 characters or less',
+      error: "Slug must be 50 characters or less",
     };
   }
 
@@ -99,23 +99,23 @@ export function validateSlug(slug: string): SlugValidationResult {
   if (!/^[a-z0-9-]+$/.test(slug)) {
     return {
       isValid: false,
-      error: 'Slug can only contain lowercase letters, numbers, and hyphens',
+      error: "Slug can only contain lowercase letters, numbers, and hyphens",
     };
   }
 
   // Check if it starts or ends with hyphen
-  if (slug.startsWith('-') || slug.endsWith('-')) {
+  if (slug.startsWith("-") || slug.endsWith("-")) {
     return {
       isValid: false,
-      error: 'Slug cannot start or end with a hyphen',
+      error: "Slug cannot start or end with a hyphen",
     };
   }
 
   // Check for consecutive hyphens
-  if (slug.includes('--')) {
+  if (slug.includes("--")) {
     return {
       isValid: false,
-      error: 'Slug cannot contain consecutive hyphens',
+      error: "Slug cannot contain consecutive hyphens",
     };
   }
 
@@ -123,7 +123,7 @@ export function validateSlug(slug: string): SlugValidationResult {
   if (RESERVED_SLUGS.includes(slug)) {
     return {
       isValid: false,
-      error: 'This slug is reserved and cannot be used',
+      error: "This slug is reserved and cannot be used",
     };
   }
 
@@ -131,7 +131,7 @@ export function validateSlug(slug: string): SlugValidationResult {
   if (/^\d+$/.test(slug)) {
     return {
       isValid: false,
-      error: 'Slug cannot be only numbers',
+      error: "Slug cannot be only numbers",
     };
   }
 

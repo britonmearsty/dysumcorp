@@ -67,9 +67,7 @@ export const AnimatedNavItem = forwardRef<
             : isHovered
               ? "text-foreground"
               : "text-muted-foreground",
-          isCollapsed
-            ? "opacity-0 w-0 overflow-hidden"
-            : "opacity-100 w-auto",
+          isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto",
         )}
       >
         {label}

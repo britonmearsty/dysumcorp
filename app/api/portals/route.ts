@@ -28,7 +28,12 @@ export async function GET(request: Request) {
     const limit = searchParams.get("limit");
     const take = limit ? parseInt(limit, 10) : undefined;
 
-    console.log("[/api/portals] Fetching portals for user:", session.user.id, "limit:", take);
+    console.log(
+      "[/api/portals] Fetching portals for user:",
+      session.user.id,
+      "limit:",
+      take,
+    );
 
     const portals = await prisma.portal.findMany({
       where: { userId: session.user.id },
@@ -44,7 +49,7 @@ export async function GET(request: Request) {
     console.log("[/api/portals] Found portals:", portals.length);
 
     // Convert BigInt fields to strings for JSON serialization
-    const serializedPortals = portals.map(portal => ({
+    const serializedPortals = portals.map((portal) => ({
       ...portal,
       maxFileSize: portal.maxFileSize.toString(),
     }));

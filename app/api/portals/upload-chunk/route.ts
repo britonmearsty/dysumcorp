@@ -10,15 +10,18 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 // Route config
-export const runtime = 'nodejs';
+export const runtime = "nodejs";
 export const maxDuration = 60;
 
 // Store upload sessions in memory (in production, use Redis or database)
-const uploadSessions = new Map<string, {
-  uploadUrl: string;
-  uploadedBytes: number;
-  totalBytes: number;
-}>();
+const uploadSessions = new Map<
+  string,
+  {
+    uploadUrl: string;
+    uploadedBytes: number;
+    totalBytes: number;
+  }
+>();
 
 // POST /api/portals/upload-chunk - Upload a chunk of a file to Google Drive
 export async function POST(request: NextRequest) {
@@ -32,12 +35,20 @@ export async function POST(request: NextRequest) {
     const fileSize = parseInt(formData.get("fileSize") as string);
     const sessionId = formData.get("sessionId") as string;
 
-    console.log(`[Upload Chunk] Chunk ${chunkIndex + 1}/${totalChunks} for ${fileName}`);
+    console.log(
+      `[Upload Chunk] Chunk ${chunkIndex + 1}/${totalChunks} for ${fileName}`,
+    );
 
-    if (!chunk || !portalId || !fileName || isNaN(chunkIndex) || isNaN(totalChunks)) {
+    if (
+      !chunk ||
+      !portalId ||
+      !fileName ||
+      isNaN(chunkIndex) ||
+      isNaN(totalChunks)
+    ) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -61,7 +72,7 @@ export async function POST(request: NextRequest) {
     if (!accessToken) {
       return NextResponse.json(
         { error: "Google Drive not connected" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -80,7 +91,7 @@ export async function POST(request: NextRequest) {
             name: `${portal.name}/${fileName}`,
             mimeType: formData.get("mimeType") || "application/octet-stream",
           }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -88,6 +99,7 @@ export async function POST(request: NextRequest) {
       }
 
       const uploadUrl = response.headers.get("Location");
+
       if (!uploadUrl) {
         throw new Error("No upload URL returned");
       }
@@ -101,10 +113,11 @@ export async function POST(request: NextRequest) {
 
     // Get session
     const session = uploadSessions.get(sessionId);
+
     if (!session) {
       return NextResponse.json(
         { error: "Upload session not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -131,6 +144,7 @@ export async function POST(request: NextRequest) {
       }
 
       const result = await uploadResponse.json();
+
       uploadSessions.delete(sessionId);
 
       console.log(`[Upload Chunk] Upload complete: ${result.id}`);
@@ -153,15 +167,17 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[Upload Chunk] Error:", error);
-    
-    const errorMessage = error instanceof Error ? error.message : "Upload failed";
-    
+
+    const errorMessage =
+      error instanceof Error ? error.message : "Upload failed";
+
     return NextResponse.json(
-      { 
+      {
         error: "Upload failed",
-        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+        details:
+          process.env.NODE_ENV === "development" ? errorMessage : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -39,19 +39,19 @@ export async function POST(request: NextRequest) {
       password,
     } = body;
 
-    console.log("[Portal Confirm Upload] Request:", { 
-      portalId, 
-      fileName, 
-      fileSize, 
+    console.log("[Portal Confirm Upload] Request:", {
+      portalId,
+      fileName,
+      fileSize,
       provider,
       uploaderName,
-      uploaderEmail 
+      uploaderEmail,
     });
 
     if (!portalId || !fileName || !fileSize || !storageUrl || !storageFileId) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -65,11 +65,13 @@ export async function POST(request: NextRequest) {
 
     if (!portal) {
       console.log("[Portal Confirm Upload] Portal not found:", portalId);
+
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
     // Hash password if provided
     let passwordHash = null;
+
     if (password && password.trim() !== "") {
       passwordHash = hashPassword(password.trim());
     }
@@ -96,15 +98,20 @@ export async function POST(request: NextRequest) {
       await sendFileUploadNotification({
         userEmail: portal.user.email,
         portalName: portal.name,
-        files: [{
-          name: fileName,
-          size: formatFileSize(fileSize),
-        }],
+        files: [
+          {
+            name: fileName,
+            size: formatFileSize(fileSize),
+          },
+        ],
         uploaderName: uploaderName || undefined,
       });
       console.log("[Portal Confirm Upload] Email notification sent");
     } catch (emailError) {
-      console.error("[Portal Confirm Upload] Failed to send email notification:", emailError);
+      console.error(
+        "[Portal Confirm Upload] Failed to send email notification:",
+        emailError,
+      );
       // Don't fail the upload if email fails
     }
 
@@ -118,15 +125,17 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[Portal Confirm Upload] Error:", error);
-    
-    const errorMessage = error instanceof Error ? error.message : "Failed to confirm upload";
-    
+
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to confirm upload";
+
     return NextResponse.json(
-      { 
+      {
         error: "Failed to confirm upload",
-        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+        details:
+          process.env.NODE_ENV === "development" ? errorMessage : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

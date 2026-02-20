@@ -59,6 +59,7 @@ async function uploadViaAPI(options: UploadOptions): Promise<UploadResult> {
 
   try {
     const formData = new FormData();
+
     formData.append("files", file);
     formData.append("portalId", portalId);
 
@@ -73,6 +74,7 @@ async function uploadViaAPI(options: UploadOptions): Promise<UploadResult> {
       xhr.upload.addEventListener("progress", (e) => {
         if (e.lengthComputable && onProgress) {
           const percentComplete = (e.loaded / e.total) * 100;
+
           onProgress(percentComplete);
         }
       });
@@ -100,6 +102,7 @@ async function uploadViaAPI(options: UploadOptions): Promise<UploadResult> {
     };
   } catch (error) {
     console.error("API upload error:", error);
+
     return {
       success: false,
       error: error instanceof Error ? error.message : "Upload failed",
@@ -167,6 +170,7 @@ async function uploadDirectToCloud(
         file,
         onProgress,
       );
+
       storageUrl = uploadResult.webViewLink || "";
       storageFileId = uploadResult.id;
     } else {
@@ -177,6 +181,7 @@ async function uploadDirectToCloud(
         file,
         onProgress,
       );
+
       storageUrl = "";
       storageFileId = uploadResult.id;
     }
@@ -211,6 +216,7 @@ async function uploadDirectToCloud(
     };
   } catch (error) {
     console.error("Direct upload error:", error);
+
     return {
       success: false,
       error: error instanceof Error ? error.message : "Upload failed",
@@ -233,6 +239,7 @@ async function uploadToGoogleDrive(
     xhr.upload.addEventListener("progress", (e) => {
       if (e.lengthComputable && onProgress) {
         const percentComplete = (e.loaded / e.total) * 100;
+
         onProgress(percentComplete);
       }
     });
@@ -273,6 +280,7 @@ async function uploadToDropbox(
     xhr.upload.addEventListener("progress", (e) => {
       if (e.lengthComputable && onProgress) {
         const percentComplete = (e.loaded / e.total) * 100;
+
         onProgress(percentComplete);
       }
     });
@@ -316,6 +324,7 @@ export async function uploadFiles(
 
   for (const file of files) {
     const result = await uploadFile({ ...options, file });
+
     results.push(result);
   }
 

@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { Box } from "lucide-react";
+import Link from "next/link";
 
 import { signIn, useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { Box } from "lucide-react";
-import Link from "next/link";
 
 export default function AuthPage() {
   const [loading, setLoading] = useState<string | null>(null);
@@ -36,7 +36,7 @@ export default function AuthPage() {
     <main className="min-h-screen selection:bg-stone-200 bg-[#fafaf9]">
       <nav className="sticky top-0 z-50 bg-[#fafaf9] border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
+          <Link className="flex items-center gap-3" href="/">
             <div className="w-10 h-10 bg-[#1c1917] flex items-center justify-center rounded-lg">
               <Box className="text-stone-50 text-xl" />
             </div>

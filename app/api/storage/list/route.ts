@@ -27,8 +27,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Map google_drive to google for token lookup
-    const tokenProvider = provider === "google_drive" ? "google" : provider === "dropbox" ? "dropbox" : null;
-    
+    const tokenProvider =
+      provider === "google_drive"
+        ? "google"
+        : provider === "dropbox"
+          ? "dropbox"
+          : null;
+
     if (!tokenProvider) {
       return NextResponse.json(
         { error: "Invalid provider. Must be 'google_drive' or 'dropbox'" },
@@ -59,9 +64,10 @@ export async function GET(request: NextRequest) {
       }
 
       // List folders in Google Drive
-      const query = parentFolderId && parentFolderId !== "root"
-        ? `'${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
-        : `'root' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+      const query =
+        parentFolderId && parentFolderId !== "root"
+          ? `'${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
+          : `'root' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
 
       const response = await fetch(
         `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)&orderBy=name`,
@@ -77,18 +83,19 @@ export async function GET(request: NextRequest) {
       }
 
       const data = await response.json();
-      const folders = data.files?.map((file: any) => ({
-        id: file.id,
-        name: file.name,
-        path: `/${file.name}`,
-        subfolders: [],
-      })) || [];
+      const folders =
+        data.files?.map((file: any) => ({
+          id: file.id,
+          name: file.name,
+          path: `/${file.name}`,
+          subfolders: [],
+        })) || [];
 
       return NextResponse.json(folders);
     } else if (provider === "dropbox") {
       // List folders in Dropbox
       const path = parentFolderId || "";
-      
+
       if (rootOnly) {
         return NextResponse.json({
           id: "",
@@ -118,19 +125,23 @@ export async function GET(request: NextRequest) {
       }
 
       const data = await response.json();
-      const folders = data.entries
-        ?.filter((entry: any) => entry[".tag"] === "folder")
-        .map((folder: any) => ({
-          id: folder.path_lower,
-          name: folder.name,
-          path: folder.path_display,
-          subfolders: [],
-        })) || [];
+      const folders =
+        data.entries
+          ?.filter((entry: any) => entry[".tag"] === "folder")
+          .map((folder: any) => ({
+            id: folder.path_lower,
+            name: folder.name,
+            path: folder.path_display,
+            subfolders: [],
+          })) || [];
 
       return NextResponse.json(folders);
     }
 
-    return NextResponse.json({ error: "Unsupported provider" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unsupported provider" },
+      { status: 400 },
+    );
   } catch (error) {
     console.error("Storage list error:", error);
 

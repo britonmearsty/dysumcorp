@@ -1,6 +1,7 @@
 "use client";
 
 import { ShieldCheck, Lock, Server, Building } from "lucide-react";
+
 import { FadeIn, Stagger, StaggerItem } from "./animations";
 
 const certifications = [
@@ -23,10 +24,10 @@ const certifications = [
 
 export default function SecuritySection() {
   return (
-    <section id="security" className="py-32 px-6 bg-[#fafaf9]">
+    <section className="py-32 px-6 bg-[#fafaf9]" id="security">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-16 items-center">
-          <FadeIn direction="left" className="flex-1">
+          <FadeIn className="flex-1" direction="left">
             <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs">
               Security First
             </span>
@@ -66,12 +67,12 @@ export default function SecuritySection() {
             </div>
           </FadeIn>
 
-          <FadeIn direction="right" delay={0.2} className="flex-1 w-full">
+          <FadeIn className="flex-1 w-full" delay={0.2} direction="right">
             <div className="bg-white rounded-[2.5rem] p-12 premium-shadow">
               <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500 mb-10">
                 Compliance Certifications
               </h4>
-              <Stagger delay={0.15} className="space-y-10">
+              <Stagger className="space-y-10" delay={0.15}>
                 {certifications.map((cert, index) => (
                   <StaggerItem key={index}>
                     <div className="flex items-center gap-8 border-b border-stone-100 pb-8 last:border-0 last:pb-0">

@@ -28,10 +28,14 @@ export default function StoragePage() {
 
       if (response.ok) {
         const data = await response.json();
-        
+
         // Transform new API format to old format for this page
-        const googleAccount = data.accounts?.find((a: any) => a.provider === "google");
-        const dropboxAccount = data.accounts?.find((a: any) => a.provider === "dropbox");
+        const googleAccount = data.accounts?.find(
+          (a: any) => a.provider === "google",
+        );
+        const dropboxAccount = data.accounts?.find(
+          (a: any) => a.provider === "dropbox",
+        );
 
         setConnections({
           google: googleAccount?.isConnected || false,
@@ -91,27 +95,27 @@ export default function StoragePage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">
+      <div className="mb-6 sm:mb-8 lg:mb-10">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
           Storage
         </h1>
-        <p className="text-muted-foreground mt-2 text-lg">
+        <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-lg">
           Monitor your storage usage and manage connections
         </p>
       </div>
 
       {/* Storage Connections */}
-      <div className="bg-bg-card rounded-[12px] border border-border p-6 shadow-sm">
-        <h2 className="font-semibold text-xl mb-6 text-foreground">
+      <div className="bg-bg-card rounded-[12px] border border-border p-4 sm:p-6 shadow-sm">
+        <h2 className="font-semibold text-lg sm:text-xl mb-4 sm:mb-6 text-foreground">
           Storage Connections
         </h2>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
           {/* Google Drive */}
-          <div className="bg-bg-card rounded-[12px] p-6 border border-border hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-bg-card border border-border flex items-center justify-center shadow-sm">
-                  <svg className="w-7 h-7" viewBox="0 0 24 24">
+          <div className="bg-bg-card rounded-[12px] p-4 sm:p-6 border border-border hover:shadow-md transition-shadow">
+            <div className="flex items-start justify-between mb-3 sm:mb-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-bg-card border border-border flex items-center justify-center shadow-sm">
+                  <svg className="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24">
                     <path
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                       fill="#4285F4"
@@ -131,8 +135,10 @@ export default function StoragePage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-bold text-foreground">Google Drive</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <h3 className="font-bold text-foreground text-sm sm:text-base">
+                    Google Drive
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                     {loading
                       ? "Checking..."
                       : connections.google
@@ -162,11 +168,15 @@ export default function StoragePage() {
           </div>
 
           {/* Dropbox */}
-          <div className="bg-bg-card rounded-[12px] p-6 border border-border hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-bg-card border border-border flex items-center justify-center shadow-sm">
-                  <svg className="w-7 h-7" fill="#0061FF" viewBox="0 0 24 24">
+          <div className="bg-bg-card rounded-[12px] p-4 sm:p-6 border border-border hover:shadow-md transition-shadow">
+            <div className="flex items-start justify-between mb-3 sm:mb-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-bg-card border border-border flex items-center justify-center shadow-sm">
+                  <svg
+                    className="w-6 h-6 sm:w-7 sm:h-7"
+                    fill="#0061FF"
+                    viewBox="0 0 24 24"
+                  >
                     <path d="M6 2L0 6L6 10L12 6L6 2Z" />
                     <path d="M18 2L12 6L18 10L24 6L18 2Z" />
                     <path d="M0 14L6 18L12 14L6 10L0 14Z" />
@@ -175,8 +185,10 @@ export default function StoragePage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-bold text-foreground">Dropbox</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <h3 className="font-bold text-foreground text-sm sm:text-base">
+                    Dropbox
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                     {loading
                       ? "Checking..."
                       : connections.dropbox

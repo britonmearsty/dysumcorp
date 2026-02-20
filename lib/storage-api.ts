@@ -54,13 +54,16 @@ export async function getStorageTokens(
   }
 
   // Check if token is expired
-  const isExpired = account.accessTokenExpiresAt && account.accessTokenExpiresAt <= new Date();
+  const isExpired =
+    account.accessTokenExpiresAt && account.accessTokenExpiresAt <= new Date();
 
   // Auto-refresh if expired and refresh token exists
   if (isExpired && account.refreshToken) {
-    console.log(`[Storage API] Token expired for ${provider}, auto-refreshing...`);
+    console.log(
+      `[Storage API] Token expired for ${provider}, auto-refreshing...`,
+    );
     const newAccessToken = await refreshStorageToken(userId, provider);
-    
+
     if (newAccessToken) {
       console.log(`[Storage API] Successfully refreshed token for ${provider}`);
       // Fetch updated account data
@@ -75,11 +78,13 @@ export async function getStorageTokens(
         return {
           accessToken: updatedAccount.accessToken!,
           refreshToken: updatedAccount.refreshToken || undefined,
-          accessTokenExpiresAt: updatedAccount.accessTokenExpiresAt || undefined,
+          accessTokenExpiresAt:
+            updatedAccount.accessTokenExpiresAt || undefined,
         };
       }
     } else {
       console.log(`[Storage API] Failed to refresh token for ${provider}`);
+
       return null;
     }
   }

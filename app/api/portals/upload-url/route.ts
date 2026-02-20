@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 import { getValidToken } from "@/lib/storage-api";
 import {
@@ -135,6 +136,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Public upload URL error:", error);
+
     return NextResponse.json(
       { error: "Failed to get upload URL" },
       { status: 500 },
