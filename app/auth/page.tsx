@@ -21,28 +21,31 @@ export default function AuthPage() {
 
   const handleOAuthSignIn = (provider: "google" | "dropbox") => {
     setLoading(provider);
-    console.log("Starting OAuth sign in for:", provider);
+
     signIn
       .social({
         provider,
         callbackURL: "/dashboard",
-        errorCallbackURL: "/auth?error=signin_failed",
       })
-      .then((response) => {
-        console.log("OAuth raw response:", response);
-        let data = response?.data;
-        if (typeof data === "string") {
-          data = JSON.parse(data);
+      .then((response: any) => {
+        if (response?.data) {
+          const data =
+            typeof response.data === "string"
+              ? JSON.parse(response.data)
+              : response.data;
+          if (data?.url) {
+            window.location.href = data.url;
+            return;
+          }
         }
-        console.log("OAuth parsed data:", data);
-        if (data?.url) {
-          window.location.href = data.url;
-        }
+        console.log("No redirect URL found, response:", response);
+        setLoading(null);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error("OAuth sign in failed:", err);
         setLoading(null);
       });
+
     setTimeout(() => {
       setLoading((prev) => (prev ? null : prev));
     }, 5000);

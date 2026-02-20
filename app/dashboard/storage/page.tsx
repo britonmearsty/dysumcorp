@@ -60,9 +60,18 @@ export default function StoragePage() {
       .then((response) => {
         let data = response?.data;
         if (typeof data === "string") {
-          data = JSON.parse(data);
-        }
-        if (data?.url) {
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.url) {
+              window.location.href = parsed.url;
+            }
+          } catch (e) {
+            const urlMatch = data.match(/"url":"([^"]+)"/);
+            if (urlMatch && urlMatch[1]) {
+              window.location.href = urlMatch[1];
+            }
+          }
+        } else if (data?.url) {
           window.location.href = data.url;
         }
       })
