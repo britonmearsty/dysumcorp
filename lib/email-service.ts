@@ -8,6 +8,7 @@ import {
   PortalCreatedEmail,
   FileDownloadedEmail,
   StorageWarningEmail,
+  SupportRequestEmail,
 } from "@/emails/templates";
 
 let resend: Resend | null = null;
@@ -317,4 +318,26 @@ export async function sendEmail({
   from?: string;
 }): Promise<EmailResult> {
   return sendEmailInternal({ to, subject, html, from });
+}
+
+export async function sendSupportRequestEmail({
+  name,
+  email,
+  subject,
+  message,
+}: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}): Promise<EmailResult> {
+  const supportEmail = SupportRequestEmail({ name, email, subject, message });
+  const html = await render(supportEmail);
+
+  return sendEmailInternal({
+    to: "support@dysumcorp.pro",
+    subject: `Support Request: ${subject}`,
+    html,
+    from: `Support Form <noreply@dysumcorp.pro>`,
+  });
 }

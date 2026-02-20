@@ -455,3 +455,55 @@ export function StorageWarningEmail({
     </EmailLayout>
   );
 }
+
+interface SupportRequestEmailProps {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
+export function SupportRequestEmail({
+  name,
+  email,
+  subject,
+  message,
+}: SupportRequestEmailProps) {
+  const previewText = `New support request from ${name}: ${subject}`;
+
+  return (
+    <EmailLayout previewText={previewText}>
+      <Heading className="text-center text-2xl font-bold text-gray-800">
+        🎧 New Support Request
+      </Heading>
+      <Text className="text-base text-gray-600">
+        You have received a new support request from the dashboard.
+      </Text>
+      <Container className="my-4 rounded bg-gray-50 p-4">
+        <Text className="my-1 text-sm font-semibold text-gray-700">
+          Request Details:
+        </Text>
+        <Text className="my-1 text-sm text-gray-600">
+          <strong>From:</strong> {name} ({email})
+        </Text>
+        <Text className="my-1 text-sm text-gray-600">
+          <strong>Subject:</strong> {subject}
+        </Text>
+        <Text className="my-1 text-sm font-semibold text-gray-700 mt-3">
+          Message:
+        </Text>
+        <Text className="my-1 text-sm text-gray-600 whitespace-pre-wrap">
+          {message}
+        </Text>
+      </Container>
+      <Text className="text-base text-gray-600">
+        You can reply directly to this email to contact the user.
+      </Text>
+      <Text className="text-base text-gray-600">
+        Best regards,
+        <br />
+        DysumCorp System
+      </Text>
+    </EmailLayout>
+  );
+}
