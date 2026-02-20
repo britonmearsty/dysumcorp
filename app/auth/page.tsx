@@ -22,25 +22,37 @@ export default function AuthPage() {
   const handleOAuthSignIn = async (provider: "google" | "dropbox") => {
     setLoading(provider);
 
+    console.log("Starting OAuth for:", provider);
+
     try {
-      const { data, error } = await signIn.social({
+      const result = await signIn.social({
         provider,
         callbackURL: "/dashboard",
       });
 
-      if (error) {
-        console.error("OAuth sign in error:", error);
+      console.log("OAuth result:", result);
+
+      if (result.error) {
+        console.error("OAuth sign in error:", result.error);
         setLoading(null);
         return;
       }
 
-      if (data?.url) {
-        window.location.href = data.url;
+      if (result.data?.url) {
+        console.log("Redirecting to:", result.data.url);
+        window.location.href = result.data.url;
+      } else {
+        console.log("No URL returned, result:", result);
+        setLoading(null);
       }
     } catch (err) {
       console.error("OAuth sign in failed:", err);
       setLoading(null);
     }
+
+    setTimeout(() => {
+      setLoading((prev) => (prev ? null : prev));
+    }, 10000);
   };
 
   return (
