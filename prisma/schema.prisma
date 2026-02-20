@@ -13,6 +13,7 @@ model User {
   email              String    @unique
   emailVerified      Boolean   @default(false)
   image              String?
+  portalLogo         String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   creemCustomerId    String?

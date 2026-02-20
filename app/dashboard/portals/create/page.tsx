@@ -69,9 +69,8 @@ const FolderNode: React.FC<FolderNodeProps> = ({
   return (
     <div className="pl-4">
       <div
-        className={`flex items-center justify-between py-2 hover:bg-muted/50 transition-colors group rounded-lg pr-2 ${
-          isSelected ? "bg-primary/10 border-l-2 border-primary" : ""
-        }`}
+        className={`flex items-center justify-between py-2 hover:bg-muted/50 transition-colors group rounded-lg pr-2 ${isSelected ? "bg-primary/10 border-l-2 border-primary" : ""
+          }`}
       >
         <button
           className="flex items-center gap-2 text-left flex-1"
@@ -79,16 +78,14 @@ const FolderNode: React.FC<FolderNodeProps> = ({
           onClick={() => navigateToFolder(folder)}
         >
           <FolderOpen
-            className={`w-4 h-4 flex-shrink-0 ${
-              isSelected ? "text-primary" : "text-warning"
-            }`}
+            className={`w-4 h-4 flex-shrink-0 ${isSelected ? "text-primary" : "text-warning"
+              }`}
           />
           <span
-            className={`text-sm font-medium truncate ${
-              isSelected
+            className={`text-sm font-medium truncate ${isSelected
                 ? "text-primary font-semibold"
                 : "text-muted-foreground group-hover:text-foreground"
-            }`}
+              }`}
           >
             {folder.name}
           </span>
@@ -377,13 +374,12 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                         className="flex items-center gap-2 text-sm"
                       >
                         <div
-                          className={`w-2 h-2 rounded-full ${
-                            account.storageStatus === "DISCONNECTED"
+                          className={`w-2 h-2 rounded-full ${account.storageStatus === "DISCONNECTED"
                               ? "bg-red-500"
                               : account.storageStatus === "ERROR"
                                 ? "bg-orange-500 animate-pulse"
                                 : "bg-yellow-500"
-                          }`}
+                            }`}
                         />
                         <span className="font-medium">
                           {account.provider === "google"
@@ -450,11 +446,10 @@ const StorageSection: React.FC<StorageSectionProps> = ({
           return (
             <button
               key={provider.id}
-              className={`relative p-5 rounded-2xl border-2 transition-all flex flex-col items-center gap-3 ${
-                isActive
+              className={`relative p-5 rounded-2xl border-2 transition-all flex flex-col items-center gap-3 ${isActive
                   ? "border-primary bg-muted"
                   : "border-border bg-card hover:border-muted-foreground hover:bg-muted"
-              } ${provider.disabled ? "opacity-40 grayscale cursor-not-allowed" : ""}`}
+                } ${provider.disabled ? "opacity-40 grayscale cursor-not-allowed" : ""}`}
               disabled={provider.disabled}
               type="button"
               onClick={() =>
@@ -473,26 +468,24 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                 {hasAccount && (
                   <div className="flex items-center justify-center gap-1 mt-1">
                     <div
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        account.storageStatus === "ACTIVE"
+                      className={`w-1.5 h-1.5 rounded-full ${account.storageStatus === "ACTIVE"
                           ? "bg-green-500"
                           : account.storageStatus === "DISCONNECTED"
                             ? "bg-red-500"
                             : account.storageStatus === "ERROR"
                               ? "bg-orange-500 animate-pulse"
                               : "bg-yellow-500"
-                      }`}
+                        }`}
                     />
                     <span
-                      className={`text-xs font-medium ${
-                        account.storageStatus === "ACTIVE"
+                      className={`text-xs font-medium ${account.storageStatus === "ACTIVE"
                           ? "text-green-600"
                           : account.storageStatus === "DISCONNECTED"
                             ? "text-red-600"
                             : account.storageStatus === "ERROR"
                               ? "text-orange-600"
                               : "text-yellow-600"
-                      }`}
+                        }`}
                     >
                       {account.storageStatus === "ACTIVE"
                         ? "Ready"
@@ -521,11 +514,10 @@ const StorageSection: React.FC<StorageSectionProps> = ({
       {/* Health Check Results */}
       {healthCheckResults && (
         <div
-          className={`rounded-xl p-4 border ${
-            healthCheckResults.success
+          className={`rounded-xl p-4 border ${healthCheckResults.success
               ? "bg-success/10 border-success/20"
               : "bg-destructive/10 border-destructive/20"
-          }`}
+            }`}
         >
           <div className="flex items-start gap-3">
             {healthCheckResults.success ? (
@@ -591,11 +583,10 @@ const StorageSection: React.FC<StorageSectionProps> = ({
               <div key={folder.id} className="flex items-center gap-1 shrink-0">
                 <ChevronRight className="w-3 h-3 text-muted" />
                 <button
-                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all ${
-                    idx === folderPath.length - 1
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all ${idx === folderPath.length - 1
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-card hover:text-foreground"
-                  }`}
+                    }`}
                   type="button"
                   onClick={() => navigateToBreadcrumb(idx)}
                 >
@@ -801,11 +792,10 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
             ].map((template) => (
               <button
                 key={template.size}
-                className={`p-3 rounded-xl border text-center transition-all ${
-                  formData.maxFileSize === template.size
+                className={`p-3 rounded-xl border text-center transition-all ${formData.maxFileSize === template.size
                     ? "border-primary bg-primary text-primary-foreground shadow-md"
                     : "border-border bg-card text-muted-foreground hover:border-muted-foreground"
-                }`}
+                  }`}
                 type="button"
                 onClick={() => {
                   updateFormData("maxFileSize", template.size);
@@ -889,11 +879,10 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
           ].map((req) => (
             <button
               key={req.id}
-              className={`flex-1 px-4 py-3 rounded-xl border font-bold text-sm transition-all ${
-                formData[req.key as keyof typeof formData]
+              className={`flex-1 px-4 py-3 rounded-xl border font-bold text-sm transition-all ${formData[req.key as keyof typeof formData]
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-card text-muted-foreground hover:border-muted-foreground"
-              }`}
+                }`}
               type="button"
               onClick={() =>
                 updateFormData(
@@ -954,8 +943,8 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
                       "allowedFileTypes",
                       isSelected
                         ? formData.allowedFileTypes.filter(
-                            (v: string) => v !== opt.value,
-                          )
+                          (v: string) => v !== opt.value,
+                        )
                         : [...formData.allowedFileTypes, opt.value],
                     )
                   }
@@ -1131,15 +1120,15 @@ export default function CreatePortalPage() {
     updateFormData("logo", file);
   };
 
-  // Upload logo to storage
+  // Upload logo to Cloudinary
   const uploadLogo = async (file: File): Promise<string | null> => {
     try {
       const formData = new FormData();
 
       formData.append("file", file);
-      formData.append("provider", "google"); // Default to Google Drive
+      formData.append("folder", "portals");
 
-      const response = await fetch("/api/storage/upload", {
+      const response = await fetch("/api/upload/cloudinary", {
         method: "POST",
         body: formData,
       });
@@ -1152,11 +1141,8 @@ export default function CreatePortalPage() {
 
       const data = await response.json();
 
-      // Return the file URL or ID from the response
-      if (data.file?.webViewLink) {
-        return data.file.webViewLink; // Google Drive
-      } else if (data.file?.id) {
-        return data.file.id; // Fallback to ID
+      if (data.url) {
+        return data.url;
       }
 
       throw new Error("No file URL returned from upload");
@@ -1468,7 +1454,7 @@ export default function CreatePortalPage() {
           // Show error message with upgrade option
           setError(
             data.error ||
-              "Portal limit reached. Please upgrade your plan to continue.",
+            "Portal limit reached. Please upgrade your plan to continue.",
           );
           setRequiresUpgrade(true);
           setCurrentStep("identity"); // Go back to first step to show error
@@ -1520,11 +1506,10 @@ export default function CreatePortalPage() {
               return (
                 <button
                   key={step.id}
-                  className={`w-full flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2.5 lg:py-3 rounded-xl transition-all duration-200 group whitespace-nowrap ${
-                    isActive
+                  className={`w-full flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2.5 lg:py-3 rounded-xl transition-all duration-200 group whitespace-nowrap ${isActive
                       ? "bg-card shadow-sm border border-border text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
+                    }`}
                   type="button"
                   onClick={() => navigateToSection(step.id)}
                 >
@@ -1642,15 +1627,14 @@ export default function CreatePortalPage() {
                             </div>
                             <input
                               required
-                              className={`flex-1 px-4 py-3 bg-card border border-border rounded-r-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground ${
-                                formData.portalUrl &&
-                                !slugValidation.isValid &&
-                                !slugValidation.isChecking
+                              className={`flex-1 px-4 py-3 bg-card border border-border rounded-r-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground ${formData.portalUrl &&
+                                  !slugValidation.isValid &&
+                                  !slugValidation.isChecking
                                   ? "border-red-300 focus:ring-red-500"
                                   : formData.portalUrl && slugValidation.isValid
                                     ? "border-green-300 focus:ring-green-500"
                                     : ""
-                              }`}
+                                }`}
                               placeholder="custom-address"
                               type="text"
                               value={formData.portalUrl}

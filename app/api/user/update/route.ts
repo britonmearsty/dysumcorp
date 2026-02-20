@@ -11,13 +11,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name } = await req.json();
+    const { name, image, portalLogo } = await req.json();
 
     // Update user in database
     await auth.api.updateUser({
       body: {
         name,
-      },
+        image,
+        portalLogo,
+      } as any,
       headers: req.headers,
     });
 

@@ -49,6 +49,11 @@ export const auth = betterAuth({
         defaultValue: null,
         input: false,
       },
+      portalLogo: {
+        type: "string",
+        defaultValue: null,
+        input: true,
+      },
     },
   },
   socialProviders: {

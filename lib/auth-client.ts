@@ -14,6 +14,9 @@ export const authClient = createAuthClient({
         subscriptionStatus: {
           type: "string",
         },
+        portalLogo: {
+          type: "string",
+        },
       },
     }),
   ],

@@ -11,6 +11,10 @@ import {
   Globe,
   Lock,
   ChevronRight,
+  Upload,
+  Camera,
+  Loader2,
+  Palette,
 } from "lucide-react";
 import { Checkbox } from "@heroui/react";
 
@@ -41,6 +45,10 @@ export default function SettingsPage() {
   // Profile state
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [image, setImage] = useState("");
+  const [portalLogo, setPortalLogo] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   // Notification state
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -57,6 +65,12 @@ export default function SettingsPage() {
       name: "Profile",
       icon: User,
       description: "Manage your personal information",
+    },
+    {
+      id: "branding",
+      name: "Branding",
+      icon: Palette,
+      description: "Default portal aesthetics",
     },
     {
       id: "notifications",
@@ -88,6 +102,9 @@ export default function SettingsPage() {
     if (session?.user) {
       setName(session.user.name || "");
       setEmail(session.user.email || "");
+      setImage(session.user.image || "");
+      // Use the newly added field if available
+      setPortalLogo((session.user as any).portalLogo || "");
     }
   }, [session]);
 
@@ -107,7 +124,7 @@ export default function SettingsPage() {
       const response = await fetch("/api/user/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, image, portalLogo }),
       });
 
       if (!response.ok) throw new Error("Failed to update profile");
@@ -119,6 +136,82 @@ export default function SettingsPage() {
       resetStatus(setProfileStatus);
     } finally {
       setProfileLoading(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "profiles");
+
+    try {
+      const res = await fetch("/api/upload/cloudinary", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      setImage(data.url);
+
+      // Auto-save the new image
+      await fetch("/api/user/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, image: data.url }),
+      });
+
+      setProfileStatus("success");
+      resetStatus(setProfileStatus);
+    } catch (error) {
+      console.error("Image upload error:", error);
+      setProfileStatus("error");
+      resetStatus(setProfileStatus);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingLogo(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "portals/defaults");
+
+    try {
+      const res = await fetch("/api/upload/cloudinary", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      setPortalLogo(data.url);
+
+      // Auto-save the new logo
+      await fetch("/api/user/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, image, portalLogo: data.url }),
+      });
+
+      setProfileStatus("success");
+      resetStatus(setProfileStatus);
+    } catch (error) {
+      console.error("Logo upload error:", error);
+      setProfileStatus("error");
+      resetStatus(setProfileStatus);
+    } finally {
+      setIsUploadingLogo(false);
     }
   };
 
@@ -212,11 +305,10 @@ export default function SettingsPage() {
               return (
                 <button
                   key={tab.id}
-                  className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 group ${
-                    isActive
-                      ? "bg-card shadow-sm border border-border text-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 group ${isActive
+                    ? "bg-card shadow-sm border border-border text-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
                 >
@@ -265,6 +357,53 @@ export default function SettingsPage() {
                       className="space-y-4 sm:space-y-6"
                       onSubmit={handleProfileUpdate}
                     >
+                      {/* Profile Image */}
+                      <div className="flex flex-col items-center sm:flex-row sm:items-end gap-4 sm:gap-6 mb-8">
+                        <div className="relative group">
+                          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden border-2 border-border bg-muted flex items-center justify-center relative">
+                            {image ? (
+                              <img src={image} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="w-12 h-12 text-muted-foreground" />
+                            )}
+                            {isUploading && (
+                              <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+                                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                              </div>
+                            )}
+                          </div>
+                          <label
+                            htmlFor="profile-image"
+                            className="absolute -right-2 -bottom-2 p-2 bg-primary text-primary-foreground rounded-xl shadow-lg cursor-pointer hover:scale-110 transition-transform"
+                          >
+                            <Camera className="w-4 h-4" />
+                          </label>
+                          <input
+                            type="file"
+                            id="profile-image"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            disabled={isUploading}
+                          />
+                        </div>
+                        <div className="text-center sm:text-left">
+                          <h3 className="text-lg font-bold text-foreground">Profile Picture</h3>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            PNG, JPG or GIF. Max 5MB.
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3 h-8 text-[10px] font-bold uppercase tracking-wider"
+                            onClick={() => document.getElementById("profile-image")?.click()}
+                            disabled={isUploading}
+                          >
+                            Change Photo
+                          </Button>
+                        </div>
+                      </div>
+
                       <div>
                         <Label
                           className="text-sm font-semibold text-foreground"
@@ -303,11 +442,10 @@ export default function SettingsPage() {
 
                       {profileStatus !== "idle" && (
                         <div
-                          className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${
-                            profileStatus === "success"
-                              ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                              : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
-                          }`}
+                          className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${profileStatus === "success"
+                            ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                            : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
+                            }`}
                         >
                           {profileStatus === "success"
                             ? "Profile updated successfully!"
@@ -323,6 +461,81 @@ export default function SettingsPage() {
                         {profileLoading ? "Saving..." : "Save Changes"}
                       </Button>
                     </form>
+                  )}
+
+                  {/* Branding Settings */}
+                  {activeTab === "branding" && (
+                    <div className="space-y-8">
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-4 block">
+                          Default Portal Logo
+                        </Label>
+                        <div className="flex flex-col sm:flex-row items-center gap-6 p-6 border-2 border-dashed border-border rounded-2xl bg-muted/30">
+                          <div className="relative group">
+                            <div className="w-48 h-24 rounded-xl overflow-hidden border border-border bg-card flex items-center justify-center relative">
+                              {portalLogo ? (
+                                <img src={portalLogo} alt="Portal Logo" className="max-w-full max-h-full object-contain p-2" />
+                              ) : (
+                                <Palette className="w-8 h-8 text-muted-foreground/30" />
+                              )}
+                              {isUploadingLogo && (
+                                <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+                                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                </div>
+                              )}
+                            </div>
+                            <label
+                              htmlFor="default-logo"
+                              className="absolute -right-2 -bottom-2 p-2 bg-primary text-primary-foreground rounded-xl shadow-lg cursor-pointer hover:scale-110 transition-transform"
+                            >
+                              <Upload className="w-4 h-4" />
+                            </label>
+                            <input
+                              type="file"
+                              id="default-logo"
+                              className="hidden"
+                              accept="image/*"
+                              onChange={handleLogoUpload}
+                              disabled={isUploadingLogo}
+                            />
+                          </div>
+                          <div className="flex-1 text-center sm:text-left">
+                            <p className="text-sm font-bold text-foreground">Generic Brand Asset</p>
+                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                              This logo will be used as the default for all new portals you create.
+                              Translucent PNG or SVG recommended.
+                            </p>
+                            <div className="flex flex-wrap gap-2 mt-4 justify-center sm:justify-start">
+                              <Button
+                                size="sm"
+                                className="h-8 rounded-lg text-[10px] font-bold uppercase tracking-wider"
+                                onClick={() => document.getElementById("default-logo")?.click()}
+                                disabled={isUploadingLogo}
+                              >
+                                Upload New Logo
+                              </Button>
+                              {portalLogo && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 rounded-lg text-[10px] font-bold uppercase tracking-wider"
+                                  onClick={() => setPortalLogo("")}
+                                >
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
+                        <p className="text-xs text-primary font-medium leading-relaxed">
+                          <strong>Pro Tip:</strong> Setting a default logo here saves you time when setting up new client portals.
+                          You can always override this on a per-portal basis.
+                        </p>
+                      </div>
+                    </div>
                   )}
 
                   {/* Notifications */}
@@ -377,11 +590,10 @@ export default function SettingsPage() {
 
                       {notificationsStatus !== "idle" && (
                         <div
-                          className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${
-                            notificationsStatus === "success"
-                              ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                              : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
-                          }`}
+                          className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${notificationsStatus === "success"
+                            ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                            : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
+                            }`}
                         >
                           {notificationsStatus === "success"
                             ? "Notifications updated successfully!"
@@ -503,11 +715,10 @@ export default function SettingsPage() {
 
                           {notificationsStatus !== "idle" && (
                             <div
-                              className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${
-                                notificationsStatus === "success"
-                                  ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                                  : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
-                              }`}
+                              className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${notificationsStatus === "success"
+                                ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                                : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
+                                }`}
                             >
                               {notificationsStatus === "success"
                                 ? "Account deletion initiated"

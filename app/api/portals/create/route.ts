@@ -166,7 +166,11 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("[/api/portals/create] Creating portal in database");
+    // Get user's default branding
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { portalLogo: true }
+    });
 
     // Create the portal
     const portal = await prisma.portal.create({
@@ -181,7 +185,7 @@ export async function POST(request: Request) {
         textColor: textColor || "#0f172a",
         backgroundColor: backgroundColor || "#ffffff",
         cardBackgroundColor: cardBackgroundColor || "#ffffff",
-        logoUrl: logoUrl || null,
+        logoUrl: logoUrl || user?.portalLogo || null,
         // Storage
         storageProvider: storageProvider || null,
         storageFolderId: storageFolderId || null,
