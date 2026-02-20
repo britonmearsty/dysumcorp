@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { Box } from "lucide-react";
 import Link from "next/link";
 
-import { signIn, useSession } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
 export default function AuthPage() {
@@ -19,36 +19,47 @@ export default function AuthPage() {
     }
   }, [session, router]);
 
-  const handleOAuthSignIn = (provider: "google" | "dropbox") => {
+  const handleOAuthSignIn = async (provider: "google" | "dropbox") => {
     setLoading(provider);
 
-    signIn
-      .social({
-        provider,
-        callbackURL: "/dashboard",
-      })
-      .then((response: any) => {
-        if (response?.data) {
-          const data =
-            typeof response.data === "string"
-              ? JSON.parse(response.data)
-              : response.data;
-          if (data?.url) {
-            window.location.href = data.url;
-            return;
-          }
-        }
-        console.log("No redirect URL found, response:", response);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/auth/sign-in/social`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            provider,
+            callbackURL: "/dashboard",
+          }),
+          credentials: "include",
+        },
+      );
+
+      const data = await response.json();
+      console.log("OAuth response:", data);
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else if (data?.data?.url) {
+        window.location.href = data.data.url;
+      } else if (data?.error) {
+        console.error("OAuth error:", data.error);
         setLoading(null);
-      })
-      .catch((err: any) => {
-        console.error("OAuth sign in failed:", err);
+      } else {
+        console.error("Unexpected response:", data);
         setLoading(null);
-      });
+      }
+    } catch (err: any) {
+      console.error("OAuth sign in failed:", err);
+      setLoading(null);
+    }
 
     setTimeout(() => {
       setLoading((prev) => (prev ? null : prev));
-    }, 5000);
+    }, 10000);
   };
 
   return (

@@ -45,20 +45,19 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
   emailAndPassword: {
-    enabled: false, // Disabled email/password auth
+    enabled: false,
   },
   user: {
-    // Define additional fields that exist in your User model
     additionalFields: {
       subscriptionPlan: {
         type: "string",
         defaultValue: "free",
-        input: false, // Don't allow users to set this during signup
+        input: false,
       },
       subscriptionStatus: {
         type: "string",
         defaultValue: "active",
-        input: false, // Don't allow users to set this during signup
+        input: false,
       },
       creemCustomerId: {
         type: "string",
@@ -73,6 +72,7 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
       accessType: "offline",
       prompt: "consent",
+      redirectURI: `${process.env.BETTER_AUTH_URL}/api/auth/callback/google`,
       scope: [
         "openid",
         "email",
@@ -87,6 +87,7 @@ export const auth = betterAuth({
     dropbox: {
       clientId: process.env.DROPBOX_CLIENT_ID || "",
       clientSecret: process.env.DROPBOX_CLIENT_SECRET || "",
+      redirectURI: `${process.env.BETTER_AUTH_URL}/api/auth/callback/dropbox`,
       scope: [
         "account_info.read",
         "files.metadata.write",
@@ -101,7 +102,10 @@ export const auth = betterAuth({
   },
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: process.env.BETTER_AUTH_URL!,
-  trustedOrigins: [process.env.BETTER_AUTH_URL!],
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL!,
+    process.env.NEXT_PUBLIC_BETTER_AUTH_URL!,
+  ].filter(Boolean),
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
     cookiePrefix: "better-auth",
