@@ -586,56 +586,59 @@ export default function AssetsPage() {
                           )}
                         </>
                       ) : (
-                        <div className="p-4 sm:p-6">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="p-3 sm:p-6">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                             {filteredFiles.map((file) => (
                               <div
                                 key={file.id}
-                                className="bg-muted/50 rounded-lg border border-border hover:shadow-md transition-all p-4"
+                                className="bg-muted/50 rounded-lg border border-border hover:shadow-md transition-all p-3 sm:p-4 overflow-hidden"
                               >
-                                <div className="flex justify-between items-start mb-3">
+                                <div className="flex justify-between items-start mb-2 sm:mb-3">
                                   <div
                                     className={getFileIconColor(file.mimeType)}
                                   >
-                                    {getFileIcon(file.mimeType, "w-7 h-7")}
+                                    {getFileIcon(
+                                      file.mimeType,
+                                      "w-6 h-6 sm:w-7 sm:h-7",
+                                    )}
                                   </div>
-                                  <div className="flex gap-1">
+                                  <div className="flex gap-0.5 sm:gap-1">
                                     <button
-                                      className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-card rounded transition-all"
+                                      className="p-1 sm:p-1.5 text-muted-foreground hover:text-foreground hover:bg-card rounded transition-all"
                                       onClick={() => handleDownload(file)}
                                     >
-                                      <Download className="w-3.5 h-3.5" />
+                                      <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                     </button>
                                     <button
-                                      className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition-all"
+                                      className="p-1 sm:p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition-all"
                                       disabled={deleting === file.id}
                                       onClick={() =>
                                         handleDelete(file.id, file.name)
                                       }
                                     >
-                                      <Trash2 className="w-3.5 h-3.5" />
+                                      <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                     </button>
                                   </div>
                                 </div>
                                 <h4
-                                  className="font-bold text-sm truncate"
+                                  className="font-bold text-xs sm:text-sm truncate"
                                   title={file.name}
                                 >
                                   {file.name}
                                 </h4>
-                                <div className="text-xs text-muted-foreground truncate mt-1">
+                                <div className="text-[10px] sm:text-xs text-muted-foreground truncate mt-1">
                                   {file.portal.name}
                                 </div>
-                                <div className="flex items-center gap-2 mt-2">
-                                  <span className="text-xs font-bold text-muted-foreground">
+                                <div className="flex items-center gap-1.5 sm:gap-2 mt-1.5 sm:mt-2">
+                                  <span className="text-[10px] sm:text-xs font-bold text-muted-foreground">
                                     {formatFileSize(file.size)}
                                   </span>
-                                  <span className="w-1 h-1 bg-border rounded-full" />
-                                  <div className="flex items-center gap-1">
+                                  <span className="w-1 h-1 bg-border rounded-full flex-shrink-0" />
+                                  <div className="flex items-center gap-1 min-w-0">
                                     {getStorageIcon(
                                       getStorageType(file.storageUrl),
                                     )}
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="text-[10px] sm:text-xs text-muted-foreground truncate">
                                       {getStorageLabel(
                                         getStorageType(file.storageUrl),
                                       )}
@@ -739,12 +742,12 @@ export default function AssetsPage() {
                                   ))}
                                 </div>
                               ) : (
-                                <div className="p-4 sm:p-6">
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                <div className="p-3 sm:p-6">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                     {providerFiles.map((file) => (
                                       <div
                                         key={file.id}
-                                        className="bg-muted/50 rounded-lg border border-border hover:shadow-md transition-all p-3"
+                                        className="bg-muted/50 rounded-lg border border-border hover:shadow-md transition-all p-3 overflow-hidden"
                                       >
                                         <div className="flex justify-between items-start mb-2">
                                           <div
@@ -754,10 +757,10 @@ export default function AssetsPage() {
                                           >
                                             {getFileIcon(
                                               file.mimeType,
-                                              "w-6 h-6",
+                                              "w-5 h-5 sm:w-6 sm:h-6",
                                             )}
                                           </div>
-                                          <div className="flex gap-1">
+                                          <div className="flex gap-0.5">
                                             <button
                                               className="p-1 text-muted-foreground hover:text-foreground hover:bg-card rounded transition-all"
                                               title="Download"
@@ -768,7 +771,7 @@ export default function AssetsPage() {
                                               <Download className="w-3 h-3" />
                                             </button>
                                             <button
-                                              className="p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition-all disabled:opacity-50"
+                                              className="p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition-all"
                                               disabled={deleting === file.id}
                                               title="Delete"
                                               onClick={() =>
@@ -780,12 +783,12 @@ export default function AssetsPage() {
                                           </div>
                                         </div>
                                         <h4
-                                          className="font-bold text-xs truncate"
+                                          className="font-bold text-[10px] sm:text-xs truncate"
                                           title={file.name}
                                         >
                                           {file.name}
                                         </h4>
-                                        <div className="text-xs text-muted-foreground mt-1">
+                                        <div className="text-[10px] sm:text-xs text-muted-foreground mt-1 truncate">
                                           {formatFileSize(file.size)}
                                         </div>
                                       </div>

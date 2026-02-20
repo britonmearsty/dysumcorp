@@ -407,7 +407,7 @@ export default function DashboardPage() {
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 lg:gap-8 items-start">
         {/* Left Panel - Active Client Portals */}
-        <section className="flex flex-col gap-4">
+        <section className="flex flex-col gap-3 sm:gap-4">
           <div className="flex items-center justify-between">
             <span className="text-base font-bold text-text-white">
               Active Client Portals
@@ -421,9 +421,9 @@ export default function DashboardPage() {
           </div>
 
           {activePortalsList.length === 0 ? (
-            <div className="bg-bg-card border border-border rounded-[14px] flex flex-col items-center justify-center py-[72px] px-10 min-h-[380px] text-center">
+            <div className="bg-bg-card border border-border rounded-[14px] flex flex-col items-center justify-center py-10 sm:py-[72px] px-6 sm:px-10 min-h-[280px] sm:min-h-[380px] text-center">
               <svg
-                className="w-14 h-14 mb-6 opacity-45"
+                className="w-12 h-12 sm:w-14 sm:h-14 mb-4 sm:mb-6 opacity-45"
                 fill="none"
                 stroke="currentColor"
                 strokeLinecap="round"
@@ -433,46 +433,46 @@ export default function DashboardPage() {
               >
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
               </svg>
-              <h2 className="text-[1.15rem] font-bold text-text-white mb-2.5">
+              <h2 className="text-base sm:text-[1.15rem] font-bold text-text-white mb-2 sm:mb-2.5">
                 Build your first portal
               </h2>
-              <p className="text-sm text-text-muted leading-relaxed max-w-[280px] mb-7">
+              <p className="text-xs sm:text-sm text-text-muted leading-relaxed max-w-[240px] sm:max-w-[280px] mb-5 sm:mb-7">
                 Start collecting files securely. It takes less than a minute to
                 set up.
               </p>
               <Link href="/dashboard/portals/create">
-                <button className="bg-primary text-primary-foreground border-none rounded-[10px] px-9 py-3 text-[0.9rem] font-bold cursor-pointer hover:opacity-90 transition-opacity">
+                <button className="bg-primary text-primary-foreground border-none rounded-[10px] px-6 sm:px-9 py-2.5 sm:py-3 text-[0.85rem] sm:text-[0.9rem] font-bold cursor-pointer hover:opacity-90 transition-opacity">
                   Create Portal
                 </button>
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:md:grid-cols-2 gap-3 sm:gap-4">
               {activePortalsList.map((portal) => (
                 <div
                   key={portal.id}
-                  className="bg-bg-card border border-border rounded-[14px] p-6 hover:shadow-md transition-shadow"
+                  className="bg-bg-card border border-border rounded-[14px] p-4 sm:p-5 lg:p-6 hover:shadow-md transition-shadow"
                 >
                   {/* Portal Name - Clickable to open files modal */}
                   <div
-                    className="cursor-pointer mb-4 group"
+                    className="cursor-pointer mb-3 sm:mb-4 group"
                     onClick={() => handlePortalClick(portal)}
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-text-white text-base truncate group-hover:text-primary transition-colors">
+                        <h3 className="font-bold text-text-white text-sm sm:text-base truncate group-hover:text-primary transition-colors">
                           {portal.name}
                         </h3>
-                        <p className="text-xs text-text-muted truncate mt-1">
+                        <p className="text-[10px] sm:text-xs text-text-muted truncate mt-0.5 sm:mt-1">
                           /{portal.slug}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                        <span className="text-xs px-2 py-1 rounded-md bg-accent-green/10 text-accent-green">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-2">
+                        <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-accent-green/10 text-accent-green">
                           Active
                         </span>
                         {portal.whiteLabeled && (
-                          <span className="text-xs px-2 py-1 rounded-md bg-purple-50 text-purple-600 dark:bg-purple-950/50">
+                          <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-purple-50 text-purple-600 dark:bg-purple-950/50">
                             Premium
                           </span>
                         )}
@@ -481,12 +481,12 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Stats */}
-                  <div className="space-y-2 text-sm mb-4">
+                  <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm mb-3 sm:mb-4">
                     <div className="flex justify-between items-center">
                       <span className="text-text-muted">Files</span>
                       <span className="font-medium flex items-center gap-1">
                         <svg
-                          className="w-3.5 h-3.5"
+                          className="w-3 h-3 sm:w-3.5 sm:h-3.5"
                           fill="none"
                           stroke="currentColor"
                           strokeLinecap="round"
@@ -503,9 +503,9 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5 sm:gap-2">
                     <button
-                      className="flex-1 rounded-xl font-medium text-xs h-8 px-3 border border-border hover:bg-muted transition-colors"
+                      className="flex-1 rounded-xl font-medium text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3 border border-border hover:bg-muted transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         const url = `${window.location.origin}/portal/${portal.slug}`;
@@ -517,7 +517,7 @@ export default function DashboardPage() {
                       Copy Link
                     </button>
                     <button
-                      className="rounded-xl font-medium text-xs h-8 px-3 border border-border hover:bg-muted transition-colors"
+                      className="rounded-xl font-medium text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3 border border-border hover:bg-muted transition-colors"
                       title={
                         portal.isActive
                           ? "Deactivate Portal"
@@ -529,7 +529,7 @@ export default function DashboardPage() {
                     >
                       {portal.isActive ? (
                         <svg
-                          className="w-3.5 h-3.5"
+                          className="w-3 h-3 sm:w-3.5 sm:h-3.5"
                           fill="none"
                           stroke="currentColor"
                           strokeLinecap="round"
@@ -543,7 +543,7 @@ export default function DashboardPage() {
                         </svg>
                       ) : (
                         <svg
-                          className="w-3.5 h-3.5"
+                          className="w-3 h-3 sm:w-3.5 sm:h-3.5"
                           fill="none"
                           stroke="currentColor"
                           strokeLinecap="round"
@@ -557,17 +557,17 @@ export default function DashboardPage() {
                       )}
                     </button>
                     <button
-                      className="rounded-xl font-medium text-xs h-8 px-3 border border-border hover:bg-muted transition-colors"
+                      className="rounded-xl font-medium text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3 border border-border hover:bg-muted transition-colors"
                       title="View Portal"
                       onClick={(e) => {
                         e.stopPropagation();
                         router.push(`/portal/${portal.slug}`);
                       }}
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
+                      <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </button>
                     <button
-                      className="rounded-xl font-medium text-xs h-8 px-3 border border-border hover:bg-muted transition-colors"
+                      className="rounded-xl font-medium text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3 border border-border hover:bg-muted transition-colors"
                       title="Edit Portal"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -575,7 +575,7 @@ export default function DashboardPage() {
                       }}
                     >
                       <svg
-                        className="w-3.5 h-3.5"
+                        className="w-3 h-3 sm:w-3.5 sm:h-3.5"
                         fill="none"
                         stroke="currentColor"
                         strokeLinecap="round"
@@ -595,19 +595,19 @@ export default function DashboardPage() {
         </section>
 
         {/* Right Panel - Quick Actions + Recent Activity */}
-        <aside className="flex flex-col gap-8">
+        <aside className="flex flex-col gap-6 sm:gap-8">
           {/* Quick Actions */}
           <div>
-            <h2 className="text-base font-bold text-text-white mb-5">
+            <h2 className="text-base font-bold text-text-white mb-4 sm:mb-5">
               Quick Actions
             </h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <Link
-                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2.5"
+                className="bg-bg-card border border-border rounded-[12px] p-3 sm:p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2"
                 href="/dashboard/portals/create"
               >
                 <svg
-                  className="w-[26px] h-[26px] text-accent-green"
+                  className="w-5 h-5 sm:w-[26px] sm:h-[26px] text-accent-green"
                   fill="none"
                   stroke="currentColor"
                   strokeLinecap="round"
@@ -618,17 +618,17 @@ export default function DashboardPage() {
                   <line x1="12" x2="12" y1="5" y2="19" />
                   <line x1="5" x2="19" y1="12" y2="12" />
                 </svg>
-                <span className="text-sm font-semibold text-text-white">
+                <span className="text-xs sm:text-sm font-semibold text-text-white">
                   New Portal
                 </span>
               </Link>
 
               <Link
-                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2.5"
+                className="bg-bg-card border border-border rounded-[12px] p-3 sm:p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2"
                 href="/dashboard/portals"
               >
                 <svg
-                  className="w-[26px] h-[26px] text-accent-blue"
+                  className="w-5 h-5 sm:w-[26px] sm:h-[26px] text-accent-blue"
                   fill="none"
                   stroke="currentColor"
                   strokeLinecap="round"
@@ -638,17 +638,17 @@ export default function DashboardPage() {
                 >
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                 </svg>
-                <span className="text-sm font-semibold text-text-white">
+                <span className="text-xs sm:text-sm font-semibold text-text-white">
                   All Portals
                 </span>
               </Link>
 
               <Link
-                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2.5"
+                className="bg-bg-card border border-border rounded-[12px] p-3 sm:p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2"
                 href="/dashboard/storage"
               >
                 <svg
-                  className="w-[26px] h-[26px] text-accent-purple"
+                  className="w-5 h-5 sm:w-[26px] sm:h-[26px] text-accent-purple"
                   fill="none"
                   stroke="currentColor"
                   strokeLinecap="round"
@@ -658,17 +658,17 @@ export default function DashboardPage() {
                 >
                   <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
                 </svg>
-                <span className="text-sm font-semibold text-text-white">
+                <span className="text-xs sm:text-sm font-semibold text-text-white">
                   Storage
                 </span>
               </Link>
 
               <Link
-                className="bg-bg-card border border-border rounded-[12px] p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2.5"
+                className="bg-bg-card border border-border rounded-[12px] p-3 sm:p-[18px] cursor-pointer hover:bg-muted/60 hover:border-muted transition-all flex flex-col gap-2"
                 href="/dashboard/settings"
               >
                 <svg
-                  className="w-[26px] h-[26px] text-accent-yellow"
+                  className="w-5 h-5 sm:w-[26px] sm:h-[26px] text-accent-yellow"
                   fill="none"
                   stroke="currentColor"
                   strokeLinecap="round"
@@ -679,7 +679,7 @@ export default function DashboardPage() {
                   <circle cx="12" cy="12" r="3" />
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
-                <span className="text-sm font-semibold text-text-white">
+                <span className="text-xs sm:text-sm font-semibold text-text-white">
                   Settings
                 </span>
               </Link>
@@ -688,7 +688,7 @@ export default function DashboardPage() {
 
           {/* Recent Activity */}
           <div>
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-4 sm:mb-5">
               <span className="text-base font-bold text-text-white">
                 Recent Activity
               </span>
@@ -700,9 +700,9 @@ export default function DashboardPage() {
               </Link>
             </div>
             {recentActivities.length === 0 ? (
-              <div className="bg-bg-card border border-border rounded-[12px] flex flex-col items-center justify-center py-14 px-6 min-h-[200px] text-center">
+              <div className="bg-bg-card border border-border rounded-[12px] flex flex-col items-center justify-center py-10 sm:py-14 px-4 sm:px-6 min-h-[160px] sm:min-h-[200px] text-center">
                 <svg
-                  className="w-10 h-10 mb-4 opacity-40"
+                  className="w-8 h-8 sm:w-10 sm:h-10 mb-3 sm:mb-4 opacity-40"
                   fill="none"
                   stroke="currentColor"
                   strokeLinecap="round"
@@ -713,10 +713,10 @@ export default function DashboardPage() {
                   <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
                   <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
                 </svg>
-                <h3 className="text-sm font-semibold text-text-sub mb-1.5">
+                <h3 className="text-xs sm:text-sm font-semibold text-text-sub mb-1 sm:mb-1.5">
                   No recent activity detected.
                 </h3>
-                <p className="text-[0.78rem] text-text-muted leading-relaxed">
+                <p className="text-[0.7rem] sm:text-[0.78rem] text-text-muted leading-relaxed">
                   Files uploaded to your portals will appear here.
                 </p>
               </div>
@@ -726,22 +726,22 @@ export default function DashboardPage() {
                   {recentActivities.map((file: any) => (
                     <div
                       key={file.id}
-                      className="p-4 hover:bg-muted/30 transition-colors"
+                      className="p-3 sm:p-4 hover:bg-muted/30 transition-colors"
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-2.5 sm:gap-3">
                         <div
                           className={`flex-shrink-0 mt-0.5 ${getFileIconColor(file.mimeType)}`}
                         >
-                          {getFileIcon(file.mimeType, "w-5 h-5")}
+                          {getFileIcon(file.mimeType, "w-4 h-4 sm:w-5 sm:h-5")}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-text-white truncate">
+                          <p className="text-xs sm:text-sm font-medium text-text-white truncate">
                             {file.name}
                           </p>
-                          <p className="text-xs text-text-muted mt-0.5">
+                          <p className="text-[10px] sm:text-xs text-text-muted mt-0.5">
                             {file.portal?.name || "Unknown Portal"}
                           </p>
-                          <p className="text-xs text-text-muted mt-1">
+                          <p className="text-[10px] sm:text-xs text-text-muted mt-0.5 sm:mt-1">
                             {new Date(file.uploadedAt).toLocaleDateString()} at{" "}
                             {new Date(file.uploadedAt).toLocaleTimeString([], {
                               hour: "2-digit",
@@ -761,7 +761,7 @@ export default function DashboardPage() {
 
       {/* Portal Files Modal */}
       {showFilesModal && selectedPortal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           <motion.div
             animate={{ opacity: 1 }}
             className="absolute inset-0 bg-background/40 backdrop-blur-sm"
@@ -775,51 +775,51 @@ export default function DashboardPage() {
           />
           <motion.div
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative w-full max-w-2xl bg-bg-card rounded-[14px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            className="relative w-full max-w-2xl sm:max-w-2xl bg-bg-card rounded-[14px] shadow-2xl overflow-hidden max-h-[85vh] sm:max-h-[90vh] flex flex-col"
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
           >
-            <div className="p-8 border-b border-border bg-muted/50 flex justify-between items-start">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-card shadow-sm border border-border flex items-center justify-center text-xl font-bold text-foreground">
-                  <FolderOpen className="w-8 h-8 text-primary" />
+            <div className="p-4 sm:p-6 lg:p-8 border-b border-border bg-muted/50 flex justify-between items-start gap-3">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-xl lg:rounded-2xl bg-card shadow-sm border border-border flex items-center justify-center text-lg sm:text-xl font-bold text-foreground flex-shrink-0">
+                  <FolderOpen className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-primary" />
                 </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-foreground leading-tight">
+                <div className="min-w-0">
+                  <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground leading-tight truncate">
                     {selectedPortal.name}
                   </h3>
-                  <p className="text-muted-foreground text-sm mt-1">
+                  <p className="text-muted-foreground text-xs sm:text-sm mt-0.5 sm:mt-1 truncate">
                     /{selectedPortal.slug}
                   </p>
                 </div>
               </div>
               <button
-                className="p-2 hover:bg-muted rounded-xl transition-colors text-muted-foreground hover:text-foreground"
+                className="p-1.5 sm:p-2 hover:bg-muted rounded-xl transition-colors text-muted-foreground hover:text-foreground flex-shrink-0"
                 onClick={() => {
                   setShowFilesModal(false);
                   setSelectedPortal(null);
                   setPortalFiles([]);
                 }}
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
 
-            <div className="p-8 overflow-y-auto flex-1">
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-bg-card p-4 rounded-[14px] border border-border">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+            <div className="p-4 sm:p-6 lg:p-8 overflow-y-auto flex-1">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                <div className="bg-bg-card p-3 sm:p-4 rounded-[14px] border border-border">
+                  <p className="text-[10px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
                     Total Files
                   </p>
-                  <p className="text-xl font-bold text-foreground">
+                  <p className="text-lg sm:text-xl font-bold text-foreground">
                     {portalFiles.length}
                   </p>
                 </div>
-                <div className="bg-bg-card p-4 rounded-[14px] border border-border">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                <div className="bg-bg-card p-3 sm:p-4 rounded-[14px] border border-border">
+                  <p className="text-[10px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
                     Total Size
                   </p>
-                  <p className="text-xl font-bold text-foreground">
+                  <p className="text-lg sm:text-xl font-bold text-foreground">
                     {formatFileSize(
                       portalFiles
                         .reduce((acc, f) => acc + Number(f.size || 0), 0)
@@ -829,7 +829,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <h4 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+              <h4 className="text-sm font-bold text-foreground mb-3 sm:mb-4 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-muted-foreground" />
                 Uploaded Files
               </h4>
@@ -839,18 +839,18 @@ export default function DashboardPage() {
                   portalFiles.map((file: any) => (
                     <div
                       key={file.id}
-                      className="flex items-center gap-3 p-3 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors"
+                      className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors"
                     >
                       <span
                         className={`flex-shrink-0 ${getFileIconColor(file.mimeType)}`}
                       >
-                        {getFileIcon(file.mimeType, "w-5 h-5")}
+                        {getFileIcon(file.mimeType, "w-4 h-4 sm:w-5 sm:h-5")}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground text-sm truncate">
+                        <p className="font-medium text-foreground text-xs sm:text-sm truncate">
                           {file.name}
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 flex-wrap">
                           <span>{formatFileSize(file.size)}</span>
                           <span>•</span>
                           <div className="flex items-center gap-1">
@@ -860,40 +860,42 @@ export default function DashboardPage() {
                           {file.uploaderName && (
                             <>
                               <span>•</span>
-                              <span>{file.uploaderName}</span>
+                              <span className="truncate max-w-[60px] sm:max-w-[100px]">
+                                {file.uploaderName}
+                              </span>
                             </>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5 sm:gap-1">
                         <button
-                          className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
+                          className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
                           title="Download"
                           onClick={() => handleDownloadFile(file)}
                         >
-                          <Download className="w-4 h-4" />
+                          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                         <button
-                          className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
+                          className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
                           title="Open file"
                           onClick={() => window.open(file.storageUrl, "_blank")}
                         >
-                          <ExternalLink className="w-4 h-4" />
+                          <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                         <button
-                          className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all disabled:opacity-50"
+                          className="p-1.5 sm:p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all disabled:opacity-50"
                           disabled={deletingFile === file.id}
                           title="Delete"
                           onClick={() => handleDeleteFile(file.id, file.name)}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="py-12 text-center">
-                    <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                  <div className="py-8 sm:py-12 text-center">
+                    <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground mx-auto mb-2" />
                     <p className="text-muted-foreground text-sm">
                       No files uploaded yet
                     </p>
@@ -905,9 +907,9 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="p-6 bg-muted border-t border-border flex justify-end gap-3">
+            <div className="p-4 sm:p-6 bg-muted border-t border-border flex justify-end gap-2 sm:gap-3">
               <button
-                className="px-6 py-2.5 bg-card border border-border rounded-2xl text-sm font-bold text-muted-foreground hover:bg-muted transition-all"
+                className="px-4 sm:px-6 py-2 sm:py-2.5 bg-card border border-border rounded-2xl text-sm font-bold text-muted-foreground hover:bg-muted transition-all"
                 onClick={() => {
                   setShowFilesModal(false);
                   setSelectedPortal(null);
@@ -917,7 +919,7 @@ export default function DashboardPage() {
                 Close
               </button>
               <button
-                className="px-6 py-2.5 bg-foreground text-background rounded-2xl text-sm font-bold hover:opacity-90 shadow-sm transition-all flex items-center gap-2"
+                className="px-4 sm:px-6 py-2 sm:py-2.5 bg-foreground text-background rounded-2xl text-sm font-bold hover:opacity-90 shadow-sm transition-all flex items-center gap-2"
                 onClick={() =>
                   window.open(`/portal/${selectedPortal.slug}`, "_blank")
                 }

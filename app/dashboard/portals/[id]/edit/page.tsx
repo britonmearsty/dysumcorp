@@ -351,7 +351,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       {/* Storage Account Status Warning */}
       {accounts.length > 0 &&
         accounts.some((a) => a.storageStatus !== "ACTIVE") && (
@@ -417,7 +417,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
         )}
 
       {/* Storage Provider Selection */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {[
           {
             id: "google_drive",
@@ -709,9 +709,9 @@ const StorageSection: React.FC<StorageSectionProps> = ({
         </div>
       </div>
 
-      <div className="pt-4 flex justify-between">
+      <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
         <div />
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <button
             className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
             type="button"
@@ -771,7 +771,7 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
   setError,
 }) => {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-semibold text-foreground mb-3">
@@ -779,7 +779,7 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
           </label>
 
           {/* File Size Templates */}
-          <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
             {[
               {
                 size: 10,
@@ -872,7 +872,7 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
         <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
           Client Data Requirements
         </label>
-        <div className="flex gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           {[
             {
               id: "name",
@@ -945,9 +945,9 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
         </div>
       </div>
 
-      <div className="pt-4 flex justify-between">
+      <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
         <div />
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <button
             className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
             type="button"
@@ -1417,25 +1417,25 @@ export default function EditPortalPage() {
       ) : (
         <>
           <Link
-            className="group inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-medium text-sm mb-10"
+            className="group inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-medium text-sm mb-6 lg:mb-10"
             href="/dashboard/portals"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             Back to Portals
           </Link>
 
-          <div className="flex flex-col lg:flex-row gap-8">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
             {/* Navigation Sidebar */}
-            <aside className="lg:w-64 flex-shrink-0">
-              <div className="mb-6 px-2">
-                <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            <aside className="lg:w-64 flex-shrink-0 order-2 lg:order-1">
+              <div className="mb-4 lg:mb-6 px-1 lg:px-2">
+                <h1 className="text-xl lg:text-2xl font-bold text-foreground tracking-tight">
                   Edit Portal
                 </h1>
                 <p className="text-muted-foreground text-sm mt-1">
                   Update settings for your portal.
                 </p>
               </div>
-              <nav className="space-y-1">
+              <nav className="space-y-1 overflow-x-auto pb-2 -mx-2 px-2 lg:overflow-visible lg:mx-0 lg:px-0">
                 {steps.map((step) => {
                   const Icon = step.icon;
                   const isActive = currentStep === step.id;
@@ -1444,7 +1444,7 @@ export default function EditPortalPage() {
                   return (
                     <button
                       key={step.id}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                      className={`w-full flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2.5 lg:py-3 rounded-xl transition-all duration-200 group whitespace-nowrap ${
                         isActive
                           ? "bg-card shadow-sm border border-border text-foreground"
                           : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -1453,13 +1453,12 @@ export default function EditPortalPage() {
                       onClick={() => navigateToSection(step.id)}
                     >
                       <Icon
-                        className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}
+                        className={`w-4 lg:w-5 h-4 lg:h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}
                       />
                       <span className="font-medium text-sm flex-1 text-left">
                         {step.label}
                       </span>
 
-                      {/* Completion Indicator */}
                       {status === "complete" && !isActive && (
                         <CheckCircle2 className="w-4 h-4 text-green-600" />
                       )}
@@ -1484,7 +1483,7 @@ export default function EditPortalPage() {
             </aside>
 
             {/* Content Area */}
-            <main className="flex-1 min-w-0">
+            <main className="flex-1 min-w-0 order-1 lg:order-2">
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -1499,17 +1498,17 @@ export default function EditPortalPage() {
                     initial={{ opacity: 0, y: 10 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <div className="bg-card rounded-2xl border border-border overflow-hidden">
-                      <div className="p-6 border-b border-border bg-muted/30 flex justify-between items-center">
+                    <div className="bg-card rounded-xl lg:rounded-2xl border border-border overflow-hidden">
+                      <div className="p-4 lg:p-6 border-b border-border bg-muted/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div>
-                          <h2 className="text-xl font-semibold text-foreground">
+                          <h2 className="text-lg lg:text-xl font-semibold text-foreground">
                             {steps.find((s) => s.id === currentStep)?.label}
                           </h2>
                           <p className="text-sm text-muted-foreground mt-1">
                             Configure settings for this section.
                           </p>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                           {saving && (
                             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                           )}
@@ -1540,7 +1539,7 @@ export default function EditPortalPage() {
                         </div>
                       </div>
 
-                      <div className="p-8 space-y-8">
+                      <div className="p-4 lg:p-8 space-y-6 lg:space-y-6 lg:space-y-8">
                         {/* Identity Section */}
                         {currentStep === "identity" && (
                           <div className="space-y-6">
@@ -1580,9 +1579,9 @@ export default function EditPortalPage() {
                               </p>
                             </div>
 
-                            <div className="pt-4 flex justify-between">
+                            <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
                               <div />
-                              <div className="flex gap-3">
+                              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                                 <button
                                   className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
                                   type="button"
@@ -1839,9 +1838,9 @@ export default function EditPortalPage() {
                               </div>
                             </div>
 
-                            <div className="pt-4 flex justify-between">
+                            <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
                               <div />
-                              <div className="flex gap-3">
+                              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                                 <button
                                   className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
                                   type="button"
@@ -1883,7 +1882,7 @@ export default function EditPortalPage() {
 
                         {/* Messaging Section */}
                         {currentStep === "messaging" && (
-                          <div className="space-y-8">
+                          <div className="space-y-6 lg:space-y-8">
                             <div>
                               <label className="block text-sm font-semibold text-foreground mb-2">
                                 Welcome Message

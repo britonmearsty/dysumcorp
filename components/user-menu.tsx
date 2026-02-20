@@ -26,8 +26,8 @@ export function UserMenu() {
         {session.user?.name?.split(" ")[0] || "User"}
       </span>
       <Button
-        variant="outline"
         size="sm"
+        variant="outline"
         onClick={async () => {
           await signOut();
           router.push("/");

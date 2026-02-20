@@ -232,6 +232,13 @@ export default function BillingPage() {
                           Choose Your Plan
                         </h3>
                         <Tabs
+                          classNames={{
+                            tabList: "bg-muted border-border",
+                            cursor: "bg-primary",
+                            tab: "text-muted-foreground data-[selected=true]:text-primary-foreground",
+                            tabContent:
+                              "group-data-[selected=true]:text-primary-foreground",
+                          }}
                           selectedKey={billingCycle}
                           size="sm"
                           onSelectionChange={(key) =>

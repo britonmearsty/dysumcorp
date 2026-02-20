@@ -81,9 +81,9 @@ export function StorageUpload() {
       </div>
 
       <Button
+        className="w-full sm:w-auto"
         disabled={!file || uploading}
         onClick={handleUpload}
-        className="w-full sm:w-auto"
       >
         {uploading ? "Uploading..." : "Upload"}
       </Button>

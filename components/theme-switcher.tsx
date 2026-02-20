@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { Button } from "@heroui/button";
-import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 
 import { cn } from "@/lib/utils";
@@ -71,7 +69,7 @@ export function ThemeSwitcher() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-mono font-semibold">Theme</h3>
+          <h3 className="font-mono font-semibold text-foreground">Theme</h3>
           <p className="text-sm text-muted-foreground mt-1">
             Choose your preferred color scheme
           </p>
@@ -81,39 +79,44 @@ export function ThemeSwitcher() {
         </Chip>
       </div>
 
-      <Card className="border-border/50">
-        <CardBody className="p-3 space-y-2">
-          {themeOptions.map((option) => {
-            const isActive = theme === option.value;
+      <div className="bg-muted rounded-xl border border-border p-3 space-y-2">
+        {themeOptions.map((option) => {
+          const isActive = theme === option.value;
 
-            return (
-              <Button
-                key={option.value}
+          return (
+            <button
+              key={option.value}
+              className={cn(
+                "w-full justify-start gap-3 h-14 rounded-lg transition-all duration-200 flex items-center",
+                "bg-transparent border border-transparent",
+                "hover:bg-bg-card hover:border-border",
+                isActive && "bg-bg-card border-border",
+              )}
+              onClick={() => setTheme(option.value)}
+            >
+              <div
                 className={cn(
-                  "w-full justify-start gap-3 h-14 rounded-lg transition-all duration-200",
-                  "hover:bg-default-100 dark:hover:bg-default-50",
-                  isActive && "bg-primary/10 text-primary dark:bg-primary/20",
+                  "flex items-center justify-center w-8 h-8 rounded-lg",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted-foreground/10 text-muted-foreground",
                 )}
-                variant="light"
-                onClick={() => setTheme(option.value)}
               >
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-default-100 dark:bg-default-200">
-                  {option.icon}
+                {option.icon}
+              </div>
+              <div className="text-left flex-1">
+                <div className="font-medium text-sm text-foreground">
+                  {option.label}
                 </div>
-                <div className="text-left flex-1">
-                  <div className="font-medium text-sm">{option.label}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {option.description}
-                  </div>
+                <div className="text-xs text-muted-foreground">
+                  {option.description}
                 </div>
-                {isActive && (
-                  <div className="w-2 h-2 rounded-full bg-primary" />
-                )}
-              </Button>
-            );
-          })}
-        </CardBody>
-      </Card>
+              </div>
+              {isActive && <div className="w-2 h-2 rounded-full bg-primary" />}
+            </button>
+          );
+        })}
+      </div>
 
       <div className="text-xs text-muted-foreground font-mono">
         Current: {currentTheme === "light" ? "☀️ Light" : "🌙 Dark"}
@@ -143,13 +146,13 @@ export function ThemeSwitch() {
   return (
     <button
       aria-label="Toggle theme"
-      className="p-2 rounded-lg transition-all duration-200 hover:bg-default-100 dark:hover:bg-default-800"
+      className="p-2 rounded-lg transition-all duration-200 hover:bg-muted border border-transparent hover:border-border"
       onClick={() => setTheme(isDark ? "light" : isDark ? "system" : "dark")}
     >
       {isDark ? (
-        <SunFilledIcon className="text-default-600" size={20} />
+        <SunFilledIcon className="text-foreground" size={20} />
       ) : (
-        <MoonFilledIcon className="text-default-600" size={20} />
+        <MoonFilledIcon className="text-foreground" size={20} />
       )}
     </button>
   );

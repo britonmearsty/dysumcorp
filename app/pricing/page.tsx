@@ -75,6 +75,12 @@ export default function PricingPage() {
         {/* Billing Toggle */}
         <div className="flex justify-center mb-12">
           <Tabs
+            classNames={{
+              tabList: "bg-muted border-border",
+              cursor: "bg-primary",
+              tab: "text-muted-foreground data-[selected=true]:text-primary-foreground",
+              tabContent: "group-data-[selected=true]:text-primary-foreground",
+            }}
             selectedKey={billingCycle}
             size="lg"
             onSelectionChange={(key) =>
