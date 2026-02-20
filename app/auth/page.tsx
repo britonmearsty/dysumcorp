@@ -19,36 +19,22 @@ export default function AuthPage() {
     }
   }, [session, router]);
 
-  const handleOAuthSignIn = (provider: "google" | "dropbox") => {
+  const handleOAuthSignIn = async (provider: "google" | "dropbox") => {
     setLoading(provider);
 
-    signIn
-      .social({
+    try {
+      await signIn.social({
         provider,
         callbackURL: "/dashboard",
-      })
-      .then((response: any) => {
-        if (response?.data) {
-          const data =
-            typeof response.data === "string"
-              ? JSON.parse(response.data)
-              : response.data;
-          if (data?.url) {
-            window.location.href = data.url;
-            return;
-          }
-        }
-        console.log("No redirect URL found, response:", response);
-        setLoading(null);
-      })
-      .catch((err: any) => {
-        console.error("OAuth sign in failed:", err);
-        setLoading(null);
       });
-
-    setTimeout(() => {
-      setLoading((prev) => (prev ? null : prev));
-    }, 5000);
+    } catch (err: any) {
+      console.error("OAuth sign in failed:", err);
+      setLoading(null);
+    } finally {
+      setTimeout(() => {
+        setLoading((prev) => (prev ? null : prev));
+      }, 5000);
+    }
   };
 
   return (
