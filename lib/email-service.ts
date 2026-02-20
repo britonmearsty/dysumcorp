@@ -1,4 +1,13 @@
 import { Resend } from "resend";
+import { render } from "@react-email/render";
+import {
+  WelcomeEmail,
+  SignInEmail,
+  UploadCompletionEmail,
+  PortalCreatedEmail,
+  FileDownloadedEmail,
+  StorageWarningEmail,
+} from "@/emails/templates";
 
 let resend: Resend | null = null;
 
@@ -6,175 +15,39 @@ function getResendClient() {
   if (!resend && process.env.RESEND_API_KEY) {
     resend = new Resend(process.env.RESEND_API_KEY);
   }
-
   return resend;
 }
 
-// Email templates
-export const emailTemplates = {
-  fileUploaded: {
-    subject: "New files uploaded to your portal",
-    html: (data: {
-      portalName: string;
-      files: Array<{ name: string; size: string }>;
-      uploaderName?: string;
-    }) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-          <h2 style="color: #333; margin-bottom: 20px;">📁 New Files Uploaded</h2>
-          <p style="color: #666; margin-bottom: 20px;">
-            ${data.uploaderName ? `${data.uploaderName} has` : "Someone has"} uploaded new files to your portal "<strong>${data.portalName}</strong>".
-          </p>
-          
-          <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-            <h3 style="color: #333; margin-bottom: 10px;">Files uploaded:</h3>
-            <ul style="list-style: none; padding: 0;">
-              ${data.files
-                .map(
-                  (file) => `
-                <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
-                  <strong>${file.name}</strong> 
-                  <span style="color: #999; font-size: 0.9em;">(${file.size})</span>
-                </li>
-              `,
-                )
-                .join("")}
-            </ul>
-          </div>
-          
-          <p style="color: #666; font-size: 0.9em;">
-            You can view and download these files from your dashboard.
-          </p>
-        </div>
-        
-        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-          <p style="color: #999; font-size: 0.8em;">
-            This is an automated notification from DysumCorp Portal.
-          </p>
-        </div>
-      </div>
-    `,
-  },
+const FROM_EMAIL =
+  process.env.RESEND_FROM_EMAIL || "DysumCorp <noreply@dysumcorp.com>";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://dysumcorp.com";
 
-  portalCreated: {
-    subject: "Your new portal is ready",
-    html: (data: { portalName: string; portalSlug: string }) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-          <h2 style="color: #333; margin-bottom: 20px;">🎉 Portal Created Successfully</h2>
-          <p style="color: #666; margin-bottom: 20px;">
-            Your portal "<strong>${data.portalName}</strong>" has been created and is ready to use.
-          </p>
-          
-          <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-            <h3 style="color: #333; margin-bottom: 10px;">Portal Details:</h3>
-            <p style="margin: 5px 0;"><strong>Name:</strong> ${data.portalName}</p>
-            <p style="margin: 5px 0;"><strong>URL:</strong> ${process.env.NEXT_PUBLIC_APP_URL}/portal/${data.portalSlug}</p>
-          </div>
-          
-          <p style="color: #666; font-size: 0.9em;">
-            Share this URL with your clients to start collecting files.
-          </p>
-        </div>
-        
-        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-          <p style="color: #999; font-size: 0.8em;">
-            This is an automated notification from DysumCorp Portal.
-          </p>
-        </div>
-      </div>
-    `,
-  },
+export interface EmailResult {
+  success: boolean;
+  data?: unknown;
+  error?: unknown;
+}
 
-  fileDownloaded: {
-    subject: "File downloaded from your portal",
-    html: (data: {
-      fileName: string;
-      portalName: string;
-      downloaderName?: string;
-    }) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-          <h2 style="color: #333; margin-bottom: 20px;">📥 File Downloaded</h2>
-          <p style="color: #666; margin-bottom: 20px;">
-            ${data.downloaderName ? `${data.downloaderName} has` : "Someone has"} downloaded a file from your portal "<strong>${data.portalName}</strong>".
-          </p>
-          
-          <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-            <h3 style="color: #333; margin-bottom: 10px;">Downloaded file:</h3>
-            <p style="margin: 5px 0;"><strong>${data.fileName}</strong></p>
-          </div>
-        </div>
-        
-        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-          <p style="color: #999; font-size: 0.8em;">
-            This is an automated notification from DysumCorp Portal.
-          </p>
-        </div>
-      </div>
-    `,
-  },
-
-  storageWarning: {
-    subject: "Storage limit warning",
-    html: (data: {
-      usedStorage: string;
-      totalStorage: string;
-      percentage: number;
-    }) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border: 1px solid #ffeaa7;">
-          <h2 style="color: #856404; margin-bottom: 20px;">⚠️ Storage Limit Warning</h2>
-          <p style="color: #856404; margin-bottom: 20px;">
-            You have used ${data.percentage}% of your storage limit.
-          </p>
-          
-          <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-            <h3 style="color: #333; margin-bottom: 10px;">Storage Usage:</h3>
-            <p style="margin: 5px 0;"><strong>Used:</strong> ${data.usedStorage}</p>
-            <p style="margin: 5px 0;"><strong>Total:</strong> ${data.totalStorage}</p>
-            <p style="margin: 5px 0;"><strong>Available:</strong> ${data.percentage > 90 ? "Very low" : data.percentage > 75 ? "Low" : "Good"}</p>
-          </div>
-          
-          <p style="color: #856404; font-size: 0.9em;">
-            Consider upgrading your plan or deleting old files to avoid upload restrictions.
-          </p>
-        </div>
-        
-        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-          <p style="color: #999; font-size: 0.8em;">
-            This is an automated notification from DysumCorp Portal.
-          </p>
-        </div>
-      </div>
-    `,
-  },
-};
-
-// Send email function
-export async function sendEmail({
+async function sendEmailInternal({
   to,
   subject,
   html,
-  from = process.env.RESEND_FROM_EMAIL || "noreply@dysumcorp.com",
+  from = FROM_EMAIL,
 }: {
   to: string | string[];
   subject: string;
   html: string;
   from?: string;
-}) {
+}): Promise<EmailResult> {
   try {
     if (!process.env.RESEND_API_KEY) {
       console.warn("RESEND_API_KEY not configured, skipping email send");
-
       return { success: false, error: "Email service not configured" };
     }
 
     const resendClient = getResendClient();
-
     if (!resendClient) {
       console.warn("Failed to initialize Resend client");
-
       return { success: false, error: "Email service not configured" };
     }
 
@@ -187,93 +60,252 @@ export async function sendEmail({
 
     if (error) {
       console.error("Email send error:", error);
-
       return { success: false, error };
     }
 
     return { success: true, data };
   } catch (error) {
     console.error("Email service error:", error);
-
     return { success: false, error };
   }
 }
 
-// Helper functions for specific email types
-export async function sendFileUploadNotification({
-  userEmail,
+export async function sendWelcomeEmail({
+  to,
+  userName,
+}: {
+  to: string;
+  userName: string;
+}): Promise<EmailResult> {
+  const email = WelcomeEmail({ userName });
+  const html = await render(email);
+
+  return sendEmailInternal({
+    to,
+    subject: "Welcome to DysumCorp Portal! 🎉",
+    html,
+  });
+}
+
+export async function sendSignInNotification({
+  to,
+  userName,
+  ipAddress,
+  location,
+  time,
+}: {
+  to: string;
+  userName: string;
+  ipAddress?: string;
+  location?: string;
+  time?: string;
+}): Promise<EmailResult> {
+  const email = SignInEmail({
+    userName,
+    ipAddress,
+    location,
+    time: time || new Date().toLocaleString(),
+  });
+  const html = await render(email);
+
+  return sendEmailInternal({
+    to,
+    subject: "New sign-in to your DysumCorp account 🔐",
+    html,
+  });
+}
+
+export async function sendUploadCompletionNotification({
+  to,
+  userName,
   portalName,
+  portalSlug,
   files,
   uploaderName,
+  uploaderEmail,
+  totalSize,
+  fileCount,
 }: {
-  userEmail: string;
+  to: string;
+  userName: string;
   portalName: string;
-  files: Array<{ name: string; size: string }>;
+  portalSlug: string;
+  files: Array<{ name: string; size: string; uploadedAt: string }>;
   uploaderName?: string;
-}) {
-  const template = emailTemplates.fileUploaded;
+  uploaderEmail?: string;
+  totalSize: string;
+  fileCount: number;
+}): Promise<EmailResult> {
+  const email = UploadCompletionEmail({
+    userName,
+    portalName,
+    portalSlug,
+    files,
+    uploaderName,
+    uploaderEmail,
+    totalSize,
+    fileCount,
+  });
+  const html = await render(email);
 
-  return await sendEmail({
-    to: userEmail,
-    subject: template.subject,
-    html: template.html({ portalName, files, uploaderName }),
+  return sendEmailInternal({
+    to,
+    subject: `📁 New files uploaded to ${portalName}`,
+    html,
   });
 }
 
 export async function sendPortalCreatedNotification({
-  userEmail,
+  to,
+  userName,
   portalName,
   portalSlug,
 }: {
-  userEmail: string;
+  to: string;
+  userName: string;
   portalName: string;
   portalSlug: string;
-}) {
-  const template = emailTemplates.portalCreated;
+}): Promise<EmailResult> {
+  const email = PortalCreatedEmail({ userName, portalName, portalSlug });
+  const html = await render(email);
 
-  return await sendEmail({
-    to: userEmail,
-    subject: template.subject,
-    html: template.html({ portalName, portalSlug }),
+  return sendEmailInternal({
+    to,
+    subject: `Your portal "${portalName}" is ready! 🎉`,
+    html,
   });
 }
 
 export async function sendFileDownloadNotification({
   userEmail,
-  fileName,
+  userName,
   portalName,
+  fileName,
   downloaderName,
+  downloaderEmail,
+  ipAddress,
+  time,
 }: {
   userEmail: string;
-  fileName: string;
+  userName?: string;
   portalName: string;
+  fileName: string;
   downloaderName?: string;
-}) {
-  const template = emailTemplates.fileDownloaded;
+  downloaderEmail?: string;
+  ipAddress?: string;
+  time?: string;
+}): Promise<EmailResult> {
+  const email = FileDownloadedEmail({
+    userName: userName || userEmail.split("@")[0],
+    portalName,
+    fileName,
+    downloaderName,
+    downloaderEmail,
+    ipAddress,
+    time: time || new Date().toLocaleString(),
+  });
+  const html = await render(email);
 
-  return await sendEmail({
+  return sendEmailInternal({
     to: userEmail,
-    subject: template.subject,
-    html: template.html({ fileName, portalName, downloaderName }),
+    subject: `📥 File downloaded from ${portalName}`,
+    html,
   });
 }
 
 export async function sendStorageWarning({
   userEmail,
+  userName,
   usedStorage,
   totalStorage,
   percentage,
 }: {
   userEmail: string;
+  userName?: string;
   usedStorage: string;
   totalStorage: string;
   percentage: number;
-}) {
-  const template = emailTemplates.storageWarning;
-
-  return await sendEmail({
-    to: userEmail,
-    subject: template.subject,
-    html: template.html({ usedStorage, totalStorage, percentage }),
+}): Promise<EmailResult> {
+  const email = StorageWarningEmail({
+    userName: userName || userEmail.split("@")[0],
+    usedStorage,
+    totalStorage,
+    percentage,
   });
+  const html = await render(email);
+
+  return sendEmailInternal({
+    to: userEmail,
+    subject: "Storage limit warning ⚠️",
+    html,
+  });
+}
+
+export async function sendFileUploadNotification({
+  userEmail,
+  portalName,
+  portalSlug,
+  files,
+  uploaderName,
+  uploaderEmail,
+}: {
+  userEmail: string;
+  portalName: string;
+  portalSlug?: string;
+  files: Array<{ name: string; size: string }>;
+  uploaderName?: string;
+  uploaderEmail?: string;
+}): Promise<EmailResult> {
+  const email = UploadCompletionEmail({
+    userName: userEmail.split("@")[0],
+    portalName,
+    portalSlug: portalSlug || "",
+    files: files.map((f) => ({
+      name: f.name,
+      size: f.size,
+      uploadedAt: new Date().toLocaleString(),
+    })),
+    uploaderName,
+    uploaderEmail,
+    totalSize: files
+      .reduce((acc, f) => acc + parseFileSize(f.size), 0)
+      .toString(),
+    fileCount: files.length,
+  });
+  const html = await render(email);
+
+  return sendEmailInternal({
+    to: userEmail,
+    subject: `📁 New file uploaded to ${portalName}`,
+    html,
+  });
+}
+
+function parseFileSize(size: string): number {
+  const match = size.match(/^([\d.]+)\s*(B|KB|MB|GB|TB)?$/i);
+  if (!match) return 0;
+  const value = parseFloat(match[1]);
+  const unit = (match[2] || "B").toUpperCase();
+  const units: Record<string, number> = {
+    B: 1,
+    KB: 1024,
+    MB: 1024 * 1024,
+    GB: 1024 * 1024 * 1024,
+    TB: 1024 * 1024 * 1024 * 1024,
+  };
+  return value * (units[unit] || 1);
+}
+
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  from,
+}: {
+  to: string | string[];
+  subject: string;
+  html: string;
+  from?: string;
+}): Promise<EmailResult> {
+  return sendEmailInternal({ to, subject, html, from });
 }

@@ -5,6 +5,7 @@ import { creem } from "@creem_io/better-auth";
 import pg from "pg";
 
 import { PrismaClient } from "@/lib/generated/prisma/client";
+import { sendWelcomeEmail, sendSignInNotification } from "@/lib/email-service";
 
 // Validate required environment variables
 if (!process.env.DATABASE_URL) {
@@ -102,6 +103,52 @@ export const auth = betterAuth({
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
     cookiePrefix: "better-auth",
+  },
+  hooks: {
+    after: async (ctx) => {
+      const isSignup =
+        ctx.path === "/sign-up" ||
+        ctx.path === "/signup" ||
+        ctx.path.startsWith("/callback/");
+      const isSignIn = ctx.path === "/sign-in" || ctx.path === "/signin";
+
+      if ((isSignup || isSignIn) && ctx.body?.user) {
+        const user = ctx.body.user as {
+          email: string;
+          name?: string | null;
+        };
+
+        const userName = user.name || user.email.split("@")[0];
+
+        if (isSignup) {
+          console.log(`📧 Sending welcome email to ${user.email}`);
+          try {
+            await sendWelcomeEmail({
+              to: user.email,
+              userName,
+            });
+            console.log(`✅ Welcome email sent to ${user.email}`);
+          } catch (error) {
+            console.error("Failed to send welcome email:", error);
+          }
+        }
+
+        if (isSignIn) {
+          console.log(`📧 Sending sign-in notification to ${user.email}`);
+          try {
+            await sendSignInNotification({
+              to: user.email,
+              userName,
+              time: new Date().toLocaleString(),
+            });
+            console.log(`✅ Sign-in notification sent to ${user.email}`);
+          } catch (error) {
+            console.error("Failed to send sign-in notification:", error);
+          }
+        }
+      }
+      return ctx;
+    },
   },
   plugins: [
     creem({
