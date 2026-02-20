@@ -55,29 +55,21 @@ export default function StoragePage() {
       .social({
         provider,
         callbackURL: "/dashboard/storage",
-        errorCallbackURL: "/dashboard/storage?error=connection_failed",
       })
-      .then((response) => {
-        const data = response?.data;
-        if (typeof data === "string") {
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.url) {
-              window.location.href = parsed.url;
-              return;
-            }
-          } catch {
-            const strData = data as string;
-            const urlMatch = strData.match(/"url":"([^"]+)"/);
-            if (urlMatch && urlMatch[1]) {
-              window.location.href = urlMatch[1];
-            }
+      .then((response: any) => {
+        if (response?.data) {
+          const data =
+            typeof response.data === "string"
+              ? JSON.parse(response.data)
+              : response.data;
+          if (data?.url) {
+            window.location.href = data.url;
+            return;
           }
-        } else if (data?.url) {
-          window.location.href = data.url;
         }
+        setActionLoading(null);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error("Failed to connect:", err);
         setActionLoading(null);
       });
