@@ -8,6 +8,7 @@ import { PricingCard } from "@/components/pricing-card";
 import { PRICING_PLANS } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
 
+import { Button } from "@/components/ui/button";
 import { LandingNavbar } from "@/components/landing-navbar";
 
 export function PricingClient() {
