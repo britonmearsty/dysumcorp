@@ -1,4 +1,5 @@
 import "@/styles/globals.css";
+import "@/styles/fonts.css";
 import { Metadata, Viewport } from "next";
 import clsx from "clsx";
 
@@ -8,6 +9,8 @@ import Startup from "./startup";
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/seo/JsonLd";
+import { FacebookPixel } from "@/components/seo/FacebookPixel";
+
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://dysumcorp.pro"),
@@ -16,7 +19,7 @@ export const metadata: Metadata = {
     template: `%s | ${siteConfig.name}`,
   },
   description:
-    "Dysumcorp lets professionals collect files from clients directly to Google Drive or Dropbox. No client account needed. Secure, branded portals for CPAs, lawyers, consultants & agencies.",
+    "Dysumcorp: Secure, branded portals for CPAs & lawyers to collect files from clients directly to Google Drive or Dropbox. No client account needed. Try it free!",
   keywords: [
     "collect files from clients",
     "client file upload",
@@ -96,13 +99,11 @@ export default function RootLayout({
   return (
     <html suppressHydrationWarning lang="en">
       <head>
-        <link
-          href="https://api.fontshare.com/v2/css?f[]=zodiak@800,700,500,400&f[]=satoshi@700,500,400&display=swap"
-          rel="stylesheet"
-        />
         <OrganizationJsonLd />
         <WebsiteJsonLd />
+        <FacebookPixel />
       </head>
+
       <body
         className={clsx(
           "min-h-screen text-foreground bg-background font-sans antialiased",

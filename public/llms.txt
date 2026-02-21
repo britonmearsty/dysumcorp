@@ -1,0 +1,28 @@
+# Dysumcorp
+
+> Professional secure file collection portal for CPAs, lawyers, and consultants. Branded client document upload with bank-level encryption. No client login required.
+
+Dysumcorp is designed to streamline the document collection process for professional service providers. By providing a branded, secure, and easy-to-use portal, it eliminates the need for complex client logins while maintaining bank-level security.
+
+## Links
+
+- [Home](/): The main landing page for Dysumcorp.
+- [Pricing](/pricing): Details about subscription plans and features.
+- [Blog](/blog): Articles and updates about secure file collection and professional workflows.
+
+## Use Cases
+
+- [For Accountants](/use-cases/accountants): How CPAs and accounting firms use Dysumcorp to collect client documents.
+- [For Lawyers](/use-cases/lawyers): Streamlining document discovery and client intakes for legal professionals.
+- [For Freelancers](/use-cases/freelancers): Simple and secure file requests for independent contractors.
+- [For Marketing Agencies](/use-cases/marketing-agencies): Collecting assets and approvals from clients efficiently.
+- [For Photographers](/use-cases/photographers): Managing client photo uploads and project assets.
+
+## Technical Details
+
+### Security
+Dysumcorp employs bank-level encryption for all file transfers and storage. Data is encrypted at rest and in transit, ensuring client confidentiality and compliance with professional standards.
+
+### Integrations
+- [Dropbox Integration](/integrations/dropbox): Seamlessly sync collected files to your Dropbox account.
+- [Google Drive Integration](/integrations/google-drive): Automatically save documents to your Google Drive folders.

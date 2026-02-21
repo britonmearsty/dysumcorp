@@ -39,6 +39,15 @@ export default function BlogPostPage() {
             </span>
           </div>
 
+          <div className="mb-8">
+            <Link
+              href="/blog"
+              className="text-sm font-mono text-[#334155] hover:underline flex items-center gap-1"
+            >
+              ← Back to Blog
+            </Link>
+          </div>
+
           <h1 className="font-mono text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
             How to Collect Files from Clients Without Email
           </h1>
@@ -58,7 +67,7 @@ export default function BlogPostPage() {
             </p>
             <p>
               Email wasn't designed for file transfer. It's clunky, unreliable,
-              and creates unnecessary friction in your client relationships.
+              and creates unnecessary friction in your client relationships. Plus, file size limits on providers like <a href="https://support.google.com/mail/answer/6584?hl=en" target="_blank" rel="noopener noreferrer" className="text-[#334155] underline">Gmail</a> can prevent your clients from sending large documents altogether.
             </p>
 
             <h2>The Solution: Dedicated File Collection Links</h2>
@@ -73,7 +82,7 @@ export default function BlogPostPage() {
               <li>Create a branded upload portal with your logo and colors</li>
               <li>Share your unique upload link with your client</li>
               <li>Client clicks the link and uploads their files</li>
-              <li>Files automatically land in your Google Drive or Dropbox</li>
+              <li>Files automatically land in your <a href="https://www.google.com/drive/" target="_blank" rel="noopener noreferrer" className="text-[#334155] underline">Google Drive</a> or <a href="https://www.dropbox.com/" target="_blank" rel="noopener noreferrer" className="text-[#334155] underline">Dropbox</a></li>
             </ol>
 
             <h2>Benefits for Your Practice</h2>
@@ -92,7 +101,7 @@ export default function BlogPostPage() {
               </li>
               <li>
                 <strong>Better security:</strong> Encrypted file transfer
-                protects sensitive data
+                protects sensitive data. Learn more about <a href="https://en.wikipedia.org/wiki/Transport_Layer_Security" target="_blank" rel="noopener noreferrer" className="text-[#334155] underline">TLS security</a> and how it keeps your data safe.
               </li>
             </ul>
 
@@ -100,7 +109,7 @@ export default function BlogPostPage() {
             <p>
               Setting up file collection without email is easier than you think.
               Tools like Dysumcorp let you create upload links in minutes that
-              work on any device.
+              work on any device. Check out our <Link href="/pricing" className="text-[#334155] underline">pricing plans</Link> to find the right fit for your business.
             </p>
           </div>
 

@@ -1,4 +1,4 @@
-"use client";
+import Image from "next/image";
 
 import { Quote } from "lucide-react";
 
@@ -27,10 +27,11 @@ export default function TestimonialsSection() {
         </FadeIn>
         <FadeIn delay={0.2}>
           <div className="flex flex-col items-center gap-6">
-            <div className="w-20 h-20 rounded-full border-4 border-white shadow-xl overflow-hidden">
-              <img
+            <div className="w-20 h-20 rounded-full border-4 border-white shadow-xl overflow-hidden relative">
+              <Image
                 alt={testimonial.name}
-                className="w-full h-full object-cover grayscale"
+                className="object-cover grayscale"
+                fill
                 src={testimonial.image}
               />
             </div>
