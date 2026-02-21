@@ -307,6 +307,8 @@ export default function PublicPortalPage() {
               "mimeType",
               file.type || "application/octet-stream",
             );
+            chunkFormData.append("clientName", uploaderName.trim());
+            chunkFormData.append("clientEmail", uploaderEmail.trim());
 
             const chunkResponse = await fetch("/api/portals/upload-chunk", {
               method: "POST",

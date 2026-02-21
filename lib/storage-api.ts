@@ -201,15 +201,21 @@ export async function uploadToGoogleDrive(
   fileName: string,
   fileContent: Buffer | string | Blob | File,
   mimeType: string = "text/plain",
+  parentFolderId?: string,
 ): Promise<FileMetadata> {
   const boundary = "-------314159265358979323846";
   const delimiter = `\r\n--${boundary}\r\n`;
   const closeDelimiter = `\r\n--${boundary}--`;
 
-  const metadata = {
+  const metadata: any = {
     name: fileName,
     mimeType: mimeType,
   };
+
+  // Add parent folder if specified
+  if (parentFolderId) {
+    metadata.parents = [parentFolderId];
+  }
 
   // Construct multipart body using Blob to avoid loading file into string/memory
   // We need to combine: delimiter + metadata + delimiter + fileContent + closeDelimiter
@@ -453,4 +459,172 @@ export async function deleteFromDropbox(
   if (!response.ok) {
     throw new Error(`Dropbox delete failed: ${response.statusText}`);
   }
+}
+
+/**
+ * Find or create the root "dysumcorp" folder for a user
+ */
+export async function findOrCreateRootFolder(
+  accessToken: string,
+  userId: string,
+): Promise<{ id: string; name: string }> {
+  // First, try to find existing dysumcorp folder
+  const searchResponse = await fetch(
+    "https://www.googleapis.com/drive/v3/files",
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+
+  if (searchResponse.ok) {
+    const data = await searchResponse.json();
+    const existingFolder = data.files?.find(
+      (f: any) =>
+        f.name === "dysumcorp" &&
+        f.mimeType === "application/vnd.google-apps.folder",
+    );
+    if (existingFolder) {
+      return { id: existingFolder.id, name: existingFolder.name };
+    }
+  }
+
+  // Create dysumcorp folder if not found
+  const createResponse = await fetch(
+    "https://www.googleapis.com/drive/v3/files",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: "dysumcorp",
+        mimeType: "application/vnd.google-apps.folder",
+      }),
+    },
+  );
+
+  if (!createResponse.ok) {
+    throw new Error("Failed to create dysumcorp folder");
+  }
+
+  const createdFolder = await createResponse.json();
+  return { id: createdFolder.id, name: createdFolder.name };
+}
+
+/**
+ * Find or create a portal folder inside the dysumcorp folder
+ */
+export async function findOrCreatePortalFolder(
+  accessToken: string,
+  rootFolderId: string,
+  portalName: string,
+): Promise<{ id: string; name: string }> {
+  // First, try to find existing portal folder
+  const searchResponse = await fetch(
+    `https://www.googleapis.com/drive/v3/files?${new URLSearchParams({
+      q: `'${rootFolderId}' in parents and name = '${portalName}' and mimeType = 'application/vnd.google-apps.folder'`,
+      fields: "files(id,name)",
+    })}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+
+  if (searchResponse.ok) {
+    const data = await searchResponse.json();
+    const existingFolder = data.files?.[0];
+    if (existingFolder) {
+      return { id: existingFolder.id, name: existingFolder.name };
+    }
+  }
+
+  // Create portal folder if not found
+  const createResponse = await fetch(
+    "https://www.googleapis.com/drive/v3/files",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: portalName,
+        mimeType: "application/vnd.google-apps.folder",
+        parents: [rootFolderId],
+      }),
+    },
+  );
+
+  if (!createResponse.ok) {
+    throw new Error(`Failed to create portal folder: ${portalName}`);
+  }
+
+  const createdFolder = await createResponse.json();
+  return { id: createdFolder.id, name: createdFolder.name };
+}
+
+/**
+ * Find or create a client folder inside the portal folder
+ */
+export async function findOrCreateClientFolder(
+  accessToken: string,
+  portalFolderId: string,
+  clientName: string,
+): Promise<{ id: string; name: string }> {
+  // Sanitize client name for folder name
+  const sanitizedName = clientName.replace(/[<>:"/\\|?*]/g, "_").trim();
+
+  if (!sanitizedName) {
+    throw new Error("Invalid client name");
+  }
+
+  // First, try to find existing client folder
+  const searchResponse = await fetch(
+    `https://www.googleapis.com/drive/v3/files?${new URLSearchParams({
+      q: `'${portalFolderId}' in parents and name = '${sanitizedName}' and mimeType = 'application/vnd.google-apps.folder'`,
+      fields: "files(id,name)",
+    })}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+
+  if (searchResponse.ok) {
+    const data = await searchResponse.json();
+    const existingFolder = data.files?.[0];
+    if (existingFolder) {
+      return { id: existingFolder.id, name: existingFolder.name };
+    }
+  }
+
+  // Create client folder if not found
+  const createResponse = await fetch(
+    "https://www.googleapis.com/drive/v3/files",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: sanitizedName,
+        mimeType: "application/vnd.google-apps.folder",
+        parents: [portalFolderId],
+      }),
+    },
+  );
+
+  if (!createResponse.ok) {
+    throw new Error(`Failed to create client folder: ${sanitizedName}`);
+  }
+
+  const createdFolder = await createResponse.json();
+  return { id: createdFolder.id, name: createdFolder.name };
 }

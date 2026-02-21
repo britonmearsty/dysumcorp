@@ -5,6 +5,9 @@ import {
   getValidToken,
   uploadToGoogleDrive,
   uploadToDropbox,
+  findOrCreateRootFolder,
+  findOrCreatePortalFolder,
+  findOrCreateClientFolder,
 } from "@/lib/storage-api";
 import {
   getRateLimit,
@@ -125,7 +128,15 @@ export async function POST(request: NextRequest) {
     console.log("[Portal Upload] Fetching portal from database...");
     const portal = await prisma.portal.findUnique({
       where: { id: portalId },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        userId: true,
+        storageProvider: true,
+        storageFolderId: true,
+        storageFolderPath: true,
+        useClientFolders: true,
         user: true,
       },
     });
@@ -167,6 +178,44 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Portal Upload] Using ${provider} for storage`);
 
+    // Determine folder structure
+    let parentFolderId: string;
+    let folderPath: string;
+
+    if (portal.storageFolderId) {
+      // Use custom folder selected in portal settings
+      parentFolderId = portal.storageFolderId;
+      folderPath = portal.storageFolderPath || portal.name;
+    } else {
+      // Default: use dysumcorp/portalname structure
+      const rootFolder = await findOrCreateRootFolder(
+        accessToken,
+        portal.userId,
+      );
+      const portalFolder = await findOrCreatePortalFolder(
+        accessToken,
+        rootFolder.id,
+        portal.name,
+      );
+      parentFolderId = portalFolder.id;
+      folderPath = `dysumcorp/${portal.name}`;
+    }
+
+    // Get uploader info for client folder creation
+    const uploaderName = formData.get("uploaderName") as string;
+    const uploaderEmail = formData.get("uploaderEmail") as string;
+
+    // Handle client folder if enabled
+    if (portal.useClientFolders && uploaderName && uploaderName.trim()) {
+      const clientFolder = await findOrCreateClientFolder(
+        accessToken,
+        parentFolderId,
+        uploaderName.trim(),
+      );
+      parentFolderId = clientFolder.id;
+      folderPath = `${folderPath}/${clientFolder.name}`;
+    }
+
     console.log("[Portal Upload] Starting file uploads...");
     const uploadedFiles = await Promise.all(
       files.map(async (file, index) => {
@@ -184,9 +233,10 @@ export async function POST(request: NextRequest) {
             );
             const result = await uploadToGoogleDrive(
               accessToken,
-              `${portal.name}/${file.name}`,
+              `${folderPath}/${file.name}`,
               file,
               file.type || "application/octet-stream",
+              parentFolderId,
             );
 
             storageUrl =
@@ -200,7 +250,7 @@ export async function POST(request: NextRequest) {
             console.log(`[Portal Upload] Uploading to Dropbox: ${file.name}`);
             const result = await uploadToDropbox(
               accessToken,
-              `/${portal.name}/${file.name}`,
+              `/${folderPath}/${file.name}`,
               file,
             );
 
