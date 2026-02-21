@@ -7,6 +7,7 @@ import Startup from "./startup";
 
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
+import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://dysumcorp.pro"),
@@ -99,6 +100,8 @@ export default function RootLayout({
           href="https://api.fontshare.com/v2/css?f[]=zodiak@800,700,500,400&f[]=satoshi@700,500,400&display=swap"
           rel="stylesheet"
         />
+        <OrganizationJsonLd />
+        <WebsiteJsonLd />
       </head>
       <body
         className={clsx(
