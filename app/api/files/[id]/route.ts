@@ -44,34 +44,54 @@ export async function DELETE(
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    // Try to delete from cloud storage if it's a cloud URL
-    if (
-      file.storageUrl.startsWith("http") ||
-      file.storageUrl.includes("drive.google.com")
-    ) {
+    // Try to delete from cloud storage
+    let cloudDeleteSuccess = false;
+
+    // Determine storage provider and file ID
+    const isGoogleDrive =
+      file.storageUrl.includes("drive.google.com") ||
+      file.storageUrl.includes("docs.google.com") ||
+      file.storageUrl.includes("googledrive.com");
+    const isDropbox = file.storageUrl.includes("dropbox.com");
+
+    // Use storageFileId if available, otherwise extract from URL
+    let cloudFileId = file.storageFileId;
+
+    if (!cloudFileId && isGoogleDrive) {
+      // Try to extract file ID from URL
+      const match =
+        file.storageUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+        file.storageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (match) {
+        cloudFileId = match[1];
+      }
+    }
+
+    if (isGoogleDrive && cloudFileId) {
       try {
         const accessToken = await getValidToken(session.user.id, "google");
 
         if (accessToken) {
-          // Extract file ID from URL or use storageUrl as ID
-          const fileId = file.storageUrl.split("/").pop() || file.storageUrl;
-
-          await deleteFromGoogleDrive(accessToken, fileId);
+          await deleteFromGoogleDrive(accessToken, cloudFileId);
+          cloudDeleteSuccess = true;
         }
       } catch (error) {
         console.error("Failed to delete from Google Drive:", error);
-        // Continue with database deletion even if cloud deletion fails
       }
-    } else if (file.storageUrl.includes("dropbox")) {
+    } else if (isDropbox) {
       try {
         const accessToken = await getValidToken(session.user.id, "dropbox");
 
         if (accessToken) {
-          await deleteFromDropbox(accessToken, file.storageUrl);
+          // For Dropbox, use the path from storageUrl or construct it
+          const dropboxPath = file.storageUrl.includes("dropbox.com")
+            ? `/${file.name}` // Dropbox paths are typically just filenames
+            : file.storageUrl;
+          await deleteFromDropbox(accessToken, dropboxPath);
+          cloudDeleteSuccess = true;
         }
       } catch (error) {
         console.error("Failed to delete from Dropbox:", error);
-        // Continue with database deletion even if cloud deletion fails
       }
     }
 
@@ -80,7 +100,10 @@ export async function DELETE(
       where: { id },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      cloudDeleted: cloudDeleteSuccess,
+    });
   } catch (error) {
     console.error("Error deleting file:", error);
 

@@ -131,6 +131,7 @@ model File {
   size          BigInt
   mimeType      String
   storageUrl    String
+  storageFileId String?
   portalId      String
   uploadedAt    DateTime  @default(now())
   expiresAt     DateTime?

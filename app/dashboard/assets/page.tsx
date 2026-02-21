@@ -19,6 +19,8 @@ import {
   RefreshCw,
   Cloud,
   HardDrive,
+  CloudOff,
+  Loader2,
 } from "lucide-react";
 
 import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
@@ -54,6 +56,7 @@ export default function AssetsPage() {
     id: string;
     name: string;
   } | null>(null);
+  const [syncing, setSyncing] = useState(false);
   const { showToast } = useToast();
 
   const tabs = [
@@ -94,6 +97,33 @@ export default function AssetsPage() {
       console.error("Failed to fetch files:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSyncWithCloud = async () => {
+    setSyncing(true);
+    try {
+      const response = await fetch("/api/files/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        showToast(
+          `Synced with cloud: ${result.deleted} files removed`,
+          "success",
+        );
+        fetchFiles();
+      } else {
+        const error = await response.json();
+        showToast(error.error || "Failed to sync", "error");
+      }
+    } catch (error) {
+      console.error("Failed to sync:", error);
+      showToast("Failed to sync with cloud storage", "error");
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -416,6 +446,19 @@ export default function AssetsPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        className="p-2 bg-muted hover:bg-muted/80 rounded-lg transition-colors border border-border disabled:opacity-50"
+                        title="Sync with cloud"
+                        type="button"
+                        disabled={syncing}
+                        onClick={handleSyncWithCloud}
+                      >
+                        {syncing ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CloudOff className="w-4 h-4" />
+                        )}
+                      </button>
                       <button
                         className="p-2 bg-muted hover:bg-muted/80 rounded-lg transition-colors border border-border"
                         title="Refresh"
