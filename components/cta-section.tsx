@@ -67,7 +67,6 @@ export default function CTASection() {
                 </h4>
                 <ul className="space-y-3">
                   <li>
-<<<<<<< HEAD
                     <Link
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
                       href="/features"
@@ -85,30 +84,10 @@ export default function CTASection() {
                   </li>
                   <li>
                     <Link
-=======
-                    <a
-                      className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
-                      href="#features"
-                    >
-                      Features
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
-                      href="#pricing"
-                    >
-                      Pricing
-                    </a>
-                  </li>
-                  <li>
-                    <a
->>>>>>> 4fde20fc10d84443855848deee9d596e33e85817
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
                       href="/blog"
                     >
                       Blog
-<<<<<<< HEAD
                     </Link>
                   </li>
                   <li>
@@ -118,17 +97,6 @@ export default function CTASection() {
                     >
                       Security
                     </Link>
-=======
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
-                      href="#security"
-                    >
-                      Security
-                    </a>
->>>>>>> 4fde20fc10d84443855848deee9d596e33e85817
                   </li>
                 </ul>
               </div>
@@ -203,37 +171,36 @@ export default function CTASection() {
                 </h4>
                 <ul className="space-y-3">
                   <li>
-<<<<<<< HEAD
                     <Link
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
-                      href="/privacy"
+                      href="/features"
                     >
-                      Privacy
+                      Features
                     </Link>
                   </li>
                   <li>
                     <Link
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
-                      href="/terms"
+                      href="/pricing"
                     >
-                      Terms
+                      Pricing
                     </Link>
-=======
-                    <a
-                      className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
-                      href="#"
-                    >
-                      Privacy
-                    </a>
                   </li>
                   <li>
-                    <a
+                    <Link
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
-                      href="#"
+                      href="/blog"
                     >
-                      Terms
-                    </a>
->>>>>>> 4fde20fc10d84443855848deee9d596e33e85817
+                      Blog
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
+                      href="/security"
+                    >
+                      Security
+                    </Link>
                   </li>
                 </ul>
               </div>
