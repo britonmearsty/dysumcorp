@@ -24,6 +24,7 @@ export async function POST(request: Request) {
 
     // Get all user's files if no specific fileIds provided
     let files;
+
     if (fileIds && fileIds.length > 0) {
       files = await prisma.file.findMany({
         where: {
@@ -84,6 +85,7 @@ export async function POST(request: Request) {
               const match =
                 file.storageUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
                 file.storageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+
               if (match) {
                 fileId = match[1];
               }

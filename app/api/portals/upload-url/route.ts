@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { getValidToken } from "@/lib/storage-api";
+import {
+  getValidToken,
+  findOrCreateRootFolder,
+  findOrCreatePortalFolder,
+  findOrCreateClientFolder,
+} from "@/lib/storage-api";
 import {
   getRateLimit,
   uploadRateLimit,
@@ -41,7 +46,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { fileName, fileSize, mimeType, portalId, provider } = body;
+    const { fileName, fileSize, mimeType, portalId, provider, uploaderName } =
+      body;
 
     if (!fileName || !fileSize || !portalId) {
       return NextResponse.json(
@@ -53,7 +59,16 @@ export async function POST(request: NextRequest) {
     // Verify portal exists and is active
     const portal = await prisma.portal.findUnique({
       where: { id: portalId },
-      include: { user: true },
+      select: {
+        id: true,
+        name: true,
+        userId: true,
+        storageProvider: true,
+        storageFolderId: true,
+        storageFolderPath: true,
+        useClientFolders: true,
+        isActive: true,
+      },
     });
 
     if (!portal) {
@@ -68,10 +83,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the portal owner's storage token
-    const accessToken = await getValidToken(
-      portal.userId,
-      provider || "google",
-    );
+    const storageProvider = provider || portal.storageProvider || "google";
+    const accessToken = await getValidToken(portal.userId, storageProvider);
 
     if (!accessToken) {
       return NextResponse.json(
@@ -83,18 +96,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Determine folder structure
+    let parentFolderId: string;
+    let folderPath: string;
+
+    if (portal.storageFolderId) {
+      // Use custom folder selected in portal settings
+      parentFolderId = portal.storageFolderId;
+      folderPath = portal.storageFolderPath || portal.name;
+    } else {
+      // Default: use dysumcorp/portalname structure
+      const rootFolder = await findOrCreateRootFolder(
+        accessToken,
+        portal.userId,
+      );
+      const portalFolder = await findOrCreatePortalFolder(
+        accessToken,
+        rootFolder.id,
+        portal.name,
+      );
+
+      parentFolderId = portalFolder.id;
+      folderPath = `dysumcorp/${portal.name}`;
+    }
+
+    // Handle client folder if enabled
+    if (portal.useClientFolders && uploaderName && uploaderName.trim()) {
+      const clientFolder = await findOrCreateClientFolder(
+        accessToken,
+        parentFolderId,
+        uploaderName.trim(),
+      );
+
+      parentFolderId = clientFolder.id;
+      folderPath = `${folderPath}/${clientFolder.name}`;
+    }
+
+    const finalParentFolderId = parentFolderId;
+
     // Generate upload URL based on provider
     let uploadUrl: string;
     let uploadMetadata: Record<string, any> = {};
 
-    if (provider === "dropbox") {
+    if (storageProvider === "dropbox") {
       uploadMetadata = {
         accessToken,
-        path: `/${portal.name}/${fileName}`,
+        path: `/${folderPath}/${fileName}`,
         method: "client-sdk",
       };
     } else {
-      // Google Drive - create resumable upload session
+      // Google Drive - create resumable upload session with parent folder
       const response = await fetch(
         "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable",
         {
@@ -106,6 +157,7 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify({
             name: fileName,
             mimeType: mimeType || "application/octet-stream",
+            parents: [finalParentFolderId],
           }),
         },
       );

@@ -163,6 +163,7 @@ async function uploadDirectToCloudChunked(
         mimeType: file.type,
         portalId,
         provider: provider || "google",
+        uploaderName,
       }),
     });
 

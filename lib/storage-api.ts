@@ -485,6 +485,7 @@ export async function findOrCreateRootFolder(
         f.name === "dysumcorp" &&
         f.mimeType === "application/vnd.google-apps.folder",
     );
+
     if (existingFolder) {
       return { id: existingFolder.id, name: existingFolder.name };
     }
@@ -511,6 +512,7 @@ export async function findOrCreateRootFolder(
   }
 
   const createdFolder = await createResponse.json();
+
   return { id: createdFolder.id, name: createdFolder.name };
 }
 
@@ -538,6 +540,7 @@ export async function findOrCreatePortalFolder(
   if (searchResponse.ok) {
     const data = await searchResponse.json();
     const existingFolder = data.files?.[0];
+
     if (existingFolder) {
       return { id: existingFolder.id, name: existingFolder.name };
     }
@@ -565,6 +568,7 @@ export async function findOrCreatePortalFolder(
   }
 
   const createdFolder = await createResponse.json();
+
   return { id: createdFolder.id, name: createdFolder.name };
 }
 
@@ -599,6 +603,7 @@ export async function findOrCreateClientFolder(
   if (searchResponse.ok) {
     const data = await searchResponse.json();
     const existingFolder = data.files?.[0];
+
     if (existingFolder) {
       return { id: existingFolder.id, name: existingFolder.name };
     }
@@ -626,5 +631,6 @@ export async function findOrCreateClientFolder(
   }
 
   const createdFolder = await createResponse.json();
+
   return { id: createdFolder.id, name: createdFolder.name };
 }

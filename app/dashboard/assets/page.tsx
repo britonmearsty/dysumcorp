@@ -110,6 +110,7 @@ export default function AssetsPage() {
 
       if (response.ok) {
         const result = await response.json();
+
         showToast(
           `Synced with cloud: ${result.deleted} files removed`,
           "success",
@@ -117,6 +118,7 @@ export default function AssetsPage() {
         fetchFiles();
       } else {
         const error = await response.json();
+
         showToast(error.error || "Failed to sync", "error");
       }
     } catch (error) {
@@ -448,9 +450,9 @@ export default function AssetsPage() {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
                         className="p-2 bg-muted hover:bg-muted/80 rounded-lg transition-colors border border-border disabled:opacity-50"
+                        disabled={syncing}
                         title="Sync with cloud"
                         type="button"
-                        disabled={syncing}
                         onClick={handleSyncWithCloud}
                       >
                         {syncing ? (

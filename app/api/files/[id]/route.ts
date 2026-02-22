@@ -62,6 +62,7 @@ export async function DELETE(
       const match =
         file.storageUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
         file.storageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+
       if (match) {
         cloudFileId = match[1];
       }
@@ -87,6 +88,7 @@ export async function DELETE(
           const dropboxPath = file.storageUrl.includes("dropbox.com")
             ? `/${file.name}` // Dropbox paths are typically just filenames
             : file.storageUrl;
+
           await deleteFromDropbox(accessToken, dropboxPath);
           cloudDeleteSuccess = true;
         }

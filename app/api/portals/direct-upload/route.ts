@@ -3,11 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 
 import { PrismaClient } from "@/lib/generated/prisma/client";
-import {
-  getValidToken,
-  findOrCreateRootFolder,
-  findOrCreatePortalFolder,
-} from "@/lib/storage-api";
+import { getValidToken } from "@/lib/storage-api";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -132,6 +128,7 @@ export async function POST(request: NextRequest) {
 
     // Determine folder path
     let folderPath: string;
+
     if (portal.storageFolderId && portal.storageFolderPath) {
       folderPath = portal.storageFolderPath;
     } else {

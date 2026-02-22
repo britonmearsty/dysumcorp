@@ -1957,9 +1957,9 @@ export default function EditPortalPage() {
                         {currentStep === "storage" && (
                           <StorageSection
                             formData={formData}
+                            portal={portal}
                             setCurrentStep={setCurrentStep}
                             updateFormData={updateFormData}
-                            portal={portal}
                           />
                         )}
 

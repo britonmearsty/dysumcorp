@@ -21,9 +21,11 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function useToast() {
   const context = useContext(ToastContext);
+
   if (!context) {
     throw new Error("useToast must be used within a ToastProvider");
   }
+
   return context;
 }
 
@@ -32,6 +34,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const showToast = useCallback((message: string, type: ToastType = "info") => {
     const id = Date.now();
+
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -45,7 +48,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toasts, showToast, removeToast }}>
       {children}
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
+      <ToastContainer removeToast={removeToast} toasts={toasts} />
     </ToastContext.Provider>
   );
 }
@@ -80,8 +83,8 @@ function ToastContainer({
           {toast.type === "info" && <Info className="w-5 h-5" />}
           <p className="flex-1 text-sm font-medium">{toast.message}</p>
           <button
-            onClick={() => removeToast(toast.id)}
             className="opacity-70 hover:opacity-100 transition-opacity"
+            onClick={() => removeToast(toast.id)}
           >
             <XCircle className="w-4 h-4" />
           </button>

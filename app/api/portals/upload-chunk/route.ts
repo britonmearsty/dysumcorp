@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
         rootFolder.id,
         portal.name,
       );
+
       parentFolderId = portalFolder.id;
       folderPath = `dysumcorp/${portal.name}`;
     }
@@ -123,6 +124,7 @@ export async function POST(request: NextRequest) {
         parentFolderId,
         clientName.trim(),
       );
+
       parentFolderId = clientFolder.id;
       folderPath = `${folderPath}/${clientFolder.name}`;
     }
