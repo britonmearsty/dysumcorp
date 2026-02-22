@@ -9,12 +9,11 @@ import {
   Zap,
   CheckCircle,
 } from "lucide-react";
+import Link from "next/link";
 
 import { FadeIn, Stagger, StaggerItem } from "./animations";
 
 import { useSession } from "@/lib/auth-client";
-
-import Link from "next/link";
 
 const useCases = [
   {
@@ -56,9 +55,7 @@ const features = [
     visual: (
       <div className="bg-stone-100 border border-stone-200 rounded-2xl p-6">
         <div className="flex items-center justify-between text-[11px] mb-3">
-          <span className="font-bold text-stone-700">
-            Connected Storage
-          </span>
+          <span className="font-bold text-stone-700">Connected Storage</span>
         </div>
         <div className="flex gap-2">
           <span className="text-[9px] bg-white px-3 py-1.5 rounded-md border border-stone-200 font-bold uppercase text-stone-600">
@@ -146,7 +143,7 @@ export default function FeaturesSection() {
           >
             {useCases.map((useCase, index) => (
               <StaggerItem key={index}>
-                <Link href={useCase.href} className="block h-full group">
+                <Link className="block h-full group" href={useCase.href}>
                   <div className="bg-white p-6 sm:p-8 lg:p-10 rounded-2xl lg:rounded-[2.5rem] border border-stone-100 premium-shadow-hover h-full transition-all group-hover:border-stone-300">
                     <useCase.icon className="text-3xl sm:text-4xl text-stone-900 mb-4 sm:mb-6" />
                     <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 serif-font text-[#1c1917]">
@@ -187,8 +184,9 @@ export default function FeaturesSection() {
             {features.map((feature, index) => (
               <StaggerItem key={index}>
                 <div
-                  className={`p-6 sm:p-8 lg:p-10 rounded-2xl lg:rounded-[2.5rem] border border-stone-100 flex flex-col justify-between premium-shadow-hover h-full relative ${feature.dark ? "bg-[#1c1917] text-stone-50" : "bg-white"
-                    }`}
+                  className={`p-6 sm:p-8 lg:p-10 rounded-2xl lg:rounded-[2.5rem] border border-stone-100 flex flex-col justify-between premium-shadow-hover h-full relative ${
+                    feature.dark ? "bg-[#1c1917] text-stone-50" : "bg-white"
+                  }`}
                 >
                   {feature.comingSoon && (
                     <div className="absolute top-5 right-5 bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-full border border-amber-200">
@@ -197,10 +195,11 @@ export default function FeaturesSection() {
                   )}
                   <div>
                     <div
-                      className={`inline-flex items-center gap-2 ${feature.dark
-                        ? "bg-white/10 text-stone-200"
-                        : "bg-stone-100 text-stone-700"
-                        } text-[10px] font-bold uppercase tracking-widest px-3 sm:px-4 py-1.5 rounded-full mb-6 sm:mb-8`}
+                      className={`inline-flex items-center gap-2 ${
+                        feature.dark
+                          ? "bg-white/10 text-stone-200"
+                          : "bg-stone-100 text-stone-700"
+                      } text-[10px] font-bold uppercase tracking-widest px-3 sm:px-4 py-1.5 rounded-full mb-6 sm:mb-8`}
                     >
                       {feature.dark ? (
                         <CheckCircle className="w-3 h-3" />
@@ -217,8 +216,9 @@ export default function FeaturesSection() {
                       {feature.title}
                     </h3>
                     <p
-                      className={`leading-relaxed mb-6 sm:mb-10 ${feature.dark ? "text-stone-300" : "text-stone-600"
-                        }`}
+                      className={`leading-relaxed mb-6 sm:mb-10 ${
+                        feature.dark ? "text-stone-300" : "text-stone-600"
+                      }`}
                     >
                       {feature.desc}
                     </p>

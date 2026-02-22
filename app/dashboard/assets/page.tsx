@@ -19,9 +19,12 @@ import {
   RefreshCw,
   Cloud,
   HardDrive,
+  CloudOff,
+  Loader2,
 } from "lucide-react";
 
 import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
+import { useToast } from "@/lib/toast";
 
 interface File {
   id: string;
@@ -48,6 +51,13 @@ export default function AssetsPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [dateFilter, setDateFilter] = useState<string>("");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const { showToast } = useToast();
 
   const tabs = [
     {
@@ -90,28 +100,59 @@ export default function AssetsPage() {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${name}"? This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
-    setDeleting(id);
+  const handleSyncWithCloud = async () => {
+    setSyncing(true);
     try {
-      const response = await fetch(`/api/files/${id}`, { method: "DELETE" });
+      const response = await fetch("/api/files/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
 
       if (response.ok) {
-        setFiles(files.filter((f) => f.id !== id));
+        const result = await response.json();
+        showToast(
+          `Synced with cloud: ${result.deleted} files removed`,
+          "success",
+        );
+        fetchFiles();
       } else {
-        alert("Failed to delete file");
+        const error = await response.json();
+        showToast(error.error || "Failed to sync", "error");
+      }
+    } catch (error) {
+      console.error("Failed to sync:", error);
+      showToast("Failed to sync with cloud storage", "error");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    setFileToDelete({ id, name });
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!fileToDelete) return;
+    setDeleteModalOpen(false);
+    setDeleting(fileToDelete.id);
+    try {
+      const response = await fetch(`/api/files/${fileToDelete.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setFiles(files.filter((f) => f.id !== fileToDelete.id));
+        showToast("File deleted successfully", "success");
+      } else {
+        showToast("Failed to delete file", "error");
       }
     } catch (error) {
       console.error("Failed to delete file:", error);
-      alert("Failed to delete file");
+      showToast("Failed to delete file", "error");
     } finally {
       setDeleting(null);
+      setFileToDelete(null);
     }
   };
 
@@ -143,27 +184,29 @@ export default function AssetsPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else if (response.status === 401) {
-        alert("Invalid password. Please try again.");
+        showToast("Invalid password. Please try again.", "error");
       } else {
         try {
           const errorData = await response.json();
 
-          alert(errorData.error || "Failed to download file");
+          showToast(errorData.error || "Failed to download file", "error");
         } catch {
-          alert("Failed to download file");
+          showToast("Failed to download file", "error");
         }
       }
     } catch (error) {
       console.error("Failed to download file:", error);
-      alert("Failed to download file");
+      showToast("Failed to download file", "error");
     }
   };
 
   // Helper functions
   const getStorageType = (storageUrl: string): string => {
+    if (!storageUrl) return "other";
     if (
       storageUrl.includes("drive.google.com") ||
-      storageUrl.includes("googleapis.com")
+      storageUrl.includes("googleapis.com") ||
+      storageUrl.includes("googledrive.com")
     )
       return "google";
     if (storageUrl.includes("dropbox.com")) return "dropbox";
@@ -403,6 +446,19 @@ export default function AssetsPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        className="p-2 bg-muted hover:bg-muted/80 rounded-lg transition-colors border border-border disabled:opacity-50"
+                        title="Sync with cloud"
+                        type="button"
+                        disabled={syncing}
+                        onClick={handleSyncWithCloud}
+                      >
+                        {syncing ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CloudOff className="w-4 h-4" />
+                        )}
+                      </button>
                       <button
                         className="p-2 bg-muted hover:bg-muted/80 rounded-lg transition-colors border border-border"
                         title="Refresh"
@@ -860,6 +916,48 @@ export default function AssetsPage() {
             </motion.div>
           </AnimatePresence>
         </main>
+
+        {/* Delete Confirmation Modal */}
+        {deleteModalOpen && fileToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+            <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-3 bg-red-500/20 rounded-full">
+                  <Trash2 className="w-6 h-6 text-red-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">
+                    Delete File
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    This action cannot be undone
+                  </p>
+                </div>
+              </div>
+              <p className="text-foreground mb-6">
+                Are you sure you want to delete{" "}
+                <span className="font-semibold">"{fileToDelete.name}"</span>?
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  className="px-4 py-2 border border-border rounded-xl font-medium hover:bg-muted transition-colors"
+                  onClick={() => {
+                    setDeleteModalOpen(false);
+                    setFileToDelete(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors"
+                  onClick={confirmDelete}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

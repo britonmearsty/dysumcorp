@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+
 import { FadeIn, Stagger, StaggerItem } from "./animations";
 
 const integrations = [
@@ -55,11 +56,11 @@ export default function IntegrationsSection() {
                 )}
                 <div className="mb-6 flex justify-center items-center h-16">
                   <Image
-                    src={integration.logo}
                     alt={integration.name}
-                    width={80}
-                    height={64}
                     className="object-contain max-h-16 w-auto"
+                    height={64}
+                    src={integration.logo}
+                    width={80}
                   />
                 </div>
                 <h4 className="font-bold serif-font text-xl mb-2 text-[#1c1917]">

@@ -3,7 +3,11 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 
 import { PrismaClient } from "@/lib/generated/prisma/client";
-import { getValidToken } from "@/lib/storage-api";
+import {
+  getValidToken,
+  findOrCreateRootFolder,
+  findOrCreatePortalFolder,
+} from "@/lib/storage-api";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -39,6 +43,7 @@ export async function POST(request: NextRequest) {
         maxFileSize: true,
         storageProvider: true,
         storageFolderId: true,
+        storageFolderPath: true,
         useClientFolders: true,
       },
     });
@@ -125,6 +130,14 @@ export async function POST(request: NextRequest) {
 
     console.log("[Portal Direct Upload] Using provider:", provider);
 
+    // Determine folder path
+    let folderPath: string;
+    if (portal.storageFolderId && portal.storageFolderPath) {
+      folderPath = portal.storageFolderPath;
+    } else {
+      folderPath = `dysumcorp/${portal.name}`;
+    }
+
     // Generate upload URL/credentials based on provider
     let uploadData: any = {};
 
@@ -144,7 +157,7 @@ export async function POST(request: NextRequest) {
       // For Dropbox, return the access token (client will upload directly)
       uploadData = {
         accessToken,
-        path: `/${portal.name}/${fileName}`,
+        path: `/${folderPath}/${fileName}`,
         method: "dropbox-api",
       };
 

@@ -19,6 +19,7 @@ import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import { uploadFile } from "@/lib/upload-manager";
+import { useToast } from "@/lib/toast";
 
 interface Portal {
   id: string;
@@ -56,6 +57,12 @@ export default function PortalsPage() {
   const [showFilesModal, setShowFilesModal] = useState(false);
   const [portalFiles, setPortalFiles] = useState<any[]>([]);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [portalToDelete, setPortalToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchPortals();
@@ -78,30 +85,31 @@ export default function PortalsPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${name}"? This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
+    setPortalToDelete({ id, name });
+    setDeleteModalOpen(true);
+  };
 
-    setDeleting(id);
+  const confirmDelete = async () => {
+    if (!portalToDelete) return;
+    setDeleteModalOpen(false);
+    setDeleting(portalToDelete.id);
     try {
-      const response = await fetch(`/api/portals/${id}`, {
+      const response = await fetch(`/api/portals/${portalToDelete.id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
-        setPortals(portals.filter((p) => p.id !== id));
+        setPortals(portals.filter((p) => p.id !== portalToDelete.id));
+        showToast("Portal deleted successfully", "success");
       } else {
-        alert("Failed to delete portal");
+        showToast("Failed to delete portal", "error");
       }
     } catch (error) {
       console.error("Failed to delete portal:", error);
-      alert("Failed to delete portal");
+      showToast("Failed to delete portal", "error");
     } finally {
       setDeleting(null);
+      setPortalToDelete(null);
     }
   };
 
@@ -248,11 +256,11 @@ export default function PortalsPage() {
         // Refresh portals list
         await fetchPortals();
       } else {
-        alert("Failed to toggle portal status");
+        showToast("Failed to toggle portal status", "error");
       }
     } catch (error) {
       console.error("Failed to toggle portal status:", error);
-      alert("Failed to toggle portal status");
+      showToast("Failed to toggle portal status", "error");
     }
   };
 
@@ -284,20 +292,20 @@ export default function PortalsPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else if (response.status === 401) {
-        alert("Invalid password. Please try again.");
+        showToast("Invalid password. Please try again.", "error");
       } else {
         // Try to get error message from response
         try {
           const errorData = await response.json();
 
-          alert(errorData.error || "Failed to download file");
+          showToast(errorData.error || "Failed to download file", "error");
         } catch {
-          alert("Failed to download file");
+          showToast("Failed to download file", "error");
         }
       }
     } catch (error) {
       console.error("Failed to download file:", error);
-      alert("Failed to download file");
+      showToast("Failed to download file", "error");
     }
   };
 
@@ -317,13 +325,13 @@ export default function PortalsPage() {
 
       if (response.ok) {
         setPortalFiles(portalFiles.filter((f) => f.id !== fileId));
-        alert("File deleted successfully");
+        showToast("File deleted successfully", "success");
       } else {
-        alert("Failed to delete file");
+        showToast("Failed to delete file", "error");
       }
     } catch (error) {
       console.error("Failed to delete file:", error);
-      alert("Failed to delete file");
+      showToast("Failed to delete file", "error");
     } finally {
       setDeletingFile(null);
     }
@@ -484,7 +492,7 @@ export default function PortalsPage() {
                     const url = `${window.location.origin}/portal/${portal.slug}`;
 
                     navigator.clipboard.writeText(url);
-                    alert("Portal link copied to clipboard!");
+                    showToast("Portal link copied to clipboard!", "success");
                   }}
                 >
                   <span className="hidden sm:inline">Copy Link</span>
@@ -847,6 +855,50 @@ export default function PortalsPage() {
               </button>
             </div>
           </motion.div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && portalToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 bg-red-500/20 rounded-full">
+                <Trash2 className="w-6 h-6 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">
+                  Delete Portal
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  This action cannot be undone
+                </p>
+              </div>
+            </div>
+            <p className="text-foreground mb-6">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">"{portalToDelete.name}"</span>?
+              All files and data associated with this portal will be permanently
+              removed.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                className="px-4 py-2 border border-border rounded-xl font-medium hover:bg-muted transition-colors"
+                onClick={() => {
+                  setDeleteModalOpen(false);
+                  setPortalToDelete(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors"
+                onClick={confirmDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

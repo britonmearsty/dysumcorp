@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
+import { useToast } from "@/lib/toast";
 
 interface Client {
   name: string;
@@ -61,6 +62,7 @@ export default function ClientsPage() {
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const tabs = [
     {
@@ -205,20 +207,20 @@ export default function ClientsPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else if (response.status === 401) {
-        alert("Invalid password. Please try again.");
+        showToast("Invalid password. Please try again.", "error");
       } else {
         // Try to get error message from response
         try {
           const errorData = await response.json();
 
-          alert(errorData.error || "Failed to download file");
+          showToast(errorData.error || "Failed to download file", "error");
         } catch {
-          alert("Failed to download file");
+          showToast("Failed to download file", "error");
         }
       }
     } catch (error) {
       console.error("Failed to download file:", error);
-      alert("Failed to download file");
+      showToast("Failed to download file", "error");
     }
   };
 
@@ -238,13 +240,13 @@ export default function ClientsPage() {
 
       if (response.ok) {
         setClientFiles(clientFiles.filter((f) => f.id !== fileId));
-        alert("File deleted successfully");
+        showToast("File deleted successfully", "success");
       } else {
-        alert("Failed to delete file");
+        showToast("Failed to delete file", "error");
       }
     } catch (error) {
       console.error("Failed to delete file:", error);
-      alert("Failed to delete file");
+      showToast("Failed to delete file", "error");
     } finally {
       setDeletingFile(null);
     }

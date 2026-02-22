@@ -133,12 +133,14 @@ interface StorageSectionProps {
   formData: any;
   updateFormData: (field: string, value: any) => void;
   setCurrentStep: (step: Step) => void;
+  portal: any;
 }
 
 const StorageSection: React.FC<StorageSectionProps> = ({
   formData,
   updateFormData,
   setCurrentStep,
+  portal,
 }) => {
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
@@ -709,6 +711,26 @@ const StorageSection: React.FC<StorageSectionProps> = ({
             </div>
           </label>
         </div>
+
+        {/* Folder Path Display */}
+        <div className="mt-4 p-3 bg-muted/50 rounded-xl border border-border">
+          <div className="flex items-center gap-2">
+            <FolderOpen className="w-4 h-4 text-primary" />
+            <span className="text-xs font-semibold text-foreground">
+              Default Upload Path:
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1 font-mono">
+            {formData.storageFolderId && formData.storageFolderPath
+              ? formData.storageFolderPath
+              : portal?.name
+                ? `dysumcorp/${portal.name}`
+                : "dysumcorp/[portal name]"}
+            {formData.useClientFolders && (
+              <span className="text-primary">/[client name]</span>
+            )}
+          </p>
+        </div>
       </div>
 
       <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
@@ -741,6 +763,7 @@ interface SecuritySectionProps {
   setCurrentStep: (step: Step) => void;
   error: string;
   setError: (error: string) => void;
+  portal: any;
 }
 
 const FILE_TYPE_OPTIONS = [
@@ -771,6 +794,7 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
   setCurrentStep,
   error,
   setError,
+  portal,
 }) => {
   return (
     <div className="space-y-6 lg:space-y-8">
@@ -861,12 +885,17 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
-              placeholder="Set new key..."
+              placeholder={portal?.password ? "••••••••" : "Set new key..."}
               type="password"
               value={formData.password}
               onChange={(e) => updateFormData("password", e.target.value)}
             />
           </div>
+          {portal?.password && !formData.password && (
+            <p className="text-xs text-amber-600 mt-1">
+              A passkey is currently set. Leave blank to keep it unchanged.
+            </p>
+          )}
         </div>
       </div>
 
@@ -1930,6 +1959,7 @@ export default function EditPortalPage() {
                             formData={formData}
                             setCurrentStep={setCurrentStep}
                             updateFormData={updateFormData}
+                            portal={portal}
                           />
                         )}
 
@@ -1938,6 +1968,7 @@ export default function EditPortalPage() {
                           <SecuritySection
                             error={error}
                             formData={formData}
+                            portal={portal}
                             setCurrentStep={setCurrentStep}
                             setError={setError}
                             updateFormData={updateFormData}

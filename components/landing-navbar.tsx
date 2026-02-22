@@ -32,11 +32,11 @@ export function LandingNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-24 flex items-center justify-between">
         <Link className="flex items-center gap-2 sm:gap-3" href="/">
           <Image
-            src="/logo.png"
             alt="dysumcorp logo"
-            width={40}
-            height={40}
             className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+            height={40}
+            src="/logo.png"
+            width={40}
           />
           <span className="serif-font text-xl sm:text-2xl font-bold tracking-tight text-[#1c1917]">
             dysumcorp

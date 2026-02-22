@@ -3,7 +3,12 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 
 import { PrismaClient } from "@/lib/generated/prisma/client";
-import { getValidToken } from "@/lib/storage-api";
+import {
+  getValidToken,
+  findOrCreateRootFolder,
+  findOrCreatePortalFolder,
+  findOrCreateClientFolder,
+} from "@/lib/storage-api";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -34,6 +39,8 @@ export async function POST(request: NextRequest) {
     const totalChunks = parseInt(formData.get("totalChunks") as string);
     const fileSize = parseInt(formData.get("fileSize") as string);
     const sessionId = formData.get("sessionId") as string;
+    const clientName = formData.get("clientName") as string | null;
+    const clientEmail = formData.get("clientEmail") as string | null;
 
     console.log(
       `[Upload Chunk] Chunk ${chunkIndex + 1}/${totalChunks} for ${fileName}`,
@@ -87,24 +94,48 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine the parent folder for uploads
-    const parentFolderId = portal.storageFolderId || "root";
+    let parentFolderId: string;
+    let folderPath: string;
+
+    if (portal.storageFolderId) {
+      // Use custom folder selected in portal settings
+      parentFolderId = portal.storageFolderId;
+      folderPath = portal.storageFolderPath || portal.name;
+    } else {
+      // Default: use dysumcorp/portalname structure
+      const rootFolder = await findOrCreateRootFolder(
+        accessToken,
+        portal.userId,
+      );
+      const portalFolder = await findOrCreatePortalFolder(
+        accessToken,
+        rootFolder.id,
+        portal.name,
+      );
+      parentFolderId = portalFolder.id;
+      folderPath = `dysumcorp/${portal.name}`;
+    }
+
+    // Handle client folder if enabled
+    if (portal.useClientFolders && clientName && clientName.trim()) {
+      const clientFolder = await findOrCreateClientFolder(
+        accessToken,
+        parentFolderId,
+        clientName.trim(),
+      );
+      parentFolderId = clientFolder.id;
+      folderPath = `${folderPath}/${clientFolder.name}`;
+    }
 
     // First chunk: create resumable upload session
     if (chunkIndex === 0) {
-      // Build the upload path
-      const uploadPath = portal.storageFolderPath
-        ? `${portal.storageFolderPath}/${fileName}`
-        : `${portal.name}/${fileName}`;
-
       const metadata: any = {
         name: fileName,
         mimeType: formData.get("mimeType") || "application/octet-stream",
       };
 
-      // Set parent folder if available
-      if (parentFolderId && parentFolderId !== "root") {
-        metadata.parents = [parentFolderId];
-      }
+      // Set parent folder
+      metadata.parents = [parentFolderId];
 
       const response = await fetch(
         "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable",
@@ -174,10 +205,14 @@ export async function POST(request: NextRequest) {
 
       console.log(`[Upload Chunk] Upload complete: ${result.id}`);
 
+      const storageUrl =
+        result.webViewLink ||
+        `https://drive.google.com/file/d/${result.id}/view`;
+
       return NextResponse.json({
         success: true,
         complete: true,
-        storageUrl: result.webViewLink || result.id,
+        storageUrl,
         storageFileId: result.id,
         size: result.size ? Number(result.size) : fileSize,
       });

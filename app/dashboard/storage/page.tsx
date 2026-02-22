@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/lib/toast";
 
 interface ConnectionStatus {
   google: boolean;
@@ -16,6 +17,7 @@ export default function StoragePage() {
   });
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     checkConnections();
@@ -105,12 +107,16 @@ export default function StoragePage() {
 
       if (response.ok) {
         setConnections((prev) => ({ ...prev, [provider]: false }));
+        showToast(
+          `${provider === "google" ? "Google Drive" : "Dropbox"} disconnected successfully`,
+          "success",
+        );
       } else {
-        alert("Failed to disconnect. Please try again.");
+        showToast("Failed to disconnect. Please try again.", "error");
       }
     } catch (error) {
       console.error("Failed to disconnect:", error);
-      alert("Failed to disconnect. Please try again.");
+      showToast("Failed to disconnect. Please try again.", "error");
     } finally {
       setActionLoading(null);
     }

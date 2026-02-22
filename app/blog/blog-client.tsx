@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { ArrowRight, Clock } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-
 const posts = [
   {
     slug: "collect-files-clients",
@@ -34,7 +32,8 @@ export function BlogClient() {
               Blog
             </h1>
             <p className="text-lg md:text-xl text-stone-700 max-w-2xl mx-auto font-medium leading-relaxed">
-              Tips, guides, and best practices for collecting files from clients securely and efficiently.
+              Tips, guides, and best practices for collecting files from clients
+              securely and efficiently.
             </p>
           </div>
 
@@ -76,7 +75,9 @@ export function BlogClient() {
             <div className="w-8 h-8 bg-[#1c1917] flex items-center justify-center rounded-lg">
               <span className="text-stone-50 font-bold text-sm">D</span>
             </div>
-            <span className="serif-font font-bold text-[#1c1917]">dysumcorp</span>
+            <span className="serif-font font-bold text-[#1c1917]">
+              dysumcorp
+            </span>
           </div>
           <span className="text-sm font-medium text-stone-500">
             © 2025 Dysumcorp. All rights reserved.
@@ -100,4 +101,3 @@ export function BlogClient() {
     </div>
   );
 }
-

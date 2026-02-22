@@ -131,7 +131,10 @@ export function DropboxClient() {
             </h2>
             <div className="space-y-6">
               {faqs.map((faq) => (
-                <div key={faq.question} className="p-8 bg-white border border-stone-100 rounded-[2rem]">
+                <div
+                  key={faq.question}
+                  className="p-8 bg-white border border-stone-100 rounded-[2rem]"
+                >
                   <h3 className="text-lg font-bold text-[#1c1917] mb-4 serif-font">
                     {faq.question}
                   </h3>
@@ -168,7 +171,9 @@ export function DropboxClient() {
             <div className="w-8 h-8 bg-[#1c1917] flex items-center justify-center rounded-lg">
               <span className="text-stone-50 font-bold text-sm">D</span>
             </div>
-            <span className="serif-font font-bold text-[#1c1917]">dysumcorp</span>
+            <span className="serif-font font-bold text-[#1c1917]">
+              dysumcorp
+            </span>
           </div>
           <span className="text-sm font-medium text-stone-500">
             © 2025 Dysumcorp. All rights reserved.
@@ -198,4 +203,3 @@ export function DropboxClient() {
     </div>
   );
 }
-

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Box, User, Mail, Shield, Calendar, Fingerprint } from "lucide-react";
+import { User, Mail, Shield, Calendar, Fingerprint } from "lucide-react";
 import Link from "next/link";
 
 import { getSession } from "@/lib/auth-server";
@@ -64,7 +64,9 @@ export default async function ProfilePage() {
                     <Shield className="w-3 h-3" /> Account Status
                   </label>
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${session.user.emailVerified ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                    <div
+                      className={`w-2 h-2 rounded-full ${session.user.emailVerified ? "bg-emerald-500" : "bg-amber-500"}`}
+                    />
                     <p className="text-xl font-bold text-[#1c1917] serif-font">
                       {session.user.emailVerified ? "Verified" : "Unverified"}
                     </p>
@@ -76,11 +78,14 @@ export default async function ProfilePage() {
                     <Calendar className="w-3 h-3" /> Member Since
                   </label>
                   <p className="text-xl font-bold text-[#1c1917] serif-font">
-                    {new Date(session.user.createdAt).toLocaleDateString(undefined, {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                    {new Date(session.user.createdAt).toLocaleDateString(
+                      undefined,
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      },
+                    )}
                   </p>
                 </div>
               </div>
@@ -89,8 +94,8 @@ export default async function ProfilePage() {
 
           <div className="mt-12 flex justify-end">
             <Link
-              href="/dashboard"
               className="text-sm font-bold uppercase tracking-widest text-stone-900 border-b-2 border-[#1c1917] pb-1 hover:text-stone-600 hover:border-stone-600 transition-all"
+              href="/dashboard"
             >
               Back to Dashboard
             </Link>
@@ -104,7 +109,9 @@ export default async function ProfilePage() {
             <div className="w-8 h-8 bg-[#1c1917] flex items-center justify-center rounded-lg">
               <span className="text-stone-50 font-bold text-sm">D</span>
             </div>
-            <span className="serif-font font-bold text-[#1c1917]">dysumcorp</span>
+            <span className="serif-font font-bold text-[#1c1917]">
+              dysumcorp
+            </span>
           </div>
           <span className="text-sm font-medium text-stone-500">
             © 2025 Dysumcorp. All rights reserved.
@@ -128,4 +135,3 @@ export default async function ProfilePage() {
     </div>
   );
 }
-

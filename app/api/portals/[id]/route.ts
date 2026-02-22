@@ -4,6 +4,7 @@ import pg from "pg";
 
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { PrismaClient } from "@/lib/generated/prisma/client";
+import { hashPassword } from "@/lib/password-utils";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -166,7 +167,8 @@ export async function PATCH(
       updateData.useClientFolders = useClientFolders;
 
     // Security
-    if (password !== undefined) updateData.password = password || null;
+    if (password !== undefined)
+      updateData.password = password ? hashPassword(password) : null;
     if (requireClientName !== undefined)
       updateData.requireClientName = requireClientName;
     if (requireClientEmail !== undefined)

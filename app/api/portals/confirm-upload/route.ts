@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
         size: BigInt(fileSize),
         mimeType: mimeType || "application/octet-stream",
         storageUrl: finalStorageUrl,
+        storageFileId: storageFileId || null,
         portalId: portalId,
         passwordHash,
         uploaderName: uploaderName || null,

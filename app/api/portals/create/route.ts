@@ -4,6 +4,7 @@ import pg from "pg";
 
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { PrismaClient } from "@/lib/generated/prisma/client";
+import { hashPassword } from "@/lib/password-utils";
 import {
   checkPortalLimit,
   checkCustomDomainLimit,
@@ -192,7 +193,7 @@ export async function POST(request: Request) {
         storageFolderPath: storageFolderPath || null,
         useClientFolders: useClientFolders || false,
         // Security
-        password: password || null,
+        password: password ? hashPassword(password) : null,
         requireClientName:
           requireClientName !== undefined ? requireClientName : true,
         requireClientEmail: requireClientEmail || false,

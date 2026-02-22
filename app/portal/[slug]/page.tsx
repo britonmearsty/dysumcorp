@@ -307,6 +307,8 @@ export default function PublicPortalPage() {
               "mimeType",
               file.type || "application/octet-stream",
             );
+            chunkFormData.append("clientName", uploaderName.trim());
+            chunkFormData.append("clientEmail", uploaderEmail.trim());
 
             const chunkResponse = await fetch("/api/portals/upload-chunk", {
               method: "POST",
@@ -535,7 +537,10 @@ export default function PublicPortalPage() {
             >
               {portal.name}
             </h1>
-            <p className="mt-2 text-stone-600 font-medium" style={{ color: portal.textColor }}>
+            <p
+              className="mt-2 text-stone-600 font-medium"
+              style={{ color: portal.textColor }}
+            >
               This portal is password protected
             </p>
           </div>
@@ -580,7 +585,10 @@ export default function PublicPortalPage() {
   }
 
   return (
-    <div className="min-h-screen selection:bg-stone-200" style={getBrandingStyles()}>
+    <div
+      className="min-h-screen selection:bg-stone-200"
+      style={getBrandingStyles()}
+    >
       {/* Header */}
       <header
         className="border-b py-8 px-4 md:px-8 bg-white/50 backdrop-blur-sm"
@@ -681,9 +689,7 @@ export default function PublicPortalPage() {
                   <div className="grid md:grid-cols-2 gap-8 mb-10">
                     {portal.requireClientName && (
                       <div className="space-y-3">
-                        <label
-                          className="block text-xs font-bold uppercase tracking-[0.2em] text-stone-500"
-                        >
+                        <label className="block text-xs font-bold uppercase tracking-[0.2em] text-stone-500">
                           YOUR NAME *
                         </label>
                         <Input
@@ -700,9 +706,7 @@ export default function PublicPortalPage() {
                     )}
                     {portal.requireClientEmail && (
                       <div className="space-y-3">
-                        <label
-                          className="block text-xs font-bold uppercase tracking-[0.2em] text-stone-500"
-                        >
+                        <label className="block text-xs font-bold uppercase tracking-[0.2em] text-stone-500">
                           YOUR EMAIL *
                         </label>
                         <Input
@@ -726,7 +730,9 @@ export default function PublicPortalPage() {
                   style={{
                     borderColor: portal.primaryColor || "#e2e8f0",
                   }}
-                  onClick={() => document.getElementById("file-upload")?.click()}
+                  onClick={() =>
+                    document.getElementById("file-upload")?.click()
+                  }
                 >
                   <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 premium-shadow-sm group-hover:scale-110 transition-transform">
                     <Upload
@@ -748,13 +754,17 @@ export default function PublicPortalPage() {
                   </p>
                   <div className="flex flex-wrap justify-center gap-3">
                     <span className="px-4 py-1.5 bg-white rounded-full border border-stone-100 text-xs font-bold text-stone-500 uppercase tracking-widest shadow-sm">
-                      Max {portal ? `${(parseInt(portal.maxFileSize) / 1024 / 1024).toFixed(0)}MB` : "..."}
+                      Max{" "}
+                      {portal
+                        ? `${(parseInt(portal.maxFileSize) / 1024 / 1024).toFixed(0)}MB`
+                        : "..."}
                     </span>
-                    {portal.allowedFileTypes && portal.allowedFileTypes.length > 0 && (
-                      <span className="px-4 py-1.5 bg-white rounded-full border border-stone-100 text-xs font-bold text-stone-500 uppercase tracking-widest shadow-sm">
-                        {portal.allowedFileTypes.length} Types Allowed
-                      </span>
-                    )}
+                    {portal.allowedFileTypes &&
+                      portal.allowedFileTypes.length > 0 && (
+                        <span className="px-4 py-1.5 bg-white rounded-full border border-stone-100 text-xs font-bold text-stone-500 uppercase tracking-widest shadow-sm">
+                          {portal.allowedFileTypes.length} Types Allowed
+                        </span>
+                      )}
                   </div>
                   <input
                     multiple
@@ -768,9 +778,7 @@ export default function PublicPortalPage() {
                 {/* Selected Files */}
                 {files.length > 0 && portal && (
                   <div className="mb-10">
-                    <h3
-                      className="text-sm font-bold uppercase tracking-widest text-stone-500 mb-4"
-                    >
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-stone-500 mb-4">
                       Selected Files ({files.length})
                     </h3>
                     <div className="space-y-3">
@@ -791,8 +799,9 @@ export default function PublicPortalPage() {
                           >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                               <FileText
-                                className={`w-5 h-5 flex-shrink-0 ${isOversized ? "text-red-500" : ""
-                                  }`}
+                                className={`w-5 h-5 flex-shrink-0 ${
+                                  isOversized ? "text-red-500" : ""
+                                }`}
                                 style={{
                                   color: isOversized
                                     ? "#ef4444"
@@ -847,9 +856,7 @@ export default function PublicPortalPage() {
 
                 {/* Error Message */}
                 {uploadStatus === "error" && errorMessage && (
-                  <div
-                    className="mb-8 p-6 rounded-2xl border border-red-100 bg-red-50/50"
-                  >
+                  <div className="mb-8 p-6 rounded-2xl border border-red-100 bg-red-50/50">
                     <p className="text-red-600 text-sm font-bold flex items-center gap-2">
                       <AlertCircle className="w-4 h-4" /> {errorMessage}
                     </p>
@@ -892,8 +899,8 @@ export default function PublicPortalPage() {
               className="text-sm font-medium text-stone-500 flex items-center justify-center gap-2"
               style={{ color: portal.textColor }}
             >
-              <Lock className="w-4 h-4" /> Your files are encrypted and securely stored. We take your
-              privacy seriously.
+              <Lock className="w-4 h-4" /> Your files are encrypted and securely
+              stored. We take your privacy seriously.
             </p>
           </div>
         </div>
@@ -905,7 +912,9 @@ export default function PublicPortalPage() {
             <div className="w-8 h-8 bg-[#1c1917] flex items-center justify-center rounded-lg">
               <span className="text-stone-50 font-bold text-sm">D</span>
             </div>
-            <span className="serif-font font-bold text-[#1c1917]">dysumcorp</span>
+            <span className="serif-font font-bold text-[#1c1917]">
+              dysumcorp
+            </span>
           </div>
           <span className="text-sm font-medium text-stone-400 italic">
             Powered by Dysumcorp. Securely collect files.
@@ -915,4 +924,3 @@ export default function PublicPortalPage() {
     </div>
   );
 }
-

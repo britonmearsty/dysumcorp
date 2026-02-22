@@ -42,15 +42,21 @@ export function PricingCard({
         shadow="none"
       >
         <CardHeader className="flex flex-col items-start gap-2 pb-6 border-b border-stone-100 bg-transparent">
-          <h3 className="text-2xl font-bold serif-font text-[#1c1917]">{plan.name}</h3>
-          <p className="text-sm text-stone-600 font-medium">{plan.description}</p>
+          <h3 className="text-2xl font-bold serif-font text-[#1c1917]">
+            {plan.name}
+          </h3>
+          <p className="text-sm text-stone-600 font-medium">
+            {plan.description}
+          </p>
 
           <div className="mt-6">
             <div className="flex items-baseline gap-1">
               <span className="text-5xl font-bold text-[#1c1917] tracking-tight">
                 {formatPrice(price)}
               </span>
-              {!isFree && <span className="text-stone-500 font-medium">/month</span>}
+              {!isFree && (
+                <span className="text-stone-500 font-medium">/month</span>
+              )}
             </div>
             {billingCycle === "annual" && !isFree && (
               <div className="mt-2">
@@ -72,15 +78,19 @@ export function PricingCard({
             {plan.features.map((feature, index) => (
               <li key={index} className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-[#1c1917] flex-shrink-0 mt-0.5" />
-                <span className="text-sm font-medium text-stone-700">{feature}</span>
+                <span className="text-sm font-medium text-stone-700">
+                  {feature}
+                </span>
               </li>
             ))}
           </ul>
 
           <Button
-            className={`w-full py-6 rounded-xl font-bold text-sm transition-all ${plan.popular
-              ? "bg-[#1c1917] text-stone-50 hover:bg-stone-800"
-              : "bg-white border border-stone-200 text-[#1c1917] hover:bg-stone-50"}`}
+            className={`w-full py-6 rounded-xl font-bold text-sm transition-all ${
+              plan.popular
+                ? "bg-[#1c1917] text-stone-50 hover:bg-stone-800"
+                : "bg-white border border-stone-200 text-[#1c1917] hover:bg-stone-50"
+            }`}
             isDisabled={isCurrentPlan}
             onClick={() => onSubscribe?.(plan.id, billingCycle === "annual")}
           >

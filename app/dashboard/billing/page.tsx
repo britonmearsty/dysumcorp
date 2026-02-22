@@ -12,6 +12,7 @@ import { PricingCard } from "@/components/pricing-card";
 import { UsageDashboard } from "@/components/usage-dashboard";
 import { PRICING_PLANS } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
+import { useToast } from "@/lib/toast";
 
 export default function BillingPage() {
   const { data: session, refetch } = useSession();
@@ -24,6 +25,7 @@ export default function BillingPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showCanceled, setShowCanceled] = useState(false);
   const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
+  const { showToast } = useToast();
 
   const tabs = [
     {
@@ -95,7 +97,7 @@ export default function BillingPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.error || "Failed to create checkout session");
+        showToast(data.error || "Failed to create checkout session", "error");
 
         return;
       }
@@ -104,7 +106,7 @@ export default function BillingPage() {
       window.location.href = data.checkoutUrl;
     } catch (error) {
       console.error("Subscription error:", error);
-      alert("Failed to start checkout process");
+      showToast("Failed to start checkout process", "error");
     }
   };
 

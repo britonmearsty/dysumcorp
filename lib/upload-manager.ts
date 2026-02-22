@@ -184,7 +184,9 @@ async function uploadDirectToCloudChunked(
         onProgress,
       );
 
-      storageUrl = result.webViewLink || "";
+      storageUrl =
+        result.webViewLink ||
+        `https://drive.google.com/file/d/${result.id}/view`;
       storageFileId = result.id;
     } else if (uploadData.provider === "dropbox") {
       const result = await uploadToDropboxChunked(

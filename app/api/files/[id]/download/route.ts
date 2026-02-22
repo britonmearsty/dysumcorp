@@ -148,7 +148,8 @@ export async function GET(
         // Determine which storage provider based on URL
         if (
           file.storageUrl.includes("drive.google.com") ||
-          file.storageUrl.includes("docs.google.com")
+          file.storageUrl.includes("docs.google.com") ||
+          file.storageUrl.includes("googledrive.com")
         ) {
           storageProvider = "google";
         } else if (file.storageUrl.includes("dropbox.com")) {

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ArrowRight, Image } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
 import { LandingNavbar } from "@/components/landing-navbar";
 
 export function PhotographersClient() {
@@ -61,7 +60,9 @@ export function PhotographersClient() {
             <div className="w-8 h-8 bg-[#1c1917] flex items-center justify-center rounded-lg">
               <span className="text-stone-50 font-bold text-sm">D</span>
             </div>
-            <span className="serif-font font-bold text-[#1c1917]">dysumcorp</span>
+            <span className="serif-font font-bold text-[#1c1917]">
+              dysumcorp
+            </span>
           </div>
           <span className="text-sm font-medium text-stone-500">
             © 2025 Dysumcorp. All rights reserved.
@@ -85,4 +86,3 @@ export function PhotographersClient() {
     </div>
   );
 }
-

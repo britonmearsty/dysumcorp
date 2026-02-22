@@ -9,6 +9,7 @@ import { Download, Calendar, Trash2, FolderOpen } from "lucide-react";
 
 import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
 import { useSession } from "@/lib/auth-client";
+import { useToast } from "@/lib/toast";
 
 interface Portal {
   id: string;
@@ -51,6 +52,7 @@ export default function DashboardPage() {
   const [showFilesModal, setShowFilesModal] = useState(false);
   const [portalFiles, setPortalFiles] = useState<any[]>([]);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -158,11 +160,11 @@ export default function DashboardPage() {
           setActivePortalsList(activePortals);
         }
       } else {
-        alert("Failed to toggle portal status");
+        showToast("Failed to toggle portal status", "error");
       }
     } catch (error) {
       console.error("Failed to toggle portal status:", error);
-      alert("Failed to toggle portal status");
+      showToast("Failed to toggle portal status", "error");
     }
   };
 
@@ -194,20 +196,20 @@ export default function DashboardPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else if (response.status === 401) {
-        alert("Invalid password. Please try again.");
+        showToast("Invalid password. Please try again.", "error");
       } else {
         // Try to get error message from response
         try {
           const errorData = await response.json();
 
-          alert(errorData.error || "Failed to download file");
+          showToast(errorData.error || "Failed to download file", "error");
         } catch {
-          alert("Failed to download file");
+          showToast("Failed to download file", "error");
         }
       }
     } catch (error) {
       console.error("Failed to download file:", error);
-      alert("Failed to download file");
+      showToast("Failed to download file", "error");
     }
   };
 
@@ -227,13 +229,13 @@ export default function DashboardPage() {
 
       if (response.ok) {
         setPortalFiles(portalFiles.filter((f) => f.id !== fileId));
-        alert("File deleted successfully");
+        showToast("File deleted successfully", "success");
       } else {
-        alert("Failed to delete file");
+        showToast("Failed to delete file", "error");
       }
     } catch (error) {
       console.error("Failed to delete file:", error);
-      alert("Failed to delete file");
+      showToast("Failed to delete file", "error");
     } finally {
       setDeletingFile(null);
     }
@@ -511,7 +513,10 @@ export default function DashboardPage() {
                         const url = `${window.location.origin}/portal/${portal.slug}`;
 
                         navigator.clipboard.writeText(url);
-                        alert("Portal link copied to clipboard!");
+                        showToast(
+                          "Portal link copied to clipboard!",
+                          "success",
+                        );
                       }}
                     >
                       Copy Link
