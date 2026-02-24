@@ -2,12 +2,6 @@
   "buildCommand": "prisma generate && next build",
   "framework": "nextjs",
   "regions": ["iad1"],
-  "crons": [
-    {
-      "path": "/api/cron/refresh-tokens",
-      "schedule": "*/15 * * * *"
-    }
-  ],
   "functions": {
     "app/api/portals/upload/route.ts": {
       "maxDuration": 60
