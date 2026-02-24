@@ -52,7 +52,17 @@ export async function GET() {
       accounts.map(async (account) => {
         let accessToken = account.accessToken;
         let expiresAt = account.accessTokenExpiresAt;
-        let isExpired = expiresAt && expiresAt <= new Date();
+
+        // Check if token is expired
+        // For Dropbox: if no expiration set, assume expired (need refresh)
+        // For Google: check actual expiration time
+        let isExpired: boolean;
+        if (account.providerId === "dropbox") {
+          // Dropbox tokens without expiration are treated as expired
+          isExpired = !expiresAt || expiresAt <= new Date();
+        } else {
+          isExpired = !!(expiresAt && expiresAt <= new Date());
+        }
 
         // Auto-refresh if token is expired and refresh token exists
         if (isExpired && account.refreshToken) {
@@ -169,9 +179,17 @@ async function refreshAccessToken(
 
     const data = await response.json();
     const newAccessToken = data.access_token;
-    const expiresAt = data.expires_in
-      ? new Date(Date.now() + data.expires_in * 1000)
-      : null;
+
+    // Google returns expires_in, Dropbox doesn't (long-lived tokens)
+    // Default to 4 hours for Dropbox if not returned
+    let expiresAt: Date | null = null;
+    if (data.expires_in) {
+      expiresAt = new Date(Date.now() + data.expires_in * 1000);
+    } else if (provider === "dropbox") {
+      // Dropbox tokens are long-lived but still expire (~4 hours)
+      // Set default 4 hour expiration if not provided
+      expiresAt = new Date(Date.now() + 4 * 60 * 60 * 1000);
+    }
 
     // Update the access token in the database
     await prisma.account.update({
