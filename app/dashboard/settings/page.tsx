@@ -51,8 +51,11 @@ export default function SettingsPage() {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   // Notification state
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
+  const [notifyOnUpload, setNotifyOnUpload] = useState(true);
+  const [notifyOnDownload, setNotifyOnDownload] = useState(true);
+  const [notifyOnSignIn, setNotifyOnSignIn] = useState(true);
+  const [notifyOnPortalCreate, setNotifyOnPortalCreate] = useState(true);
+  const [notifyOnStorageWarning, setNotifyOnStorageWarning] = useState(true);
   const [weeklyReports, setWeeklyReports] = useState(false);
 
   // Delete account state
@@ -105,6 +108,29 @@ export default function SettingsPage() {
       setImage(session.user.image || "");
       // Use the newly added field if available
       setPortalLogo((session.user as any).portalLogo || "");
+    }
+  }, [session]);
+
+  useEffect(() => {
+    async function fetchNotificationSettings() {
+      try {
+        const response = await fetch("/api/user/notifications");
+        if (response.ok) {
+          const data = await response.json();
+          setNotifyOnUpload(data.notifyOnUpload ?? true);
+          setNotifyOnDownload(data.notifyOnDownload ?? true);
+          setNotifyOnSignIn(data.notifyOnSignIn ?? true);
+          setNotifyOnPortalCreate(data.notifyOnPortalCreate ?? true);
+          setNotifyOnStorageWarning(data.notifyOnStorageWarning ?? true);
+          setWeeklyReports(data.weeklyReports ?? false);
+        }
+      } catch (error) {
+        console.error("Failed to fetch notification settings:", error);
+      }
+    }
+
+    if (session?.user) {
+      fetchNotificationSettings();
     }
   }, [session]);
 
@@ -230,8 +256,11 @@ export default function SettingsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          emailNotifications,
-          pushNotifications,
+          notifyOnUpload,
+          notifyOnDownload,
+          notifyOnSignIn,
+          notifyOnPortalCreate,
+          notifyOnStorageWarning,
           weeklyReports,
         }),
       });
@@ -573,30 +602,77 @@ export default function SettingsPage() {
                         <div className="flex items-center justify-between p-3 sm:p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
                           <div>
                             <p className="font-semibold text-sm text-foreground">
-                              Email Notifications
+                              File Upload Notifications
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                              Receive email updates
+                              Get notified when files are uploaded to your
+                              portals
                             </p>
                           </div>
                           <Checkbox
-                            isSelected={emailNotifications}
-                            onValueChange={setEmailNotifications}
+                            isSelected={notifyOnUpload}
+                            onValueChange={setNotifyOnUpload}
                           />
                         </div>
 
                         <div className="flex items-center justify-between p-3 sm:p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
                           <div>
                             <p className="font-semibold text-sm text-foreground">
-                              Push Notifications
+                              File Download Notifications
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                              Browser notifications
+                              Get notified when someone downloads files from
+                              your portals
                             </p>
                           </div>
                           <Checkbox
-                            isSelected={pushNotifications}
-                            onValueChange={setPushNotifications}
+                            isSelected={notifyOnDownload}
+                            onValueChange={setNotifyOnDownload}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 sm:p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
+                          <div>
+                            <p className="font-semibold text-sm text-foreground">
+                              Sign-in Notifications
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                              Get notified of new sign-ins to your account
+                            </p>
+                          </div>
+                          <Checkbox
+                            isSelected={notifyOnSignIn}
+                            onValueChange={setNotifyOnSignIn}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 sm:p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
+                          <div>
+                            <p className="font-semibold text-sm text-foreground">
+                              Portal Created Notifications
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                              Get notified when a new portal is created
+                            </p>
+                          </div>
+                          <Checkbox
+                            isSelected={notifyOnPortalCreate}
+                            onValueChange={setNotifyOnPortalCreate}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 sm:p-4 bg-muted rounded-xl border border-border hover:bg-bg-card transition-colors">
+                          <div>
+                            <p className="font-semibold text-sm text-foreground">
+                              Storage Warning Notifications
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                              Get notified when storage is running low
+                            </p>
+                          </div>
+                          <Checkbox
+                            isSelected={notifyOnStorageWarning}
+                            onValueChange={setNotifyOnStorageWarning}
                           />
                         </div>
 
@@ -606,7 +682,7 @@ export default function SettingsPage() {
                               Weekly Reports
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                              Activity summaries
+                              Receive weekly activity summaries
                             </p>
                           </div>
                           <Checkbox

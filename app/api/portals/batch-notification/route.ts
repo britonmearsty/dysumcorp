@@ -3,7 +3,10 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 
 import { PrismaClient } from "@/lib/generated/prisma/client";
-import { sendFileUploadNotification } from "@/lib/email-service";
+import {
+  sendFileUploadNotification,
+  getUserNotificationSettings,
+} from "@/lib/email-service";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -45,6 +48,17 @@ export async function POST(request: NextRequest) {
 
     // Send the batch notification
     try {
+      const settings = await getUserNotificationSettings(portal.user.email);
+      if (settings && !settings.notifyOnUpload) {
+        console.log(
+          `Upload notifications disabled for user: ${portal.user.email}`,
+        );
+        return NextResponse.json({
+          success: true,
+          message: "Notifications disabled",
+        });
+      }
+
       await sendFileUploadNotification({
         userEmail: portal.user.email,
         portalName: portal.name,

@@ -2,18 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { sendFileUploadNotification } from "@/lib/email-service";
 import { hashPassword } from "@/lib/password-utils";
-
-// Helper function to format file size
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-}
 
 // POST /api/storage/confirm-upload - Confirm direct upload and save metadata
 export async function POST(request: NextRequest) {
@@ -80,24 +69,6 @@ export async function POST(request: NextRequest) {
         uploaderEmail: uploaderEmail || null,
       },
     });
-
-    // Send email notification to portal owner
-    try {
-      await sendFileUploadNotification({
-        userEmail: portal.user.email,
-        portalName: portal.name,
-        files: [
-          {
-            name: fileName,
-            size: formatFileSize(Number(fileSize)),
-          },
-        ],
-        uploaderName: uploaderName || undefined,
-      });
-    } catch (emailError) {
-      console.error("Failed to send email notification:", emailError);
-      // Don't fail the upload if email fails
-    }
 
     return NextResponse.json({
       success: true,

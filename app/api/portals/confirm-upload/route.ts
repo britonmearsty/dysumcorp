@@ -4,7 +4,6 @@ import pg from "pg";
 
 import { PrismaClient } from "@/lib/generated/prisma/client";
 import { hashPassword } from "@/lib/password-utils";
-import { sendFileUploadNotification } from "@/lib/email-service";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -37,7 +36,6 @@ export async function POST(request: NextRequest) {
       uploaderName,
       uploaderEmail,
       password,
-      skipNotification,
     } = body;
 
     console.log("[Portal Confirm Upload] Request:", {
@@ -47,7 +45,6 @@ export async function POST(request: NextRequest) {
       provider,
       uploaderName,
       uploaderEmail,
-      skipNotification,
     });
 
     if (!portalId || !fileName || !fileSize || !storageFileId) {
@@ -98,36 +95,6 @@ export async function POST(request: NextRequest) {
     });
 
     console.log("[Portal Confirm Upload] File metadata saved:", file.id);
-
-    // Send email notification to portal owner if not skipped
-    if (!skipNotification) {
-      try {
-        await sendFileUploadNotification({
-          userEmail: portal.user.email,
-          portalName: portal.name,
-          portalSlug: portal.slug,
-          files: [
-            {
-              name: fileName,
-              size: formatFileSize(Number(fileSize)),
-            },
-          ],
-          uploaderName: uploaderName || undefined,
-          uploaderEmail: uploaderEmail || undefined,
-        });
-        console.log("[Portal Confirm Upload] Email notification sent");
-      } catch (emailError) {
-        console.error(
-          "[Portal Confirm Upload] Failed to send email notification:",
-          emailError,
-        );
-        // Don't fail the upload if email fails
-      }
-    } else {
-      console.log(
-        "[Portal Confirm Upload] Email notification skipped (batch mode)",
-      );
-    }
 
     return NextResponse.json({
       success: true,

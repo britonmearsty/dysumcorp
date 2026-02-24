@@ -227,6 +227,8 @@ export default function PublicPortalPage() {
     setUploadStatus("idle");
     setErrorMessage("");
 
+    const successfulFiles: Array<{ name: string; size: number }> = [];
+
     try {
       // Upload files one by one
       for (let i = 0; i < files.length; i++) {

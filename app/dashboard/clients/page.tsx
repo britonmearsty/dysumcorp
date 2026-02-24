@@ -64,10 +64,10 @@ export default function ClientsPage() {
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const { showToast } = useToast();
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
 
   // Show loading while checking auth
-  if (status === "loading") {
+  if (isPending) {
     return (
       <div className="w-full overflow-hidden">
         <div className="mb-6 sm:mb-8 lg:mb-10">

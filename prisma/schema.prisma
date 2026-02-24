@@ -24,6 +24,13 @@ model User {
   portals            Portal[]
   sessions           Session[]
 
+  notifyOnUpload     Boolean   @default(true)
+  notifyOnDownload  Boolean   @default(true)
+  notifyOnSignIn     Boolean   @default(true)
+  notifyOnPortalCreate Boolean @default(true)
+  notifyOnStorageWarning Boolean @default(true)
+  weeklyReports      Boolean   @default(false)
+
   @@map("user")
 }
 

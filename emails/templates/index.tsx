@@ -35,7 +35,7 @@ export function EmailLayout({ previewText, children }: EmailLayoutProps) {
                 alt="DysumCorp"
                 className="mx-auto"
                 height="40"
-                src={`${baseUrl}/logo.svg`}
+                src={`${baseUrl}/logo.png`}
                 width="40"
               />
             </Section>
@@ -71,8 +71,8 @@ export function WelcomeEmail({ userName }: WelcomeEmailProps) {
       </Heading>
       <Text className="text-base text-gray-600">Hi {userName},</Text>
       <Text className="text-base text-gray-600">
-        Thank you for joining DysumCorp Portal! We're excited to have you on
-        board. Our platform makes it easy to create beautiful file upload
+        Thank you for joining DysumCorp Portal! We&apos;re excited to have you
+        on board. Our platform makes it easy to create beautiful file upload
         portals for your clients.
       </Text>
       <Section className="my-6 text-center">
@@ -84,7 +84,7 @@ export function WelcomeEmail({ userName }: WelcomeEmailProps) {
         </Button>
       </Section>
       <Text className="text-base text-gray-600">
-        Here's what you can do with DysumCorp:
+        Here&apos;s what you can do with DysumCorp:
       </Text>
       <ul className="list-disc pl-5 text-base text-gray-600">
         <li>Create customizable upload portals for your clients</li>
@@ -148,13 +148,14 @@ export function SignInEmail({
         )}
       </Container>
       <Text className="text-base text-gray-600">
-        If this was you, you can safely ignore this email. If you didn't sign
-        in, please secure your account immediately by changing your password.
+        If this was you, you can safely ignore this email. If you didn&apos;t
+        sign in, please secure your account immediately by changing your
+        password.
       </Text>
       <Section className="my-6 text-center">
         <Button
           className="rounded bg-red-600 px-5 py-3 text-base font-semibold text-white no-underline"
-          href={`${baseUrl}/settings/security`}
+          href={`${baseUrl}/dashboard/settings`}
         >
           Secure Account
         </Button>
@@ -209,7 +210,7 @@ export function UploadCompletionEmail({
             <strong>
               {fileCount} file{fileCount > 1 ? "s" : ""}
             </strong>{" "}
-            to your portal "<strong>{portalName}</strong>".
+            to your portal &quot;<strong>{portalName}</strong>&quot;.
           </>
         ) : (
           <>
@@ -217,7 +218,7 @@ export function UploadCompletionEmail({
             <strong>
               {fileCount} file{fileCount > 1 ? "s" : ""}
             </strong>{" "}
-            to your portal "<strong>{portalName}</strong>".
+            to your portal &quot;<strong>{portalName}</strong>&quot;.
           </>
         )}
       </Text>
@@ -280,8 +281,8 @@ export function PortalCreatedEmail({
       </Heading>
       <Text className="text-base text-gray-600">Hi {userName},</Text>
       <Text className="text-base text-gray-600">
-        Your portal "<strong>{portalName}</strong>" has been created and is
-        ready to use!
+        Your portal &quot;<strong>{portalName}</strong>&quot; has been created
+        and is ready to use!
       </Text>
       <Container className="my-4 rounded bg-gray-50 p-4">
         <Text className="my-1 text-sm font-semibold text-gray-700">
@@ -349,7 +350,7 @@ export function FileDownloadedEmail({
           <>
             <strong>{downloaderName}</strong>
             {downloaderEmail && ` (${downloaderEmail})`} has downloaded a file
-            from your portal "<strong>{portalName}</strong>".
+            from your portal &quot;<strong>{portalName}</strong>&quot;.
           </>
         ) : (
           <>

@@ -1,6 +1,10 @@
 import { Resend } from "resend";
 import { render } from "@react-email/render";
 
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
+
+import { PrismaClient } from "@/lib/generated/prisma/client";
 import {
   WelcomeEmail,
   SignInEmail,
@@ -12,6 +16,10 @@ import {
 } from "@/emails/templates";
 
 let resend: Resend | null = null;
+
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 function getResendClient() {
   if (!resend && process.env.RESEND_API_KEY) {
@@ -78,6 +86,36 @@ async function sendEmailInternal({
   }
 }
 
+interface UserNotificationSettings {
+  notifyOnUpload: boolean;
+  notifyOnDownload: boolean;
+  notifyOnSignIn: boolean;
+  notifyOnPortalCreate: boolean;
+  notifyOnStorageWarning: boolean;
+}
+
+export async function getUserNotificationSettings(
+  email: string,
+): Promise<UserNotificationSettings | null> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        notifyOnUpload: true,
+        notifyOnDownload: true,
+        notifyOnSignIn: true,
+        notifyOnPortalCreate: true,
+        notifyOnStorageWarning: true,
+      },
+    });
+
+    return user;
+  } catch (error) {
+    console.error("Error fetching user notification settings:", error);
+    return null;
+  }
+}
+
 export async function sendWelcomeEmail({
   to,
   userName,
@@ -108,6 +146,12 @@ export async function sendSignInNotification({
   location?: string;
   time?: string;
 }): Promise<EmailResult> {
+  const settings = await getUserNotificationSettings(to);
+  if (settings && !settings.notifyOnSignIn) {
+    console.log(`Sign-in notifications disabled for user: ${to}`);
+    return { success: true, data: "Notifications disabled" };
+  }
+
   const email = SignInEmail({
     userName,
     ipAddress,
@@ -144,6 +188,12 @@ export async function sendUploadCompletionNotification({
   totalSize: string;
   fileCount: number;
 }): Promise<EmailResult> {
+  const settings = await getUserNotificationSettings(to);
+  if (settings && !settings.notifyOnUpload) {
+    console.log(`Upload notifications disabled for user: ${to}`);
+    return { success: true, data: "Notifications disabled" };
+  }
+
   const email = UploadCompletionEmail({
     userName,
     portalName,
@@ -174,6 +224,12 @@ export async function sendPortalCreatedNotification({
   portalName: string;
   portalSlug: string;
 }): Promise<EmailResult> {
+  const settings = await getUserNotificationSettings(to);
+  if (settings && !settings.notifyOnPortalCreate) {
+    console.log(`Portal created notifications disabled for user: ${to}`);
+    return { success: true, data: "Notifications disabled" };
+  }
+
   const email = PortalCreatedEmail({ userName, portalName, portalSlug });
   const html = await render(email);
 
@@ -203,6 +259,12 @@ export async function sendFileDownloadNotification({
   ipAddress?: string;
   time?: string;
 }): Promise<EmailResult> {
+  const settings = await getUserNotificationSettings(userEmail);
+  if (settings && !settings.notifyOnDownload) {
+    console.log(`Download notifications disabled for user: ${userEmail}`);
+    return { success: true, data: "Notifications disabled" };
+  }
+
   const email = FileDownloadedEmail({
     userName: userName || userEmail.split("@")[0],
     portalName,
@@ -234,6 +296,14 @@ export async function sendStorageWarning({
   totalStorage: string;
   percentage: number;
 }): Promise<EmailResult> {
+  const settings = await getUserNotificationSettings(userEmail);
+  if (settings && !settings.notifyOnStorageWarning) {
+    console.log(
+      `Storage warning notifications disabled for user: ${userEmail}`,
+    );
+    return { success: true, data: "Notifications disabled" };
+  }
+
   const email = StorageWarningEmail({
     userName: userName || userEmail.split("@")[0],
     usedStorage,
@@ -264,6 +334,12 @@ export async function sendFileUploadNotification({
   uploaderName?: string;
   uploaderEmail?: string;
 }): Promise<EmailResult> {
+  const settings = await getUserNotificationSettings(userEmail);
+  if (settings && !settings.notifyOnUpload) {
+    console.log(`Upload notifications disabled for user: ${userEmail}`);
+    return { success: true, data: "Notifications disabled" };
+  }
+
   const email = UploadCompletionEmail({
     userName: userEmail.split("@")[0],
     portalName,
