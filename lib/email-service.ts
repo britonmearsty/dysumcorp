@@ -1,6 +1,5 @@
 import { Resend } from "resend";
 import { render } from "@react-email/render";
-
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 
@@ -92,6 +91,7 @@ interface UserNotificationSettings {
   notifyOnSignIn: boolean;
   notifyOnPortalCreate: boolean;
   notifyOnStorageWarning: boolean;
+  weeklyReports: boolean;
 }
 
 export async function getUserNotificationSettings(
@@ -106,12 +106,14 @@ export async function getUserNotificationSettings(
         notifyOnSignIn: true,
         notifyOnPortalCreate: true,
         notifyOnStorageWarning: true,
+        weeklyReports: true,
       },
     });
 
     return user;
   } catch (error) {
     console.error("Error fetching user notification settings:", error);
+
     return null;
   }
 }
@@ -147,8 +149,10 @@ export async function sendSignInNotification({
   time?: string;
 }): Promise<EmailResult> {
   const settings = await getUserNotificationSettings(to);
+
   if (settings && !settings.notifyOnSignIn) {
     console.log(`Sign-in notifications disabled for user: ${to}`);
+
     return { success: true, data: "Notifications disabled" };
   }
 
@@ -189,8 +193,10 @@ export async function sendUploadCompletionNotification({
   fileCount: number;
 }): Promise<EmailResult> {
   const settings = await getUserNotificationSettings(to);
+
   if (settings && !settings.notifyOnUpload) {
     console.log(`Upload notifications disabled for user: ${to}`);
+
     return { success: true, data: "Notifications disabled" };
   }
 
@@ -225,8 +231,10 @@ export async function sendPortalCreatedNotification({
   portalSlug: string;
 }): Promise<EmailResult> {
   const settings = await getUserNotificationSettings(to);
+
   if (settings && !settings.notifyOnPortalCreate) {
     console.log(`Portal created notifications disabled for user: ${to}`);
+
     return { success: true, data: "Notifications disabled" };
   }
 
@@ -260,8 +268,10 @@ export async function sendFileDownloadNotification({
   time?: string;
 }): Promise<EmailResult> {
   const settings = await getUserNotificationSettings(userEmail);
+
   if (settings && !settings.notifyOnDownload) {
     console.log(`Download notifications disabled for user: ${userEmail}`);
+
     return { success: true, data: "Notifications disabled" };
   }
 
@@ -297,10 +307,12 @@ export async function sendStorageWarning({
   percentage: number;
 }): Promise<EmailResult> {
   const settings = await getUserNotificationSettings(userEmail);
+
   if (settings && !settings.notifyOnStorageWarning) {
     console.log(
       `Storage warning notifications disabled for user: ${userEmail}`,
     );
+
     return { success: true, data: "Notifications disabled" };
   }
 
@@ -335,8 +347,10 @@ export async function sendFileUploadNotification({
   uploaderEmail?: string;
 }): Promise<EmailResult> {
   const settings = await getUserNotificationSettings(userEmail);
+
   if (settings && !settings.notifyOnUpload) {
     console.log(`Upload notifications disabled for user: ${userEmail}`);
+
     return { success: true, data: "Notifications disabled" };
   }
 

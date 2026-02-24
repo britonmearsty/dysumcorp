@@ -49,10 +49,12 @@ export async function POST(request: NextRequest) {
     // Send the batch notification
     try {
       const settings = await getUserNotificationSettings(portal.user.email);
+
       if (settings && !settings.notifyOnUpload) {
         console.log(
           `Upload notifications disabled for user: ${portal.user.email}`,
         );
+
         return NextResponse.json({
           success: true,
           message: "Notifications disabled",

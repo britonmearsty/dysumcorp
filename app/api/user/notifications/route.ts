@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 

@@ -41,6 +41,9 @@ export default function SettingsPage() {
   const [notificationsStatus, setNotificationsStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
+  const [deleteStatus, setDeleteStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
 
   // Profile state
   const [name, setName] = useState("");
@@ -115,8 +118,10 @@ export default function SettingsPage() {
     async function fetchNotificationSettings() {
       try {
         const response = await fetch("/api/user/notifications");
+
         if (response.ok) {
           const data = await response.json();
+
           setNotifyOnUpload(data.notifyOnUpload ?? true);
           setNotifyOnDownload(data.notifyOnDownload ?? true);
           setNotifyOnSignIn(data.notifyOnSignIn ?? true);
@@ -156,6 +161,7 @@ export default function SettingsPage() {
       if (!response.ok) throw new Error("Failed to update profile");
 
       setProfileStatus("success");
+      router.refresh();
       resetStatus(setProfileStatus);
     } catch (error) {
       setProfileStatus("error");
@@ -196,6 +202,7 @@ export default function SettingsPage() {
       });
 
       setProfileStatus("success");
+      router.refresh();
       resetStatus(setProfileStatus);
     } catch (error) {
       console.error("Image upload error:", error);
@@ -213,6 +220,7 @@ export default function SettingsPage() {
 
     setIsUploadingLogo(true);
     const formData = new FormData();
+    const originalLogo = portalLogo;
 
     formData.append("file", file);
     formData.append("folder", "portals/defaults");
@@ -227,19 +235,21 @@ export default function SettingsPage() {
 
       const data = await res.json();
 
-      setPortalLogo(data.url);
-
-      // Auto-save the new logo
-      await fetch("/api/user/update", {
+      const saveRes = await fetch("/api/user/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, image, portalLogo: data.url }),
       });
 
+      if (!saveRes.ok) throw new Error("Failed to save logo");
+
+      setPortalLogo(data.url);
       setProfileStatus("success");
+      router.refresh();
       resetStatus(setProfileStatus);
     } catch (error) {
       console.error("Logo upload error:", error);
+      setPortalLogo(originalLogo);
       setProfileStatus("error");
       resetStatus(setProfileStatus);
     } finally {
@@ -279,8 +289,8 @@ export default function SettingsPage() {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== "DELETE") {
-      setNotificationsStatus("error");
-      resetStatus(setNotificationsStatus);
+      setDeleteStatus("error");
+      resetStatus(setDeleteStatus);
 
       return;
     }
@@ -297,8 +307,8 @@ export default function SettingsPage() {
       router.push("/");
     } catch (error) {
       setDeleteLoading(false);
-      setNotificationsStatus("error");
-      resetStatus(setNotificationsStatus);
+      setDeleteStatus("error");
+      resetStatus(setDeleteStatus);
     }
   };
 
@@ -818,15 +828,15 @@ export default function SettingsPage() {
                             />
                           </div>
 
-                          {notificationsStatus !== "idle" && (
+                          {deleteStatus !== "idle" && (
                             <div
                               className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${
-                                notificationsStatus === "success"
+                                deleteStatus === "success"
                                   ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
                                   : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
                               }`}
                             >
-                              {notificationsStatus === "success"
+                              {deleteStatus === "success"
                                 ? "Account deletion initiated"
                                 : deleteConfirmText !== "DELETE"
                                   ? 'Please type "DELETE" to confirm'
@@ -854,7 +864,7 @@ export default function SettingsPage() {
                               onClick={() => {
                                 setShowDeleteConfirm(false);
                                 setDeleteConfirmText("");
-                                setNotificationsStatus("idle");
+                                setDeleteStatus("idle");
                               }}
                             >
                               Cancel
