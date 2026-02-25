@@ -750,7 +750,6 @@ const StorageSection: React.FC<StorageSectionProps> = ({
             </div>
           </label>
         </div>
-<<<<<<< HEAD
 
         {/* Folder Path Display */}
         <div className="mt-4 p-3 bg-muted/50 rounded-xl border border-border">
@@ -771,8 +770,6 @@ const StorageSection: React.FC<StorageSectionProps> = ({
             )}
           </p>
         </div>
-=======
->>>>>>> b5487ed8baaede40c7bfa5a57a6876977d809e92
       </div>
 
       <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
