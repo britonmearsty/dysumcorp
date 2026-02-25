@@ -22,6 +22,14 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { usePaywall } from "@/components/paywall-modal";
 import { PlanType } from "@/config/pricing";
 import { siteConfig } from "@/config/site";
@@ -377,53 +385,20 @@ const StorageSection: React.FC<StorageSectionProps> = ({
 
   return (
     <div className="space-y-8">
-      {/* Storage Account Status Warning */}
-      {accounts.length > 0 &&
-        accounts.some((a) => a.storageStatus !== "ACTIVE") && (
+      {/* Storage Account Status Warning - only show when BOTH storage accounts are disconnected */}
+      {accounts.length >= 2 &&
+        accounts.every((a) => a.storageStatus === "DISCONNECTED") && (
           <div className="bg-warning/10 border border-warning/20 rounded-xl p-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <h4 className="font-semibold text-foreground mb-1">
-                  Storage Account Issues Detected
+                  Storage Accounts Disconnected
                 </h4>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Your storage accounts need to be reconnected. Please go to
-                  Settings to fix this issue.
+                  Both your storage accounts (Google Drive and Dropbox) are
+                  disconnected. Please reconnect at least one to continue.
                 </p>
-                <div className="space-y-2">
-                  {accounts
-                    .filter((a) => a.storageStatus !== "ACTIVE")
-                    .map((account) => (
-                      <div
-                        key={account.provider}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        <div
-                          className={`w-2 h-2 rounded-full ${
-                            account.storageStatus === "DISCONNECTED"
-                              ? "bg-red-500"
-                              : account.storageStatus === "ERROR"
-                                ? "bg-orange-500 animate-pulse"
-                                : "bg-yellow-500"
-                          }`}
-                        />
-                        <span className="font-medium">
-                          {account.provider === "google"
-                            ? "Google Drive"
-                            : "Dropbox"}
-                          :
-                        </span>
-                        <span className="text-muted-foreground">
-                          {account.storageStatus === "DISCONNECTED"
-                            ? "Disconnected - needs reconnection"
-                            : account.storageStatus === "ERROR"
-                              ? "Connection error - may resolve automatically"
-                              : "Inactive - not available for new uploads"}
-                        </span>
-                      </div>
-                    ))}
-                </div>
                 <div className="mt-4 flex items-center gap-3">
                   <Link
                     className="inline-flex items-center gap-2 px-4 py-2 bg-warning text-warning-foreground rounded-lg text-sm font-medium hover:bg-warning/90 transition-colors"
@@ -637,59 +612,65 @@ const StorageSection: React.FC<StorageSectionProps> = ({
           </div>
         </div>
 
-        <div className="relative">
-          <AnimatePresence>
-            {isCreatingFolder && (
-              <motion.div
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute inset-x-0 top-0 z-10 p-4 bg-card border-b border-border shadow-xl"
-                exit={{ opacity: 0, y: -10 }}
-                initial={{ opacity: 0, y: -10 }}
-              >
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Creation Module
-                    </h4>
-                    <button
-                      className="text-muted-foreground hover:text-foreground"
-                      onClick={() => {
-                        setIsCreatingFolder(false);
-                        setFolderError(null);
-                      }}
-                    >
-                      <ArrowLeft className="w-3.5 h-3.5 rotate-90" />
-                    </button>
+        <div>
+          <Dialog
+            open={isCreatingFolder}
+            onOpenChange={(open) => {
+              if (!open) {
+                setIsCreatingFolder(false);
+                setFolderError(null);
+              }
+            }}
+          >
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Create New Folder</DialogTitle>
+                <DialogDescription>
+                  Enter a name for the new folder in your storage.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <input
+                  autoFocus
+                  className="flex-1 px-3 py-2 bg-muted border border-border rounded-lg text-sm font-semibold focus:ring-2 focus:ring-ring outline-none text-foreground"
+                  placeholder="Enter folder name..."
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
+                />
+                {folderError && (
+                  <div className="flex items-center gap-2 text-xs text-red-500">
+                    <AlertCircle className="w-3 h-3" />
+                    <span>{folderError}</span>
                   </div>
-                  <div className="flex gap-2">
-                    <input
-                      autoFocus
-                      className="flex-1 px-3 py-2 bg-muted border border-border rounded-lg text-sm font-semibold focus:ring-2 focus:ring-ring outline-none text-foreground"
-                      placeholder="Enter folder identifier..."
-                      value={newFolderName}
-                      onChange={(e) => setNewFolderName(e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && handleCreateFolder()
-                      }
-                    />
-                    <button
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors"
-                      type="button"
-                      onClick={handleCreateFolder}
-                    >
-                      Create
-                    </button>
-                  </div>
-                  {folderError && (
-                    <div className="flex items-center gap-2 text-xs text-red-500 mt-1">
-                      <AlertCircle className="w-3 h-3" />
-                      <span>{folderError}</span>
-                    </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsCreatingFolder(false);
+                    setFolderError(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  disabled={!newFolderName.trim() || loadingFolders}
+                  onClick={handleCreateFolder}
+                >
+                  {loadingFolders ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Folder"
                   )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <div className="max-h-72 overflow-y-auto p-2 bg-card">
             {loadingFolders ? (
