@@ -15,7 +15,6 @@ import {
   Upload,
   FolderOpen,
   Hash,
-  ExternalLink,
   XIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";

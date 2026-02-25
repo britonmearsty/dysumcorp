@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
   try {
     // Apply rate limiting
     const rateLimitResult = await applyUploadRateLimit(request);
+
     if (rateLimitResult) {
       return rateLimitResult;
     }

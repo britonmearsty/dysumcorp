@@ -23,9 +23,11 @@ export async function getUploadSession(
 ): Promise<UploadSession | null> {
   try {
     const data = await redis.get(`${SESSION_PREFIX}${sessionId}`);
+
     return data as UploadSession | null;
   } catch (error) {
     console.error("Failed to get upload session from Redis:", error);
+
     return null;
   }
 }
@@ -40,9 +42,11 @@ export async function setUploadSession(
       SESSION_TTL,
       JSON.stringify(session),
     );
+
     return true;
   } catch (error) {
     console.error("Failed to set upload session in Redis:", error);
+
     return false;
   }
 }
@@ -53,17 +57,21 @@ export async function updateUploadSession(
 ): Promise<boolean> {
   try {
     const existing = await getUploadSession(sessionId);
+
     if (!existing) return false;
 
     const updated = { ...existing, ...updates };
+
     await redis.setex(
       `${SESSION_PREFIX}${sessionId}`,
       SESSION_TTL,
       JSON.stringify(updated),
     );
+
     return true;
   } catch (error) {
     console.error("Failed to update upload session in Redis:", error);
+
     return false;
   }
 }
@@ -71,9 +79,11 @@ export async function updateUploadSession(
 export async function deleteUploadSession(sessionId: string): Promise<boolean> {
   try {
     await redis.del(`${SESSION_PREFIX}${sessionId}`);
+
     return true;
   } catch (error) {
     console.error("Failed to delete upload session from Redis:", error);
+
     return false;
   }
 }
@@ -84,6 +94,7 @@ export async function incrementUploadedBytes(
 ): Promise<UploadSession | null> {
   try {
     const session = await getUploadSession(sessionId);
+
     if (!session) return null;
 
     session.uploadedBytes += bytesToAdd;
@@ -92,9 +103,11 @@ export async function incrementUploadedBytes(
       SESSION_TTL,
       JSON.stringify(session),
     );
+
     return session;
   } catch (error) {
     console.error("Failed to increment uploaded bytes:", error);
+
     return null;
   }
 }
@@ -115,10 +128,13 @@ class InMemoryUploadSessions {
     updates: Partial<UploadSession>,
   ): UploadSession | null {
     const existing = this.sessions.get(sessionId);
+
     if (!existing) return null;
 
     const updated = { ...existing, ...updates };
+
     this.sessions.set(sessionId, updated);
+
     return updated;
   }
 
@@ -128,10 +144,12 @@ class InMemoryUploadSessions {
 
   incrementBytes(sessionId: string, bytesToAdd: number): UploadSession | null {
     const session = this.sessions.get(sessionId);
+
     if (!session) return null;
 
     session.uploadedBytes += bytesToAdd;
     this.sessions.set(sessionId, session);
+
     return session;
   }
 }

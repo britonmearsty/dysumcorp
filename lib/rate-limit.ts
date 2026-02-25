@@ -88,6 +88,7 @@ export async function getRateLimit(
       process.env.UPSTASH_REDIS_REST_TOKEN
     ) {
       const result = await limiter.limit(identifier);
+
       return {
         success: result.success,
         limit: result.limit,
@@ -123,6 +124,7 @@ export async function applyRateLimit(
 
   if (!result.success) {
     const headers = rateLimitHeaders(result);
+
     return new NextResponse(
       JSON.stringify({
         error: "Rate limit exceeded. Please try again later.",

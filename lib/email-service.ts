@@ -460,6 +460,7 @@ export async function sendWeeklyReport({
 
   if (settings && !settings.weeklyReports) {
     console.log(`Weekly reports disabled for user: ${to}`);
+
     return { success: true, data: "Weekly reports disabled" };
   }
 

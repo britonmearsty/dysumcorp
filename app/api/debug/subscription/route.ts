@@ -15,6 +15,7 @@ export async function GET(request: Request) {
     }
 
     const adminCheck = await isAdmin(request.headers);
+
     if (!adminCheck.isAdmin && process.env.NODE_ENV === "production") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

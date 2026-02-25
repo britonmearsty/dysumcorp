@@ -73,6 +73,7 @@ export async function getStorageTokens(
       }
     } else {
       console.log(`[Storage API] Failed to refresh token for ${provider}`);
+
       return null;
     }
   }
@@ -147,6 +148,7 @@ export async function refreshStorageToken(
     return data.access_token;
   } catch (error) {
     console.error(`Failed to refresh ${provider} token:`, error);
+
     return null;
   }
 }
@@ -245,6 +247,7 @@ export async function listGoogleDriveFiles(
   }
 
   const data = await response.json();
+
   return data.files || [];
 }
 
@@ -266,6 +269,7 @@ export async function downloadFromGoogleDrive(
   }
 
   const arrayBuffer = await response.arrayBuffer();
+
   return Buffer.from(arrayBuffer);
 }
 
@@ -348,12 +352,14 @@ export async function uploadChunkToDropbox(
   if (isFirst && isLast) {
     // Single chunk - direct upload
     const result = await uploadToDropbox(accessToken, filePath, chunk);
+
     return { complete: true, id: result.id };
   }
 
   if (isLast) {
     // Last chunk - complete the upload
     const result = await uploadToDropbox(accessToken, filePath, chunk);
+
     return { complete: true, id: result.id };
   }
 
@@ -421,6 +427,7 @@ export async function downloadFromDropbox(
   }
 
   const arrayBuffer = await response.arrayBuffer();
+
   return Buffer.from(arrayBuffer);
 }
 
@@ -499,6 +506,7 @@ async function findOrCreateGoogleDriveFolder(
   }
 
   const createdFolder = await createResponse.json();
+
   return { id: createdFolder.id, name: createdFolder.name };
 }
 
@@ -531,6 +539,7 @@ async function findOrCreateDropboxFolder(
 
   if (checkResponse.ok) {
     const data = await checkResponse.json();
+
     if (data[".tag"] === "folder") {
       return { id: data.id, name: data.name };
     }
@@ -571,6 +580,7 @@ async function findOrCreateDropboxFolder(
 
       if (retryResponse.ok) {
         const data = await retryResponse.json();
+
         return { id: data.id, name: data.name };
       }
     }
@@ -578,6 +588,7 @@ async function findOrCreateDropboxFolder(
   }
 
   const data = await createResponse.json();
+
   return { id: data.metadata.id, name: data.metadata.name };
 }
 

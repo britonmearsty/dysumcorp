@@ -58,6 +58,7 @@ async function getSession(sessionId: string): Promise<UploadSession | null> {
   if (hasRedis()) {
     return getUploadSession(sessionId);
   }
+
   return fallbackSessions.get(sessionId);
 }
 
@@ -79,6 +80,7 @@ async function updateSessionBytes(
   if (hasRedis()) {
     return incrementUploadedBytes(sessionId, bytesToAdd);
   }
+
   return fallbackSessions.incrementBytes(sessionId, bytesToAdd);
 }
 
@@ -94,6 +96,7 @@ export async function POST(request: NextRequest) {
   try {
     // Apply rate limiting
     const rateLimitResult = await applyUploadRateLimit(request);
+
     if (rateLimitResult) {
       return rateLimitResult;
     }
@@ -204,6 +207,7 @@ export async function POST(request: NextRequest) {
       // Try fallback provider
       const fallbackProvider =
         portalProvider === "dropbox" ? "google" : "dropbox";
+
       accessToken = await getValidToken(portal.userId, fallbackProvider);
 
       if (!accessToken) {
@@ -278,6 +282,7 @@ export async function POST(request: NextRequest) {
         }
 
         const uploadUrl = response.headers.get("Location");
+
         if (!uploadUrl) {
           throw new Error("No upload URL returned from Google Drive");
         }
@@ -307,6 +312,7 @@ export async function POST(request: NextRequest) {
 
     // Get session
     const session = await getSession(sessionId);
+
     if (!session) {
       return NextResponse.json(
         { error: "Upload session not found" },
@@ -342,6 +348,7 @@ export async function POST(request: NextRequest) {
         }
 
         const result = await uploadResponse.json();
+
         await removeSession(sessionId);
 
         console.log(

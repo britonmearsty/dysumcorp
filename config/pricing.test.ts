@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import {
   formatStorage,
   formatPrice,
@@ -35,11 +36,13 @@ describe("pricing utilities", () => {
   describe("getPlanByCreemProductId", () => {
     it("should return plan for valid product ID", () => {
       const plan = getPlanByCreemProductId("prod_1Rz5XOjKFlcgahDws69WiH");
+
       expect(plan?.id).toBe("pro");
     });
 
     it("should return plan for annual product ID", () => {
       const plan = getPlanByCreemProductId("prod_4TLbnNWJvTQcOReecnTIa0");
+
       expect(plan?.id).toBe("pro");
     });
 

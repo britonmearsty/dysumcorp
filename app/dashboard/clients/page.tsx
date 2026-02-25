@@ -164,6 +164,7 @@ export default function ClientsPage() {
           if (client.name && f.uploaderName) {
             return f.uploaderName.toLowerCase() === client.name.toLowerCase();
           }
+
           return false;
         });
 

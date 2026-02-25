@@ -52,6 +52,7 @@ export async function GET() {
         // For Dropbox: if no expiration set, assume expired (need refresh)
         // For Google: check actual expiration time
         let isExpired: boolean;
+
         if (account.providerId === "dropbox") {
           // Dropbox tokens without expiration are treated as expired
           isExpired = !expiresAt || expiresAt <= new Date();
@@ -180,6 +181,7 @@ async function refreshAccessToken(
     // Google returns expires_in, Dropbox doesn't (long-lived tokens)
     // Default to 4 hours for Dropbox if not returned
     let expiresAt: Date | null = null;
+
     if (data.expires_in) {
       expiresAt = new Date(Date.now() + data.expires_in * 1000);
     } else if (provider === "dropbox") {

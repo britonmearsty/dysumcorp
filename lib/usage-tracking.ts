@@ -198,6 +198,7 @@ export async function sendWeeklyReports() {
               (portal.files as Array<Record<string, unknown>>).filter(
                 (file: Record<string, unknown>) => {
                   const uploadedAt = file.uploadedAt as Date;
+
                   return (
                     uploadedAt >= new Date(weekStart) &&
                     uploadedAt <= new Date(weekEnd)
@@ -212,6 +213,7 @@ export async function sendWeeklyReports() {
         const newPortals = user.portals.filter(
           (portal: Record<string, unknown>) => {
             const createdAt = portal.createdAt as Date;
+
             return (
               createdAt >= new Date(weekStart) && createdAt <= new Date(weekEnd)
             );

@@ -21,6 +21,7 @@ export async function GET(
 
     // Apply rate limiting
     const rateLimitResult = await applyDownloadRateLimit(request);
+
     if (rateLimitResult) {
       return rateLimitResult;
     }

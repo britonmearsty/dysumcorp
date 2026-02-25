@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import {
   sanitizeSlug,
   validateSlug,
@@ -45,6 +46,7 @@ describe("slug-validation", () => {
 
     it("should return invalid for slug longer than 50 characters", () => {
       const longSlug = "a".repeat(51);
+
       expect(validateSlug(longSlug).isValid).toBe(false);
     });
 
