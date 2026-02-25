@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const [showFilesModal, setShowFilesModal] = useState(false);
   const [portalFiles, setPortalFiles] = useState<any[]>([]);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
+  const [togglingPortal, setTogglingPortal] = useState<string | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -143,6 +144,7 @@ export default function DashboardPage() {
   ) => {
     e.preventDefault();
     e.stopPropagation();
+    setTogglingPortal(portalId);
     try {
       const response = await fetch(`/api/portals/${portalId}/toggle-active`, {
         method: "POST",
@@ -167,6 +169,8 @@ export default function DashboardPage() {
     } catch (error) {
       console.error("Failed to toggle portal status:", error);
       showToast("Failed to toggle portal status", "error");
+    } finally {
+      setTogglingPortal(null);
     }
   };
 
@@ -539,6 +543,7 @@ export default function DashboardPage() {
                     </Button>
                     <Switch
                       checked={portal.isActive}
+                      loading={togglingPortal === portal.id}
                       title={
                         portal.isActive
                           ? "Deactivate Portal"

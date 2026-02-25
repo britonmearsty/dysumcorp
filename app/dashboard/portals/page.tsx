@@ -63,6 +63,7 @@ export default function PortalsPage() {
     id: string;
     name: string;
   } | null>(null);
+  const [togglingPortal, setTogglingPortal] = useState<string | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -248,13 +249,13 @@ export default function PortalsPage() {
     portalId: string,
     currentStatus: boolean,
   ) => {
+    setTogglingPortal(portalId);
     try {
       const response = await fetch(`/api/portals/${portalId}/toggle-active`, {
         method: "POST",
       });
 
       if (response.ok) {
-        // Refresh portals list
         await fetchPortals();
       } else {
         showToast("Failed to toggle portal status", "error");
@@ -262,6 +263,8 @@ export default function PortalsPage() {
     } catch (error) {
       console.error("Failed to toggle portal status:", error);
       showToast("Failed to toggle portal status", "error");
+    } finally {
+      setTogglingPortal(null);
     }
   };
 
@@ -501,6 +504,7 @@ export default function PortalsPage() {
                 </Button>
                 <Switch
                   checked={portal.isActive}
+                  loading={togglingPortal === portal.id}
                   title={
                     portal.isActive ? "Deactivate Portal" : "Activate Portal"
                   }

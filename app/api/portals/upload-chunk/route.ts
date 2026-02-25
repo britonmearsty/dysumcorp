@@ -20,26 +20,65 @@ import {
 import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 
-function isValidMimeType(mimeType: string): boolean {
-  const allowedMimeTypes = [
-    "application/pdf",
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "text/plain",
-    "text/csv",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.ms-excel",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/vnd.ms-powerpoint",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    "application/zip",
-    "application/x-rar-compressed",
-    "application/x-7z-compressed",
-  ];
+function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
+  const allowedMimeTypes = new Set<string>();
 
-  return allowedMimeTypes.includes(mimeType.toLowerCase());
+  for (const typeGroup of allowedFileTypes) {
+    const mimeTypes = typeGroup.split(",").map((t) => t.trim().toLowerCase());
+
+    for (const mimeType of mimeTypes) {
+      if (mimeType.includes("/*")) {
+        const prefix = mimeType.replace("/*", "");
+
+        if (prefix === "image") {
+          allowedMimeTypes.add("image/jpeg");
+          allowedMimeTypes.add("image/png");
+          allowedMimeTypes.add("image/gif");
+          allowedMimeTypes.add("image/webp");
+          allowedMimeTypes.add("image/svg+xml");
+          allowedMimeTypes.add("image/bmp");
+          allowedMimeTypes.add("image/tiff");
+          allowedMimeTypes.add("image/webp");
+        } else if (prefix === "video") {
+          allowedMimeTypes.add("video/mp4");
+          allowedMimeTypes.add("video/webm");
+          allowedMimeTypes.add("video/ogg");
+          allowedMimeTypes.add("video/mpeg");
+          allowedMimeTypes.add("video/quicktime");
+          allowedMimeTypes.add("video/x-msvideo");
+        } else if (prefix === "audio") {
+          allowedMimeTypes.add("audio/mpeg");
+          allowedMimeTypes.add("audio/mp3");
+          allowedMimeTypes.add("audio/wav");
+          allowedMimeTypes.add("audio/ogg");
+          allowedMimeTypes.add("audio/webm");
+          allowedMimeTypes.add("audio/aac");
+          allowedMimeTypes.add("audio/midi");
+        } else if (prefix === "text") {
+          allowedMimeTypes.add("text/plain");
+          allowedMimeTypes.add("text/csv");
+          allowedMimeTypes.add("text/html");
+          allowedMimeTypes.add("text/xml");
+          allowedMimeTypes.add("text/javascript");
+          allowedMimeTypes.add("text/css");
+          allowedMimeTypes.add("text/markdown");
+        } else {
+          allowedMimeTypes.add(mimeType);
+        }
+      } else {
+        allowedMimeTypes.add(mimeType);
+      }
+    }
+  }
+
+  return allowedMimeTypes;
+}
+
+function isValidMimeType(
+  mimeType: string,
+  allowedMimeTypes: Set<string>,
+): boolean {
+  return allowedMimeTypes.has(mimeType.toLowerCase());
 }
 
 function isValidFileName(fileName: string): boolean {
@@ -142,14 +181,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
-    if (!isValidMimeType(mimeType)) {
-      return NextResponse.json(
-        { error: "Invalid file type. Please upload a supported file format." },
-        { status: 400 },
-      );
-    }
-
     const portal = await prisma.portal.findUnique({
       where: { id: portalId },
       select: {
@@ -161,11 +192,32 @@ export async function POST(request: NextRequest) {
         storageFolderPath: true,
         useClientFolders: true,
         maxFileSize: true,
+        allowedFileTypes: true,
       },
     });
 
     if (!portal) {
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
+    }
+
+    // Parse portal's allowed file types
+    const allowedMimeTypes = parseAllowedFileTypes(
+      portal.allowedFileTypes || [],
+    );
+
+    // If no file types are configured, allow all (backward compatibility)
+    const effectiveAllowedTypes =
+      allowedMimeTypes.size > 0 ? allowedMimeTypes : null;
+
+    // Validate file type
+    if (
+      effectiveAllowedTypes &&
+      !isValidMimeType(mimeType, effectiveAllowedTypes)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid file type. Please upload a supported file format." },
+        { status: 400 },
+      );
     }
 
     // Check storage limit on first chunk
