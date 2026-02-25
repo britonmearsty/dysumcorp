@@ -508,3 +508,106 @@ export function SupportRequestEmail({
     </EmailLayout>
   );
 }
+
+interface WeeklyReportEmailProps {
+  userName: string;
+  weekStart: string;
+  weekEnd: string;
+  totalFiles: number;
+  totalSize: string;
+  newFiles: number;
+  newPortals: number;
+  totalDownloads: number;
+  storageUsed: string;
+  storageLimit: string;
+  storagePercentage: number;
+  topPortals: Array<{ name: string; files: number; downloads: number }>;
+}
+
+export function WeeklyReportEmail({
+  userName,
+  weekStart,
+  weekEnd,
+  totalFiles,
+  totalSize,
+  newFiles,
+  newPortals,
+  totalDownloads,
+  storageUsed,
+  storageLimit,
+  storagePercentage,
+  topPortals,
+}: WeeklyReportEmailProps) {
+  const previewText = `Your weekly activity report for ${weekStart} - ${weekEnd}`;
+
+  return (
+    <EmailLayout previewText={previewText}>
+      <Heading className="text-center text-2xl font-bold text-gray-800">
+        📊 Weekly Activity Report
+      </Heading>
+      <Text className="text-base text-gray-600">Hi {userName},</Text>
+      <Text className="text-base text-gray-600">
+        Here&apos;s your weekly summary for <strong>{weekStart}</strong> to{" "}
+        <strong>{weekEnd}</strong>:
+      </Text>
+      <Container className="my-4 rounded bg-blue-50 p-4">
+        <Text className="my-1 text-sm font-semibold text-gray-700">
+          Weekly Highlights:
+        </Text>
+        <Text className="my-1 text-sm text-gray-600">
+          <strong>📁 New Files:</strong> {newFiles}
+        </Text>
+        <Text className="my-1 text-sm text-gray-600">
+          <strong>🚀 New Portals:</strong> {newPortals}
+        </Text>
+        <Text className="my-1 text-sm text-gray-600">
+          <strong>📥 Total Downloads:</strong> {totalDownloads}
+        </Text>
+      </Container>
+      <Container className="my-4 rounded bg-gray-50 p-4">
+        <Text className="my-1 text-sm font-semibold text-gray-700">
+          Storage Overview:
+        </Text>
+        <Text className="my-1 text-sm text-gray-600">
+          <strong>Used:</strong> {storageUsed} / {storageLimit}
+        </Text>
+        <Text className="my-1 text-sm text-gray-600">
+          <strong>Usage:</strong> {storagePercentage}%
+        </Text>
+        <Text className="my-1 text-sm text-gray-600">
+          <strong>Total Files:</strong> {totalFiles} ({totalSize})
+        </Text>
+      </Container>
+      {topPortals.length > 0 && (
+        <Container className="my-4 rounded bg-gray-50 p-4">
+          <Text className="my-1 text-sm font-semibold text-gray-700">
+            Top Performing Portals:
+          </Text>
+          {topPortals.map((portal, index) => (
+            <Text key={index} className="my-1 text-sm text-gray-600">
+              • <strong>{portal.name}</strong>: {portal.files} files,{" "}
+              {portal.downloads} downloads
+            </Text>
+          ))}
+        </Container>
+      )}
+      <Section className="my-6 text-center">
+        <Button
+          className="rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white no-underline"
+          href={`${baseUrl}/dashboard`}
+        >
+          View Dashboard
+        </Button>
+      </Section>
+      <Text className="text-base text-gray-600">
+        Keep up the great work! If you need any help, our support team is here
+        for you.
+      </Text>
+      <Text className="text-base text-gray-600">
+        Best regards,
+        <br />
+        The DysumCorp Team
+      </Text>
+    </EmailLayout>
+  );
+}

@@ -7,11 +7,8 @@ import {
   findOrCreatePortalFolder,
   findOrCreateClientFolder,
 } from "@/lib/storage-api";
-import {
-  getRateLimit,
-  uploadRateLimit,
-  fallbackUploadLimit,
-} from "@/lib/rate-limit";
+import { applyUploadRateLimit } from "@/lib/rate-limit";
+import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -20,30 +17,17 @@ export const dynamic = "force-dynamic";
 // POST /api/portals/upload-url - Get direct upload URL for public portal (no auth required)
 export async function POST(request: NextRequest) {
   try {
-    const ip =
-      request.headers.get("x-forwarded-for") ||
-      request.headers.get("x-real-ip") ||
-      "unknown";
-
-    const rateLimitResult = await getRateLimit(
-      uploadRateLimit,
-      fallbackUploadLimit,
-      `upload-url:${ip}`,
-    );
-
-    if (!rateLimitResult.success) {
-      return NextResponse.json(
-        { error: "Too many upload requests. Please try again later." },
-        {
-          status: 429,
-          headers: {
-            "X-RateLimit-Limit": rateLimitResult.limit.toString(),
-            "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
-            "X-RateLimit-Reset": rateLimitResult.reset.toString(),
-          },
-        },
-      );
+    // Apply rate limiting
+    const rateLimitResponse = await applyUploadRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
     }
+
+    const rateLimitInfo = {
+      limit: 50,
+      remaining: 49,
+      reset: Math.ceil(Date.now() / 1000) + 60,
+    };
 
     const body = await request.json();
     const { fileName, fileSize, mimeType, portalId, provider, uploaderName } =
@@ -78,6 +62,29 @@ export async function POST(request: NextRequest) {
     if (!portal.isActive) {
       return NextResponse.json(
         { error: "Portal is not accepting uploads" },
+        { status: 403 },
+      );
+    }
+
+    // Check storage limit before allowing upload
+    const planType = await getUserPlanType(portal.userId);
+    const storageCheck = await checkStorageLimit(
+      portal.userId,
+      planType,
+      Number(fileSize),
+    );
+
+    if (!storageCheck.allowed) {
+      console.log("[Portal Upload URL] Storage limit exceeded:", {
+        current: storageCheck.current,
+        limit: storageCheck.limit,
+      });
+
+      return NextResponse.json(
+        {
+          error: storageCheck.reason || "Storage limit exceeded",
+          upgrade: true,
+        },
         { status: 403 },
       );
     }
@@ -137,13 +144,16 @@ export async function POST(request: NextRequest) {
 
     // Generate upload URL based on provider
     let uploadUrl: string;
-    let uploadMetadata: Record<string, any> = {};
+    let uploadMetadata: Record<string, unknown> = {};
 
     if (storageProvider === "dropbox") {
+      // For Dropbox, use chunked upload through our server
+      // We NO LONGER expose the access token to the client for security
       uploadMetadata = {
-        accessToken,
-        path: `/${folderPath}/${fileName}`,
-        method: "client-sdk",
+        method: "chunked",
+        provider: "dropbox",
+        folderPath,
+        chunkSize: 4 * 1024 * 1024, // 4MB chunks
       };
     } else {
       // Google Drive - create resumable upload session with parent folder
@@ -182,9 +192,9 @@ export async function POST(request: NextRequest) {
       fileName,
       fileSize,
       rateLimit: {
-        limit: rateLimitResult.limit,
-        remaining: rateLimitResult.remaining,
-        reset: rateLimitResult.reset,
+        limit: rateLimitInfo.limit,
+        remaining: rateLimitInfo.remaining,
+        reset: rateLimitInfo.reset,
       },
     });
   } catch (error) {

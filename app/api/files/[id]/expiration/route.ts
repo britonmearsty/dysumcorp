@@ -1,15 +1,9 @@
 import { NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
+import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
+import { checkFeatureAccess, getUserPlanType } from "@/lib/plan-limits";
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-
-// PUT /api/files/[id]/expiration - Set expiration date on a file
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -40,6 +34,21 @@ export async function PUT(
           error: "Expiration date must be in the future",
         },
         { status: 400 },
+      );
+    }
+
+    // Check if user has access to expiring links feature
+    const planType = await getUserPlanType(session.user.id);
+    const featureCheck = checkFeatureAccess(planType, "expiringLinks");
+
+    if (!featureCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: featureCheck.reason || "Expiring links require a Pro plan",
+          upgrade: true,
+          currentPlan: planType,
+        },
+        { status: 403 },
       );
     }
 
@@ -78,7 +87,6 @@ export async function PUT(
   }
 }
 
-// DELETE /api/files/[id]/expiration - Remove expiration date from a file
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },

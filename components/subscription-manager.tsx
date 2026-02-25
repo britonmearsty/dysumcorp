@@ -10,13 +10,10 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
-import { Select, SelectItem } from "@heroui/select";
 import { Alert } from "@heroui/alert";
-import { useRouter } from "next/navigation";
 
 import { CustomerPortalButton } from "./customer-portal-button";
 
-import { useSession } from "@/lib/auth-client";
 import { PRICING_PLANS } from "@/config/pricing";
 
 interface SubscriptionManagerProps {
@@ -28,11 +25,7 @@ export function SubscriptionManager({
   currentPlan,
   onSubscriptionChanged,
 }: SubscriptionManagerProps) {
-  const { data: session } = useSession();
-  const router = useRouter();
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [showChangePlanModal, setShowChangePlanModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(currentPlan);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -42,9 +35,6 @@ export function SubscriptionManager({
   const isFreePlan = currentPlan === "free";
   const currentPlanDetails =
     PRICING_PLANS[currentPlan as keyof typeof PRICING_PLANS];
-  const availablePlans = Object.values(PRICING_PLANS).filter(
-    (plan) => plan.id !== "free" && plan.id !== currentPlan,
-  );
 
   const handleCancelSubscription = async () => {
     setIsLoading(true);
@@ -72,7 +62,6 @@ export function SubscriptionManager({
       setShowCancelModal(false);
       onSubscriptionChanged?.();
 
-      // Refresh session to get updated subscription
       setTimeout(() => {
         window.location.reload();
       }, 2000);
@@ -83,88 +72,11 @@ export function SubscriptionManager({
     }
   };
 
-  const handleChangePlan = async () => {
-    if (selectedPlan === currentPlan) {
-      setShowChangePlanModal(false);
-
-      return;
-    }
-
-    setIsLoading(true);
-    setMessage(null);
-    try {
-      const response = await fetch("/api/subscription/change", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newPlanId: selectedPlan }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to change plan");
-      }
-
-      if (data.checkoutUrl) {
-        // Redirect to checkout for new plan (from free)
-        window.location.href = data.checkoutUrl;
-
-        return;
-      }
-
-      if (data.redirectToPortal) {
-        // If API tells us to use the portal for plan change
-        setMessage({
-          type: "success",
-          text: "Redirecting to subscription portal to manage your plan...",
-        });
-
-        // Use the auth client to get the portal URL
-        const { authClient } = await import("@/lib/auth-client");
-        const { data: portalData, error: portalError } =
-          await authClient.creem.createPortal();
-
-        if (portalError || !portalData || "error" in portalData) {
-          throw new Error(
-            (portalError as any)?.message ||
-              (portalData as any)?.error ||
-              "Failed to open customer portal",
-          );
-        }
-
-        if ("url" in portalData && portalData.url) {
-          window.location.href = portalData.url;
-        }
-
-        return;
-      }
-
-      setMessage({ type: "success", text: "Plan changed successfully!" });
-      setShowChangePlanModal(false);
-      onSubscriptionChanged?.();
-
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    } catch (error: any) {
-      console.error("Change plan error:", error);
-      setMessage({
-        type: "error",
-        text: error.message || "Failed to change plan",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   if (isFreePlan) {
     return (
       <Card className="bg-card border border-border rounded-xl" shadow="none">
         <CardBody className="text-center py-8">
           <p className="text-muted-foreground mb-4">You are on the Free plan</p>
-          <Button color="primary" onPress={() => router.push("#pricing")}>
-            Upgrade Now
-          </Button>
         </CardBody>
       </Card>
     );
@@ -187,23 +99,12 @@ export function SubscriptionManager({
           )}
 
           <div className="grid gap-3">
-            {/* Change Plan Button */}
-            <Button
-              color="primary"
-              variant="flat"
-              onPress={() => setShowChangePlanModal(true)}
-            >
-              Change Plan
-            </Button>
-
-            {/* Customer Portal - Manage Payment Methods */}
             <CustomerPortalButton
               color="secondary"
               label="Manage Payment Methods"
               variant="flat"
             />
 
-            {/* Cancel Subscription */}
             <Button
               color="danger"
               variant="flat"
@@ -215,7 +116,6 @@ export function SubscriptionManager({
         </CardBody>
       </Card>
 
-      {/* Cancel Subscription Modal */}
       <Modal isOpen={showCancelModal} onClose={() => setShowCancelModal(false)}>
         <ModalContent>
           <ModalHeader>Cancel Subscription</ModalHeader>
@@ -237,48 +137,6 @@ export function SubscriptionManager({
               onPress={handleCancelSubscription}
             >
               Yes, Cancel
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      {/* Change Plan Modal */}
-      <Modal
-        isOpen={showChangePlanModal}
-        onClose={() => setShowChangePlanModal(false)}
-      >
-        <ModalContent>
-          <ModalHeader>Change Plan</ModalHeader>
-          <ModalBody>
-            <p className="mb-4">Select a new plan:</p>
-            <Select
-              label="Choose Plan"
-              selectedKeys={[selectedPlan]}
-              onChange={(e) => setSelectedPlan(e.target.value)}
-            >
-              {availablePlans.map((plan) => (
-                <SelectItem key={plan.id}>
-                  {plan.name} - ${plan.price}/month
-                </SelectItem>
-              ))}
-            </Select>
-            <p className="text-small text-default-500 mt-4">
-              You will be charged/credited the prorated difference immediately.
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="flat"
-              onPress={() => setShowChangePlanModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              color="primary"
-              isLoading={isLoading}
-              onPress={handleChangePlan}
-            >
-              Change Plan
             </Button>
           </ModalFooter>
         </ModalContent>

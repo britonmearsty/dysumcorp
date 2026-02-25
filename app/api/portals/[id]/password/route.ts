@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
-import { PrismaClient } from "@/lib/generated/prisma/client";
-import { verifyPassword } from "@/lib/password-utils";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import { prisma } from "@/lib/prisma";
+import { verifyPasswordWithMigration } from "@/lib/password-utils";
 
 // POST /api/portals/[id]/password - Verify portal password
 export async function POST(
@@ -43,11 +37,19 @@ export async function POST(
       return NextResponse.json({ valid: true });
     }
 
-    // Verify password
-    const isValid = verifyPassword(password, portal.password);
+    // Verify password with migration support for legacy SHA-256 hashes
+    const result = await verifyPasswordWithMigration(password, portal.password);
 
-    if (!isValid) {
+    if (!result.valid) {
       return NextResponse.json({ valid: false }, { status: 401 });
+    }
+
+    // If password was migrated, update the stored hash
+    if (result.newHash) {
+      await prisma.portal.update({
+        where: { id },
+        data: { password: result.newHash },
+      });
     }
 
     return NextResponse.json({ valid: true });

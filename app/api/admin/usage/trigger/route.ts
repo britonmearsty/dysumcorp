@@ -1,37 +1,13 @@
 import { NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
-import { auth } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { triggerUsageTracking } from "@/lib/usage-tracking";
+import { isAdmin } from "@/lib/admin";
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-
-// POST /api/admin/usage/trigger - Trigger usage tracking update (admin only)
 export async function POST(request: Request) {
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+    const adminCheck = await isAdmin(request.headers);
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is admin (you might want to add an admin role to the User model)
-    // For now, this endpoint is disabled as there's no enterprise plan
-    // You can add a separate admin role field to enable this
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { subscriptionPlan: true, email: true },
-    });
-
-    // TODO: Add proper admin role check
-    // For now, restrict to specific email or disable entirely
-    if (!user) {
+    if (!adminCheck.isAdmin) {
       return NextResponse.json(
         { error: "Admin access required" },
         { status: 403 },

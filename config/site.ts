@@ -4,6 +4,7 @@ export const siteConfig = {
   name: "Dysumcorp",
   description:
     "Professional secure file collection portal for CPAs, lawyers, and consultants. Branded client document upload with bank-level encryption. No client login required. Start free.",
+  storageRootFolder: process.env.STORAGE_ROOT_FOLDER || "dysumcorp",
   navItems: [
     {
       label: "Home",

@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 
 import { getSessionFromRequest } from "@/lib/auth-server";
+import { isAdmin } from "@/lib/admin";
 
 export async function GET(request: Request) {
+  const adminCheck = await isAdmin(request.headers);
+  if (!adminCheck.isAdmin && process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
     const session = await getSessionFromRequest(request);
 

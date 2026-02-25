@@ -1,19 +1,8 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
+import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
-
-// Create PostgreSQL connection pool
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-
-// Create Prisma adapter for PostgreSQL
-const adapter = new PrismaPg(pool);
-
-// Initialize Prisma Client with the adapter
-const prisma = new PrismaClient({ adapter });
 
 export async function GET() {
   try {
@@ -24,6 +13,12 @@ export async function GET() {
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Fetch user to get email
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { email: true, name: true },
+    });
 
     // Fetch all OAuth accounts for the user
     const accounts = await prisma.account.findMany({
@@ -95,6 +90,8 @@ export async function GET() {
         return {
           provider: account.providerId as "google" | "dropbox",
           providerAccountId: account.accountId,
+          email: user?.email || undefined,
+          name: user?.name || undefined,
           isConnected: hasValidToken,
           storageAccountId: account.id,
           storageStatus: hasValidToken ? "ACTIVE" : "DISCONNECTED",

@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
+import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { hashPassword, validatePassword } from "@/lib/password-utils";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import { checkFeatureAccess, getUserPlanType } from "@/lib/plan-limits";
 
 // PUT /api/files/[id]/password - Set password protection on a file
 export async function PUT(
@@ -45,6 +40,22 @@ export async function PUT(
       );
     }
 
+    // Check if user has access to password protection feature
+    const planType = await getUserPlanType(session.user.id);
+    const featureCheck = checkFeatureAccess(planType, "passwordProtection");
+
+    if (!featureCheck.allowed) {
+      return NextResponse.json(
+        {
+          error:
+            featureCheck.reason || "Password protection requires a Pro plan",
+          upgrade: true,
+          currentPlan: planType,
+        },
+        { status: 403 },
+      );
+    }
+
     // Check if user owns the file
     const file = await prisma.file.findFirst({
       where: {
@@ -60,7 +71,7 @@ export async function PUT(
     }
 
     // Hash and set the password
-    const passwordHash = hashPassword(password);
+    const passwordHash = await hashPassword(password);
 
     await prisma.file.update({
       where: { id },

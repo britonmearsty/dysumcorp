@@ -1,19 +1,8 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
-import { PrismaClient } from "@/lib/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-server";
-
-// Create PostgreSQL connection pool
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-
-// Create Prisma adapter for PostgreSQL
-const adapter = new PrismaPg(pool);
-
-// Initialize Prisma Client with the adapter
-const prisma = new PrismaClient({ adapter });
 
 export async function POST(request: Request) {
   try {

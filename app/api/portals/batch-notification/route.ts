@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
-import { PrismaClient } from "@/lib/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
 import {
   sendFileUploadNotification,
   getUserNotificationSettings,
 } from "@/lib/email-service";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
 
 // Helper function to format file size
 function formatFileSize(bytes: number): string {

@@ -938,7 +938,10 @@ export default function AssetsPage() {
               </div>
               <p className="text-foreground mb-6">
                 Are you sure you want to delete{" "}
-                <span className="font-semibold">"{fileToDelete.name}"</span>?
+                <span className="font-semibold">
+                  &quot;{fileToDelete.name}&quot;
+                </span>
+                ?
               </p>
               <div className="flex gap-3 justify-end">
                 <button

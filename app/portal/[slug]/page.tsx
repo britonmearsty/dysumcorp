@@ -438,6 +438,30 @@ export default function PublicPortalPage() {
 
         console.log(`[Upload] Upload confirmed for ${file.name}`);
         setFileProgress((prev) => ({ ...prev, [i]: 100 }));
+
+        successfulFiles.push({
+          name: file.name,
+          size: file.size,
+        });
+      }
+
+      // Send batch notification after all files are uploaded
+      if (successfulFiles.length > 0) {
+        try {
+          await fetch("/api/portals/batch-notification", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              portalId: portal.id,
+              files: successfulFiles,
+              uploaderName: uploaderName.trim(),
+              uploaderEmail: uploaderEmail.trim(),
+            }),
+          });
+        } catch (notifError) {
+          console.error("[Upload] Failed to send notification:", notifError);
+          // Don't fail the upload if notification fails
+        }
       }
 
       // All files uploaded successfully

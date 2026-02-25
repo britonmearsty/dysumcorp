@@ -1,18 +1,18 @@
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
-
-import { PrismaClient } from "@/lib/generated/prisma/client";
-import { PRICING_PLANS, PlanType } from "@/config/pricing";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import { prisma } from "@/lib/prisma";
+import { PRICING_PLANS, PlanType, PlanLimits } from "@/config/pricing";
 
 export interface PlanLimitCheck {
   allowed: boolean;
   reason?: string;
   current?: number;
   limit?: number;
+}
+
+export interface FeatureAccessCheck {
+  allowed: boolean;
+  reason?: string;
+  upgrade?: boolean;
+  currentPlan?: PlanType;
 }
 
 export async function checkPortalLimit(
@@ -143,11 +143,21 @@ export async function checkCustomDomainLimit(
 
 export function checkFeatureAccess(
   planType: PlanType,
-  feature: keyof typeof PRICING_PLANS.free.limits,
-): boolean {
+  feature: keyof PlanLimits,
+): FeatureAccessCheck {
   const limits = PRICING_PLANS[planType].limits;
+  const allowed = limits[feature] === true;
 
-  return limits[feature] === true;
+  if (!allowed) {
+    return {
+      allowed: false,
+      reason: `This feature is not available on the ${planType} plan. Upgrade to Pro to unlock this feature.`,
+      upgrade: true,
+      currentPlan: planType,
+    };
+  }
+
+  return { allowed: true, currentPlan: planType };
 }
 
 export async function getUserPlanType(userId: string): Promise<PlanType> {
@@ -156,4 +166,38 @@ export async function getUserPlanType(userId: string): Promise<PlanType> {
   });
 
   return (user?.subscriptionPlan as PlanType) || "free";
+}
+
+export async function recordGraceUsage(
+  userId: string,
+  resourceType: "portal" | "storage",
+  amount: number = 1,
+  notes?: string,
+): Promise<void> {
+  await prisma.graceUsage.create({
+    data: {
+      userId,
+      resourceType,
+      amount,
+      notes,
+    },
+  });
+}
+
+export async function getGraceUsage(
+  userId: string,
+  resourceType: "portal" | "storage",
+): Promise<number> {
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const records = await prisma.graceUsage.findMany({
+    where: {
+      userId,
+      resourceType,
+      usedAt: {
+        gte: new Date(`${currentMonth}-01`),
+      },
+    },
+  });
+
+  return records.reduce((acc, record) => acc + record.amount, 0);
 }

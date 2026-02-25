@@ -1,18 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
-import { PrismaClient } from "@/lib/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
 import { getValidToken } from "@/lib/storage-api";
+import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
+import { applyUploadRateLimit } from "@/lib/rate-limit";
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+function isValidMimeType(mimeType: string): boolean {
+  const allowedMimeTypes = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "text/plain",
+    "text/csv",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/zip",
+    "application/x-rar-compressed",
+    "application/x-7z-compressed",
+  ];
+
+  return allowedMimeTypes.includes(mimeType.toLowerCase());
+}
+
+function isValidFileName(fileName: string): boolean {
+  const invalidChars = /[<>:"/\\|?*]/;
+  const maxLength = 255;
+
+  return !invalidChars.test(fileName) && fileName.length <= maxLength;
+}
 
 // POST /api/portals/direct-upload - Get upload credentials for public portal upload
 // This endpoint doesn't require authentication - it's for public portal uploads
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResult = await applyUploadRateLimit(request);
+    if (rateLimitResult) {
+      return rateLimitResult;
+    }
+
     const body = await request.json();
     const { fileName, fileSize, mimeType, portalId } = body;
 
@@ -25,6 +56,25 @@ export async function POST(request: NextRequest) {
     if (!fileName || !fileSize || !portalId) {
       return NextResponse.json(
         { error: "Missing required fields: fileName, fileSize, portalId" },
+        { status: 400 },
+      );
+    }
+
+    // Validate file name
+    if (!isValidFileName(fileName)) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid file name. File name contains invalid characters or exceeds maximum length.",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Validate file type
+    if (!isValidMimeType(mimeType)) {
+      return NextResponse.json(
+        { error: "Invalid file type. Please upload a supported file format." },
         { status: 400 },
       );
     }
@@ -65,6 +115,29 @@ export async function POST(request: NextRequest) {
           maxSize: portal.maxFileSize.toString(),
         },
         { status: 413 },
+      );
+    }
+
+    // Check storage limit before allowing upload
+    const planType = await getUserPlanType(portal.userId);
+    const storageCheck = await checkStorageLimit(
+      portal.userId,
+      planType,
+      Number(fileSize),
+    );
+
+    if (!storageCheck.allowed) {
+      console.log("[Portal Direct Upload] Storage limit exceeded:", {
+        current: storageCheck.current,
+        limit: storageCheck.limit,
+      });
+
+      return NextResponse.json(
+        {
+          error: storageCheck.reason || "Storage limit exceeded",
+          upgrade: true,
+        },
+        { status: 403 },
       );
     }
 
@@ -136,7 +209,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate upload URL/credentials based on provider
-    let uploadData: any = {};
+    let uploadData: Record<string, unknown> = {};
 
     if (provider === "google") {
       // For Google Drive, use chunked upload through our server
@@ -151,14 +224,17 @@ export async function POST(request: NextRequest) {
         "[Portal Direct Upload] Google Drive will use chunked upload",
       );
     } else {
-      // For Dropbox, return the access token (client will upload directly)
+      // For Dropbox, use chunked upload through our server
+      // We NO LONGER expose the access token to the client for security
       uploadData = {
-        accessToken,
-        path: `/${folderPath}/${fileName}`,
-        method: "dropbox-api",
+        method: "chunked",
+        provider: "dropbox",
+        chunkSize: 4 * 1024 * 1024, // 4MB chunks
       };
 
-      console.log("[Portal Direct Upload] Dropbox credentials prepared");
+      console.log(
+        "[Portal Direct Upload] Dropbox will use chunked upload (secure)",
+      );
     }
 
     return NextResponse.json({

@@ -1,25 +1,15 @@
 import { NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
+import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import {
   getValidToken,
   downloadFromGoogleDrive,
   downloadFromDropbox,
 } from "@/lib/storage-api";
-import {
-  getRateLimit,
-  downloadRateLimit,
-  fallbackDownloadLimit,
-} from "@/lib/rate-limit";
+import { applyDownloadRateLimit } from "@/lib/rate-limit";
 import { sendFileDownloadNotification } from "@/lib/email-service";
 import { verifyPassword } from "@/lib/password-utils";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
 
 // GET /api/files/[id]/download - Download a file
 export async function GET(
@@ -29,33 +19,10 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Apply rate limiting based on IP address
-    const ip =
-      request.headers.get("x-forwarded-for") ||
-      request.headers.get("x-real-ip") ||
-      "unknown";
-
-    const rateLimitResult = await getRateLimit(
-      downloadRateLimit,
-      fallbackDownloadLimit,
-      `download:${ip}`,
-    );
-
-    if (!rateLimitResult.success) {
-      return NextResponse.json(
-        { error: "Too many download requests. Please try again later." },
-        {
-          status: 429,
-          headers: {
-            "X-RateLimit-Limit": rateLimitResult.limit.toString(),
-            "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
-            "X-RateLimit-Reset": rateLimitResult.reset.toString(),
-            "Retry-After": Math.ceil(
-              (rateLimitResult.reset - Date.now()) / 1000,
-            ).toString(),
-          },
-        },
-      );
+    // Apply rate limiting
+    const rateLimitResult = await applyDownloadRateLimit(request);
+    if (rateLimitResult) {
+      return rateLimitResult;
     }
 
     const session = await getSessionFromRequest(request);
@@ -219,9 +186,6 @@ export async function GET(
               "Content-Type": file.mimeType,
               "Content-Disposition": `attachment; filename="${file.name}"`,
               "Cache-Control": "private, max-age=3600",
-              "X-RateLimit-Limit": rateLimitResult.limit.toString(),
-              "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
-              "X-RateLimit-Reset": rateLimitResult.reset.toString(),
             },
           });
         }

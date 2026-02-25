@@ -1,26 +1,29 @@
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 import * as cron from "node-cron";
 
-import { PrismaClient } from "@/lib/generated/prisma/client";
-import { sendStorageWarning } from "@/lib/email-service";
+import { prisma } from "@/lib/prisma";
+import { sendStorageWarning, sendWeeklyReport } from "@/lib/email-service";
+import { PRICING_PLANS, PlanType } from "@/config/pricing";
 
-// Create PostgreSQL connection pool
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
 
-/**
- * Update usage tracking for all users
- * This function calculates and stores monthly usage statistics
- */
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
+
+function getPlanLimits(plan: PlanType) {
+  return PRICING_PLANS[plan]?.limits || PRICING_PLANS.free.limits;
+}
+
 export async function updateUsageTracking() {
   try {
     console.log("Starting usage tracking update...");
 
-    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+    const currentMonth = new Date().toISOString().slice(0, 7);
 
-    // Get all users
     const users = await prisma.user.findMany({
       include: {
         portals: {
@@ -33,51 +36,59 @@ export async function updateUsageTracking() {
 
     for (const user of users) {
       try {
-        // Calculate usage for this user
         const storageUsed = user.portals.reduce(
-          (total: number, portal: any) => {
+          (total: number, portal: Record<string, unknown>) => {
             return (
               total +
-              portal.files.reduce((portalTotal: number, file: any) => {
-                return portalTotal + Number(file.size);
-              }, 0)
+              (portal.files as Array<Record<string, unknown>>).reduce(
+                (portalTotal: number, file: Record<string, unknown>) => {
+                  return portalTotal + Number(file.size);
+                },
+                0,
+              )
             );
           },
           0,
         );
 
         const monthlyPortalsCreated = user.portals.filter(
-          (portal: any) =>
-            portal.createdAt.toISOString().slice(0, 7) === currentMonth,
+          (portal: Record<string, unknown>) =>
+            (portal.createdAt as Date).toISOString().slice(0, 7) ===
+            currentMonth,
         ).length;
 
         const monthlyFilesUploaded = user.portals.reduce(
-          (total: number, portal: any) => {
+          (total: number, portal: Record<string, unknown>) => {
             return (
               total +
-              portal.files.filter(
-                (file: any) =>
-                  file.uploadedAt.toISOString().slice(0, 7) === currentMonth,
+              (portal.files as Array<Record<string, unknown>>).filter(
+                (file: Record<string, unknown>) =>
+                  (file.uploadedAt as Date).toISOString().slice(0, 7) ===
+                  currentMonth,
               ).length
             );
           },
           0,
         );
 
-        // Calculate bandwidth (simplified - just file sizes for downloads)
         const monthlyBandwidth = user.portals.reduce(
-          (total: number, portal: any) => {
+          (total: number, portal: Record<string, unknown>) => {
             return (
               total +
-              portal.files.reduce((portalTotal: number, file: any) => {
-                return portalTotal + Number(file.size) * file.downloads;
-              }, 0)
+              (portal.files as Array<Record<string, unknown>>).reduce(
+                (portalTotal: number, file: Record<string, unknown>) => {
+                  return (
+                    portalTotal +
+                    Number(file.size) * Number(file.downloads || 0)
+                  );
+                },
+                0,
+              )
             );
           },
           0,
         );
 
-        // Update or create usage tracking record
         await prisma.usageTracking.upsert({
           where: {
             userId_month: {
@@ -102,16 +113,17 @@ export async function updateUsageTracking() {
           },
         });
 
-        // Check if user is approaching storage limits and send warning
         if (user.subscriptionPlan) {
-          const planLimits = getPlanLimits(user.subscriptionPlan);
-          const storagePercentage = (storageUsed / planLimits.storage) * 100;
+          const planLimits = getPlanLimits(user.subscriptionPlan as PlanType);
+          const storageLimitBytes = planLimits.storage * 1024 * 1024 * 1024;
+          const storagePercentage = (storageUsed / storageLimitBytes) * 100;
 
-          if (storagePercentage >= 90) {
+          if (storagePercentage >= 90 && user.notifyOnStorageWarning) {
             await sendStorageWarning({
               userEmail: user.email,
+              userName: user.name || undefined,
               usedStorage: formatBytes(storageUsed),
-              totalStorage: formatBytes(planLimits.storage),
+              totalStorage: formatBytes(storageLimitBytes),
               percentage: Math.round(storagePercentage),
             });
           }
@@ -127,34 +139,192 @@ export async function updateUsageTracking() {
   }
 }
 
-/**
- * Get plan limits based on subscription plan
- */
-function getPlanLimits(plan: string) {
-  const limits = {
-    free: { storage: 1 * 1024 * 1024 * 1024, portals: 1 }, // 1GB, 1 portal
-    pro: { storage: 500 * 1024 * 1024 * 1024, portals: 999999 }, // 500GB, unlimited portals
-  };
+export async function sendWeeklyReports() {
+  try {
+    console.log("Starting weekly reports...");
 
-  return limits[plan as keyof typeof limits] || limits.free;
+    const users = await prisma.user.findMany({
+      where: {
+        weeklyReports: true,
+      },
+      include: {
+        portals: {
+          include: {
+            files: true,
+          },
+        },
+      },
+    });
+
+    const now = new Date();
+    const weekEnd = now.toISOString().slice(0, 10);
+    const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+
+    for (const user of users) {
+      try {
+        const planLimits = getPlanLimits(
+          (user.subscriptionPlan as PlanType) || "free",
+        );
+        const storageLimitBytes = planLimits.storage * 1024 * 1024 * 1024;
+
+        const storageUsed = user.portals.reduce(
+          (total: number, portal: Record<string, unknown>) => {
+            return (
+              total +
+              (portal.files as Array<Record<string, unknown>>).reduce(
+                (portalTotal: number, file: Record<string, unknown>) => {
+                  return portalTotal + Number(file.size);
+                },
+                0,
+              )
+            );
+          },
+          0,
+        );
+
+        const totalFiles = user.portals.reduce(
+          (total: number, portal: Record<string, unknown>) => {
+            return total + (portal.files as Array<unknown>).length;
+          },
+          0,
+        );
+
+        const newFiles = user.portals.reduce(
+          (total: number, portal: Record<string, unknown>) => {
+            return (
+              total +
+              (portal.files as Array<Record<string, unknown>>).filter(
+                (file: Record<string, unknown>) => {
+                  const uploadedAt = file.uploadedAt as Date;
+                  return (
+                    uploadedAt >= new Date(weekStart) &&
+                    uploadedAt <= new Date(weekEnd)
+                  );
+                },
+              ).length
+            );
+          },
+          0,
+        );
+
+        const newPortals = user.portals.filter(
+          (portal: Record<string, unknown>) => {
+            const createdAt = portal.createdAt as Date;
+            return (
+              createdAt >= new Date(weekStart) && createdAt <= new Date(weekEnd)
+            );
+          },
+        ).length;
+
+        const totalDownloads = user.portals.reduce(
+          (total: number, portal: Record<string, unknown>) => {
+            return (
+              total +
+              (portal.files as Array<Record<string, unknown>>).reduce(
+                (portalTotal: number, file: Record<string, unknown>) => {
+                  return portalTotal + Number(file.downloads || 0);
+                },
+                0,
+              )
+            );
+          },
+          0,
+        );
+
+        const portalStats = user.portals.map(
+          (portal: Record<string, unknown>) => ({
+            name: portal.name as string,
+            files: (portal.files as Array<unknown>).length,
+            downloads: (portal.files as Array<Record<string, unknown>>).reduce(
+              (total: number, file: Record<string, unknown>) =>
+                total + Number(file.downloads || 0),
+              0,
+            ),
+          }),
+        );
+
+        const topPortals = portalStats
+          .sort((a, b) => b.downloads - a.downloads)
+          .slice(0, 5);
+
+        await sendWeeklyReport({
+          to: user.email,
+          userName: user.name || user.email.split("@")[0],
+          weekStart,
+          weekEnd,
+          totalFiles,
+          totalSize: formatBytes(storageUsed),
+          newFiles,
+          newPortals,
+          totalDownloads,
+          storageUsed: formatBytes(storageUsed),
+          storageLimit: formatBytes(storageLimitBytes),
+          storagePercentage: Math.round(
+            (storageUsed / storageLimitBytes) * 100,
+          ),
+          topPortals,
+        });
+      } catch (userError) {
+        console.error(
+          `Failed to send weekly report to user ${user.id}:`,
+          userError,
+        );
+      }
+    }
+
+    console.log("Weekly reports completed successfully");
+  } catch (error) {
+    console.error("Weekly reports failed:", error);
+  }
 }
 
-/**
- * Format bytes to human readable format
- */
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 Bytes";
+export async function cleanupExpiredFiles() {
+  try {
+    console.log("Starting expired files cleanup...");
 
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const now = new Date();
 
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    const expiredFiles = await prisma.file.findMany({
+      where: {
+        expiresAt: {
+          lte: now,
+        },
+      },
+      include: {
+        portal: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    console.log(`Found ${expiredFiles.length} expired files`);
+
+    for (const file of expiredFiles) {
+      try {
+        // Delete from database first
+        await prisma.file.delete({
+          where: { id: file.id },
+        });
+
+        console.log(`Deleted expired file: ${file.name} (${file.id})`);
+
+        // Note: Actual deletion from cloud storage would require the storage provider tokens
+        // and should be implemented based on the storage provider
+      } catch (fileError) {
+        console.error(`Failed to delete expired file ${file.id}:`, fileError);
+      }
+    }
+
+    console.log("Expired files cleanup completed");
+  } catch (error) {
+    console.error("Expired files cleanup failed:", error);
+  }
 }
 
-/**
- * Get usage statistics for a specific user
- */
 export async function getUserUsageStats(userId: string) {
   const currentMonth = new Date().toISOString().slice(0, 7);
 
@@ -182,16 +352,21 @@ export async function getUserUsageStats(userId: string) {
     throw new Error("User not found");
   }
 
-  const planLimits = getPlanLimits(user.subscriptionPlan || "free");
+  const planLimits = getPlanLimits(
+    (user.subscriptionPlan as PlanType) || "free",
+  );
+  const storageLimitBytes = planLimits.storage * 1024 * 1024 * 1024;
 
-  // Calculate current storage usage
   const currentStorageUsed = user.portals.reduce(
-    (total: number, portal: any) => {
+    (total: number, portal: Record<string, unknown>) => {
       return (
         total +
-        portal.files.reduce((portalTotal: number, file: any) => {
-          return portalTotal + Number(file.size);
-        }, 0)
+        (portal.files as Array<Record<string, unknown>>).reduce(
+          (portalTotal: number, file: Record<string, unknown>) => {
+            return portalTotal + Number(file.size);
+          },
+          0,
+        )
       );
     },
     0,
@@ -199,41 +374,55 @@ export async function getUserUsageStats(userId: string) {
 
   return {
     currentMonth: usage,
-    planLimits,
+    planLimits: {
+      storage: planLimits.storage,
+      portals: planLimits.portals,
+    },
     currentStorageUsed,
-    storagePercentage: (currentStorageUsed / planLimits.storage) * 100,
+    storagePercentage: (currentStorageUsed / storageLimitBytes) * 100,
     portalsUsed: user.portals.length,
     portalsPercentage: (user.portals.length / planLimits.portals) * 100,
   };
 }
 
-/**
- * Initialize cron job for usage tracking
- * Runs every day at 2 AM
- */
 export function initializeUsageTrackingCron() {
-  // Schedule the usage tracking update to run daily at 2 AM
+  // Daily usage tracking at 2 AM
   cron.schedule("0 2 * * *", async () => {
     console.log("Running scheduled usage tracking update...");
     await updateUsageTracking();
   });
 
-  // Also run it immediately on startup for testing
+  // Weekly reports on Monday at 9 AM
+  cron.schedule("0 9 * * 1", async () => {
+    console.log("Running scheduled weekly reports...");
+    await sendWeeklyReports();
+  });
+
+  // Expired files cleanup daily at 3 AM
+  cron.schedule("0 3 * * *", async () => {
+    console.log("Running scheduled expired files cleanup...");
+    await cleanupExpiredFiles();
+  });
+
   if (process.env.NODE_ENV === "development") {
     console.log(
-      "Running usage tracking update on startup (development mode)...",
+      "Cron jobs initialized (development mode - skipping immediate run)",
     );
-    setTimeout(() => {
-      updateUsageTracking();
-    }, 5000); // Wait 5 seconds for app to start
   }
 
-  console.log("Usage tracking cron job initialized");
+  console.log(
+    "Usage tracking cron jobs initialized (daily at 2 AM, weekly on Monday at 9 AM, cleanup at 3 AM)",
+  );
 }
 
-/**
- * Manual trigger for usage tracking (for testing/admin)
- */
 export async function triggerUsageTracking() {
   return await updateUsageTracking();
+}
+
+export async function triggerWeeklyReports() {
+  return await sendWeeklyReports();
+}
+
+export async function triggerExpiredFilesCleanup() {
+  return await cleanupExpiredFiles();
 }

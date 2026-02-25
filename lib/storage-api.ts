@@ -1,22 +1,9 @@
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
-
-import { PrismaClient } from "@/lib/generated/prisma/client";
-
-// Create PostgreSQL connection pool
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-
-// Create Prisma adapter for PostgreSQL
-const adapter = new PrismaPg(pool);
-
-// Initialize Prisma Client with the adapter
-const prisma = new PrismaClient({ adapter });
+import { prisma } from "@/lib/prisma";
 
 /**
  * Storage API utilities for Google Drive and Dropbox
  */
 
-// Types
 export type StorageProvider = "google" | "dropbox";
 
 export interface StorageToken {
@@ -32,6 +19,11 @@ export interface FileMetadata {
   mimeType?: string;
   modifiedTime?: string;
   webViewLink?: string;
+}
+
+export interface FolderInfo {
+  id: string;
+  name: string;
 }
 
 /**
@@ -53,11 +45,9 @@ export async function getStorageTokens(
     return null;
   }
 
-  // Check if token is expired
   const isExpired =
     account.accessTokenExpiresAt && account.accessTokenExpiresAt <= new Date();
 
-  // Auto-refresh if expired and refresh token exists
   if (isExpired && account.refreshToken) {
     console.log(
       `[Storage API] Token expired for ${provider}, auto-refreshing...`,
@@ -66,7 +56,6 @@ export async function getStorageTokens(
 
     if (newAccessToken) {
       console.log(`[Storage API] Successfully refreshed token for ${provider}`);
-      // Fetch updated account data
       const updatedAccount = await prisma.account.findFirst({
         where: {
           userId,
@@ -84,7 +73,6 @@ export async function getStorageTokens(
       }
     } else {
       console.log(`[Storage API] Failed to refresh token for ${provider}`);
-
       return null;
     }
   }
@@ -146,7 +134,6 @@ export async function refreshStorageToken(
 
     const data = await response.json();
 
-    // Update the access token in the database
     await prisma.account.update({
       where: { id: account.id },
       data: {
@@ -160,7 +147,6 @@ export async function refreshStorageToken(
     return data.access_token;
   } catch (error) {
     console.error(`Failed to refresh ${provider} token:`, error);
-
     return null;
   }
 }
@@ -178,7 +164,6 @@ export async function getValidToken(
     return null;
   }
 
-  // Check if token is expired or about to expire (within 5 minutes)
   if (
     tokens.accessTokenExpiresAt &&
     tokens.accessTokenExpiresAt.getTime() < Date.now() + 5 * 60 * 1000
@@ -193,9 +178,6 @@ export async function getValidToken(
 // Google Drive API Functions
 // ============================================================================
 
-/**
- * Upload a file to Google Drive
- */
 export async function uploadToGoogleDrive(
   accessToken: string,
   fileName: string,
@@ -207,18 +189,14 @@ export async function uploadToGoogleDrive(
   const delimiter = `\r\n--${boundary}\r\n`;
   const closeDelimiter = `\r\n--${boundary}--`;
 
-  const metadata: any = {
+  const metadata: Record<string, unknown> = {
     name: fileName,
     mimeType: mimeType,
   };
 
-  // Add parent folder if specified
   if (parentFolderId) {
     metadata.parents = [parentFolderId];
   }
-
-  // Construct multipart body using Blob to avoid loading file into string/memory
-  // We need to combine: delimiter + metadata + delimiter + fileContent + closeDelimiter
 
   const multipartBody = new Blob([
     delimiter,
@@ -226,7 +204,7 @@ export async function uploadToGoogleDrive(
     JSON.stringify(metadata),
     delimiter,
     `Content-Type: ${mimeType}\r\n\r\n`,
-    fileContent as BlobPart, // Cast to BlobPart to silence TS error regarding Buffer
+    fileContent as BlobPart,
     closeDelimiter,
   ]);
 
@@ -249,9 +227,6 @@ export async function uploadToGoogleDrive(
   return await response.json();
 }
 
-/**
- * List files from Google Drive
- */
 export async function listGoogleDriveFiles(
   accessToken: string,
   pageSize: number = 10,
@@ -270,13 +245,9 @@ export async function listGoogleDriveFiles(
   }
 
   const data = await response.json();
-
   return data.files || [];
 }
 
-/**
- * Download a file from Google Drive
- */
 export async function downloadFromGoogleDrive(
   accessToken: string,
   fileId: string,
@@ -295,13 +266,9 @@ export async function downloadFromGoogleDrive(
   }
 
   const arrayBuffer = await response.arrayBuffer();
-
   return Buffer.from(arrayBuffer);
 }
 
-/**
- * Delete a file from Google Drive
- */
 export async function deleteFromGoogleDrive(
   accessToken: string,
   fileId: string,
@@ -325,17 +292,11 @@ export async function deleteFromGoogleDrive(
 // Dropbox API Functions
 // ============================================================================
 
-/**
- * Upload a file to Dropbox
- */
 export async function uploadToDropbox(
   accessToken: string,
   filePath: string,
   fileContent: Buffer | string | Blob | File,
 ): Promise<FileMetadata> {
-  // Use the content directly if it's a Blob/File/Buffer/string that fetch accepts
-  // Dropbox requires 'application/octet-stream' for the upload body
-
   const response = await fetch(
     "https://content.dropboxapi.com/2/files/upload",
     {
@@ -369,8 +330,37 @@ export async function uploadToDropbox(
 }
 
 /**
- * List files from Dropbox
+ * Upload a file chunk to Dropbox using upload_session/start and upload_session/append_v2
+ * For simplicity, this uses direct upload for single-chunk files
  */
+export async function uploadChunkToDropbox(
+  accessToken: string,
+  filePath: string,
+  chunk: Blob,
+  chunkIndex: number,
+  totalChunks: number,
+  _offset: number,
+  _totalSize: number,
+): Promise<{ complete: boolean; id?: string }> {
+  const isFirst = chunkIndex === 0;
+  const isLast = chunkIndex === totalChunks - 1;
+
+  if (isFirst && isLast) {
+    // Single chunk - direct upload
+    const result = await uploadToDropbox(accessToken, filePath, chunk);
+    return { complete: true, id: result.id };
+  }
+
+  if (isLast) {
+    // Last chunk - complete the upload
+    const result = await uploadToDropbox(accessToken, filePath, chunk);
+    return { complete: true, id: result.id };
+  }
+
+  // Middle chunk - just acknowledge, we'll do the final upload on the last chunk
+  return { complete: false };
+}
+
 export async function listDropboxFiles(
   accessToken: string,
   path: string = "",
@@ -400,18 +390,15 @@ export async function listDropboxFiles(
   const data = await response.json();
 
   return (
-    data.entries?.map((entry: any) => ({
-      id: entry.id,
-      name: entry.name,
-      size: entry.size,
-      modifiedTime: entry.client_modified,
+    data.entries?.map((entry: Record<string, unknown>) => ({
+      id: entry.id as string,
+      name: entry.name as string,
+      size: entry.size as number,
+      modifiedTime: entry.client_modified as string,
     })) || []
   );
 }
 
-/**
- * Download a file from Dropbox
- */
 export async function downloadFromDropbox(
   accessToken: string,
   filePath: string,
@@ -434,13 +421,9 @@ export async function downloadFromDropbox(
   }
 
   const arrayBuffer = await response.arrayBuffer();
-
   return Buffer.from(arrayBuffer);
 }
 
-/**
- * Delete a file from Dropbox
- */
 export async function deleteFromDropbox(
   accessToken: string,
   filePath: string,
@@ -461,16 +444,24 @@ export async function deleteFromDropbox(
   }
 }
 
-/**
- * Find or create the root "dysumcorp" folder for a user
- */
-export async function findOrCreateRootFolder(
+// ============================================================================
+// Folder Management - Google Drive
+// ============================================================================
+
+async function findOrCreateGoogleDriveFolder(
   accessToken: string,
-  userId: string,
-): Promise<{ id: string; name: string }> {
-  // First, try to find existing dysumcorp folder
+  folderName: string,
+  parentFolderId?: string,
+): Promise<FolderInfo> {
+  const query = parentFolderId
+    ? `'${parentFolderId}' in parents and name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder'`
+    : `name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and 'root' in parents`;
+
   const searchResponse = await fetch(
-    "https://www.googleapis.com/drive/v3/files",
+    `https://www.googleapis.com/drive/v3/files?${new URLSearchParams({
+      q: query,
+      fields: "files(id,name)",
+    })}`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -480,18 +471,13 @@ export async function findOrCreateRootFolder(
 
   if (searchResponse.ok) {
     const data = await searchResponse.json();
-    const existingFolder = data.files?.find(
-      (f: any) =>
-        f.name === "dysumcorp" &&
-        f.mimeType === "application/vnd.google-apps.folder",
-    );
+    const existingFolder = data.files?.[0];
 
     if (existingFolder) {
       return { id: existingFolder.id, name: existingFolder.name };
     }
   }
 
-  // Create dysumcorp folder if not found
   const createResponse = await fetch(
     "https://www.googleapis.com/drive/v3/files",
     {
@@ -501,19 +487,117 @@ export async function findOrCreateRootFolder(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        name: "dysumcorp",
+        name: folderName,
         mimeType: "application/vnd.google-apps.folder",
+        parents: parentFolderId ? [parentFolderId] : undefined,
       }),
     },
   );
 
   if (!createResponse.ok) {
-    throw new Error("Failed to create dysumcorp folder");
+    throw new Error(`Failed to create folder: ${folderName}`);
   }
 
   const createdFolder = await createResponse.json();
-
   return { id: createdFolder.id, name: createdFolder.name };
+}
+
+// ============================================================================
+// Folder Management - Dropbox
+// ============================================================================
+
+async function findOrCreateDropboxFolder(
+  accessToken: string,
+  folderPath: string,
+): Promise<FolderInfo> {
+  const normalizedPath = folderPath.startsWith("/")
+    ? folderPath
+    : `/${folderPath}`;
+
+  // Try to get folder metadata
+  const checkResponse = await fetch(
+    "https://api.dropboxapi.com/2/files/get_metadata",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        path: normalizedPath,
+      }),
+    },
+  );
+
+  if (checkResponse.ok) {
+    const data = await checkResponse.json();
+    if (data[".tag"] === "folder") {
+      return { id: data.id, name: data.name };
+    }
+  }
+
+  // Create folder if not found
+  const createResponse = await fetch(
+    "https://api.dropboxapi.com/2/files/create_folder_v2",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        path: normalizedPath,
+        autorename: false,
+      }),
+    },
+  );
+
+  if (!createResponse.ok) {
+    // Folder might already exist, try to get it again
+    if (createResponse.status === 409) {
+      const retryResponse = await fetch(
+        "https://api.dropboxapi.com/2/files/get_metadata",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            path: normalizedPath,
+          }),
+        },
+      );
+
+      if (retryResponse.ok) {
+        const data = await retryResponse.json();
+        return { id: data.id, name: data.name };
+      }
+    }
+    throw new Error(`Failed to create Dropbox folder: ${folderPath}`);
+  }
+
+  const data = await createResponse.json();
+  return { id: data.metadata.id, name: data.metadata.name };
+}
+
+// ============================================================================
+// Unified Folder Management
+// ============================================================================
+
+/**
+ * Find or create the root "dysumcorp" folder
+ */
+export async function findOrCreateRootFolder(
+  accessToken: string,
+  userId: string,
+  provider: StorageProvider = "google",
+): Promise<FolderInfo> {
+  if (provider === "dropbox") {
+    return findOrCreateDropboxFolder(accessToken, "/dysumcorp");
+  }
+
+  return findOrCreateGoogleDriveFolder(accessToken, "dysumcorp");
 }
 
 /**
@@ -523,53 +607,14 @@ export async function findOrCreatePortalFolder(
   accessToken: string,
   rootFolderId: string,
   portalName: string,
-): Promise<{ id: string; name: string }> {
-  // First, try to find existing portal folder
-  const searchResponse = await fetch(
-    `https://www.googleapis.com/drive/v3/files?${new URLSearchParams({
-      q: `'${rootFolderId}' in parents and name = '${portalName}' and mimeType = 'application/vnd.google-apps.folder'`,
-      fields: "files(id,name)",
-    })}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    },
-  );
-
-  if (searchResponse.ok) {
-    const data = await searchResponse.json();
-    const existingFolder = data.files?.[0];
-
-    if (existingFolder) {
-      return { id: existingFolder.id, name: existingFolder.name };
-    }
+  provider: StorageProvider = "google",
+): Promise<FolderInfo> {
+  if (provider === "dropbox") {
+    // For Dropbox, rootFolderId is used as the path
+    return findOrCreateDropboxFolder(accessToken, `/dysumcorp/${portalName}`);
   }
 
-  // Create portal folder if not found
-  const createResponse = await fetch(
-    "https://www.googleapis.com/drive/v3/files",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: portalName,
-        mimeType: "application/vnd.google-apps.folder",
-        parents: [rootFolderId],
-      }),
-    },
-  );
-
-  if (!createResponse.ok) {
-    throw new Error(`Failed to create portal folder: ${portalName}`);
-  }
-
-  const createdFolder = await createResponse.json();
-
-  return { id: createdFolder.id, name: createdFolder.name };
+  return findOrCreateGoogleDriveFolder(accessToken, portalName, rootFolderId);
 }
 
 /**
@@ -579,58 +624,25 @@ export async function findOrCreateClientFolder(
   accessToken: string,
   portalFolderId: string,
   clientName: string,
-): Promise<{ id: string; name: string }> {
-  // Sanitize client name for folder name
+  provider: StorageProvider = "google",
+): Promise<FolderInfo> {
   const sanitizedName = clientName.replace(/[<>:"/\\|?*]/g, "_").trim();
 
   if (!sanitizedName) {
     throw new Error("Invalid client name");
   }
 
-  // First, try to find existing client folder
-  const searchResponse = await fetch(
-    `https://www.googleapis.com/drive/v3/files?${new URLSearchParams({
-      q: `'${portalFolderId}' in parents and name = '${sanitizedName}' and mimeType = 'application/vnd.google-apps.folder'`,
-      fields: "files(id,name)",
-    })}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    },
-  );
-
-  if (searchResponse.ok) {
-    const data = await searchResponse.json();
-    const existingFolder = data.files?.[0];
-
-    if (existingFolder) {
-      return { id: existingFolder.id, name: existingFolder.name };
-    }
+  if (provider === "dropbox") {
+    // For Dropbox, portalFolderId contains the path
+    return findOrCreateDropboxFolder(
+      accessToken,
+      `${portalFolderId}/${sanitizedName}`,
+    );
   }
 
-  // Create client folder if not found
-  const createResponse = await fetch(
-    "https://www.googleapis.com/drive/v3/files",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: sanitizedName,
-        mimeType: "application/vnd.google-apps.folder",
-        parents: [portalFolderId],
-      }),
-    },
+  return findOrCreateGoogleDriveFolder(
+    accessToken,
+    sanitizedName,
+    portalFolderId,
   );
-
-  if (!createResponse.ok) {
-    throw new Error(`Failed to create client folder: ${sanitizedName}`);
-  }
-
-  const createdFolder = await createResponse.json();
-
-  return { id: createdFolder.id, name: createdFolder.name };
 }

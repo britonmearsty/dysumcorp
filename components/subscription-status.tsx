@@ -58,10 +58,12 @@ export function SubscriptionStatus() {
   // Determine subscription status
   const hasPaidPlan = userPlan !== "free";
   const isUserActive = userStatus === "active";
+  const hasScheduledCancel = userStatus === "scheduled_cancel";
   const hasCreemAccess =
     creemStatus?.hasAccessGranted ?? creemStatus?.hasAccess ?? false;
 
   const isActive = (hasPaidPlan && isUserActive) || hasCreemAccess;
+  const isCanceled = hasPaidPlan && hasScheduledCancel;
 
   return (
     <Card className="bg-card border border-border rounded-xl" shadow="none">
@@ -76,11 +78,11 @@ export function SubscriptionStatus() {
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Subscription Status</span>
           <Chip
-            color={isActive ? "success" : "warning"}
+            color={isActive ? "success" : isCanceled ? "warning" : "default"}
             size="sm"
             variant="flat"
           >
-            {isActive ? "Active" : "Inactive"}
+            {isActive ? "Active" : isCanceled ? "Canceling" : "Inactive"}
           </Chip>
         </div>
 

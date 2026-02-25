@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
-import { PrismaClient } from "@/lib/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password-utils";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
 
 // Helper function to format file size
 function formatFileSize(bytes: number): string {
@@ -71,11 +66,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
+    // Check storage limit before saving file
+    const planType = await getUserPlanType(portal.userId);
+    const storageCheck = await checkStorageLimit(
+      portal.userId,
+      planType,
+      Number(fileSize),
+    );
+
+    if (!storageCheck.allowed) {
+      console.log("[Portal Confirm Upload] Storage limit exceeded:", {
+        current: storageCheck.current,
+        limit: storageCheck.limit,
+      });
+
+      return NextResponse.json(
+        {
+          error: storageCheck.reason || "Storage limit exceeded",
+          upgrade: true,
+        },
+        { status: 403 },
+      );
+    }
+
     // Hash password if provided
-    let passwordHash = null;
+    let passwordHash: string | null = null;
 
     if (password && password.trim() !== "") {
-      passwordHash = hashPassword(password.trim());
+      passwordHash = await hashPassword(password.trim());
     }
 
     // Save file metadata to database

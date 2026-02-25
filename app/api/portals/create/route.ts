@@ -1,49 +1,28 @@
 import { NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
+import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
-import { hashPassword } from "@/lib/password-utils";
+import { hashPassword, validatePassword } from "@/lib/password-utils";
 import {
   checkPortalLimit,
   checkCustomDomainLimit,
   getUserPlanType,
   checkFeatureAccess,
 } from "@/lib/plan-limits";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import { sendPortalCreatedNotification } from "@/lib/email-service";
 
 export async function POST(request: Request) {
   try {
-    console.log("[/api/portals/create] Starting portal creation");
-
     const session = await getSessionFromRequest(request);
-
-    console.log("[/api/portals/create] Session:", {
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      userId: session?.user?.id,
-    });
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
-
-    console.log("[/api/portals/create] Getting user plan type");
     const planType = await getUserPlanType(userId);
 
-    console.log("[/api/portals/create] Plan type:", planType);
-
-    // Check portal limit
-    console.log("[/api/portals/create] Checking portal limit");
     const portalCheck = await checkPortalLimit(userId, planType);
-
-    console.log("[/api/portals/create] Portal check result:", portalCheck);
 
     if (!portalCheck.allowed) {
       return NextResponse.json(
@@ -56,10 +35,7 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("[/api/portals/create] Parsing request body");
     const body = await request.json();
-
-    console.log("[/api/portals/create] Request body keys:", Object.keys(body));
     const {
       name,
       slug,
@@ -110,10 +86,6 @@ export async function POST(request: Request) {
     // Validate file size - make it optional with default
     const finalMaxFileSize =
       maxFileSize && maxFileSize > 0 ? maxFileSize : 52428800; // Default 50MB
-
-    console.log(
-      "[/api/portals/create] Validation passed, checking slug uniqueness",
-    );
 
     // Check if slug is already taken
     const existingPortal = await prisma.portal.findUnique({
@@ -167,11 +139,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get user's default branding
+    // Validate password strength if password provided
+    if (password) {
+      const passwordValidation = validatePassword(password);
+
+      if (!passwordValidation.isValid) {
+        return NextResponse.json(
+          { error: passwordValidation.errors.join(". ") },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Get user's default branding and notification settings
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { portalLogo: true },
+      select: { portalLogo: true, email: true, name: true },
     });
+
+    // Hash password if provided
+    const hashedPassword = password ? await hashPassword(password) : null;
 
     // Create the portal
     const portal = await prisma.portal.create({
@@ -193,7 +180,7 @@ export async function POST(request: Request) {
         storageFolderPath: storageFolderPath || null,
         useClientFolders: useClientFolders || false,
         // Security
-        password: password ? hashPassword(password) : null,
+        password: hashedPassword,
         requireClientName:
           requireClientName !== undefined ? requireClientName : true,
         requireClientEmail: requireClientEmail || false,
@@ -206,10 +193,22 @@ export async function POST(request: Request) {
       },
     });
 
-    console.log(
-      "[/api/portals/create] Portal created successfully:",
-      portal.id,
-    );
+    // Send portal creation notification email
+    if (user?.email) {
+      try {
+        await sendPortalCreatedNotification({
+          to: user.email,
+          userName: user.name || user.email.split("@")[0],
+          portalName: portal.name,
+          portalSlug: portal.slug,
+        });
+      } catch (emailError) {
+        // Don't fail the request if email fails - log in development only
+        if (process.env.NODE_ENV === "development") {
+          console.error("Failed to send notification email:", emailError);
+        }
+      }
+    }
 
     // Convert BigInt to string for JSON serialization
     const portalResponse = {
@@ -224,15 +223,13 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[/api/portals/create] Error creating portal:", error);
-    console.error("[/api/portals/create] Error details:", {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
 
     return NextResponse.json(
       {
         error: "Failed to create portal",
-        details: error instanceof Error ? error.message : String(error),
+        ...(process.env.NODE_ENV === "development" && {
+          details: error instanceof Error ? error.message : String(error),
+        }),
       },
       { status: 500 },
     );

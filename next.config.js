@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Standalone output for Docker
+  output: "standalone",
+
   // Optimize for production
   reactStrictMode: true,
 
@@ -71,4 +74,15 @@ const nextConfig = {
   compress: true,
 };
 
-module.exports = nextConfig;
+const sentryWebpackPluginOptions = {
+  org: process.env.SENTRY_ORG,
+  project: "dysumcorp",
+  silent: true,
+  widenClientFileUpload: true,
+  hideSourceMaps: true,
+  disableLogger: true,
+};
+
+const withSentryConfig = require("@sentry/nextjs").withSentryConfig;
+
+module.exports = withSentryConfig(nextConfig, sentryWebpackPluginOptions);

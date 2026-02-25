@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
 }
 
@@ -166,4 +166,17 @@ model UsageTracking {
   @@unique([userId, month])
   @@index([userId])
   @@map("usage_tracking")
+}
+
+model GraceUsage {
+  id           String   @id @default(cuid())
+  userId       String
+  resourceType String   // 'portal', 'storage', etc.
+  usedAt       DateTime @default(now())
+  amount       Int      @default(1)
+  notes        String?
+
+  @@index([userId, resourceType])
+  @@index([usedAt])
+  @@map("grace_usage")
 }

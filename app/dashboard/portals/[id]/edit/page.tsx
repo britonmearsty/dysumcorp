@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { usePaywall } from "@/components/paywall-modal";
 import { PlanType } from "@/config/pricing";
+import { siteConfig } from "@/config/site";
 import { useSession } from "@/lib/auth-client";
 
 type Step = "identity" | "branding" | "storage" | "security" | "messaging";
@@ -724,8 +725,8 @@ const StorageSection: React.FC<StorageSectionProps> = ({
             {formData.storageFolderId && formData.storageFolderPath
               ? formData.storageFolderPath
               : portal?.name
-                ? `dysumcorp/${portal.name}`
-                : "dysumcorp/[portal name]"}
+                ? `${siteConfig.storageRootFolder}/${portal.name}`
+                : `${siteConfig.storageRootFolder}/[portal name]`}
             {formData.useClientFolders && (
               <span className="text-primary">/[client name]</span>
             )}

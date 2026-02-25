@@ -11,8 +11,8 @@ import {
 } from "@/lib/storage-api";
 import {
   getRateLimit,
-  uploadRateLimit,
-  fallbackUploadLimit,
+  UPLOAD_LIMIT,
+  FALLBACK_UPLOAD_LIMIT,
 } from "@/lib/rate-limit";
 import { sendFileUploadNotification } from "@/lib/email-service";
 import { hashPassword } from "@/lib/password-utils";
@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
       "unknown";
 
     const rateLimitResult = await getRateLimit(
-      uploadRateLimit,
-      fallbackUploadLimit,
+      UPLOAD_LIMIT,
+      FALLBACK_UPLOAD_LIMIT,
       `upload:${ip}`,
     );
 
@@ -272,10 +272,10 @@ export async function POST(request: NextRequest) {
         // Store file metadata in database
         const fileIndex = files.indexOf(file);
         const password = passwords[fileIndex];
-        let passwordHash = null;
+        let passwordHash: string | null = null;
 
         if (password && password.trim() !== "") {
-          passwordHash = hashPassword(password.trim());
+          passwordHash = await hashPassword(password.trim());
         }
 
         // Get uploader info from form data

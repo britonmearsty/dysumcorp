@@ -1,14 +1,8 @@
 import { NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
+import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import { getValidToken } from "@/lib/storage-api";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
 
 // POST /api/files/sync - Sync files with cloud storage, removing any that were deleted from cloud
 export async function POST(request: Request) {

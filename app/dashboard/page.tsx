@@ -460,7 +460,15 @@ export default function DashboardPage() {
                   {/* Portal Name - Clickable to open files modal */}
                   <div
                     className="cursor-pointer mb-3 sm:mb-4 group"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handlePortalClick(portal)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handlePortalClick(portal);
+                      }
+                    }}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">

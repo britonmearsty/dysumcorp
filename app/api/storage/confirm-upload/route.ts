@@ -50,10 +50,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password if provided
-    let passwordHash = null;
+    let passwordHash: string | null = null;
 
     if (password && password.trim() !== "") {
-      passwordHash = hashPassword(password.trim());
+      passwordHash = await hashPassword(password.trim());
     }
 
     // Save file metadata to database

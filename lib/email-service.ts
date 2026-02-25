@@ -1,9 +1,7 @@
 import { Resend } from "resend";
 import { render } from "@react-email/render";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
-import { PrismaClient } from "@/lib/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
 import {
   WelcomeEmail,
   SignInEmail,
@@ -12,13 +10,10 @@ import {
   FileDownloadedEmail,
   StorageWarningEmail,
   SupportRequestEmail,
+  WeeklyReportEmail,
 } from "@/emails/templates";
 
 let resend: Resend | null = null;
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
 
 function getResendClient() {
   if (!resend && process.env.RESEND_API_KEY) {
@@ -429,5 +424,64 @@ export async function sendSupportRequestEmail({
     subject: `Support Request: ${subject}`,
     html,
     from: `Support Form <noreply@dysumcorp.pro>`,
+  });
+}
+
+export async function sendWeeklyReport({
+  to,
+  userName,
+  weekStart,
+  weekEnd,
+  totalFiles,
+  totalSize,
+  newFiles,
+  newPortals,
+  totalDownloads,
+  storageUsed,
+  storageLimit,
+  storagePercentage,
+  topPortals,
+}: {
+  to: string;
+  userName: string;
+  weekStart: string;
+  weekEnd: string;
+  totalFiles: number;
+  totalSize: string;
+  newFiles: number;
+  newPortals: number;
+  totalDownloads: number;
+  storageUsed: string;
+  storageLimit: string;
+  storagePercentage: number;
+  topPortals: Array<{ name: string; files: number; downloads: number }>;
+}): Promise<EmailResult> {
+  const settings = await getUserNotificationSettings(to);
+
+  if (settings && !settings.weeklyReports) {
+    console.log(`Weekly reports disabled for user: ${to}`);
+    return { success: true, data: "Weekly reports disabled" };
+  }
+
+  const email = WeeklyReportEmail({
+    userName,
+    weekStart,
+    weekEnd,
+    totalFiles,
+    totalSize,
+    newFiles,
+    newPortals,
+    totalDownloads,
+    storageUsed,
+    storageLimit,
+    storagePercentage,
+    topPortals,
+  });
+  const html = await render(email);
+
+  return sendEmailInternal({
+    to,
+    subject: `📊 Your Weekly Activity Report - ${weekStart} to ${weekEnd}`,
+    html,
   });
 }

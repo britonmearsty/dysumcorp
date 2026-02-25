@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
-import { PrismaClient } from "@/lib/generated/prisma/client";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import { prisma } from "@/lib/prisma";
 
 // GET /api/portals/public/[slug] - Get portal by slug (public access)
 export async function GET(
@@ -45,7 +39,7 @@ export async function GET(
         welcomeMessage: true,
         submitButtonText: true,
         successMessage: true,
-        userId: true,
+        // Note: userId is intentionally excluded to prevent user enumeration
       },
     });
 

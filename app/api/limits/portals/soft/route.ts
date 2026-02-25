@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { prisma } from "@/lib/prisma";
 import { checkPortalLimit, getUserPlanType } from "@/lib/plan-limits";
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { PlanType } from "@/config/pricing";
@@ -32,37 +33,45 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id;
     const userPlan = await getUserPlanType(userId);
 
-    // Get basic limit check
     const limitCheck = await checkPortalLimit(userId, userPlan);
 
     const current = limitCheck.current || 0;
     const limit = limitCheck.limit || 0;
     const percentage = limit ? (current / limit) * 100 : 0;
+
+    // Get grace usage from database for current month
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const graceUsageRecords = await prisma.graceUsage.findMany({
+      where: {
+        userId,
+        resourceType: "portal",
+        usedAt: {
+          gte: new Date(`${currentMonth}-01`),
+        },
+      },
+    });
+
+    const graceUsed = graceUsageRecords.reduce(
+      (acc, record) => acc + record.amount,
+      0,
+    );
+    const graceTotal = Math.max(Math.ceil(limit * 0.1), 1);
+
     const softLimitLevel = calculateSoftLimitLevel(
       percentage,
       limitCheck.allowed,
+      graceUsed,
+      graceTotal,
     );
+    const canProceed = limitCheck.allowed || graceUsed < graceTotal;
 
-    // Calculate grace period for exceeded limits
-    let graceUsed: number | undefined;
-    let graceTotal: number | undefined;
-    let canProceed = limitCheck.allowed;
-
-    if (softLimitLevel === "exceeded") {
-      const overage = current - limit;
-
-      graceTotal = Math.max(Math.ceil(limit * 0.1), 1); // 10% grace or 1 minimum
-
-      // In a real implementation, you'd track grace usage in the database
-      // For now, we'll simulate it by allowing the grace period
-      graceUsed = Math.min(overage, graceTotal);
-      canProceed = graceUsed < graceTotal;
-    }
-
-    // Determine upgrade recommendation
     let recommendation;
 
-    if (!limitCheck.allowed || softLimitLevel === "exceeded") {
+    if (
+      !limitCheck.allowed ||
+      softLimitLevel === "critical" ||
+      softLimitLevel === "exceeded"
+    ) {
       recommendation = getUpgradeRecommendation(userPlan, "portals");
     }
 
@@ -74,9 +83,9 @@ export async function GET(request: NextRequest) {
       percentage,
       softLimitLevel,
       canProceed,
-      requiresUpgrade: !limitCheck.allowed || softLimitLevel === "critical",
-      graceUsed,
-      graceTotal,
+      requiresUpgrade: !limitCheck.allowed && graceUsed >= graceTotal,
+      graceUsed: graceUsed > 0 ? graceUsed : undefined,
+      graceTotal: current >= limit ? graceTotal : undefined,
       recommendation,
     };
 
@@ -91,12 +100,51 @@ export async function GET(request: NextRequest) {
   }
 }
 
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getSessionFromRequest(request);
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    const body = await request.json();
+    const { resourceType = "portal", amount = 1, notes } = body;
+
+    // Record grace usage
+    await prisma.graceUsage.create({
+      data: {
+        userId,
+        resourceType,
+        amount,
+        notes,
+      },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error recording grace usage:", error);
+
+    return NextResponse.json(
+      { error: "Failed to record grace usage" },
+      { status: 500 },
+    );
+  }
+}
+
 function calculateSoftLimitLevel(
   percentage: number,
   hardBlocked: boolean,
+  graceUsed: number,
+  graceTotal: number,
 ): "normal" | "warning" | "critical" | "exceeded" {
-  if (hardBlocked || percentage >= 100) {
+  if (hardBlocked && graceUsed >= graceTotal) {
     return "exceeded";
+  }
+
+  if (hardBlocked || percentage >= 100) {
+    return "critical";
   }
 
   if (percentage >= 90) {
@@ -116,7 +164,7 @@ function getUpgradeRecommendation(
 ): { suggestedPlan: PlanType; message: string } {
   const planUpgrades: Record<PlanType, PlanType> = {
     free: "pro",
-    pro: "pro", // Already on highest plan
+    pro: "pro",
   };
 
   const suggestedPlan = planUpgrades[currentPlan];

@@ -1,38 +1,36 @@
+import { NextResponse } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-// Initialize Redis client
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-// Create different rate limiters for different use cases
-export const uploadRateLimit = new Ratelimit({
+export const UPLOAD_LIMIT = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(50, "60 s"), // 50 uploads per minute (increased for development)
+  limiter: Ratelimit.slidingWindow(50, "60 s"),
   analytics: true,
 });
 
-export const downloadRateLimit = new Ratelimit({
+export const DOWNLOAD_LIMIT = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(100, "60 s"), // 100 downloads per minute
+  limiter: Ratelimit.slidingWindow(100, "60 s"),
   analytics: true,
 });
 
-export const authRateLimit = new Ratelimit({
+export const API_LIMIT = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(5, "60 s"), // 5 auth attempts per minute
+  limiter: Ratelimit.slidingWindow(1000, "60 s"),
   analytics: true,
 });
 
-export const apiRateLimit = new Ratelimit({
+export const AUTH_LIMIT = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(1000, "60 s"), // 1000 API calls per minute
+  limiter: Ratelimit.slidingWindow(5, "60 s"),
   analytics: true,
 });
 
-// Fallback in-memory rate limiter for when Redis is not available
 class InMemoryRateLimit {
   private requests: Map<string, number[]> = new Map();
 
@@ -69,28 +67,127 @@ class InMemoryRateLimit {
   }
 }
 
-// Fallback rate limiters
-export const fallbackUploadLimit = new InMemoryRateLimit(50, 60);
-export const fallbackDownloadLimit = new InMemoryRateLimit(100, 60);
-export const fallbackAuthLimit = new InMemoryRateLimit(5, 60);
-export const fallbackApiLimit = new InMemoryRateLimit(1000, 60);
+export const FALLBACK_UPLOAD_LIMIT = new InMemoryRateLimit(50, 60);
+export const FALLBACK_DOWNLOAD_LIMIT = new InMemoryRateLimit(100, 60);
+export const FALLBACK_API_LIMIT = new InMemoryRateLimit(1000, 60);
+export const FALLBACK_AUTH_LIMIT = new InMemoryRateLimit(5, 60);
 
-// Helper function to get rate limit with fallback
 export async function getRateLimit(
   limiter: any,
   fallback: any,
   identifier: string,
-) {
+): Promise<{
+  success: boolean;
+  limit: number;
+  remaining: number;
+  reset: number;
+}> {
   try {
     if (
       process.env.UPSTASH_REDIS_REST_URL &&
       process.env.UPSTASH_REDIS_REST_TOKEN
     ) {
-      return await limiter.limit(identifier);
+      const result = await limiter.limit(identifier);
+      return {
+        success: result.success,
+        limit: result.limit,
+        remaining: result.remaining,
+        reset: result.reset,
+      };
     }
   } catch (error) {
     console.warn("Redis rate limiting failed, using fallback:", error);
   }
 
   return await fallback.checkLimit(identifier);
+}
+
+export function rateLimitHeaders(result: {
+  limit: number;
+  remaining: number;
+  reset: number;
+}) {
+  return {
+    "X-RateLimit-Limit": result.limit.toString(),
+    "X-RateLimit-Remaining": result.remaining.toString(),
+    "X-RateLimit-Reset": Math.ceil(result.reset / 1000).toString(),
+  };
+}
+
+export async function applyRateLimit(
+  limiter: any,
+  fallback: any,
+  identifier: string,
+): Promise<NextResponse | null> {
+  const result = await getRateLimit(limiter, fallback, identifier);
+
+  if (!result.success) {
+    const headers = rateLimitHeaders(result);
+    return new NextResponse(
+      JSON.stringify({
+        error: "Rate limit exceeded. Please try again later.",
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          ...headers,
+        },
+      },
+    );
+  }
+
+  return null;
+}
+
+export async function applyApiRateLimit(
+  request: Request,
+): Promise<NextResponse | null> {
+  const ip =
+    request.headers.get("x-forwarded-for") ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+
+  return await applyRateLimit(API_LIMIT, FALLBACK_API_LIMIT, `api:${ip}`);
+}
+
+export async function applyAuthRateLimit(
+  request: Request,
+): Promise<NextResponse | null> {
+  const ip =
+    request.headers.get("x-forwarded-for") ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+
+  return await applyRateLimit(AUTH_LIMIT, FALLBACK_AUTH_LIMIT, `auth:${ip}`);
+}
+
+export async function applyUploadRateLimit(
+  request: Request,
+): Promise<NextResponse | null> {
+  const ip =
+    request.headers.get("x-forwarded-for") ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+
+  return await applyRateLimit(
+    UPLOAD_LIMIT,
+    FALLBACK_UPLOAD_LIMIT,
+    `upload:${ip}`,
+  );
+}
+
+export async function applyDownloadRateLimit(
+  request: Request,
+): Promise<NextResponse | null> {
+  const ip =
+    request.headers.get("x-forwarded-for") ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+
+  return await applyRateLimit(
+    DOWNLOAD_LIMIT,
+    FALLBACK_DOWNLOAD_LIMIT,
+    `download:${ip}`,
+  );
 }

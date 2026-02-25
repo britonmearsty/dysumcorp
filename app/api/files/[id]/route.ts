@@ -1,18 +1,12 @@
 import { NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
+import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
 import {
   getValidToken,
   deleteFromGoogleDrive,
   deleteFromDropbox,
 } from "@/lib/storage-api";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
 
 // DELETE /api/files/[id] - Delete a file
 export async function DELETE(

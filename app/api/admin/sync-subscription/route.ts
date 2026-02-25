@@ -1,37 +1,40 @@
 import { NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
-import { auth } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import { prisma } from "@/lib/prisma";
+import { isAdmin } from "@/lib/admin";
 
 export async function POST(request: Request) {
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+    const adminCheck = await isAdmin(request.headers);
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!adminCheck.isAdmin) {
+      return NextResponse.json(
+        { error: "Admin access required" },
+        { status: 403 },
+      );
     }
 
     const body = await request.json();
-    const { planId } = body;
+    const { planId, userId } = body;
 
-    if (!planId) {
+    if (!planId || !userId) {
       return NextResponse.json(
-        { error: "planId is required" },
+        { error: "planId and userId are required" },
         { status: 400 },
       );
     }
 
-    // Update user's subscription
+    const validPlans = ["free", "pro"];
+
+    if (!validPlans.includes(planId)) {
+      return NextResponse.json(
+        { error: "Invalid planId. Must be 'free' or 'pro'" },
+        { status: 400 },
+      );
+    }
+
     const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data: {
         subscriptionPlan: planId,
         subscriptionStatus: "active",
@@ -47,12 +50,12 @@ export async function POST(request: Request) {
         subscriptionStatus: updatedUser.subscriptionStatus,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Manual sync error:", error);
 
-    return NextResponse.json(
-      { error: error?.message || "Failed to sync subscription" },
-      { status: 500 },
-    );
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to sync subscription";
+
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

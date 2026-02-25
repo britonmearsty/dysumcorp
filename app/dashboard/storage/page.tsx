@@ -1,21 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/lib/toast";
 
+interface ConnectedAccount {
+  provider: "google" | "dropbox";
+  providerAccountId?: string;
+  email?: string;
+  name?: string;
+  isConnected: boolean;
+  storageStatus?: "ACTIVE" | "INACTIVE" | "DISCONNECTED" | "ERROR";
+  hasValidOAuth?: boolean;
+}
+
 interface ConnectionStatus {
-  google: boolean;
-  dropbox: boolean;
+  google: ConnectedAccount | null;
+  dropbox: ConnectedAccount | null;
 }
 
 export default function StoragePage() {
   const [connections, setConnections] = useState<ConnectionStatus>({
-    google: false,
-    dropbox: false,
+    google: null,
+    dropbox: null,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { showToast } = useToast();
 
@@ -24,27 +36,31 @@ export default function StoragePage() {
   }, []);
 
   const checkConnections = async () => {
+    setError(null);
     try {
       const response = await fetch("/api/storage/connections");
 
-      if (response.ok) {
-        const data = await response.json();
-
-        // Transform new API format to old format for this page
-        const googleAccount = data.accounts?.find(
-          (a: any) => a.provider === "google",
-        );
-        const dropboxAccount = data.accounts?.find(
-          (a: any) => a.provider === "dropbox",
-        );
-
-        setConnections({
-          google: googleAccount?.isConnected || false,
-          dropbox: dropboxAccount?.isConnected || false,
-        });
+      if (!response.ok) {
+        throw new Error("Failed to fetch connections");
       }
+
+      const data = await response.json();
+
+      const googleAccount: ConnectedAccount | undefined = data.accounts?.find(
+        (a: ConnectedAccount) => a.provider === "google",
+      );
+      const dropboxAccount: ConnectedAccount | undefined = data.accounts?.find(
+        (a: ConnectedAccount) => a.provider === "dropbox",
+      );
+
+      setConnections({
+        google: googleAccount || null,
+        dropbox: dropboxAccount || null,
+      });
     } catch (error) {
       console.error("Failed to check connections:", error);
+      setError("Failed to load storage connections. Please try again.");
+      showToast("Failed to load storage connections", "error");
     } finally {
       setLoading(false);
     }
@@ -76,16 +92,20 @@ export default function StoragePage() {
         window.location.href = data.data.url;
       } else {
         console.error("No redirect URL found:", data);
+        showToast(
+          `Failed to connect to ${provider === "google" ? "Google Drive" : "Dropbox"}. Please try again.`,
+          "error",
+        );
         setActionLoading(null);
       }
     } catch (err) {
       console.error("Failed to connect:", err);
+      showToast(
+        `Failed to connect to ${provider === "google" ? "Google Drive" : "Dropbox"}. Please try again.`,
+        "error",
+      );
       setActionLoading(null);
     }
-
-    setTimeout(() => {
-      setActionLoading((prev) => (prev ? null : prev));
-    }, 10000);
   };
 
   const handleDisconnect = async (provider: "google" | "dropbox") => {
@@ -106,7 +126,7 @@ export default function StoragePage() {
       });
 
       if (response.ok) {
-        setConnections((prev) => ({ ...prev, [provider]: false }));
+        setConnections((prev) => ({ ...prev, [provider]: null }));
         showToast(
           `${provider === "google" ? "Google Drive" : "Dropbox"} disconnected successfully`,
           "success",
@@ -122,6 +142,40 @@ export default function StoragePage() {
     }
   };
 
+  const getStatusDisplay = (account: ConnectedAccount | null) => {
+    if (loading) {
+      return {
+        text: "Checking...",
+        color: "text-muted-foreground",
+        icon: Loader2,
+      };
+    }
+    if (!account) {
+      return {
+        text: "Not connected",
+        color: "text-muted-foreground",
+        icon: null,
+      };
+    }
+    if (account.storageStatus === "ACTIVE") {
+      return { text: "Connected", color: "text-green-600", icon: CheckCircle2 };
+    }
+    if (account.storageStatus === "DISCONNECTED") {
+      return { text: "Disconnected", color: "text-red-600", icon: AlertCircle };
+    }
+    if (account.storageStatus === "ERROR") {
+      return { text: "Error", color: "text-orange-600", icon: AlertCircle };
+    }
+
+    return { text: "Inactive", color: "text-yellow-600", icon: null };
+  };
+
+  const googleStatus = getStatusDisplay(connections.google);
+  const dropboxStatus = getStatusDisplay(connections.dropbox);
+
+  const GoogleStatusIcon = googleStatus.icon;
+  const DropboxStatusIcon = dropboxStatus.icon;
+
   return (
     <div>
       {/* Header */}
@@ -133,6 +187,13 @@ export default function StoragePage() {
           Monitor your storage usage and manage connections
         </p>
       </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+          <p className="text-sm text-red-500">{error}</p>
+        </div>
+      )}
 
       {/* Storage Connections */}
       <div className="bg-bg-card rounded-[12px] border border-border p-4 sm:p-6 shadow-sm">
@@ -168,13 +229,26 @@ export default function StoragePage() {
                   <h3 className="font-bold text-foreground text-sm sm:text-base">
                     Google Drive
                   </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-                    {loading
-                      ? "Checking..."
-                      : connections.google
-                        ? "Connected"
-                        : "Not connected"}
-                  </p>
+                  <div className="flex items-center gap-1.5 mt-0.5 sm:mt-1">
+                    {loading && (
+                      <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                    )}
+                    {!loading && GoogleStatusIcon && (
+                      <GoogleStatusIcon
+                        className={`w-3 h-3 ${googleStatus.color}`}
+                      />
+                    )}
+                    <p
+                      className={`text-xs sm:text-sm ${loading ? "text-muted-foreground" : googleStatus.color}`}
+                    >
+                      {googleStatus.text}
+                    </p>
+                  </div>
+                  {connections.google?.email && (
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[180px]">
+                      {connections.google.email}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -182,18 +256,23 @@ export default function StoragePage() {
               className="w-full rounded-xl"
               disabled={loading || actionLoading === "google"}
               size="sm"
-              variant={connections.google ? "outline" : "default"}
+              variant={connections.google?.isConnected ? "outline" : "default"}
               onClick={() =>
-                connections.google
+                connections.google?.isConnected
                   ? handleDisconnect("google")
                   : handleConnect("google")
               }
             >
-              {actionLoading === "google"
-                ? "Loading..."
-                : connections.google
-                  ? "Disconnect"
-                  : "Connect"}
+              {actionLoading === "google" ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : connections.google?.isConnected ? (
+                "Disconnect"
+              ) : (
+                "Connect"
+              )}
             </Button>
           </div>
 
@@ -218,13 +297,26 @@ export default function StoragePage() {
                   <h3 className="font-bold text-foreground text-sm sm:text-base">
                     Dropbox
                   </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-                    {loading
-                      ? "Checking..."
-                      : connections.dropbox
-                        ? "Connected"
-                        : "Not connected"}
-                  </p>
+                  <div className="flex items-center gap-1.5 mt-0.5 sm:mt-1">
+                    {loading && (
+                      <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                    )}
+                    {!loading && DropboxStatusIcon && (
+                      <DropboxStatusIcon
+                        className={`w-3 h-3 ${dropboxStatus.color}`}
+                      />
+                    )}
+                    <p
+                      className={`text-xs sm:text-sm ${loading ? "text-muted-foreground" : dropboxStatus.color}`}
+                    >
+                      {dropboxStatus.text}
+                    </p>
+                  </div>
+                  {connections.dropbox?.email && (
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[180px]">
+                      {connections.dropbox.email}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -232,18 +324,23 @@ export default function StoragePage() {
               className="w-full rounded-xl"
               disabled={loading || actionLoading === "dropbox"}
               size="sm"
-              variant={connections.dropbox ? "outline" : "default"}
+              variant={connections.dropbox?.isConnected ? "outline" : "default"}
               onClick={() =>
-                connections.dropbox
+                connections.dropbox?.isConnected
                   ? handleDisconnect("dropbox")
                   : handleConnect("dropbox")
               }
             >
-              {actionLoading === "dropbox"
-                ? "Loading..."
-                : connections.dropbox
-                  ? "Disconnect"
-                  : "Connect"}
+              {actionLoading === "dropbox" ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : connections.dropbox?.isConnected ? (
+                "Disconnect"
+              ) : (
+                "Connect"
+              )}
             </Button>
           </div>
         </div>

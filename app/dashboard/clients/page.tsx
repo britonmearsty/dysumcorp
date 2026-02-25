@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users,
@@ -66,25 +66,6 @@ export default function ClientsPage() {
   const { showToast } = useToast();
   const { data: session, isPending } = useSession();
 
-  // Show loading while checking auth
-  if (isPending) {
-    return (
-      <div className="w-full overflow-hidden">
-        <div className="mb-6 sm:mb-8 lg:mb-10">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-            Client Directory
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-lg">
-            Loading...
-          </p>
-        </div>
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-4 border-muted border-t-foreground rounded-full animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
   const tabs = [
     {
       id: "directory",
@@ -106,13 +87,7 @@ export default function ClientsPage() {
     },
   ];
 
-  useEffect(() => {
-    if (session) {
-      fetchClients();
-    }
-  }, [session]);
-
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
     try {
       const response = await fetch("/api/clients");
 
@@ -132,7 +107,13 @@ export default function ClientsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    if (session) {
+      fetchClients();
+    }
+  }, [session, fetchClients]);
 
   const formatFileSize = (bytes: string) => {
     const size = Number(bytes);
@@ -290,6 +271,24 @@ export default function ClientsPage() {
   const totalPortals = new Set(
     clients.flatMap((c) => (Array.isArray(c.portals) ? c.portals : [])),
   ).size;
+
+  if (isPending) {
+    return (
+      <div className="w-full overflow-hidden">
+        <div className="mb-6 sm:mb-8 lg:mb-10">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+            Client Directory
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-lg">
+            Loading...
+          </p>
+        </div>
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-4 border-muted border-t-foreground rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -729,7 +728,7 @@ export default function ClientsPage() {
                         No documents found
                       </p>
                       <p className="text-muted-foreground text-xs mt-1">
-                        This client hasn't uploaded any files yet.
+                        This client hasn&apos;t uploaded any files yet.
                       </p>
                     </div>
                   )}

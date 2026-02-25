@@ -1,4 +1,6 @@
-// Add these models to your schema.prisma file
+// NOTE: This file is for reference/documentation purposes only.
+// The models below are already included in schema.prisma.
+// Do not run prisma generate on this file.
 
 model Portal {
   id              String   @id @default(cuid())

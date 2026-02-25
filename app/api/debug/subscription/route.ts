@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
 
+import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-server";
-import { PrismaClient } from "@/lib/generated/prisma/client";
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import { isAdmin } from "@/lib/admin";
 
 export async function GET(request: Request) {
   try {
@@ -17,6 +12,11 @@ export async function GET(request: Request) {
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const adminCheck = await isAdmin(request.headers);
+    if (!adminCheck.isAdmin && process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Get user from database
