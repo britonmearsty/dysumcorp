@@ -541,26 +541,24 @@ export default function DashboardPage() {
                       <span className="hidden sm:inline">Copy Link</span>
                       <span className="sm:hidden">Copy</span>
                     </Button>
-                    <div className="flex items-center justify-end gap-2 py-2">
-                      <Switch
-                        checked={portal.isActive}
-                        loading={togglingPortal === portal.id}
-                        onCheckedChange={(checked) => {
-                          const mockEvent = {
-                            stopPropagation: () => {},
-                          } as unknown as React.MouseEvent;
+                    <Switch
+                      checked={portal.isActive}
+                      loading={togglingPortal === portal.id}
+                      onCheckedChange={(checked) => {
+                        const mockEvent = {
+                          stopPropagation: () => {},
+                        } as unknown as React.MouseEvent;
 
-                          handleToggleActive(
-                            portal.id,
-                            Boolean(checked),
-                            mockEvent,
-                          );
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                        }}
-                      />
-                    </div>
+                        handleToggleActive(
+                          portal.id,
+                          Boolean(checked),
+                          mockEvent,
+                        );
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    />
                     <Button
                       className="rounded-xl font-medium text-xs h-8 px-2 sm:px-3"
                       size="sm"

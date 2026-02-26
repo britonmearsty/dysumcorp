@@ -502,15 +502,13 @@ export default function PortalsPage() {
                   <span className="hidden sm:inline">Copy Link</span>
                   <span className="sm:hidden">Copy</span>
                 </Button>
-                <div className="flex items-center justify-end gap-2 py-2">
-                  <Switch
-                    checked={portal.isActive}
-                    loading={togglingPortal === portal.id}
-                    onCheckedChange={(checked): void => {
-                      handleToggleActive(portal.id, Boolean(checked));
-                    }}
-                  />
-                </div>
+                <Switch
+                  checked={portal.isActive}
+                  loading={togglingPortal === portal.id}
+                  onCheckedChange={(checked): void => {
+                    handleToggleActive(portal.id, Boolean(checked));
+                  }}
+                />
                 <Button
                   className="rounded-xl font-medium text-xs h-8 px-2 sm:px-3"
                   size="sm"
