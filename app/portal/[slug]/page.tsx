@@ -408,7 +408,6 @@ export default function PublicPortalPage() {
           storageFileId = uploadResult.id;
           storageUrl = `https://drive.google.com/file/d/${uploadResult.id}/view`;
           console.log(`[Upload] File uploaded to Google Drive: ${file.name}`);
-          }
         } else if (uploadData.provider === "dropbox" && uploadData.method === "direct") {
           // Dropbox upload (direct from browser)
           const uploadResponse = await new Promise<{ url: string; id: string }>(
