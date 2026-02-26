@@ -7,10 +7,19 @@ const handler = toNextJsHandler(auth);
 
 // Wrap handlers with error logging
 export async function GET(request: NextRequest) {
+  const url = request.nextUrl.href;
+  console.log("[AUTH] GET request to:", url);
+
   try {
-    return await handler.GET(request);
+    const response = await handler.GET(request);
+    console.log("[AUTH] GET response status:", response.status);
+    return response;
   } catch (error) {
     console.error("Auth GET error:", error);
+    console.error(
+      "Auth GET error stack:",
+      error instanceof Error ? error.stack : "unknown",
+    );
 
     return NextResponse.json(
       {
@@ -23,10 +32,19 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const url = request.nextUrl.href;
+  console.log("[AUTH] POST request to:", url);
+
   try {
-    return await handler.POST(request);
+    const response = await handler.POST(request);
+    console.log("[AUTH] POST response status:", response.status);
+    return response;
   } catch (error) {
     console.error("Auth POST error:", error);
+    console.error(
+      "Auth POST error stack:",
+      error instanceof Error ? error.stack : "unknown",
+    );
 
     return NextResponse.json(
       {
