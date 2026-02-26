@@ -366,70 +366,48 @@ export default function PublicPortalPage() {
           uploadData.method === "direct"
         ) {
           // Google Drive direct upload (resumable upload to Google Drive)
-          const chunkSize = uploadData.chunkSize || 4 * 1024 * 1024;
-          const totalChunks = Math.ceil(file.size / chunkSize);
-          const sessionId = `${portal.id}-${Date.now()}-${Math.random()}`;
+          // Google Drive direct upload (resumable upload)
+          const uploadResult = await new Promise<{ id: string }>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
 
-          console.log(
-            `[Upload] Uploading ${file.name} in ${totalChunks} chunks`,
-          );
-
-          let uploadedBytes = 0;
-
-          for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-            const start = chunkIndex * chunkSize;
-            const end = Math.min(start + chunkSize, file.size);
-            const chunk = file.slice(start, end);
-
-            const chunkFormData = new FormData();
-
-            chunkFormData.append("chunk", chunk);
-            chunkFormData.append("portalId", portal.id);
-            chunkFormData.append("fileName", file.name);
-            chunkFormData.append("chunkIndex", chunkIndex.toString());
-            chunkFormData.append("totalChunks", totalChunks.toString());
-            chunkFormData.append("fileSize", file.size.toString());
-            chunkFormData.append("sessionId", sessionId);
-            chunkFormData.append(
-              "mimeType",
-              file.type || "application/octet-stream",
-            );
-            chunkFormData.append("clientName", uploaderName.trim());
-            chunkFormData.append("clientEmail", uploaderEmail.trim());
-
-            const chunkResponse = await fetch("/api/portals/upload-chunk", {
-              method: "POST",
-              body: chunkFormData,
+            xhr.upload.addEventListener("progress", (e) => {
+              if (e.lengthComputable) {
+                const percentComplete = Math.round((e.loaded / e.total) * 100);
+                setFileProgress((prev) => ({ ...prev, [i]: percentComplete }));
+              }
             });
 
-            if (!chunkResponse.ok) {
-              const errorData = await chunkResponse.json();
+            xhr.addEventListener("load", () => {
+              console.log(`[Upload] Google Drive response status: ${xhr.status}`);
+              if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                  const response = JSON.parse(xhr.responseText);
+                  console.log(`[Upload] File uploaded, ID: ${response.id}`);
+                  resolve(response);
+                } catch (e) {
+                  console.error(`[Upload] Parse error:`, e);
+                  reject(new Error("Failed to parse upload response"));
+                }
+              } else {
+                console.error(`[Upload] Upload failed:`, xhr.status, xhr.responseText.substring(0, 200));
+                reject(new Error(`Upload failed with status ${xhr.status}`));
+              }
+            });
 
-              throw new Error(
-                errorData.error || `Failed to upload chunk ${chunkIndex + 1}`,
-              );
-            }
+            xhr.addEventListener("error", () => {
+              console.error(`[Upload] Network error`);
+              reject(new Error("Network error during upload"));
+            });
 
-            const chunkResult = await chunkResponse.json();
+            console.log(`[Upload] Uploading ${file.size} bytes directly to Google Drive`);
+            xhr.open("PUT", uploadData.uploadUrl);
+            xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+            xhr.send(file);
+          });
 
-            uploadedBytes = end;
-            const percentComplete = Math.round(
-              (uploadedBytes / file.size) * 100,
-            );
-
-            setFileProgress((prev) => ({ ...prev, [i]: percentComplete }));
-
-            if (chunkResult.complete) {
-              storageUrl = chunkResult.storageUrl;
-              storageFileId = chunkResult.storageFileId;
-              console.log(`[Upload] Chunked upload complete for ${file.name}`);
-            }
-          }
-
-          if (!storageUrl || !storageFileId) {
-            throw new Error(
-              "Upload completed but no storage information received",
-            );
+          storageFileId = uploadResult.id;
+          storageUrl = `https://drive.google.com/file/d/${uploadResult.id}/view`;
+          console.log(`[Upload] File uploaded to Google Drive: ${file.name}`);
           }
         } else if (uploadData.provider === "dropbox" && uploadData.method === "direct") {
           // Dropbox upload (direct from browser)
