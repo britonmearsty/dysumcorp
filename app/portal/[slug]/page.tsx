@@ -363,9 +363,9 @@ export default function PublicPortalPage() {
 
         if (
           uploadData.provider === "google" &&
-          uploadData.method === "chunked"
+          uploadData.method === "direct"
         ) {
-          // Google Drive chunked upload through our server
+          // Google Drive direct upload (resumable upload to Google Drive)
           const chunkSize = uploadData.chunkSize || 4 * 1024 * 1024;
           const totalChunks = Math.ceil(file.size / chunkSize);
           const sessionId = `${portal.id}-${Date.now()}-${Math.random()}`;
