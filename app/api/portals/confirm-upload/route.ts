@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
       provider,
       uploaderName,
       uploaderEmail,
+      uploaderNotes,
       password,
     } = body;
 
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
       provider,
       uploaderName,
       uploaderEmail,
+      uploaderNotes: uploaderNotes ? "provided" : "not provided",
     });
 
     if (!portalId || !fileName || !fileSize || !storageFileId) {
@@ -109,6 +111,7 @@ export async function POST(request: NextRequest) {
         passwordHash,
         uploaderName: uploaderName || null,
         uploaderEmail: uploaderEmail || null,
+        uploaderNotes: uploaderNotes || null,
       },
     });
 

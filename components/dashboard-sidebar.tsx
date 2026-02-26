@@ -34,6 +34,7 @@ const navItems: NavItem[] = [
   { label: "PORTALS", href: "/dashboard/portals", icon: BlocksIcon },
   { label: "ASSETS", href: "/dashboard/assets", icon: BoxIcon },
   { label: "CLIENTS", href: "/dashboard/clients", icon: UserIcon },
+  { label: "UPLOADS", href: "/dashboard/uploads", icon: BoxIcon },
   { label: "STORAGE", href: "/dashboard/storage", icon: GaugeIcon },
   { label: "BILLING", href: "/dashboard/billing", icon: CircleDollarSignIcon },
   { label: "SUPPORT", href: "/dashboard/support", icon: CircleHelpIcon },

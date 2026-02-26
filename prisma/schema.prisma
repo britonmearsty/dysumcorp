@@ -149,6 +149,7 @@ model File {
   downloads     Int       @default(0)
   uploaderName  String?
   uploaderEmail String?
+  uploaderNotes String?
   portal        Portal    @relation(fields: [portalId], references: [id], onDelete: Cascade)
 
   @@index([portalId])
