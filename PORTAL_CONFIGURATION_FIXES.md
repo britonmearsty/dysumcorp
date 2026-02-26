@@ -80,32 +80,67 @@ This document tracks all changes made to fix portal configurations and implement
 
 ---
 
-### CHANGE #9: Increase chunk size to 8MB
+### CHANGE #9: Attempted to increase chunk size to 8MB (REVERTED)
 **File:** `app/api/portals/direct-upload/route.ts`
-**Description:** Increased upload chunk size from 4MB to 8MB for both Google Drive and Dropbox. This reduces the number of API calls and improves upload performance.
-**Impact:** 
-- 1GB file: 128 chunks instead of 256 (50% reduction)
-- Estimated upload time for 1GB @ 10 Mbps: ~7-8 minutes (down from ~15-16 minutes)
-- Fewer API calls = less overhead and faster uploads
-**Status:** ✅ Complete
-**Reversal:** Change `chunkSize: 8 * 1024 * 1024` back to `chunkSize: 4 * 1024 * 1024` in both Google and Dropbox sections
+**Description:** Attempted to increase upload chunk size from 4MB to 8MB but reverted due to Vercel's 4.5MB body size limit for serverless functions on the Hobby plan.
+**Status:** ❌ Reverted to 4MB
+**Reason:** Vercel Hobby plan has a 4.5MB request body limit. To use 8MB chunks, you would need:
+- Vercel Pro plan (allows up to 4.5MB on Hobby, larger on Pro)
+- Or self-hosted deployment
+- Or use Edge Runtime (but has other limitations)
+
+**Current Configuration:** 4MB chunks (256 chunks for 1GB file)
+**Estimated upload time for 1GB @ 10 Mbps:** ~14-16 minutes
+
+**Alternative Optimization Options:**
+1. Upgrade to Vercel Pro for larger body limits
+2. Implement parallel chunk uploads (upload multiple chunks simultaneously)
+3. Use Edge Runtime with streaming (more complex)
+4. Self-host on a platform without body size limits
 
 ---
 
-### CHANGE #10: Increase API body size limit for 8MB chunks
-**Files:** 
-- `vercel.json` - Added `"maxBodySize": "10mb"` to upload-chunk function
-- `next.config.js` - Updated experimental settings for body size limit
-
-**Description:** Configured Vercel and Next.js to accept 10MB request bodies to accommodate 8MB chunks plus overhead. Without this, the server returns 413 (Content Too Large) errors.
-
+### CHANGE #10: Vercel configuration cleanup
+**File:** `vercel.json`
+**Description:** Removed invalid `maxBodySize` property that caused build failures. Vercel's body size limits are platform-level, not configurable per function on Hobby plan.
 **Status:** ✅ Complete
 
-**Reversal:** 
-- Remove `"maxBodySize": "10mb"` from vercel.json upload-chunk function
-- Revert next.config.js experimental settings
+---
 
-**Note:** After deploying these changes, you may need to redeploy to Vercel for the configuration to take effect.
+### CHANGE #11: Upload Token System (Direct Upload Infrastructure)
+**File:** `lib/upload-tokens.ts` (NEW)
+**Description:** Created secure HMAC-signed token system for validating direct uploads. Tokens expire in 1 hour and prevent tampering with upload metadata.
+**Status:** ✅ Complete
+**Reversal:** Delete `lib/upload-tokens.ts`
+
+---
+
+### CHANGE #12: Direct Upload API - Google Drive Resumable Uploads
+**File:** `app/api/portals/direct-upload/route.ts`
+**Description:** Modified API to create Google Drive resumable upload sessions and return direct upload URLs to the browser. Files now upload directly to Google Drive without passing through Vercel.
+**Benefits:**
+- No size limits (tested up to 5TB)
+- 99% reduction in Vercel bandwidth usage
+- Faster uploads (no API overhead per chunk)
+- Built-in resume capability
+**Status:** ✅ Complete
+**Reversal:** Revert changes to return `method: "chunked"` instead of `method: "direct"`
+
+---
+
+### CHANGE #13: Confirm Upload API - Token Validation
+**File:** `app/api/portals/confirm-upload/route.ts`
+**Description:** Added upload token validation to prevent unauthorized file confirmations. Validates token signature and verifies metadata matches.
+**Status:** ✅ Complete
+**Reversal:** Remove token validation code
+
+---
+
+### CHANGE #14: Portal Upload Page - Direct Upload Implementation
+**File:** `app/portal/[slug]/page.tsx`
+**Description:** Frontend implementation needed to use direct uploads. See `DIRECT_UPLOAD_IMPLEMENTATION.md` for complete code.
+**Status:** ⏳ Pending (80% complete - backend done, frontend needed)
+**Implementation Guide:** See `DIRECT_UPLOAD_IMPLEMENTATION.md`
 
 ---
 

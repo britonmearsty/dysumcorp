@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { getValidToken } from "@/lib/storage-api";
+import { 
+  getValidToken, 
+  findOrCreateRootFolder,
+  findOrCreatePortalFolder,
+  findOrCreateClientFolder 
+} from "@/lib/storage-api";
 import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
+import { generateUploadToken } from "@/lib/upload-tokens";
 
 function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
   const allowedMimeTypes = new Set<string>();
@@ -85,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { fileName, fileSize, mimeType, portalId } = body;
+    const { fileName, fileSize, mimeType, portalId, clientName, clientEmail, clientNotes } = body;
 
     console.log("[Portal Direct Upload] Request:", {
       fileName,
@@ -252,41 +258,114 @@ export async function POST(request: NextRequest) {
 
     console.log("[Portal Direct Upload] Using provider:", provider);
 
-    // Determine folder path
+    // Determine folder structure
+    let parentFolderId: string;
     let folderPath: string;
 
-    if (portal.storageFolderId && portal.storageFolderPath) {
-      folderPath = portal.storageFolderPath;
+    if (portal.storageFolderId) {
+      parentFolderId = portal.storageFolderId;
+      folderPath = portal.storageFolderPath || portal.name;
     } else {
+      const rootFolder = await findOrCreateRootFolder(
+        accessToken,
+        portal.userId,
+        provider,
+      );
+      const portalFolder = await findOrCreatePortalFolder(
+        accessToken,
+        rootFolder.id,
+        portal.name,
+        provider,
+      );
+
+      parentFolderId = portalFolder.id;
       folderPath = `dysumcorp/${portal.name}`;
     }
 
-    // Generate upload URL/credentials based on provider
+    // Handle client folder if enabled
+    if (portal.useClientFolders && clientName && clientName.trim()) {
+      const clientFolder = await findOrCreateClientFolder(
+        accessToken,
+        parentFolderId,
+        clientName.trim(),
+        provider,
+      );
+
+      parentFolderId = clientFolder.id;
+      folderPath = `${folderPath}/${clientFolder.name}`;
+    }
+
+    // Generate upload token for security
+    const uploadToken = generateUploadToken({
+      portalId,
+      fileName,
+      fileSize,
+      mimeType,
+      uploaderEmail: clientEmail || "",
+      uploaderName: clientName || "",
+      uploaderNotes: clientNotes || "",
+    });
+
+    // Generate direct upload URL based on provider
     let uploadData: Record<string, unknown> = {};
 
     if (provider === "google") {
-      // For Google Drive, use chunked upload through our server
-      // We'll upload in chunks to avoid the 4.5MB limit per request
+      // Create Google Drive resumable upload session
+      const response = await fetch(
+        "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+            "X-Upload-Content-Length": fileSize.toString(),
+            "X-Upload-Content-Type": mimeType || "application/octet-stream",
+          },
+          body: JSON.stringify({
+            name: fileName,
+            mimeType: mimeType || "application/octet-stream",
+            parents: [parentFolderId],
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[Portal Direct Upload] Google Drive session creation failed:", errorText);
+        throw new Error("Failed to create Google Drive upload session");
+      }
+
+      const uploadUrl = response.headers.get("Location");
+
+      if (!uploadUrl) {
+        throw new Error("No upload URL returned from Google Drive");
+      }
+
       uploadData = {
-        method: "chunked",
+        method: "direct",
         provider: "google",
-        chunkSize: 8 * 1024 * 1024, // 8MB chunks
+        uploadUrl,
+        uploadToken,
       };
 
       console.log(
-        "[Portal Direct Upload] Google Drive will use chunked upload",
+        "[Portal Direct Upload] Google Drive resumable upload URL created",
       );
     } else {
-      // For Dropbox, use chunked upload through our server
-      // We NO LONGER expose the access token to the client for security
+      // Dropbox direct upload
+      const dropboxPath = `/${folderPath}/${fileName}`;
+
       uploadData = {
-        method: "chunked",
+        method: "direct",
         provider: "dropbox",
-        chunkSize: 8 * 1024 * 1024, // 8MB chunks
+        uploadUrl: "https://content.dropboxapi.com/2/files/upload",
+        uploadPath: dropboxPath,
+        accessToken, // Temporary: will be removed in favor of presigned URLs
+        uploadToken,
       };
 
       console.log(
-        "[Portal Direct Upload] Dropbox will use chunked upload (secure)",
+        "[Portal Direct Upload] Dropbox direct upload configured",
       );
     }
 

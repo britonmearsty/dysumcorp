@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password-utils";
 import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
+import { validateUploadToken } from "@/lib/upload-tokens";
 
 // Helper function to format file size
 function formatFileSize(bytes: number): string {
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
       uploaderEmail,
       uploaderNotes,
       password,
+      uploadToken, // New: security token
     } = body;
 
     console.log("[Portal Confirm Upload] Request:", {
@@ -42,7 +44,36 @@ export async function POST(request: NextRequest) {
       uploaderName,
       uploaderEmail,
       uploaderNotes: uploaderNotes ? "provided" : "not provided",
+      hasToken: !!uploadToken,
     });
+
+    // Validate upload token if provided (new direct upload method)
+    if (uploadToken) {
+      const tokenData = validateUploadToken(uploadToken);
+
+      if (!tokenData) {
+        console.error("[Portal Confirm Upload] Invalid or expired upload token");
+        return NextResponse.json(
+          { error: "Invalid or expired upload token" },
+          { status: 401 },
+        );
+      }
+
+      // Verify token data matches request
+      if (
+        tokenData.portalId !== portalId ||
+        tokenData.fileName !== fileName ||
+        tokenData.fileSize !== fileSize
+      ) {
+        console.error("[Portal Confirm Upload] Token data mismatch");
+        return NextResponse.json(
+          { error: "Upload token does not match file data" },
+          { status: 400 },
+        );
+      }
+
+      console.log("[Portal Confirm Upload] Upload token validated successfully");
+    }
 
     if (!portalId || !fileName || !fileSize || !storageFileId) {
       return NextResponse.json(
