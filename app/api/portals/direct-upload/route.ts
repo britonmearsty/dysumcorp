@@ -270,7 +270,7 @@ export async function POST(request: NextRequest) {
       uploadData = {
         method: "chunked",
         provider: "google",
-        chunkSize: 4 * 1024 * 1024, // 4MB chunks
+        chunkSize: 8 * 1024 * 1024, // 8MB chunks
       };
 
       console.log(
@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
       uploadData = {
         method: "chunked",
         provider: "dropbox",
-        chunkSize: 4 * 1024 * 1024, // 4MB chunks
+        chunkSize: 8 * 1024 * 1024, // 8MB chunks
       };
 
       console.log(

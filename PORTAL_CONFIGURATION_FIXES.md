@@ -72,6 +72,26 @@ This document tracks all changes made to fix portal configurations and implement
 
 ---
 
+### CHANGE #8: Fix upload-chunk session handling
+**File:** `app/api/portals/upload-chunk/route.ts`
+**Description:** Enhanced session creation and retrieval with better logging and error handling. Added explicit type casting for provider field and improved error messages to help debug session issues.
+**Status:** ✅ Complete
+**Reversal:** Revert the changes to the session initialization and retrieval code in the upload-chunk route
+
+---
+
+### CHANGE #9: Increase chunk size to 8MB
+**File:** `app/api/portals/direct-upload/route.ts`
+**Description:** Increased upload chunk size from 4MB to 8MB for both Google Drive and Dropbox. This reduces the number of API calls and improves upload performance.
+**Impact:** 
+- 1GB file: 128 chunks instead of 256 (50% reduction)
+- Estimated upload time for 1GB @ 10 Mbps: ~7-8 minutes (down from ~15-16 minutes)
+- Fewer API calls = less overhead and faster uploads
+**Status:** ✅ Complete
+**Reversal:** Change `chunkSize: 8 * 1024 * 1024` back to `chunkSize: 4 * 1024 * 1024` in both Google and Dropbox sections
+
+---
+
 ## Verification Checklist
 
 ### Portal Configuration Features (Already Working)
