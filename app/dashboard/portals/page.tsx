@@ -502,17 +502,7 @@ export default function PortalsPage() {
                   <span className="hidden sm:inline">Copy Link</span>
                   <span className="sm:hidden">Copy</span>
                 </Button>
-                <div className="flex items-center justify-between gap-2 py-2">
-                  <div>
-                    <span className="text-sm font-medium text-foreground">
-                      {portal.isActive ? "Active" : "Inactive"}
-                    </span>
-                    <p className="text-xs text-muted-foreground">
-                      {portal.isActive
-                        ? "Portal is accepting uploads"
-                        : "Portal is not accepting uploads"}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-end gap-2 py-2">
                   <Switch
                     checked={portal.isActive}
                     loading={togglingPortal === portal.id}
