@@ -357,21 +357,25 @@ export default function PublicPortalPage() {
           `[Upload] Upload credentials received for ${file.name}, provider: ${uploadData.provider}`,
         );
 
-        // Step 2: Upload to cloud storage via streaming
+        // Step 2: Upload to cloud storage via streaming (8 concurrent chunks)
         let storageUrl = "";
         let storageFileId = "";
 
         if (uploadData.method === "stream") {
           const chunkSize = uploadData.chunkSize || 4 * 1024 * 1024;
           const totalChunks = Math.ceil(file.size / chunkSize);
+          const CONCURRENT_CHUNKS = 8; // Upload 8 chunks in parallel
+          const MAX_RETRIES = 3;
           
-          console.log(`[Upload] Streaming ${file.name} in ${totalChunks} chunks`);
+          console.log(`[Upload] Streaming ${file.name} in ${totalChunks} chunks (${CONCURRENT_CHUNKS} concurrent)`);
 
           if (uploadData.provider === "google") {
-            // Google Drive streaming upload
+            // Google Drive parallel streaming upload
             let fileData = null;
+            let completedChunks = 0;
             
-            for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+            // Upload chunk with retry logic
+            const uploadChunk = async (chunkIndex: number, retryCount = 0): Promise<any> => {
               const start = chunkIndex * chunkSize;
               const end = Math.min(start + chunkSize, file.size);
               const chunk = file.slice(start, end);
@@ -385,26 +389,55 @@ export default function PublicPortalPage() {
               formData.append("totalSize", file.size.toString());
               formData.append("uploadToken", uploadData.uploadToken);
 
-              const response = await fetch("/api/portals/stream-upload", {
-                method: "POST",
-                body: formData,
-              });
+              try {
+                const response = await fetch("/api/portals/stream-upload", {
+                  method: "POST",
+                  body: formData,
+                });
 
-              if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || "Upload failed");
+                if (!response.ok) {
+                  const error = await response.json();
+                  throw new Error(error.error || "Upload failed");
+                }
+
+                const result = await response.json();
+                
+                // Update progress
+                completedChunks++;
+                const percentComplete = Math.round((completedChunks / totalChunks) * 100);
+                setFileProgress((prev) => ({ ...prev, [i]: percentComplete }));
+
+                console.log(`[Upload] Chunk ${chunkIndex + 1}/${totalChunks} completed (${percentComplete}%)`);
+                
+                return result;
+              } catch (error) {
+                if (retryCount < MAX_RETRIES) {
+                  console.log(`[Upload] Retrying chunk ${chunkIndex + 1} (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+                  await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+                  return uploadChunk(chunkIndex, retryCount + 1);
+                }
+                throw error;
+              }
+            };
+
+            // Process chunks in batches of CONCURRENT_CHUNKS
+            for (let batchStart = 0; batchStart < totalChunks; batchStart += CONCURRENT_CHUNKS) {
+              const batchEnd = Math.min(batchStart + CONCURRENT_CHUNKS, totalChunks);
+              const batchPromises = [];
+
+              for (let chunkIndex = batchStart; chunkIndex < batchEnd; chunkIndex++) {
+                batchPromises.push(uploadChunk(chunkIndex));
               }
 
-              const result = await response.json();
+              // Wait for all chunks in this batch to complete
+              const results = await Promise.all(batchPromises);
               
-              setFileProgress((prev) => ({ 
-                ...prev, 
-                [i]: Math.round((end / file.size) * 100) 
-              }));
-
-              if (result.complete && result.fileData) {
-                fileData = result.fileData;
-                break;
+              // Check if any result indicates completion
+              for (const result of results) {
+                if (result.complete && result.fileData) {
+                  fileData = result.fileData;
+                  break;
+                }
               }
             }
 
@@ -417,10 +450,12 @@ export default function PublicPortalPage() {
             console.log(`[Upload] File uploaded to Google Drive: ${file.name}`);
             
           } else if (uploadData.provider === "dropbox") {
-            // Dropbox streaming upload
+            // Dropbox parallel streaming upload
             let sessionId = "";
+            let completedChunks = 0;
             
-            for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+            // Upload chunk with retry logic
+            const uploadChunk = async (chunkIndex: number, retryCount = 0): Promise<any> => {
               const start = chunkIndex * chunkSize;
               const end = Math.min(start + chunkSize, file.size);
               const chunk = file.slice(start, end);
@@ -438,32 +473,61 @@ export default function PublicPortalPage() {
                 formData.append("sessionId", sessionId);
               }
 
-              const response = await fetch("/api/portals/stream-upload", {
-                method: "POST",
-                body: formData,
-              });
+              try {
+                const response = await fetch("/api/portals/stream-upload", {
+                  method: "POST",
+                  body: formData,
+                });
 
-              if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || "Upload failed");
+                if (!response.ok) {
+                  const error = await response.json();
+                  throw new Error(error.error || "Upload failed");
+                }
+
+                const result = await response.json();
+                
+                if (result.sessionId && !sessionId) {
+                  sessionId = result.sessionId;
+                }
+
+                // Update progress
+                completedChunks++;
+                const percentComplete = Math.round((completedChunks / totalChunks) * 100);
+                setFileProgress((prev) => ({ ...prev, [i]: percentComplete }));
+
+                console.log(`[Upload] Chunk ${chunkIndex + 1}/${totalChunks} completed (${percentComplete}%)`);
+                
+                return result;
+              } catch (error) {
+                if (retryCount < MAX_RETRIES) {
+                  console.log(`[Upload] Retrying chunk ${chunkIndex + 1} (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+                  await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+                  return uploadChunk(chunkIndex, retryCount + 1);
+                }
+                throw error;
+              }
+            };
+
+            // Process chunks in batches of CONCURRENT_CHUNKS
+            for (let batchStart = 0; batchStart < totalChunks; batchStart += CONCURRENT_CHUNKS) {
+              const batchEnd = Math.min(batchStart + CONCURRENT_CHUNKS, totalChunks);
+              const batchPromises = [];
+
+              for (let chunkIndex = batchStart; chunkIndex < batchEnd; chunkIndex++) {
+                batchPromises.push(uploadChunk(chunkIndex));
               }
 
-              const result = await response.json();
+              // Wait for all chunks in this batch to complete
+              const results = await Promise.all(batchPromises);
               
-              if (result.sessionId) {
-                sessionId = result.sessionId;
-              }
-
-              setFileProgress((prev) => ({ 
-                ...prev, 
-                [i]: Math.round((end / file.size) * 100) 
-              }));
-
-              if (result.complete && result.fileData) {
-                storageFileId = result.fileData.id;
-                storageUrl = result.fileData.id;
-                console.log(`[Upload] File uploaded to Dropbox: ${file.name}`);
-                break;
+              // Check if any result indicates completion
+              for (const result of results) {
+                if (result.complete && result.fileData) {
+                  storageFileId = result.fileData.id;
+                  storageUrl = result.fileData.id;
+                  console.log(`[Upload] File uploaded to Dropbox: ${file.name}`);
+                  break;
+                }
               }
             }
           } else {
