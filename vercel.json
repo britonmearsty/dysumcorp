@@ -15,6 +15,10 @@
     "app/api/portals/upload-chunk/route.ts": {
       "maxDuration": 60
     },
+    "app/api/portals/stream-upload/route.ts": {
+      "maxDuration": 60,
+      "memory": 3008
+    },
     "app/api/storage/direct-upload/route.ts": {
       "maxDuration": 10
     },

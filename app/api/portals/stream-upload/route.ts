@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getValidToken } from "@/lib/storage-api";
-import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 import { validateUploadToken } from "@/lib/upload-tokens";
+
+// Increase function timeout for large uploads
+export const maxDuration = 60;
+
+// Cache validated tokens to avoid re-validation on every chunk
+const tokenCache = new Map<string, { validated: boolean; timestamp: number }>();
+const TOKEN_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 // POST /api/portals/stream-upload - Stream upload chunk to cloud storage
 export async function POST(request: NextRequest) {
   try {
-    const rateLimitResult = await applyUploadRateLimit(request);
-    if (rateLimitResult) {
-      return rateLimitResult;
-    }
-
     const formData = await request.formData();
     const chunk = formData.get("chunk") as Blob;
     const provider = formData.get("provider") as string;
     const uploadToken = formData.get("uploadToken") as string;
+    const chunkStart = formData.get("chunkStart") as string;
 
     if (!chunk || !provider || !uploadToken) {
       return NextResponse.json(
@@ -25,13 +25,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate upload token
-    const tokenData = validateUploadToken(uploadToken);
-    if (!tokenData) {
-      return NextResponse.json(
-        { error: "Invalid or expired upload token" },
-        { status: 401 }
-      );
+    // Only apply rate limiting on first chunk (chunkStart === "0")
+    if (chunkStart === "0") {
+      const rateLimitResult = await applyUploadRateLimit(request);
+      if (rateLimitResult) {
+        return rateLimitResult;
+      }
+    }
+
+    // Check token cache first
+    const cachedToken = tokenCache.get(uploadToken);
+    const now = Date.now();
+    
+    if (!cachedToken || now - cachedToken.timestamp > TOKEN_CACHE_TTL) {
+      // Validate token (only if not cached or expired)
+      const tokenData = validateUploadToken(uploadToken);
+      if (!tokenData) {
+        return NextResponse.json(
+          { error: "Invalid or expired upload token" },
+          { status: 401 }
+        );
+      }
+      
+      // Cache the validated token
+      tokenCache.set(uploadToken, { validated: true, timestamp: now });
+      
+      // Clean up old cache entries (prevent memory leak)
+      if (tokenCache.size > 1000) {
+        const oldestAllowed = now - TOKEN_CACHE_TTL;
+        const entriesToDelete: string[] = [];
+        tokenCache.forEach((value, key) => {
+          if (value.timestamp < oldestAllowed) {
+            entriesToDelete.push(key);
+          }
+        });
+        entriesToDelete.forEach(key => tokenCache.delete(key));
+      }
     }
 
     if (provider === "google") {
