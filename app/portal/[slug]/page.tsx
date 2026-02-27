@@ -364,7 +364,7 @@ export default function PublicPortalPage() {
         if (uploadData.method === "stream") {
           const chunkSize = uploadData.chunkSize || 4 * 1024 * 1024;
           const totalChunks = Math.ceil(file.size / chunkSize);
-          const CONCURRENT_CHUNKS = 8; // Upload 8 chunks in parallel
+          const CONCURRENT_CHUNKS = 3; // Upload 3 chunks in parallel (safe for Vercel limits)
           const MAX_RETRIES = 3;
           
           console.log(`[Upload] Streaming ${file.name} in ${totalChunks} chunks (${CONCURRENT_CHUNKS} concurrent)`);
