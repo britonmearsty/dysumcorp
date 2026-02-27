@@ -415,53 +415,117 @@ export default function PublicPortalPage() {
             console.log(`[Upload] File uploaded to Google Drive: ${file.name}`);
             
           } else if (uploadData.provider === "dropbox") {
-            // Dropbox streaming upload (sequential chunks per file)
-            let sessionId = "";
+            // Dropbox parallel chunk upload with dynamic concurrency
+            // Vercel limit: ~10 concurrent functions, we use 8 for safety
+            const MAX_CONCURRENT_CHUNKS = 8;
             
-            for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-              const start = chunkIndex * chunkSize;
-              const end = Math.min(start + chunkSize, file.size);
-              const chunk = file.slice(start, end);
-              const isLastChunk = chunkIndex === totalChunks - 1;
-
-              const formData = new FormData();
-              formData.append("chunk", chunk);
-              formData.append("provider", "dropbox");
-              formData.append("accessToken", uploadData.accessToken);
-              formData.append("uploadPath", uploadData.uploadPath);
-              formData.append("uploadToken", uploadData.uploadToken);
-              formData.append("isLastChunk", isLastChunk.toString());
-              formData.append("chunkIndex", chunkIndex.toString());
-              if (sessionId) {
-                formData.append("sessionId", sessionId);
-              }
-
-              const response = await fetch("/api/portals/stream-upload", {
-                method: "POST",
-                body: formData,
-              });
-
-              if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || "Upload failed");
-              }
-
-              const result = await response.json();
+            // Dynamic concurrency: distribute across files
+            // 1 file = 8 chunks at once, 2 files = 4 each, 8 files = 1 each
+            const concurrency = Math.max(1, Math.floor(MAX_CONCURRENT_CHUNKS / files.length));
+            
+            console.log(`[Upload] Dropbox parallel upload: ${concurrency} chunks at once for ${file.name}`);
+            
+            let sessionId = "";
+            let uploadedBytes = 0;
+            
+            // Phase 1: Start session with first chunk
+            const firstChunk = file.slice(0, Math.min(chunkSize, file.size));
+            const startFormData = new FormData();
+            startFormData.append("chunk", firstChunk);
+            startFormData.append("provider", "dropbox");
+            startFormData.append("accessToken", uploadData.accessToken);
+            startFormData.append("uploadPath", uploadData.uploadPath);
+            startFormData.append("uploadToken", uploadData.uploadToken);
+            startFormData.append("isLastChunk", (totalChunks === 1).toString());
+            startFormData.append("chunkIndex", "0");
+            
+            const startResponse = await fetch("/api/portals/stream-upload", {
+              method: "POST",
+              body: startFormData,
+            });
+            
+            if (!startResponse.ok) {
+              const error = await startResponse.json();
+              throw new Error(error.error || "Failed to start Dropbox session");
+            }
+            
+            const startResult = await startResponse.json();
+            sessionId = startResult.sessionId;
+            uploadedBytes = Math.min(chunkSize, file.size);
+            
+            setFileProgress((prev) => ({ 
+              ...prev, 
+              [i]: Math.round((uploadedBytes / file.size) * 100) 
+            }));
+            
+            // If only one chunk, we're done
+            if (totalChunks === 1 && startResult.complete) {
+              storageFileId = startResult.fileData.id;
+              storageUrl = startResult.fileData.id;
+              console.log(`[Upload] Single chunk file uploaded to Dropbox: ${file.name}`);
+            } else {
+              // Phase 2: Upload remaining chunks in parallel batches
+              const remainingChunks = totalChunks - 1; // Already uploaded chunk 0
               
-              if (result.sessionId) {
-                sessionId = result.sessionId;
-              }
-
-              setFileProgress((prev) => ({ 
-                ...prev, 
-                [i]: Math.round((end / file.size) * 100) 
-              }));
-
-              if (result.complete && result.fileData) {
-                storageFileId = result.fileData.id;
-                storageUrl = result.fileData.id;
-                console.log(`[Upload] File uploaded to Dropbox: ${file.name}`);
-                break;
+              for (let batchStart = 1; batchStart < totalChunks; batchStart += concurrency) {
+                const batchEnd = Math.min(batchStart + concurrency, totalChunks);
+                const isLastBatch = batchEnd === totalChunks;
+                
+                // Create parallel chunk uploads for this batch
+                const chunkPromises = [];
+                
+                for (let chunkIndex = batchStart; chunkIndex < batchEnd; chunkIndex++) {
+                  const start = chunkIndex * chunkSize;
+                  const end = Math.min(start + chunkSize, file.size);
+                  const chunk = file.slice(start, end);
+                  const isLastChunk = chunkIndex === totalChunks - 1;
+                  
+                  const formData = new FormData();
+                  formData.append("chunk", chunk);
+                  formData.append("provider", "dropbox");
+                  formData.append("accessToken", uploadData.accessToken);
+                  formData.append("uploadPath", uploadData.uploadPath);
+                  formData.append("uploadToken", uploadData.uploadToken);
+                  formData.append("isLastChunk", isLastChunk.toString());
+                  formData.append("chunkIndex", chunkIndex.toString());
+                  formData.append("sessionId", sessionId);
+                  
+                  const chunkPromise = fetch("/api/portals/stream-upload", {
+                    method: "POST",
+                    body: formData,
+                  }).then(async (response) => {
+                    if (!response.ok) {
+                      const error = await response.json();
+                      throw new Error(`Chunk ${chunkIndex} failed: ${error.error}`);
+                    }
+                    return { chunkIndex, result: await response.json(), bytesUploaded: end - start };
+                  });
+                  
+                  chunkPromises.push(chunkPromise);
+                }
+                
+                // Wait for all chunks in this batch to complete
+                const batchResults = await Promise.all(chunkPromises);
+                
+                // Update progress
+                for (const { bytesUploaded } of batchResults) {
+                  uploadedBytes += bytesUploaded;
+                }
+                
+                setFileProgress((prev) => ({ 
+                  ...prev, 
+                  [i]: Math.round((uploadedBytes / file.size) * 100) 
+                }));
+                
+                // Check if upload is complete (last chunk in last batch)
+                if (isLastBatch) {
+                  const lastResult = batchResults.find(r => r.result.complete);
+                  if (lastResult && lastResult.result.fileData) {
+                    storageFileId = lastResult.result.fileData.id;
+                    storageUrl = lastResult.result.fileData.id;
+                    console.log(`[Upload] File uploaded to Dropbox: ${file.name} (${concurrency} chunks at once)`);
+                  }
+                }
               }
             }
           } else {
