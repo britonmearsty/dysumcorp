@@ -438,49 +438,38 @@ export default function PublicPortalPage() {
                 storageUrl = startResult.fileData.id;
                 console.log(`[Upload] Single chunk file uploaded to Dropbox: ${file.name}`);
               } else {
-                // Phase 2: Upload remaining chunks in parallel batches with correct offsets
-                for (let batchStart = 1; batchStart < totalChunks; batchStart += concurrency) {
-                  const batchEnd = Math.min(batchStart + concurrency, totalChunks);
-                  const isLastBatch = batchEnd === totalChunks;
+                // Phase 2: Upload remaining chunks SEQUENTIALLY (Dropbox requires sequential append)
+                console.log(`[Upload] Dropbox sequential upload for ${file.name}`);
+                
+                for (let chunkIndex = 1; chunkIndex < totalChunks; chunkIndex++) {
+                  const start = chunkIndex * chunkSize;
+                  const end = Math.min(start + chunkSize, file.size);
+                  const chunk = file.slice(start, end);
+                  const isLastChunk = chunkIndex === totalChunks - 1;
 
-                  const chunkPromises = [];
+                  const formData = new FormData();
+                  formData.append("chunk", chunk);
+                  formData.append("provider", "dropbox");
+                  formData.append("accessToken", uploadData.accessToken);
+                  formData.append("uploadPath", uploadData.uploadPath);
+                  formData.append("uploadToken", uploadData.uploadToken);
+                  formData.append("isLastChunk", isLastChunk.toString());
+                  formData.append("chunkIndex", chunkIndex.toString());
+                  formData.append("sessionId", sessionId);
+                  formData.append("offset", uploadedBytes.toString());
 
-                  for (let chunkIndex = batchStart; chunkIndex < batchEnd; chunkIndex++) {
-                    const start = chunkIndex * chunkSize;
-                    const end = Math.min(start + chunkSize, file.size);
-                    const chunk = file.slice(start, end);
-                    const isLastChunk = chunkIndex === totalChunks - 1;
+                  const response = await fetch("/api/portals/stream-upload", {
+                    method: "POST",
+                    body: formData,
+                  });
 
-                    const formData = new FormData();
-                    formData.append("chunk", chunk);
-                    formData.append("provider", "dropbox");
-                    formData.append("accessToken", uploadData.accessToken);
-                    formData.append("uploadPath", uploadData.uploadPath);
-                    formData.append("uploadToken", uploadData.uploadToken);
-                    formData.append("isLastChunk", isLastChunk.toString());
-                    formData.append("chunkIndex", chunkIndex.toString());
-                    formData.append("sessionId", sessionId);
-                    formData.append("offset", start.toString()); // Use actual byte position
-
-                    const chunkPromise = fetch("/api/portals/stream-upload", {
-                      method: "POST",
-                      body: formData,
-                    }).then(async (response) => {
-                      if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(`Chunk ${chunkIndex} failed: ${error.error}`);
-                      }
-                      return { chunkIndex, result: await response.json(), bytesUploaded: end - start };
-                    });
-
-                    chunkPromises.push(chunkPromise);
+                  if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(`Chunk ${chunkIndex} failed: ${error.error}`);
                   }
 
-                  const batchResults = await Promise.all(chunkPromises);
-
-                  for (const { bytesUploaded } of batchResults) {
-                    uploadedBytes += bytesUploaded;
-                  }
+                  const result = await response.json();
+                  uploadedBytes += (end - start);
 
                   setFiles((prev) =>
                     prev.map((f) =>
@@ -488,13 +477,10 @@ export default function PublicPortalPage() {
                     )
                   );
 
-                  if (isLastBatch) {
-                    const lastResult = batchResults.find((r) => r.result.complete);
-                    if (lastResult && lastResult.result.fileData) {
-                      storageFileId = lastResult.result.fileData.id;
-                      storageUrl = lastResult.result.fileData.id;
-                      console.log(`[Upload] File uploaded to Dropbox: ${file.name} (${concurrency} chunks at once)`);
-                    }
+                  if (isLastChunk && result.complete && result.fileData) {
+                    storageFileId = result.fileData.id;
+                    storageUrl = result.fileData.id;
+                    console.log(`[Upload] File uploaded to Dropbox: ${file.name}`);
                   }
                 }
               }
