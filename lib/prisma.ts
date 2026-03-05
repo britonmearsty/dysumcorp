@@ -14,8 +14,10 @@ let prisma: PrismaClient;
 if (connectionString) {
   const pool = new pg.Pool({
     connectionString,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
+    max: 1, // Limit connections in serverless
+    idleTimeoutMillis: 10000, // Shorter idle timeout
+    connectionTimeoutMillis: 5000, // Shorter connection timeout
+    allowExitOnIdle: true, // Allow pool to close when idle
   });
 
   pool.on("error", (err) => {
@@ -25,10 +27,16 @@ if (connectionString) {
   const adapter = new PrismaPg(pool);
 
   if (process.env.NODE_ENV === "production") {
-    prisma = new PrismaClient({ adapter });
+    prisma = new PrismaClient({ 
+      adapter,
+      log: process.env.DEBUG_DB ? ['query', 'error', 'warn'] : ['error'],
+    });
   } else {
     if (!globalForPrisma.prisma) {
-      globalForPrisma.prisma = new PrismaClient({ adapter });
+      globalForPrisma.prisma = new PrismaClient({ 
+        adapter,
+        log: ['query', 'error', 'warn'],
+      });
     }
     prisma = globalForPrisma.prisma;
   }

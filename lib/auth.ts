@@ -4,6 +4,17 @@ import { creem } from "@creem_io/better-auth";
 import { sendWelcomeEmail, sendSignInNotification } from "@/lib/email-service";
 import { prisma } from "@/lib/prisma";
 
+// Validate required environment variables
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not set");
+}
+if (!process.env.BETTER_AUTH_SECRET) {
+  throw new Error("BETTER_AUTH_SECRET is not set");
+}
+if (!process.env.BETTER_AUTH_URL) {
+  throw new Error("BETTER_AUTH_URL is not set");
+}
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -123,46 +134,58 @@ export const auth = betterAuth({
   },
   plugins: [
     creem({
-      apiKey: process.env.CREEM_API_KEY!,
+      apiKey: process.env.CREEM_API_KEY || "",
       webhookSecret: process.env.CREEM_WEBHOOK_SECRET,
       testMode: process.env.NODE_ENV === "development",
       defaultSuccessUrl: "/dashboard/billing?success=true",
       persistSubscriptions: true,
       onCheckoutCompleted: async ({ customer }) => {
-        if (customer?.email) {
-          await prisma.user.updateMany({
-            where: { email: customer.email },
-            data: { subscriptionStatus: "active" },
-          });
+        try {
+          if (customer?.email) {
+            await prisma.user.updateMany({
+              where: { email: customer.email },
+              data: { subscriptionStatus: "active" },
+            });
+          }
+        } catch (error) {
+          console.error("Error in onCheckoutCompleted:", error);
         }
       },
       onGrantAccess: async ({ customer, metadata }) => {
-        const planId = metadata?.planId as string | undefined;
+        try {
+          const planId = metadata?.planId as string | undefined;
 
-        if (planId && planId !== "free" && customer?.email) {
-          await prisma.user.updateMany({
-            where: { email: customer.email },
-            data: {
-              subscriptionPlan: planId,
-              subscriptionStatus: "active",
-              creemCustomerId: customer.id,
-            },
-          });
+          if (planId && planId !== "free" && customer?.email) {
+            await prisma.user.updateMany({
+              where: { email: customer.email },
+              data: {
+                subscriptionPlan: planId,
+                subscriptionStatus: "active",
+                creemCustomerId: customer.id,
+              },
+            });
+          }
+        } catch (error) {
+          console.error("Error in onGrantAccess:", error);
         }
       },
       onRevokeAccess: async ({ customer }) => {
-        if (customer?.email) {
-          await prisma.user.updateMany({
-            where: { email: customer.email },
-            data: {
-              subscriptionPlan: "free",
-              subscriptionStatus: "cancelled",
-            },
-          });
+        try {
+          if (customer?.email) {
+            await prisma.user.updateMany({
+              where: { email: customer.email },
+              data: {
+                subscriptionPlan: "free",
+                subscriptionStatus: "cancelled",
+              },
+            });
+          }
+        } catch (error) {
+          console.error("Error in onRevokeAccess:", error);
         }
       },
     }),
-  ],
+  ].filter(Boolean),
 });
 
 // Export prisma from the shared instance
