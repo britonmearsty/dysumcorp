@@ -26,6 +26,8 @@ export async function GET(
         cardBackgroundColor: true,
         gradientEnabled: true,
         logoUrl: true,
+        companyWebsite: true,
+        companyEmail: true,
         // Storage
         storageProvider: true,
         storageFolderId: true,
@@ -39,8 +41,14 @@ export async function GET(
         allowedFileTypes: true,
         // Messaging
         welcomeMessage: true,
+        welcomeToastMessage: true,
+        welcomeToastDelay: true,
+        welcomeToastDuration: true,
         submitButtonText: true,
         successMessage: true,
+        textboxSectionEnabled: true,
+        textboxSectionTitle: true,
+        textboxSectionRequired: true,
         // Note: userId is intentionally excluded to prevent user enumeration
       },
     });

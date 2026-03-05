@@ -102,6 +102,8 @@ export async function PATCH(
       cardBackgroundColor,
       gradientEnabled,
       logoUrl,
+      companyWebsite,
+      companyEmail,
       storageProvider,
       storageFolderId,
       storageFolderPath,
@@ -112,8 +114,14 @@ export async function PATCH(
       maxFileSize,
       allowedFileTypes,
       welcomeMessage,
+      welcomeToastMessage,
+      welcomeToastDelay,
+      welcomeToastDuration,
       submitButtonText,
       successMessage,
+      textboxSectionEnabled,
+      textboxSectionTitle,
+      textboxSectionRequired,
     } = body;
 
     // Verify ownership
@@ -150,6 +158,8 @@ export async function PATCH(
       updateData.cardBackgroundColor = cardBackgroundColor;
     if (gradientEnabled !== undefined) updateData.gradientEnabled = gradientEnabled;
     if (logoUrl !== undefined) updateData.logoUrl = logoUrl || null;
+    if (companyWebsite !== undefined) updateData.companyWebsite = companyWebsite || null;
+    if (companyEmail !== undefined) updateData.companyEmail = companyEmail || null;
     if (customDomain !== undefined)
       updateData.customDomain = customDomain || null;
     if (whiteLabeled !== undefined) updateData.whiteLabeled = whiteLabeled;
@@ -223,10 +233,22 @@ export async function PATCH(
     // Messaging
     if (welcomeMessage !== undefined)
       updateData.welcomeMessage = welcomeMessage || null;
+    if (welcomeToastMessage !== undefined)
+      updateData.welcomeToastMessage = welcomeToastMessage || null;
+    if (welcomeToastDelay !== undefined)
+      updateData.welcomeToastDelay = welcomeToastDelay;
+    if (welcomeToastDuration !== undefined)
+      updateData.welcomeToastDuration = welcomeToastDuration;
     if (submitButtonText !== undefined)
       updateData.submitButtonText = submitButtonText;
     if (successMessage !== undefined)
       updateData.successMessage = successMessage;
+    if (textboxSectionEnabled !== undefined)
+      updateData.textboxSectionEnabled = textboxSectionEnabled;
+    if (textboxSectionTitle !== undefined)
+      updateData.textboxSectionTitle = textboxSectionTitle || null;
+    if (textboxSectionRequired !== undefined)
+      updateData.textboxSectionRequired = textboxSectionRequired;
 
     console.log(
       "[Portal Update] Update data prepared:",

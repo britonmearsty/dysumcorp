@@ -76,11 +76,16 @@ export default function PortalsPage() {
 
       if (response.ok) {
         const data = await response.json();
-
-        setPortals(data.portals);
+        setPortals(data.portals || []);
+      } else {
+        console.error("Failed to fetch portals - Status:", response.status);
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        showToast("Failed to load portals", "error");
       }
     } catch (error) {
       console.error("Failed to fetch portals:", error);
+      showToast("Failed to load portals", "error");
     } finally {
       setLoading(false);
     }
