@@ -199,7 +199,14 @@ export async function POST(request: NextRequest) {
 
       } else if (!isLastChunk && sessionId) {
         // Append to session
-        const offset = chunkIndex * 4 * 1024 * 1024; // Assuming 4MB chunks
+        const offset = formData.get("offset") as string;
+        
+        if (!offset) {
+          return NextResponse.json(
+            { error: "Missing offset for chunk append" },
+            { status: 400 }
+          );
+        }
         
         const appendResponse = await fetch("https://content.dropboxapi.com/2/files/upload_session/append_v2", {
           method: "POST",
@@ -209,7 +216,7 @@ export async function POST(request: NextRequest) {
             "Dropbox-API-Arg": JSON.stringify({
               cursor: {
                 session_id: sessionId,
-                offset: offset,
+                offset: parseInt(offset),
               },
             }),
           },
@@ -225,7 +232,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        console.log(`[Stream Upload] Dropbox chunk ${chunkIndex} appended`);
+        console.log(`[Stream Upload] Dropbox chunk ${chunkIndex} appended at offset ${offset}`);
 
         return NextResponse.json({
           success: true,
@@ -235,7 +242,14 @@ export async function POST(request: NextRequest) {
 
       } else if (isLastChunk && sessionId) {
         // Finish session
-        const offset = chunkIndex * 4 * 1024 * 1024;
+        const offset = formData.get("offset") as string;
+        
+        if (!offset) {
+          return NextResponse.json(
+            { error: "Missing offset for finish" },
+            { status: 400 }
+          );
+        }
         
         const finishResponse = await fetch("https://content.dropboxapi.com/2/files/upload_session/finish", {
           method: "POST",

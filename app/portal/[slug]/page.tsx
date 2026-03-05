@@ -438,7 +438,7 @@ export default function PublicPortalPage() {
                 storageUrl = startResult.fileData.id;
                 console.log(`[Upload] Single chunk file uploaded to Dropbox: ${file.name}`);
               } else {
-                // Phase 2: Upload remaining chunks in parallel batches
+                // Phase 2: Upload remaining chunks in parallel batches with correct offsets
                 for (let batchStart = 1; batchStart < totalChunks; batchStart += concurrency) {
                   const batchEnd = Math.min(batchStart + concurrency, totalChunks);
                   const isLastBatch = batchEnd === totalChunks;
@@ -460,6 +460,7 @@ export default function PublicPortalPage() {
                     formData.append("isLastChunk", isLastChunk.toString());
                     formData.append("chunkIndex", chunkIndex.toString());
                     formData.append("sessionId", sessionId);
+                    formData.append("offset", start.toString()); // Use actual byte position
 
                     const chunkPromise = fetch("/api/portals/stream-upload", {
                       method: "POST",
