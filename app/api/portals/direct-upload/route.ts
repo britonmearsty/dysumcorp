@@ -267,8 +267,11 @@ export async function POST(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { error: "Portal owner has not connected cloud storage" },
-        { status: 400 },
+        { 
+          error: "Portal owner's cloud storage is not connected or has expired. Please contact the portal owner to reconnect their storage.",
+          code: "STORAGE_NOT_CONNECTED"
+        },
+        { status: 503 },
       );
     }
 

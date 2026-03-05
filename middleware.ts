@@ -21,6 +21,8 @@ export async function middleware(request: NextRequest) {
   const isPublicApi =
     pathname.startsWith("/api/portals/public") ||
     pathname.startsWith("/api/portals/upload") ||
+    pathname.startsWith("/api/portals/direct-upload") ||
+    pathname.startsWith("/api/portals/stream-upload") ||
     pathname.startsWith("/api/portals/confirm-upload");
 
   if (isDashboardRoute && !isAuthenticated) {
