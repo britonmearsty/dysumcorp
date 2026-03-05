@@ -133,8 +133,43 @@ export async function POST(request: NextRequest) {
 
       const chunkBuffer = Buffer.from(await chunk.arrayBuffer());
 
-      if (chunkIndex === 0 && !sessionId) {
-        // Start upload session
+      if (chunkIndex === 0 && !sessionId && isLastChunk) {
+        // Single chunk upload - use direct upload
+        const uploadResponse = await fetch("https://content.dropboxapi.com/2/files/upload", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/octet-stream",
+            "Dropbox-API-Arg": JSON.stringify({
+              path: uploadPath,
+              mode: "add",
+              autorename: true,
+              mute: false,
+            }),
+          },
+          body: chunkBuffer,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          console.error(`[Stream Upload] Dropbox single chunk upload failed:`, uploadResponse.status, errorText);
+          return NextResponse.json(
+            { error: `Dropbox upload failed: ${uploadResponse.status}` },
+            { status: uploadResponse.status }
+          );
+        }
+
+        const fileData = await uploadResponse.json();
+        console.log(`[Stream Upload] Dropbox single chunk complete, file ID: ${fileData.id}`);
+
+        return NextResponse.json({
+          success: true,
+          complete: true,
+          fileData,
+        });
+
+      } else if (chunkIndex === 0 && !sessionId) {
+        // Start upload session for multi-chunk
         const startResponse = await fetch("https://content.dropboxapi.com/2/files/upload_session/start", {
           method: "POST",
           headers: {
