@@ -57,10 +57,10 @@ export function PortalHeader({
             {name}
           </h2>
           {(companyWebsite || companyEmail) && (
-            <p className="text-sm font-medium mt-0.5" style={{ color: primaryColor }}>
-              {companyWebsite && <span>{companyWebsite}</span>}
+            <p className="text-sm font-medium mt-0.5 truncate" style={{ color: primaryColor }}>
+              {companyWebsite && <span className="inline-block max-w-[45%] truncate align-bottom">{companyWebsite}</span>}
               {companyWebsite && companyEmail && <span className="mx-1">·</span>}
-              {companyEmail && <span>{companyEmail}</span>}
+              {companyEmail && <span className="inline-block max-w-[45%] truncate align-bottom">{companyEmail}</span>}
             </p>
           )}
         </div>

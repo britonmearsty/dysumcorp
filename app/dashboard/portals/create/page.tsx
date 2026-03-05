@@ -1098,8 +1098,8 @@ export default function CreatePortalPage() {
     ] as string[], // Default: All file types
 
     // Messaging
-    welcomeMessage: "Send us your files securely — we'll take it from here.\nFill in your details and attach the files you'd like to share with our team. All uploads are encrypted and handled with care.",
-    welcomeToastMessage: "👋 Welcome! Please fill in your details and upload your files.",
+    welcomeMessage: "",
+    welcomeToastMessage: "",
     welcomeToastDelay: 1000,
     welcomeToastDuration: 3000,
     submitButtonText: "Initialize Transfer",
