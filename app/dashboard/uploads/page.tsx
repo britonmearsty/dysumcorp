@@ -92,11 +92,9 @@ export default function UploadsPage() {
           if (groupedMap.has(sessionKey)) {
             const group = groupedMap.get(sessionKey)!;
             group.files.push(file);
-            // Don't increment counts for session-based groups (already accurate from DB)
-            if (!file.uploadSessionId) {
-              group.totalFiles++;
-              group.totalSize = (BigInt(group.totalSize) + BigInt(file.size)).toString();
-            }
+            // Always recalculate counts from actual files
+            group.totalFiles = group.files.length;
+            group.totalSize = group.files.reduce((sum, f) => sum + BigInt(f.size), BigInt(0)).toString();
           } else {
             // Create new group from upload session data or file data
             if (file.uploadSession) {
@@ -105,8 +103,8 @@ export default function UploadsPage() {
                 uploaderName: file.uploadSession.uploaderName || "Anonymous",
                 uploaderEmail: file.uploadSession.uploaderEmail || "",
                 uploaderNotes: file.uploadSession.uploaderNotes || null,
-                totalFiles: file.uploadSession.fileCount,
-                totalSize: file.uploadSession.totalSize,
+                totalFiles: 1, // Start with 1, will be recalculated as more files are added
+                totalSize: file.size,
                 uploadedAt: file.uploadSession.uploadedAt,
                 portalName: file.portal.name,
                 portalSlug: file.portal.slug,
