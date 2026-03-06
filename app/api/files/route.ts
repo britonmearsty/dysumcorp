@@ -16,35 +16,60 @@ export async function GET(request: Request) {
     const limit = searchParams.get("limit");
     const take = limit ? parseInt(limit, 10) : undefined;
 
-    const files = await prisma.file.findMany({
-      where: {
-        portal: {
-          userId: session.user.id,
-        },
-      },
-      include: {
-        portal: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
+    // Try to include uploadSession, but fall back if the relation doesn't exist yet
+    let files;
+    try {
+      files = await prisma.file.findMany({
+        where: {
+          portal: {
+            userId: session.user.id,
           },
         },
-        uploadSession: {
-          select: {
-            id: true,
-            uploaderName: true,
-            uploaderEmail: true,
-            uploaderNotes: true,
-            uploadedAt: true,
-            fileCount: true,
-            totalSize: true,
+        include: {
+          portal: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          uploadSession: {
+            select: {
+              id: true,
+              uploaderName: true,
+              uploaderEmail: true,
+              uploaderNotes: true,
+              uploadedAt: true,
+              fileCount: true,
+              totalSize: true,
+            },
           },
         },
-      },
-      orderBy: { uploadedAt: "desc" },
-      take,
-    });
+        orderBy: { uploadedAt: "desc" },
+        take,
+      });
+    } catch (relationError: any) {
+      // If uploadSession relation doesn't exist yet, fetch without it
+      console.log("[Files API] Falling back to query without uploadSession:", relationError.message);
+      files = await prisma.file.findMany({
+        where: {
+          portal: {
+            userId: session.user.id,
+          },
+        },
+        include: {
+          portal: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+        },
+        orderBy: { uploadedAt: "desc" },
+        take,
+      });
+    }
 
     return NextResponse.json({
       files: files.map((f: any) => ({
@@ -52,7 +77,7 @@ export async function GET(request: Request) {
         size: f.size.toString(), // Convert BigInt to string for JSON
         uploadSession: f.uploadSession ? {
           ...f.uploadSession,
-          totalSize: f.uploadSession.totalSize.toString(),
+          totalSize: f.uploadSession.totalSize?.toString(),
         } : null,
       })),
     });
