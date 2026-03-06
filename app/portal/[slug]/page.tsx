@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { Lock, Loader2, AlertCircle, Upload } from "lucide-react";
 import { Toaster, toast } from "sonner";
@@ -83,6 +83,7 @@ export default function PublicPortalPage() {
   const [uploadSessionId, setUploadSessionId] = useState<string | null>(null);
   const [sentFiles, setSentFiles] = useState<Array<{ name: string; size: number; type: string }>>([]);
   const [lastUploaderInfo, setLastUploaderInfo] = useState<{ name: string; email: string; notes: string } | null>(null);
+  const uploadSessionIdRef = useRef<string | null>(null); // Use ref to avoid race conditions
 
   useEffect(() => {
     fetchPortal();
@@ -302,6 +303,7 @@ export default function PublicPortalPage() {
     )) {
       // User info changed, start new session
       setUploadSessionId(null);
+      uploadSessionIdRef.current = null;
     }
     
     setLastUploaderInfo(currentInfo);
@@ -526,7 +528,7 @@ export default function PublicPortalPage() {
               uploaderName: uploaderName.trim(),
               uploaderEmail: uploaderEmail.trim(),
               uploaderNotes: textboxValue.trim() || null,
-              uploadSessionId: uploadSessionId, // Include session ID for grouping
+              uploadSessionId: uploadSessionIdRef.current, // Use ref for immediate access
             }),
           });
 
@@ -537,8 +539,9 @@ export default function PublicPortalPage() {
 
           const confirmData = await confirmResponse.json();
           
-          // Store session ID for subsequent files in this upload
-          if (confirmData.uploadSessionId && !uploadSessionId) {
+          // Store session ID for subsequent files in this upload (use ref to avoid race conditions)
+          if (confirmData.uploadSessionId && !uploadSessionIdRef.current) {
+            uploadSessionIdRef.current = confirmData.uploadSessionId;
             setUploadSessionId(confirmData.uploadSessionId);
           }
 

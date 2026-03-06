@@ -166,13 +166,33 @@ export default function UploadsPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Reset time to midnight for comparison
+    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+    const timeString = date.toLocaleString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
+
+    if (dateOnly.getTime() === todayOnly.getTime()) {
+      return `Today, ${timeString}`;
+    } else if (dateOnly.getTime() === yesterdayOnly.getTime()) {
+      return `Yesterday, ${timeString}`;
+    } else {
+      return date.toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
   };
 
   const getDayCategory = (dateString: string) => {
