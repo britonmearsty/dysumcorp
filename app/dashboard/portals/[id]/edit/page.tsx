@@ -171,12 +171,42 @@ const StorageSection: React.FC<StorageSectionProps> = ({
     fetchAccounts();
   }, []);
 
-  // Auto-initialize storage when accounts are loaded
+  // Load existing portal storage configuration
+  useEffect(() => {
+    if (portal && portal.storageFolderId && portal.storageProvider && !hasUserSelectedFolder) {
+      // Portal has existing storage configuration, load it
+      const provider = portal.storageProvider as "google_drive" | "dropbox";
+      updateFormData("storageProvider", provider);
+      updateFormData("storageFolderId", portal.storageFolderId);
+      updateFormData("storageFolderPath", portal.storageFolderPath || "");
+      
+      // Build folder path from the stored path
+      if (portal.storageFolderPath) {
+        const pathParts = portal.storageFolderPath.split("/").filter(Boolean);
+        // Create folder objects for breadcrumb
+        const folderPathObjects: StorageFolder[] = pathParts.map((name, index) => ({
+          id: index === pathParts.length - 1 ? portal.storageFolderId : `folder-${index}`,
+          name: name,
+          path: pathParts.slice(0, index + 1).join("/"),
+        }));
+        setFolderPath(folderPathObjects);
+      }
+      
+      // Load subfolders of the current folder
+      setLoadingFolders(true);
+      fetchFolders(provider, portal.storageFolderId).finally(() => {
+        setLoadingFolders(false);
+      });
+    }
+  }, [portal]);
+
+  // Auto-initialize storage when accounts are loaded (only for new portals without storage)
   useEffect(() => {
     if (
       !loadingAccounts &&
       accounts.length > 0 &&
       !hasUserSelectedFolder &&
+      !portal?.storageFolderId && // Don't auto-initialize if portal already has storage
       (!formData.storageProvider ||
         (!loadingFolders && folders.length === 0 && folderPath.length === 0))
     ) {
@@ -196,6 +226,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
     folders.length,
     folderPath.length,
     hasUserSelectedFolder,
+    portal?.storageFolderId,
   ]);
 
   async function fetchAccounts() {
@@ -1073,6 +1104,8 @@ export default function EditPortalPage() {
     cardBackgroundColor: "#ffffff",
     gradientEnabled: true,
     logo: null as File | null,
+    companyWebsite: "",
+    companyEmail: "",
 
     // Storage
     storageProvider: "google_drive" as "google_drive" | "dropbox",
@@ -1149,6 +1182,8 @@ export default function EditPortalPage() {
         cardBackgroundColor: p.cardBackgroundColor || "#ffffff",
         gradientEnabled: p.gradientEnabled !== undefined ? p.gradientEnabled : true,
         logo: null,
+        companyWebsite: p.companyWebsite || "",
+        companyEmail: p.companyEmail || "",
         storageProvider: p.storageProvider || "google_drive",
         storageFolderId: p.storageFolderId || "",
         storageFolderPath: p.storageFolderPath || "",
@@ -1463,6 +1498,8 @@ export default function EditPortalPage() {
         cardBackgroundColor: formData.cardBackgroundColor,
         gradientEnabled: formData.gradientEnabled,
         logoUrl: logoUrl,
+        companyWebsite: formData.companyWebsite || null,
+        companyEmail: formData.companyEmail || null,
 
         // Storage
         storageProvider: formData.storageProvider,
@@ -2041,6 +2078,49 @@ export default function EditPortalPage() {
                                   />
                                   <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                                 </label>
+                              </div>
+                            </div>
+
+                            <div className="space-y-4">
+                              <h3 className="text-sm font-semibold text-foreground">
+                                Company Information
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-semibold text-foreground mb-2">
+                                    Company Website
+                                  </label>
+                                  <input
+                                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                    type="text"
+                                    placeholder="example.com"
+                                    value={formData.companyWebsite}
+                                    onChange={(e) =>
+                                      updateFormData("companyWebsite", e.target.value)
+                                    }
+                                  />
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Displayed in portal header
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-semibold text-foreground mb-2">
+                                    Company Email
+                                  </label>
+                                  <input
+                                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                    type="email"
+                                    placeholder="contact@example.com"
+                                    value={formData.companyEmail}
+                                    onChange={(e) =>
+                                      updateFormData("companyEmail", e.target.value)
+                                    }
+                                  />
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Displayed in portal header
+                                  </p>
+                                </div>
                               </div>
                             </div>
 
