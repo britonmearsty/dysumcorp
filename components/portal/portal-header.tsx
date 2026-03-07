@@ -49,7 +49,7 @@ export function PortalHeader({
             <Building2 className="w-6 h-6 text-white" />
           )}
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <h2
             className="font-bold text-xl tracking-tight"
             style={{ color: textColor }}
@@ -57,11 +57,11 @@ export function PortalHeader({
             {name}
           </h2>
           {(companyWebsite || companyEmail) && (
-            <p className="text-sm font-medium mt-0.5 truncate" style={{ color: primaryColor }}>
-              {companyWebsite && <span className="inline-block max-w-[45%] truncate align-bottom">{companyWebsite}</span>}
-              {companyWebsite && companyEmail && <span className="mx-1">·</span>}
-              {companyEmail && <span className="inline-block max-w-[45%] truncate align-bottom">{companyEmail}</span>}
-            </p>
+            <div className="text-sm font-medium mt-0.5 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1" style={{ color: primaryColor }}>
+              {companyWebsite && <span className="break-all">{companyWebsite}</span>}
+              {companyWebsite && companyEmail && <span className="hidden sm:inline">·</span>}
+              {companyEmail && <span className="break-all">{companyEmail}</span>}
+            </div>
           )}
         </div>
       </div>

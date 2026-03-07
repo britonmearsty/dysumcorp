@@ -1097,6 +1097,9 @@ export default function EditPortalPage() {
 
     // Messaging
     welcomeMessage: "",
+    welcomeToastMessage: "",
+    welcomeToastDelay: 1000,
+    welcomeToastDuration: 3000,
     submitButtonText: "Initialize Transfer",
     successMessage: "Transmission Verified",
     textboxSectionEnabled: false,
@@ -1158,6 +1161,9 @@ export default function EditPortalPage() {
           : 50,
         allowedFileTypes: p.allowedFileTypes || [],
         welcomeMessage: p.welcomeMessage || "",
+        welcomeToastMessage: p.welcomeToastMessage || "",
+        welcomeToastDelay: p.welcomeToastDelay ?? 1000,
+        welcomeToastDuration: p.welcomeToastDuration ?? 3000,
         submitButtonText: p.submitButtonText || "Initialize Transfer",
         successMessage: p.successMessage || "Transmission Verified",
         textboxSectionEnabled: p.textboxSectionEnabled ?? false,
@@ -1473,6 +1479,9 @@ export default function EditPortalPage() {
 
         // Messaging
         welcomeMessage: formData.welcomeMessage || null,
+        welcomeToastMessage: formData.welcomeToastMessage || null,
+        welcomeToastDelay: formData.welcomeToastDelay,
+        welcomeToastDuration: formData.welcomeToastDuration,
         submitButtonText: formData.submitButtonText,
         successMessage: formData.successMessage,
         textboxSectionEnabled: formData.textboxSectionEnabled,
@@ -2088,7 +2097,7 @@ export default function EditPortalPage() {
                               </label>
                               <textarea
                                 className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
-                                placeholder="Welcome! Please upload your documents for review."
+                                placeholder="Send us your files securely — we'll take it from here.&#10;Fill in your details and attach the files you'd like to share with our team. All uploads are encrypted and handled with care."
                                 rows={3}
                                 value={formData.welcomeMessage}
                                 onChange={(e) =>
@@ -2098,6 +2107,74 @@ export default function EditPortalPage() {
                                   )
                                 }
                               />
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Displayed in the portal header. Use line breaks for title and description.
+                              </p>
+                            </div>
+
+                            <div className="border border-border rounded-xl p-6 bg-muted/30">
+                              <h3 className="text-sm font-semibold text-foreground mb-4">
+                                Welcome Toast Notification
+                              </h3>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-semibold text-foreground mb-2">
+                                    Toast Message
+                                  </label>
+                                  <input
+                                    className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                    type="text"
+                                    placeholder="👋 Welcome! Please fill in your details and upload your files."
+                                    value={formData.welcomeToastMessage}
+                                    onChange={(e) =>
+                                      updateFormData("welcomeToastMessage", e.target.value)
+                                    }
+                                  />
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Popup notification shown when visitors enter the portal
+                                  </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-semibold text-foreground mb-2">
+                                      Delay (ms)
+                                    </label>
+                                    <input
+                                      className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                      type="number"
+                                      min="0"
+                                      step="100"
+                                      value={formData.welcomeToastDelay}
+                                      onChange={(e) =>
+                                        updateFormData("welcomeToastDelay", parseInt(e.target.value) || 0)
+                                      }
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Time before toast appears (1000ms = 1 second)
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-sm font-semibold text-foreground mb-2">
+                                      Duration (ms)
+                                    </label>
+                                    <input
+                                      className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                      type="number"
+                                      min="1000"
+                                      step="100"
+                                      value={formData.welcomeToastDuration}
+                                      onChange={(e) =>
+                                        updateFormData("welcomeToastDuration", parseInt(e.target.value) || 3000)
+                                      }
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      How long toast stays visible
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
