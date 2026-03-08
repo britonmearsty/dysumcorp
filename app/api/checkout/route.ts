@@ -117,6 +117,7 @@ export async function POST(request: Request) {
           planId,
           billingCycle,
           userId: session.user.id,
+          productId,
         },
       },
     );

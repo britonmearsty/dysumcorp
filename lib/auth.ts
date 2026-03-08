@@ -153,9 +153,13 @@ export const auth = betterAuth({
       },
       onGrantAccess: async ({ customer, metadata }) => {
         try {
+          console.log("[Creem] onGrantAccess called:", { customer, metadata });
+          
           const planId = metadata?.planId as string | undefined;
+          const billingCycle = metadata?.billingCycle as string | undefined;
 
           if (planId && planId !== "free" && customer?.email) {
+            // Update user subscription
             await prisma.user.updateMany({
               where: { email: customer.email },
               data: {
@@ -164,9 +168,40 @@ export const auth = betterAuth({
                 creemCustomerId: customer.id,
               },
             });
+
+            // Create or update Creem_subscription record
+            const userId = metadata?.userId as string | undefined;
+            if (userId) {
+              await prisma.creem_subscription.upsert({
+                where: { id: customer.id },
+                create: {
+                  id: customer.id,
+                  productId: metadata?.productId as string || "",
+                  referenceId: userId,
+                  creemCustomerId: customer.id,
+                  creemSubscriptionId: customer.id,
+                  status: "active",
+                  periodStart: new Date(),
+                  periodEnd: billingCycle === "annual" 
+                    ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                    : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                  cancelAtPeriodEnd: false,
+                },
+                update: {
+                  status: "active",
+                  periodStart: new Date(),
+                  periodEnd: billingCycle === "annual" 
+                    ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                    : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                  cancelAtPeriodEnd: false,
+                },
+              });
+            }
+
+            console.log("[Creem] Successfully granted access for:", customer.email);
           }
         } catch (error) {
-          console.error("Error in onGrantAccess:", error);
+          console.error("[Creem] Error in onGrantAccess:", error);
         }
       },
       onRevokeAccess: async ({ customer }) => {
