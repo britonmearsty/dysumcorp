@@ -161,11 +161,26 @@ export function checkFeatureAccess(
 }
 
 export async function getUserPlanType(userId: string): Promise<PlanType> {
+  console.log("[Plan Limits] Getting plan type for user:", userId);
+  
   const user = await prisma.user.findUnique({
     where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      subscriptionPlan: true,
+      subscriptionStatus: true,
+      creemCustomerId: true,
+    },
   });
 
-  return (user?.subscriptionPlan as PlanType) || "free";
+  console.log("[Plan Limits] User data:", JSON.stringify(user, null, 2));
+
+  const planType = (user?.subscriptionPlan as PlanType) || "free";
+  
+  console.log("[Plan Limits] Returning plan type:", planType);
+
+  return planType;
 }
 
 export async function recordGraceUsage(

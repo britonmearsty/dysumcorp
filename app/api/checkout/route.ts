@@ -90,6 +90,13 @@ export async function POST(request: Request) {
       testMode: process.env.NODE_ENV === "development",
     });
 
+    console.log("🔍 Metadata being sent:", {
+      planId,
+      billingCycle,
+      userId: session.user.id,
+      productId,
+    });
+
     // Use Creem server-side SDK to create checkout
     // Use test mode if using a test API key or in development
     const isTestKey = process.env.CREEM_API_KEY?.startsWith("creem_test_");

@@ -141,67 +141,108 @@ export const auth = betterAuth({
       persistSubscriptions: true,
       onCheckoutCompleted: async ({ customer }) => {
         try {
+          console.log("[Creem] ✅ onCheckoutCompleted called");
+          console.log("[Creem] Customer data:", JSON.stringify(customer, null, 2));
+          
           if (customer?.email) {
-            await prisma.user.updateMany({
+            console.log("[Creem] Updating user subscription status for:", customer.email);
+            
+            const updateResult = await prisma.user.updateMany({
               where: { email: customer.email },
               data: { subscriptionStatus: "active" },
             });
+            
+            console.log("[Creem] User update result:", updateResult);
+          } else {
+            console.error("[Creem] ❌ No customer email in onCheckoutCompleted");
           }
         } catch (error) {
-          console.error("Error in onCheckoutCompleted:", error);
+          console.error("[Creem] ❌ Error in onCheckoutCompleted:", error);
+          console.error("[Creem] Error stack:", error instanceof Error ? error.stack : "No stack");
         }
       },
       onGrantAccess: async ({ customer, metadata }) => {
         try {
-          console.log("[Creem] onGrantAccess called:", { customer, metadata });
+          console.log("[Creem] ✅ onGrantAccess called");
+          console.log("[Creem] Customer data:", JSON.stringify(customer, null, 2));
+          console.log("[Creem] Metadata:", JSON.stringify(metadata, null, 2));
           
           const planId = metadata?.planId as string | undefined;
           const billingCycle = metadata?.billingCycle as string | undefined;
+          const userId = metadata?.userId as string | undefined;
+          const productId = metadata?.productId as string | undefined;
 
-          if (planId && planId !== "free" && customer?.email) {
-            // Update user subscription
-            await prisma.user.updateMany({
-              where: { email: customer.email },
-              data: {
-                subscriptionPlan: planId,
-                subscriptionStatus: "active",
-                creemCustomerId: customer.id,
+          console.log("[Creem] Extracted values:", { planId, billingCycle, userId, productId });
+
+          if (!customer?.email) {
+            console.error("[Creem] ❌ No customer email in onGrantAccess");
+            return;
+          }
+
+          if (!planId || planId === "free") {
+            console.error("[Creem] ❌ Invalid planId:", planId);
+            return;
+          }
+
+          console.log("[Creem] Updating user subscription for:", customer.email);
+          
+          // Update user subscription
+          const userUpdateResult = await prisma.user.updateMany({
+            where: { email: customer.email },
+            data: {
+              subscriptionPlan: planId,
+              subscriptionStatus: "active",
+              creemCustomerId: customer.id,
+            },
+          });
+          
+          console.log("[Creem] User update result:", userUpdateResult);
+
+          // Create or update Creem_subscription record
+          if (userId) {
+            console.log("[Creem] Creating/updating Creem_subscription record");
+            
+            const periodEnd = billingCycle === "annual" 
+              ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+            console.log("[Creem] Period end calculated:", periodEnd);
+
+            const subscriptionData = {
+              id: customer.id,
+              productId: productId || "",
+              referenceId: userId,
+              creemCustomerId: customer.id,
+              creemSubscriptionId: customer.id,
+              status: "active",
+              periodStart: new Date(),
+              periodEnd: periodEnd,
+              cancelAtPeriodEnd: false,
+            };
+
+            console.log("[Creem] Subscription data:", JSON.stringify(subscriptionData, null, 2));
+
+            const subscriptionResult = await prisma.creem_subscription.upsert({
+              where: { id: customer.id },
+              create: subscriptionData,
+              update: {
+                status: "active",
+                periodStart: new Date(),
+                periodEnd: periodEnd,
+                cancelAtPeriodEnd: false,
               },
             });
 
-            // Create or update Creem_subscription record
-            const userId = metadata?.userId as string | undefined;
-            if (userId) {
-              await prisma.creem_subscription.upsert({
-                where: { id: customer.id },
-                create: {
-                  id: customer.id,
-                  productId: metadata?.productId as string || "",
-                  referenceId: userId,
-                  creemCustomerId: customer.id,
-                  creemSubscriptionId: customer.id,
-                  status: "active",
-                  periodStart: new Date(),
-                  periodEnd: billingCycle === "annual" 
-                    ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-                    : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                  cancelAtPeriodEnd: false,
-                },
-                update: {
-                  status: "active",
-                  periodStart: new Date(),
-                  periodEnd: billingCycle === "annual" 
-                    ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-                    : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                  cancelAtPeriodEnd: false,
-                },
-              });
-            }
-
-            console.log("[Creem] Successfully granted access for:", customer.email);
+            console.log("[Creem] Subscription upsert result:", JSON.stringify(subscriptionResult, null, 2));
+          } else {
+            console.error("[Creem] ❌ No userId in metadata, skipping Creem_subscription creation");
           }
+
+          console.log("[Creem] ✅ Successfully granted access for:", customer.email);
         } catch (error) {
-          console.error("[Creem] Error in onGrantAccess:", error);
+          console.error("[Creem] ❌ Error in onGrantAccess:", error);
+          console.error("[Creem] Error message:", error instanceof Error ? error.message : "Unknown error");
+          console.error("[Creem] Error stack:", error instanceof Error ? error.stack : "No stack");
         }
       },
       onRevokeAccess: async ({ customer }) => {
