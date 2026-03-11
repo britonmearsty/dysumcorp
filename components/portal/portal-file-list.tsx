@@ -172,10 +172,10 @@ export function PortalFileList({
       {completedFiles.length > 0 && (
         <div className="space-y-2 pt-3 border-t border-slate-200">
           <div className="flex items-center gap-2">
-            <CheckCircle className="w-4 h-4 text-emerald-500" />
-            <span className="text-sm font-semibold text-emerald-600">
+            <CheckCircle className="w-4 h-4" style={{ color: primaryColor }} />
+            <span className="text-sm font-semibold" style={{ color: primaryColor }}>
               Completed{" "}
-              <span className="ml-1 text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100">
+              <span className="ml-1 text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: `${primaryColor}1A`, color: primaryColor }}>
                 {completedFiles.length}
               </span>
             </span>
@@ -183,7 +183,8 @@ export function PortalFileList({
           {completedFiles.map((f) => (
             <div
               key={f.id}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 bg-emerald-50 border border-emerald-200"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 border"
+              style={{ background: `${primaryColor}0D`, borderColor: `${primaryColor}40` }}
             >
               <div className="shrink-0">
                 <FileTypeIcon type={f.file.type} />
@@ -194,7 +195,7 @@ export function PortalFileList({
                 </p>
                 <span className="text-slate-400 text-xs">{formatBytes(f.file.size)}</span>
               </div>
-              <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+              <CheckCircle className="w-5 h-5 shrink-0" style={{ color: primaryColor }} />
             </div>
           ))}
         </div>

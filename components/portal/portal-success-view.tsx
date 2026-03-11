@@ -44,12 +44,12 @@ export function PortalSuccessView({
         <div
           className="flex items-center justify-center w-20 h-20 rounded-full"
           style={{
-            background: "#f0fdf4",
-            border: "2px solid #bbf7d0",
-            boxShadow: "0 0 0 6px #dcfce7",
+            background: `${primaryColor}1A`,
+            border: `2px solid ${primaryColor}`,
+            boxShadow: `0 0 0 6px ${primaryColor}0D`,
           }}
         >
-          <CheckCircle className="w-9 h-9 text-emerald-500" />
+          <CheckCircle className="w-9 h-9" style={{ color: primaryColor }} />
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2" style={{ color: textColor }}>
@@ -82,17 +82,20 @@ export function PortalSuccessView({
       {sentFiles.length > 0 && (
         <div className="rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm">
           {/* Card header */}
-          <div className="px-6 py-4 flex items-center gap-2 border-b border-slate-100 bg-emerald-50/30">
-            <Send className="w-4 h-4 text-emerald-500" />
+          <div
+            className="px-6 py-4 flex items-center gap-2 border-b"
+            style={{ background: `${primaryColor}0D`, borderColor: `${primaryColor}40` }}
+          >
+            <Send className="w-4 h-4" style={{ color: primaryColor }} />
             <span className="text-sm font-semibold" style={{ color: textColor }}>
               Sent Files
             </span>
             <span
-              className="ml-auto text-xs px-2.5 py-0.5 rounded-full font-semibold"
+              className="ml-auto text-xs px-2.5 py-0.5 rounded-full font-semibold border"
               style={{
-                background: "#dcfce7",
-                color: "#16a34a",
-                border: "1px solid #bbf7d0",
+                background: `${primaryColor}1A`,
+                color: primaryColor,
+                borderColor: `${primaryColor}40`,
               }}
             >
               {sentFiles.length} {sentFiles.length === 1 ? "file" : "files"}
@@ -115,7 +118,7 @@ export function PortalSuccessView({
                   </p>
                   <p className="text-slate-400 text-xs mt-0.5">{formatBytes(f.size)}</p>
                 </div>
-                <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                <CheckCircle className="w-4 h-4 shrink-0" style={{ color: primaryColor }} />
               </div>
             ))}
           </div>
