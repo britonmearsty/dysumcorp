@@ -118,11 +118,13 @@ export async function POST(request: NextRequest) {
       const rootFolder = await findOrCreateRootFolder(
         accessToken,
         portal.userId,
+        storageProvider,
       );
       const portalFolder = await findOrCreatePortalFolder(
         accessToken,
         rootFolder.id,
         portal.name,
+        storageProvider,
       );
 
       parentFolderId = portalFolder.id;
@@ -135,6 +137,7 @@ export async function POST(request: NextRequest) {
         accessToken,
         parentFolderId,
         uploaderName.trim(),
+        storageProvider,
       );
 
       parentFolderId = clientFolder.id;
