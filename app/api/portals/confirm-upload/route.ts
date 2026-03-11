@@ -134,6 +134,7 @@ export async function POST(request: NextRequest) {
     let sessionId = uploadSessionId;
     if (!sessionId) {
       // Create new upload session
+      console.log("[Portal Confirm Upload] No sessionId provided, creating new session");
       const session = await prisma.uploadSession.create({
         data: {
           portalId,
@@ -146,6 +147,8 @@ export async function POST(request: NextRequest) {
       });
       sessionId = session.id;
       console.log("[Portal Confirm Upload] Created new upload session:", sessionId);
+    } else {
+      console.log("[Portal Confirm Upload] Using provided sessionId:", sessionId);
     }
 
     // Save file metadata to database

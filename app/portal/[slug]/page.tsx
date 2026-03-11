@@ -542,6 +542,8 @@ export default function PublicPortalPage() {
           }
 
           // Step 3: Confirm upload and save metadata
+          console.log(`[Upload] Confirming upload for ${file.name}, sessionId: ${uploadSessionIdRef.current}`);
+          
           const confirmResponse = await fetch("/api/portals/confirm-upload", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -567,8 +569,11 @@ export default function PublicPortalPage() {
 
           const confirmData = await confirmResponse.json();
           
+          console.log(`[Upload] Confirm response sessionId: ${confirmData.uploadSessionId}`);
+          
           // Store session ID if it was created by the backend (fallback)
           if (confirmData.uploadSessionId && !uploadSessionIdRef.current) {
+            console.log(`[Upload] Storing fallback sessionId: ${confirmData.uploadSessionId}`);
             uploadSessionIdRef.current = confirmData.uploadSessionId;
             setUploadSessionId(confirmData.uploadSessionId);
           }
