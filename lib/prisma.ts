@@ -1,5 +1,5 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
+import { Pool } from "pg";
 
 import { PrismaClient } from "@/lib/generated/prisma/client";
 
@@ -12,7 +12,7 @@ const connectionString = process.env.DATABASE_URL;
 let prisma: PrismaClient;
 
 if (connectionString) {
-  const pool = new pg.Pool({
+  const pool = new Pool({
     connectionString,
     max: 1, // Limit connections in serverless
     idleTimeoutMillis: 10000, // Shorter idle timeout
