@@ -1726,6 +1726,51 @@ export default function EditPortalPage() {
                               </p>
                             </div>
 
+                            <div className="space-y-4">
+                              <h3 className="text-sm font-semibold text-foreground">
+                                Company Details
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Company Website */}
+                                <div>
+                                  <label className="block text-sm font-semibold text-foreground mb-2">
+                                    Website
+                                  </label>
+                                  <input
+                                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                    placeholder="example.com"
+                                    type="text"
+                                    value={formData.companyWebsite}
+                                    onChange={(e) =>
+                                      updateFormData("companyWebsite", e.target.value)
+                                    }
+                                  />
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Displayed in portal header
+                                  </p>
+                                </div>
+
+                                {/* Company Email */}
+                                <div>
+                                  <label className="block text-sm font-semibold text-foreground mb-2">
+                                    Contact Email
+                                  </label>
+                                  <input
+                                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                    placeholder="hello@example.com"
+                                    type="email"
+                                    value={formData.companyEmail}
+                                    onChange={(e) =>
+                                      updateFormData("companyEmail", e.target.value)
+                                    }
+                                  />
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Displayed in portal header
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
                             <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
                               <div />
                               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -2078,49 +2123,6 @@ export default function EditPortalPage() {
                                   />
                                   <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                                 </label>
-                              </div>
-                            </div>
-
-                            <div className="space-y-4">
-                              <h3 className="text-sm font-semibold text-foreground">
-                                Company Information
-                              </h3>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-semibold text-foreground mb-2">
-                                    Company Website
-                                  </label>
-                                  <input
-                                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
-                                    type="text"
-                                    placeholder="example.com"
-                                    value={formData.companyWebsite}
-                                    onChange={(e) =>
-                                      updateFormData("companyWebsite", e.target.value)
-                                    }
-                                  />
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    Displayed in portal header
-                                  </p>
-                                </div>
-
-                                <div>
-                                  <label className="block text-sm font-semibold text-foreground mb-2">
-                                    Company Email
-                                  </label>
-                                  <input
-                                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
-                                    type="email"
-                                    placeholder="contact@example.com"
-                                    value={formData.companyEmail}
-                                    onChange={(e) =>
-                                      updateFormData("companyEmail", e.target.value)
-                                    }
-                                  />
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    Displayed in portal header
-                                  </p>
-                                </div>
                               </div>
                             </div>
 

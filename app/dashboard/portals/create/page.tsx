@@ -1761,6 +1761,51 @@ export default function CreatePortalPage() {
                           )}
                         </div>
 
+                        <div className="space-y-4">
+                          <h3 className="text-sm font-semibold text-foreground">
+                            Company Details
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Company Website */}
+                            <div>
+                              <label className="block text-sm font-semibold text-foreground mb-2">
+                                Website
+                              </label>
+                              <input
+                                className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                placeholder="mycompany.studio"
+                                type="text"
+                                value={formData.companyWebsite}
+                                onChange={(e) =>
+                                  updateFormData("companyWebsite", e.target.value)
+                                }
+                              />
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Displayed in portal header
+                              </p>
+                            </div>
+
+                            {/* Company Email */}
+                            <div>
+                              <label className="block text-sm font-semibold text-foreground mb-2">
+                                Contact Email
+                              </label>
+                              <input
+                                className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                placeholder="hello@mycompany.studio"
+                                type="email"
+                                value={formData.companyEmail}
+                                onChange={(e) =>
+                                  updateFormData("companyEmail", e.target.value)
+                                }
+                              />
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Displayed in portal header
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
                         <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
                           <div />
                           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -1852,51 +1897,6 @@ export default function CreatePortalPage() {
                               </Button>
                               <p className="text-[10px] text-muted-foreground font-medium italic">
                                 Translucent PNG or SVG recommended (5MB Limit)
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-4">
-                          <h3 className="text-sm font-semibold text-foreground">
-                            Company Details
-                          </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Company Website */}
-                            <div>
-                              <label className="block text-sm font-semibold text-foreground mb-2">
-                                Website
-                              </label>
-                              <input
-                                className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
-                                placeholder="mycompany.studio"
-                                type="text"
-                                value={formData.companyWebsite}
-                                onChange={(e) =>
-                                  updateFormData("companyWebsite", e.target.value)
-                                }
-                              />
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Displayed in portal header
-                              </p>
-                            </div>
-
-                            {/* Company Email */}
-                            <div>
-                              <label className="block text-sm font-semibold text-foreground mb-2">
-                                Contact Email
-                              </label>
-                              <input
-                                className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
-                                placeholder="hello@mycompany.studio"
-                                type="email"
-                                value={formData.companyEmail}
-                                onChange={(e) =>
-                                  updateFormData("companyEmail", e.target.value)
-                                }
-                              />
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Displayed in portal header
                               </p>
                             </div>
                           </div>
