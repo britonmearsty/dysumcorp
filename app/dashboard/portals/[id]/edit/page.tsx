@@ -2126,25 +2126,24 @@ export default function EditPortalPage() {
                               </div>
 
                               {/* Gradient Toggle */}
-                              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border">
-                                <div>
-                                  <label className="block text-sm font-semibold text-foreground">
-                                    Enable Gradient Buttons
-                                  </label>
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    Use gradient from primary to secondary color for buttons
-                                  </p>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
+                              <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl border border-border">
+                                <label className="flex items-center gap-3 cursor-pointer flex-1">
                                   <input
                                     type="checkbox"
-                                    className="sr-only peer"
+                                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                                     checked={formData.gradientEnabled}
                                     onChange={(e) =>
                                       updateFormData("gradientEnabled", e.target.checked)
                                     }
                                   />
-                                  <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                  <div>
+                                    <span className="block text-sm font-semibold text-foreground">
+                                      Enable Gradient Buttons
+                                    </span>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      Use gradient from primary to secondary color for buttons
+                                    </p>
+                                  </div>
                                 </label>
                               </div>
                             </div>
