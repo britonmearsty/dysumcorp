@@ -1069,6 +1069,13 @@ export default function CreatePortalPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [requiresUpgrade, setRequiresUpgrade] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<{
+    welcomeMessage: boolean;
+    welcomeToast: boolean;
+  }>({
+    welcomeMessage: true,
+    welcomeToast: true,
+  });
 
   // Slug validation state
   const [slugValidation, setSlugValidation] = useState<{
@@ -2225,89 +2232,205 @@ export default function CreatePortalPage() {
 
                     {/* Messaging Section */}
                     {currentStep === "messaging" && (
-                      <div className="space-y-8">
-                        <div>
-                          <label className="block text-sm font-semibold text-foreground mb-2">
-                            Welcome Message
-                          </label>
-                          <textarea
-                            className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
-                            placeholder="Send us your files securely — we'll take it from here.&#10;Fill in your details and attach the files you'd like to share with our team. All uploads are encrypted and handled with care."
-                            rows={3}
-                            value={formData.welcomeMessage}
-                            onChange={(e) =>
-                              updateFormData("welcomeMessage", e.target.value)
-                            }
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Displayed in the portal header. Use line breaks for title and description.
-                          </p>
-                        </div>
-
-                        <div className="border border-border rounded-xl p-6 bg-muted/30">
-                          <h3 className="text-sm font-semibold text-foreground mb-4">
-                            Welcome Toast Notification
-                          </h3>
-                          <div className="space-y-4">
+                      <div className="space-y-4">
+                        {/* Welcome Message Section */}
+                        <button
+                          className="w-full flex items-center justify-between p-4 bg-card border border-border rounded-xl hover:bg-muted transition-all text-left group"
+                          type="button"
+                          onClick={() =>
+                            setExpandedSections((prev) => ({
+                              ...prev,
+                              welcomeMessage: !prev.welcomeMessage,
+                            }))
+                          }
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-5 h-5 rounded border-2 border-primary flex items-center justify-center transition-all ${
+                                expandedSections.welcomeMessage
+                                  ? "bg-primary"
+                                  : "bg-transparent"
+                              }`}
+                            >
+                              {expandedSections.welcomeMessage && (
+                                <svg
+                                  className="w-3 h-3 text-primary-foreground"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                            </div>
                             <div>
-                              <label className="block text-sm font-semibold text-foreground mb-2">
-                                Toast Message
-                              </label>
-                              <input
-                                className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
-                                type="text"
-                                placeholder="👋 Welcome! Please fill in your details and upload your files."
-                                value={formData.welcomeToastMessage}
-                                onChange={(e) =>
-                                  updateFormData("welcomeToastMessage", e.target.value)
-                                }
-                              />
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Popup notification shown when visitors enter the portal
+                              <h3 className="font-semibold text-foreground">
+                                Welcome Message
+                              </h3>
+                              <p className="text-xs text-muted-foreground">
+                                Displayed in the portal header
                               </p>
                             </div>
+                          </div>
+                          <ChevronRight
+                            className={`w-5 h-5 text-muted-foreground transition-transform ${
+                              expandedSections.welcomeMessage ? "rotate-90" : ""
+                            }`}
+                          />
+                        </button>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-sm font-semibold text-foreground mb-2">
-                                  Delay (ms)
-                                </label>
-                                <input
-                                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
-                                  type="number"
-                                  min="0"
-                                  step="100"
-                                  value={formData.welcomeToastDelay}
+                        {/* Welcome Message Content */}
+                        <AnimatePresence>
+                          {expandedSections.welcomeMessage && (
+                            <motion.div
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              initial={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="p-4 bg-muted/50 border border-border rounded-xl space-y-3">
+                                <textarea
+                                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
+                                  placeholder="Send us your files securely — we'll take it from here.&#10;Fill in your details and attach the files you'd like to share with our team. All uploads are encrypted and handled with care."
+                                  rows={3}
+                                  value={formData.welcomeMessage}
                                   onChange={(e) =>
-                                    updateFormData("welcomeToastDelay", parseInt(e.target.value) || 0)
+                                    updateFormData("welcomeMessage", e.target.value)
                                   }
                                 />
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Time before toast appears (1000ms = 1 second)
+                                <p className="text-xs text-muted-foreground">
+                                  Use line breaks for title and description.
                                 </p>
                               </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
 
-                              <div>
-                                <label className="block text-sm font-semibold text-foreground mb-2">
-                                  Duration (ms)
-                                </label>
-                                <input
-                                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
-                                  type="number"
-                                  min="1000"
-                                  step="100"
-                                  value={formData.welcomeToastDuration}
-                                  onChange={(e) =>
-                                    updateFormData("welcomeToastDuration", parseInt(e.target.value) || 3000)
-                                  }
-                                />
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  How long toast stays visible
-                                </p>
-                              </div>
+                        {/* Welcome Toast Notification Section */}
+                        <button
+                          className="w-full flex items-center justify-between p-4 bg-card border border-border rounded-xl hover:bg-muted transition-all text-left group"
+                          type="button"
+                          onClick={() =>
+                            setExpandedSections((prev) => ({
+                              ...prev,
+                              welcomeToast: !prev.welcomeToast,
+                            }))
+                          }
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-5 h-5 rounded border-2 border-primary flex items-center justify-center transition-all ${
+                                expandedSections.welcomeToast
+                                  ? "bg-primary"
+                                  : "bg-transparent"
+                              }`}
+                            >
+                              {expandedSections.welcomeToast && (
+                                <svg
+                                  className="w-3 h-3 text-primary-foreground"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-foreground">
+                                Welcome Toast Notification
+                              </h3>
+                              <p className="text-xs text-muted-foreground">
+                                Popup shown when visitors enter
+                              </p>
                             </div>
                           </div>
-                        </div>
+                          <ChevronRight
+                            className={`w-5 h-5 text-muted-foreground transition-transform ${
+                              expandedSections.welcomeToast ? "rotate-90" : ""
+                            }`}
+                          />
+                        </button>
+
+                        {/* Welcome Toast Content */}
+                        <AnimatePresence>
+                          {expandedSections.welcomeToast && (
+                            <motion.div
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              initial={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="p-4 bg-muted/50 border border-border rounded-xl space-y-4">
+                                <div>
+                                  <label className="block text-sm font-semibold text-foreground mb-2">
+                                    Toast Message
+                                  </label>
+                                  <input
+                                    className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                    type="text"
+                                    placeholder="👋 Welcome! Please fill in your details and upload your files."
+                                    value={formData.welcomeToastMessage}
+                                    onChange={(e) =>
+                                      updateFormData("welcomeToastMessage", e.target.value)
+                                    }
+                                  />
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Popup notification shown when visitors enter the portal
+                                  </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-semibold text-foreground mb-2">
+                                      Delay (ms)
+                                    </label>
+                                    <input
+                                      className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                      type="number"
+                                      min="0"
+                                      step="100"
+                                      value={formData.welcomeToastDelay}
+                                      onChange={(e) =>
+                                        updateFormData("welcomeToastDelay", parseInt(e.target.value) || 0)
+                                      }
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Time before toast appears (1000ms = 1 second)
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-sm font-semibold text-foreground mb-2">
+                                      Duration (ms)
+                                    </label>
+                                    <input
+                                      className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                      type="number"
+                                      min="1000"
+                                      step="100"
+                                      value={formData.welcomeToastDuration}
+                                      onChange={(e) =>
+                                        updateFormData("welcomeToastDuration", parseInt(e.target.value) || 3000)
+                                      }
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      How long toast stays visible
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
 
                         <div className="border-t border-border pt-6">
                           <div className="flex items-center justify-between mb-4">
