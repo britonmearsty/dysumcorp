@@ -1123,6 +1123,10 @@ export default function EditPortalPage() {
     textboxSection: false,
   });
 
+  // Constants for default messages
+  const DEFAULT_WELCOME_MESSAGE = "Send us your files securely — we'll take it from here.\nFill in your details and attach the files you'd like to share with our team. All uploads are encrypted and handled with care.";
+  const DEFAULT_WELCOME_TOAST = "👋 Welcome! Please fill in your details and upload your files.";
+
   const [formData, setFormData] = useState({
     // Identity
     portalName: "",
@@ -1236,6 +1240,13 @@ export default function EditPortalPage() {
         textboxSectionEnabled: p.textboxSectionEnabled ?? false,
         textboxSectionTitle: p.textboxSectionTitle || "",
         textboxSectionRequired: p.textboxSectionRequired ?? false,
+      });
+
+      // Set expanded sections based on whether portal has those messages
+      setExpandedSections({
+        welcomeMessage: !!p.welcomeMessage,
+        welcomeToast: !!p.welcomeToastMessage,
+        textboxSection: p.textboxSectionEnabled ?? false,
       });
     } catch (error) {
       console.error("Error fetching portal:", error);
@@ -1547,8 +1558,8 @@ export default function EditPortalPage() {
         allowedFileTypes: formData.allowedFileTypes,
 
         // Messaging
-        welcomeMessage: formData.welcomeMessage || null,
-        welcomeToastMessage: formData.welcomeToastMessage || null,
+        welcomeMessage: expandedSections.welcomeMessage ? (formData.welcomeMessage || DEFAULT_WELCOME_MESSAGE) : null,
+        welcomeToastMessage: expandedSections.welcomeToast ? (formData.welcomeToastMessage || DEFAULT_WELCOME_TOAST) : null,
         welcomeToastDelay: formData.welcomeToastDelay,
         welcomeToastDuration: formData.welcomeToastDuration,
         submitButtonText: formData.submitButtonText,
@@ -2272,9 +2283,9 @@ export default function EditPortalPage() {
                                   <div className="p-4 bg-muted/50 border border-border rounded-xl space-y-3">
                                     <textarea
                                       className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
-                                      placeholder="Send us your files securely — we'll take it from here.&#10;Fill in your details and attach the files you'd like to share with our team. All uploads are encrypted and handled with care."
+                                      placeholder={DEFAULT_WELCOME_MESSAGE}
                                       rows={3}
-                                      value={formData.welcomeMessage}
+                                      value={formData.welcomeMessage || DEFAULT_WELCOME_MESSAGE}
                                       onChange={(e) =>
                                         updateFormData("welcomeMessage", e.target.value)
                                       }
@@ -2360,8 +2371,8 @@ export default function EditPortalPage() {
                                       <input
                                         className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                                         type="text"
-                                        placeholder="👋 Welcome! Please fill in your details and upload your files."
-                                        value={formData.welcomeToastMessage}
+                                        placeholder={DEFAULT_WELCOME_TOAST}
+                                        value={formData.welcomeToastMessage || DEFAULT_WELCOME_TOAST}
                                         onChange={(e) =>
                                           updateFormData("welcomeToastMessage", e.target.value)
                                         }
