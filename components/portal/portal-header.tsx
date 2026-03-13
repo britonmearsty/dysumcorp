@@ -28,7 +28,9 @@ export function PortalHeader({
     : { backgroundColor: primaryColor };
 
   // Split welcome message into title and description
-  const messageParts = welcomeMessage?.split('\n').filter(line => line.trim()) || [];
+  const defaultWelcomeMessage = "Send us your files securely — we'll take it from here.\nFill in your details and attach the files you'd like to share with our team. All uploads are encrypted and handled with care.";
+  const displayMessage = welcomeMessage || defaultWelcomeMessage;
+  const messageParts = displayMessage.split('\n').filter(line => line.trim()) || [];
   const messageTitle = messageParts[0] || "";
   const messageDescription = messageParts.slice(1).join(' ') || "";
 
@@ -65,7 +67,7 @@ export function PortalHeader({
           )}
         </div>
       </div>
-      {welcomeMessage && (
+      {(welcomeMessage || true) && (
         <div className="px-6 pb-5 border-t border-slate-100 bg-slate-50">
           {messageTitle && (
             <p className="text-base font-medium pt-4" style={{ color: textColor }}>
