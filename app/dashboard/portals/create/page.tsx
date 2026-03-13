@@ -1072,9 +1072,11 @@ export default function CreatePortalPage() {
   const [expandedSections, setExpandedSections] = useState<{
     welcomeMessage: boolean;
     welcomeToast: boolean;
+    textboxSection: boolean;
   }>({
-    welcomeMessage: true,
-    welcomeToast: true,
+    welcomeMessage: false,
+    welcomeToast: false,
+    textboxSection: false,
   });
 
   // Slug validation state
@@ -2237,12 +2239,16 @@ export default function CreatePortalPage() {
                         <button
                           className="w-full flex items-center justify-between p-4 bg-card border border-border rounded-xl hover:bg-muted transition-all text-left group"
                           type="button"
-                          onClick={() =>
+                          onClick={() => {
+                            const newState = !expandedSections.welcomeMessage;
                             setExpandedSections((prev) => ({
                               ...prev,
-                              welcomeMessage: !prev.welcomeMessage,
-                            }))
-                          }
+                              welcomeMessage: newState,
+                            }));
+                            if (!newState) {
+                              updateFormData("welcomeMessage", "");
+                            }
+                          }}
                         >
                           <div className="flex items-center gap-3">
                             <div
@@ -2314,12 +2320,18 @@ export default function CreatePortalPage() {
                         <button
                           className="w-full flex items-center justify-between p-4 bg-card border border-border rounded-xl hover:bg-muted transition-all text-left group"
                           type="button"
-                          onClick={() =>
+                          onClick={() => {
+                            const newState = !expandedSections.welcomeToast;
                             setExpandedSections((prev) => ({
                               ...prev,
-                              welcomeToast: !prev.welcomeToast,
-                            }))
-                          }
+                              welcomeToast: newState,
+                            }));
+                            if (!newState) {
+                              updateFormData("welcomeToastMessage", "");
+                              updateFormData("welcomeToastDelay", 1000);
+                              updateFormData("welcomeToastDuration", 3000);
+                            }
+                          }}
                         >
                           <div className="flex items-center gap-3">
                             <div
@@ -2433,61 +2445,115 @@ export default function CreatePortalPage() {
                         </AnimatePresence>
 
                         <div className="border-t border-border pt-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <div>
-                              <h3 className="font-semibold text-foreground">
-                                Textbox Section
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                Add a text input field for clients to fill out
-                              </p>
-                            </div>
-                            <Switch
-                              checked={formData.textboxSectionEnabled}
-                              onCheckedChange={(checked) =>
-                                updateFormData("textboxSectionEnabled", checked)
+                          <button
+                            className="w-full flex items-center justify-between p-4 bg-card border border-border rounded-xl hover:bg-muted transition-all text-left group"
+                            type="button"
+                            onClick={() => {
+                              const newState = !expandedSections.textboxSection;
+                              setExpandedSections((prev) => ({
+                                ...prev,
+                                textboxSection: newState,
+                              }));
+                              if (!newState) {
+                                updateFormData("textboxSectionEnabled", false);
+                                updateFormData("textboxSectionTitle", "");
+                                updateFormData("textboxSectionRequired", false);
+                              } else {
+                                updateFormData("textboxSectionEnabled", true);
                               }
-                            />
-                          </div>
-
-                          {formData.textboxSectionEnabled && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-0 md:pl-0">
-                              <div>
-                                <label className="block text-sm font-semibold text-foreground mb-2">
-                                  Textbox Label
-                                </label>
-                                <input
-                                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
-                                  type="text"
-                                  placeholder="e.g., Notes or Comments"
-                                  value={formData.textboxSectionTitle}
-                                  onChange={(e) =>
-                                    updateFormData(
-                                      "textboxSectionTitle",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`w-5 h-5 rounded border-2 border-primary flex items-center justify-center transition-all ${
+                                  expandedSections.textboxSection
+                                    ? "bg-primary"
+                                    : "bg-transparent"
+                                }`}
+                              >
+                                {expandedSections.textboxSection && (
+                                  <svg
+                                    className="w-3 h-3 text-primary-foreground"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                )}
                               </div>
-
-                              <div className="flex items-end">
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                  <Switch
-                                    checked={formData.textboxSectionRequired}
-                                    onCheckedChange={(checked) =>
-                                      updateFormData(
-                                        "textboxSectionRequired",
-                                        checked,
-                                      )
-                                    }
-                                  />
-                                  <span className="text-sm font-medium text-foreground">
-                                    Required field
-                                  </span>
-                                </label>
+                              <div>
+                                <h3 className="font-semibold text-foreground">
+                                  Textbox Section
+                                </h3>
+                                <p className="text-xs text-muted-foreground">
+                                  Add a text input field for clients to fill out
+                                </p>
                               </div>
                             </div>
-                          )}
+                            <ChevronRight
+                              className={`w-5 h-5 text-muted-foreground transition-transform ${
+                                expandedSections.textboxSection ? "rotate-90" : ""
+                              }`}
+                            />
+                          </button>
+
+                          {/* Textbox Section Content */}
+                          <AnimatePresence>
+                            {expandedSections.textboxSection && (
+                              <motion.div
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                initial={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="p-4 bg-muted/50 border border-border rounded-xl space-y-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                      <label className="block text-sm font-semibold text-foreground mb-2">
+                                        Textbox Label
+                                      </label>
+                                      <input
+                                        className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
+                                        type="text"
+                                        placeholder="e.g., Notes or Comments"
+                                        value={formData.textboxSectionTitle}
+                                        onChange={(e) =>
+                                          updateFormData(
+                                            "textboxSectionTitle",
+                                            e.target.value,
+                                          )
+                                        }
+                                      />
+                                    </div>
+
+                                    <div className="flex items-end">
+                                      <label className="flex items-center gap-3 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                                          checked={formData.textboxSectionRequired}
+                                          onChange={(e) =>
+                                            updateFormData(
+                                              "textboxSectionRequired",
+                                              e.target.checked,
+                                            )
+                                          }
+                                        />
+                                        <span className="text-sm font-medium text-foreground">
+                                          Required field
+                                        </span>
+                                      </label>
+                                    </div>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
