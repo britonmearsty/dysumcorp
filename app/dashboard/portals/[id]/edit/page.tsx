@@ -2283,42 +2283,6 @@ export default function EditPortalPage() {
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              <div>
-                                <label className="block text-sm font-semibold text-foreground mb-2">
-                                  Submit Button Label
-                                </label>
-                                <input
-                                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
-                                  type="text"
-                                  value={formData.submitButtonText}
-                                  onChange={(e) =>
-                                    updateFormData(
-                                      "submitButtonText",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-sm font-semibold text-foreground mb-2">
-                                  Success Message
-                                </label>
-                                <input
-                                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
-                                  type="text"
-                                  value={formData.successMessage}
-                                  onChange={(e) =>
-                                    updateFormData(
-                                      "successMessage",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </div>
-                            </div>
-
                             <div className="border-t border-border pt-6">
                               <div className="flex items-center justify-between mb-4">
                                 <div>
@@ -2375,6 +2339,42 @@ export default function EditPortalPage() {
                                   </div>
                                 </div>
                               )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div>
+                                <label className="block text-sm font-semibold text-foreground mb-2">
+                                  Submit Button Label
+                                </label>
+                                <input
+                                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
+                                  type="text"
+                                  value={formData.submitButtonText}
+                                  onChange={(e) =>
+                                    updateFormData(
+                                      "submitButtonText",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-semibold text-foreground mb-2">
+                                  Success Message
+                                </label>
+                                <input
+                                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
+                                  type="text"
+                                  value={formData.successMessage}
+                                  onChange={(e) =>
+                                    updateFormData(
+                                      "successMessage",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </div>
                             </div>
 
                             <div className="bg-primary rounded-xl p-6 text-primary-foreground shadow-lg">
