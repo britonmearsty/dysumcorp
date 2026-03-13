@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
             "Dropbox-API-Arg": JSON.stringify({
               cursor: {
                 session_id: sessionId,
-                offset: offset,
+                offset: parseInt(offset),
               },
               commit: {
                 path: uploadPath,

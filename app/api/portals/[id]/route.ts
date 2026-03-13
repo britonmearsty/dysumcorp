@@ -52,9 +52,9 @@ export async function GET(
     const serializedPortal = {
       ...portal,
       maxFileSize: portal.maxFileSize.toString(),
-      // Apply defaults for messaging fields if not set
-      welcomeMessage: portal.welcomeMessage || "Send us your files securely — we'll take it from here.\nFill in your details and attach the files you'd like to share with our team. All uploads are encrypted and handled with care.",
-      welcomeToastMessage: portal.welcomeToastMessage || "👋 Welcome! Please fill in your details and upload your files.",
+      // Do NOT apply defaults for messaging fields - keep them as-is
+      welcomeMessage: portal.welcomeMessage,
+      welcomeToastMessage: portal.welcomeToastMessage,
       welcomeToastDelay: portal.welcomeToastDelay ?? 1000,
       welcomeToastDuration: portal.welcomeToastDuration ?? 3000,
       submitButtonText: portal.submitButtonText || "Initialize Transfer",
