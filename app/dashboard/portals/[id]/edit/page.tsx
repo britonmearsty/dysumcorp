@@ -36,18 +36,19 @@ import { usePaywall } from "@/components/paywall-modal";
 import { PlanType } from "@/config/pricing";
 import { siteConfig } from "@/config/site";
 import { useSession } from "@/lib/auth-client";
+import { useStorageConnections } from "@/lib/hooks/useStorageConnections";
 
 type Step = "identity" | "branding" | "storage" | "security" | "messaging";
 
 interface ConnectedAccount {
   provider: "google" | "dropbox";
-  providerAccountId: string;
+  providerAccountId?: string;
   email?: string;
   name?: string;
   isConnected: boolean;
   storageAccountId?: string;
   storageStatus?: "ACTIVE" | "INACTIVE" | "DISCONNECTED" | "ERROR";
-  hasValidOAuth: boolean;
+  hasValidOAuth?: boolean;
 }
 
 interface StorageFolder {
@@ -153,7 +154,6 @@ const StorageSection: React.FC<StorageSectionProps> = ({
   portal,
 }) => {
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
-  const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set(),
   );
@@ -167,9 +167,16 @@ const StorageSection: React.FC<StorageSectionProps> = ({
   const [hasUserSelectedFolder, setHasUserSelectedFolder] = useState(false);
   const [folderError, setFolderError] = useState<string | null>(null);
 
+  // Use the custom hook for automatic token refresh
+  const { connections: storageConnections, loading: loadingAccounts } =
+    useStorageConnections({
+      autoRefreshInterval: 4 * 60 * 1000, // Refresh every 4 minutes
+    });
+
+  // Update local accounts state when storage connections change
   useEffect(() => {
-    fetchAccounts();
-  }, []);
+    setAccounts(storageConnections);
+  }, [storageConnections]);
 
   // Load existing portal storage configuration
   useEffect(() => {
@@ -210,13 +217,23 @@ const StorageSection: React.FC<StorageSectionProps> = ({
       (!formData.storageProvider ||
         (!loadingFolders && folders.length === 0 && folderPath.length === 0))
     ) {
-      const firstAccount = accounts[0];
+      // Find first connected account, prefer Google Drive if available
+      const connectedAccounts = accounts.filter(
+        (a) => a.storageStatus === "ACTIVE" && a.isConnected,
+      );
+      
+      if (connectedAccounts.length > 0) {
+        // Prefer Google Drive if available, otherwise use first connected account
+        const preferredAccount =
+          connectedAccounts.find((a) => a.provider === "google") ||
+          connectedAccounts[0];
 
-      if (firstAccount) {
-        const storageProvider =
-          firstAccount.provider === "google" ? "google_drive" : "dropbox";
+        if (preferredAccount) {
+          const storageProvider =
+            preferredAccount.provider === "google" ? "google_drive" : "dropbox";
 
-        selectStorageProvider(storageProvider);
+          selectStorageProvider(storageProvider);
+        }
       }
     }
   }, [
@@ -228,31 +245,6 @@ const StorageSection: React.FC<StorageSectionProps> = ({
     hasUserSelectedFolder,
     portal?.storageFolderId,
   ]);
-
-  async function fetchAccounts() {
-    try {
-      const res = await fetch("/api/storage/connections");
-
-      if (res.ok) {
-        const data = await res.json();
-        // Show ALL accounts, not just connected ones
-        // This way users can see disconnected accounts and know they need to reconnect
-        const allAccounts = data.accounts || [];
-
-        setAccounts(allAccounts);
-      } else {
-        console.error(
-          "Failed to fetch storage connections:",
-          res.status,
-          await res.text(),
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching accounts:", error);
-    } finally {
-      setLoadingAccounts(false);
-    }
-  }
 
   async function selectStorageProvider(provider: "google_drive" | "dropbox") {
     setHasUserSelectedFolder(true);
@@ -278,7 +270,8 @@ const StorageSection: React.FC<StorageSectionProps> = ({
           await fetchFolders(provider, rootFolder.id);
         }
       } else if (rootRes.status === 403 || rootRes.status === 401) {
-        await fetchAccounts();
+        // Token expired, the hook will refresh automatically
+        console.log("Storage token expired, will refresh automatically");
       }
     } catch (error) {
       console.error("Error initializing storage:", error);
@@ -344,7 +337,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
           setFolderError(
             "Storage connection expired. Please refresh the page and try again.",
           );
-          await fetchAccounts();
+          // Token will be refreshed automatically by the hook
         } else {
           setFolderError(errorMessage);
         }
@@ -404,7 +397,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
       setHealthCheckResults(data);
 
       if (data.success && data.createdAccounts > 0) {
-        await fetchAccounts();
+        // Accounts will be refreshed automatically by the hook
       }
     } catch (error) {
       setHealthCheckResults({

@@ -54,8 +54,9 @@ export async function GET() {
         let isExpired: boolean;
 
         if (account.providerId === "dropbox") {
-          // Dropbox tokens without expiration are treated as expired
-          isExpired = !expiresAt || expiresAt <= new Date();
+          // Dropbox tokens: only treat as expired if expiration is set AND past
+          // If no expiration is set, assume token is still valid (long-lived)
+          isExpired = !!(expiresAt && expiresAt <= new Date());
         } else {
           isExpired = !!(expiresAt && expiresAt <= new Date());
         }
