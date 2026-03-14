@@ -827,25 +827,6 @@ const StorageSection: React.FC<StorageSectionProps> = ({
           </label>
         </div>
 
-        {/* Folder Path Display */}
-        <div className="mt-4 p-3 bg-muted/50 rounded-xl border border-border">
-          <div className="flex items-center gap-2">
-            <FolderOpen className="w-4 h-4 text-primary" />
-            <span className="text-xs font-semibold text-foreground">
-              Default Upload Path:
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1 font-mono">
-            {formData.storageFolderId && formData.storageFolderPath
-              ? formData.storageFolderPath
-              : portal?.name
-                ? `${siteConfig.storageRootFolder}/${portal.name}`
-                : `${siteConfig.storageRootFolder}/[portal name]`}
-            {formData.useClientFolders && (
-              <span className="text-primary">/[client name]</span>
-            )}
-          </p>
-        </div>
       </div>
 
       <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
