@@ -289,7 +289,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
           }
         }
       } else {
-        // Dropbox: start at dysumcorp folder (using path-based navigation)
+        // Dropbox: list root folders, find/create dysumcorp
         const rootRes = await fetch(
           `/api/storage/list?provider=${provider}&rootOnly=true`,
         );
@@ -299,26 +299,30 @@ const StorageSection: React.FC<StorageSectionProps> = ({
 
           // Dropbox root has id: "" (empty string) which is falsy, so check for name instead
           if (rootFolder && rootFolder.name) {
-            // Try to fetch dysumcorp folder
-            const dysumRes = await fetch(
-              `/api/storage/list?provider=${provider}&parentFolderId=/dysumcorp`,
+            // List root-level folders to find dysumcorp
+            const rootListRes = await fetch(
+              `/api/storage/list?provider=${provider}`,
             );
 
             let dysumFolder: StorageFolder | undefined;
 
-            if (dysumRes.ok) {
-              dysumFolder = await dysumRes.json();
+            if (rootListRes.ok) {
+              const rootFolders = await rootListRes.json();
+              // Find dysumcorp folder (case-insensitive)
+              dysumFolder = rootFolders.find(
+                (f: StorageFolder) => f.name.toLowerCase() === "dysumcorp",
+              );
             }
 
-            if (!dysumFolder || !dysumFolder.id) {
-              // dysumcorp doesn't exist, create it
+            if (!dysumFolder) {
+              // dysumcorp doesn't exist, create it at root
               try {
                 const createRes = await fetch("/api/storage/upload", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     provider: "dropbox",
-                    parentFolderId: "/",
+                    parentFolderId: "",
                     folderName: "dysumcorp",
                   }),
                 });
@@ -332,7 +336,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
             }
 
             if (dysumFolder && dysumFolder.id) {
-              // Set breadcrumb to show: root > dysumcorp
+              // Set breadcrumb to show: Dropbox > dysumcorp
               setFolderPath([rootFolder, dysumFolder]);
               updateFormData("storageFolderId", dysumFolder.id);
               updateFormData("storageFolderPath", dysumFolder.path || "/dysumcorp");
