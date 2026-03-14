@@ -144,25 +144,35 @@ interface StorageSectionProps {
   formData: any;
   updateFormData: (field: string, value: any) => void;
   setCurrentStep: (step: Step) => void;
+  folderPath: StorageFolder[];
+  setFolderPath: (path: StorageFolder[]) => void;
+  folders: StorageFolder[];
+  setFolders: (folders: StorageFolder[]) => void;
+  hasUserSelectedFolder: boolean;
+  setHasUserSelectedFolder: (val: boolean) => void;
+  expandedFolders: Set<string>;
+  setExpandedFolders: (val: Set<string>) => void;
 }
 
 const StorageSection: React.FC<StorageSectionProps> = ({
   formData,
   updateFormData,
   setCurrentStep,
+  folderPath,
+  setFolderPath,
+  folders,
+  setFolders,
+  hasUserSelectedFolder,
+  setHasUserSelectedFolder,
+  expandedFolders,
+  setExpandedFolders,
 }) => {
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
-    new Set(),
-  );
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
-  const [folderPath, setFolderPath] = useState<StorageFolder[]>([]);
   const [loadingFolders, setLoadingFolders] = useState(false);
-  const [folders, setFolders] = useState<StorageFolder[]>([]);
   const [isRunningHealthCheck, setIsRunningHealthCheck] = useState(false);
   const [healthCheckResults, setHealthCheckResults] = useState<any>(null);
-  const [hasUserSelectedFolder, setHasUserSelectedFolder] = useState(false);
 
   // Use the custom hook for automatic token refresh
   const { connections: storageConnections, loading: loadingAccounts } =
@@ -451,14 +461,11 @@ const StorageSection: React.FC<StorageSectionProps> = ({
   }
 
   const toggleFolder = (id: string) => {
-    setExpandedFolders((prev) => {
-      const newSet = new Set(prev);
+    const newSet = new Set(expandedFolders);
 
-      if (newSet.has(id)) newSet.delete(id);
-      else newSet.add(id);
-
-      return newSet;
-    });
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setExpandedFolders(newSet);
   };
 
   async function runStorageHealthCheck() {
@@ -1156,6 +1163,12 @@ export default function CreatePortalPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [requiresUpgrade, setRequiresUpgrade] = useState(false);
+
+  // Storage section state lifted here to survive step navigation
+  const [storageFolderPath, setStorageFolderPath] = useState<StorageFolder[]>([]);
+  const [storageFolders, setStorageFolders] = useState<StorageFolder[]>([]);
+  const [storageHasUserSelected, setStorageHasUserSelected] = useState(false);
+  const [storageExpandedFolders, setStorageExpandedFolders] = useState<Set<string>>(new Set());
   const [expandedSections, setExpandedSections] = useState<{
     welcomeMessage: boolean;
     welcomeToast: boolean;
@@ -2304,8 +2317,16 @@ export default function CreatePortalPage() {
                     {/* Storage Section */}
                     {currentStep === "storage" && (
                       <StorageSection
+                        expandedFolders={storageExpandedFolders}
+                        folders={storageFolders}
+                        folderPath={storageFolderPath}
                         formData={formData}
+                        hasUserSelectedFolder={storageHasUserSelected}
                         setCurrentStep={setCurrentStep}
+                        setExpandedFolders={setStorageExpandedFolders}
+                        setFolderPath={setStorageFolderPath}
+                        setFolders={setStorageFolders}
+                        setHasUserSelectedFolder={setStorageHasUserSelected}
                         updateFormData={updateFormData}
                       />
                     )}
