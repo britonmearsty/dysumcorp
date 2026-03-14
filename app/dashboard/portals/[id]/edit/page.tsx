@@ -281,7 +281,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
               if (!dysumFolder) {
                 // Dysumcorp doesn't exist, create it
                 try {
-                  const createRes = await fetch("/api/storage/direct-upload", {
+                  const createRes = await fetch("/api/storage/upload", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -347,7 +347,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
             if (!dysumFolder || !dysumFolder.id) {
               // dysumcorp doesn't exist, create it
               try {
-                const createRes = await fetch("/api/storage/direct-upload", {
+                const createRes = await fetch("/api/storage/upload", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
