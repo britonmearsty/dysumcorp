@@ -24,7 +24,8 @@ if (connectionString) {
     console.error("Unexpected pg pool error:", err);
   });
 
-  const adapter = new PrismaPg(pool);
+  // Cast to any to avoid @types/pg version conflict between top-level and @prisma/adapter-pg bundled types
+  const adapter = new PrismaPg(pool as any);
 
   if (process.env.NODE_ENV === "production") {
     prisma = new PrismaClient({ 
