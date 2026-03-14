@@ -273,10 +273,31 @@ const StorageSection: React.FC<StorageSectionProps> = ({
 
             if (dysumRes.ok) {
               const subfolders = await dysumRes.json();
-              // Find Dysumcorp folder
-              const dysumFolder = subfolders.find(
-                (f: StorageFolder) => f.name === "dysumcorp",
+              // Find Dysumcorp folder (case-insensitive)
+              let dysumFolder = subfolders.find(
+                (f: StorageFolder) => f.name.toLowerCase() === "dysumcorp",
               );
+
+              if (!dysumFolder) {
+                // Dysumcorp doesn't exist, create it
+                try {
+                  const createRes = await fetch("/api/storage/direct-upload", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      provider: "google_drive",
+                      parentFolderId: rootFolder.id,
+                      folderName: "Dysumcorp",
+                    }),
+                  });
+
+                  if (createRes.ok) {
+                    dysumFolder = await createRes.json();
+                  }
+                } catch (error) {
+                  console.error("Error creating Dysumcorp folder:", error);
+                }
+              }
 
               if (dysumFolder) {
                 // Set breadcrumb to show: My Drive > Dysumcorp
@@ -286,7 +307,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                 // Load subfolders of Dysumcorp
                 await fetchFolders(provider, dysumFolder.id);
               } else {
-                // Dysumcorp doesn't exist yet, show root
+                // Fallback to root if creation failed
                 setFolderPath([rootFolder]);
                 updateFormData("storageFolderId", rootFolder.id);
                 updateFormData("storageFolderPath", rootFolder.path);
@@ -310,31 +331,49 @@ const StorageSection: React.FC<StorageSectionProps> = ({
         if (rootRes.ok) {
           const rootFolder = await rootRes.json();
 
-          if (rootFolder && rootFolder.id) {
+          // Dropbox root has id: "" (empty string) which is falsy, so check for name instead
+          if (rootFolder && rootFolder.name) {
             // Try to fetch dysumcorp folder
             const dysumRes = await fetch(
               `/api/storage/list?provider=${provider}&parentFolderId=/dysumcorp`,
             );
 
+            let dysumFolder: StorageFolder | undefined;
+
             if (dysumRes.ok) {
-              const dysumFolder = await dysumRes.json();
-              
-              if (dysumFolder && dysumFolder.id) {
-                // Set breadcrumb to show: root > dysumcorp
-                setFolderPath([rootFolder, dysumFolder]);
-                updateFormData("storageFolderId", dysumFolder.id);
-                updateFormData("storageFolderPath", dysumFolder.path || "/dysumcorp");
-                // Load subfolders of dysumcorp
-                await fetchFolders(provider, dysumFolder.id);
-              } else {
-                // dysumcorp doesn't exist yet, show root
-                setFolderPath([rootFolder]);
-                updateFormData("storageFolderId", rootFolder.id);
-                updateFormData("storageFolderPath", rootFolder.path);
-                await fetchFolders(provider, rootFolder.id);
+              dysumFolder = await dysumRes.json();
+            }
+
+            if (!dysumFolder || !dysumFolder.id) {
+              // dysumcorp doesn't exist, create it
+              try {
+                const createRes = await fetch("/api/storage/direct-upload", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    provider: "dropbox",
+                    parentFolderId: "/",
+                    folderName: "dysumcorp",
+                  }),
+                });
+
+                if (createRes.ok) {
+                  dysumFolder = await createRes.json();
+                }
+              } catch (error) {
+                console.error("Error creating dysumcorp folder:", error);
               }
+            }
+
+            if (dysumFolder && dysumFolder.id) {
+              // Set breadcrumb to show: root > dysumcorp
+              setFolderPath([rootFolder, dysumFolder]);
+              updateFormData("storageFolderId", dysumFolder.id);
+              updateFormData("storageFolderPath", dysumFolder.path || "/dysumcorp");
+              // Load subfolders of dysumcorp
+              await fetchFolders(provider, dysumFolder.id);
             } else {
-              // Fallback to root
+              // Fallback to root if creation failed
               setFolderPath([rootFolder]);
               updateFormData("storageFolderId", rootFolder.id);
               updateFormData("storageFolderPath", rootFolder.path);
