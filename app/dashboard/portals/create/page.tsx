@@ -42,13 +42,13 @@ type Step = "identity" | "branding" | "storage" | "security" | "messaging";
 
 interface ConnectedAccount {
   provider: "google" | "dropbox";
-  providerAccountId: string;
+  providerAccountId?: string;
   email?: string;
   name?: string;
   isConnected: boolean;
   storageAccountId?: string;
   storageStatus?: "ACTIVE" | "INACTIVE" | "DISCONNECTED" | "ERROR";
-  hasValidOAuth: boolean;
+  hasValidOAuth?: boolean;
 }
 
 interface StorageFolder {
