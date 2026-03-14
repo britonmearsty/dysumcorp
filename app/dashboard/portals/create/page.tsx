@@ -222,22 +222,92 @@ const StorageSection: React.FC<StorageSectionProps> = ({
     setLoadingFolders(true);
 
     try {
-      const rootRes = await fetch(
-        `/api/storage/list?provider=${provider}&rootOnly=true`,
-      );
+      if (provider === "google_drive") {
+        // Google Drive: start at Dysumcorp folder
+        const rootRes = await fetch(
+          `/api/storage/list?provider=${provider}&rootOnly=true`,
+        );
 
-      if (rootRes.ok) {
-        const rootFolder = await rootRes.json();
+        if (rootRes.ok) {
+          const rootFolder = await rootRes.json();
 
-        if (rootFolder && rootFolder.id) {
-          setFolderPath([rootFolder]);
-          updateFormData("storageFolderId", rootFolder.id);
-          updateFormData("storageFolderPath", rootFolder.path);
-          await fetchFolders(provider, rootFolder.id);
+          if (rootFolder && rootFolder.id) {
+            // Now fetch Dysumcorp folder from root
+            const dysumRes = await fetch(
+              `/api/storage/list?provider=${provider}&parentFolderId=${rootFolder.id}`,
+            );
+
+            if (dysumRes.ok) {
+              const subfolders = await dysumRes.json();
+              // Find Dysumcorp folder
+              const dysumFolder = subfolders.find(
+                (f: StorageFolder) => f.name === "dysumcorp",
+              );
+
+              if (dysumFolder) {
+                // Set breadcrumb to show: My Drive > Dysumcorp
+                setFolderPath([rootFolder, dysumFolder]);
+                updateFormData("storageFolderId", dysumFolder.id);
+                updateFormData("storageFolderPath", `${rootFolder.path}/${dysumFolder.name}`);
+                // Load subfolders of Dysumcorp
+                await fetchFolders(provider, dysumFolder.id);
+              } else {
+                // Dysumcorp doesn't exist yet, show root
+                setFolderPath([rootFolder]);
+                updateFormData("storageFolderId", rootFolder.id);
+                updateFormData("storageFolderPath", rootFolder.path);
+                await fetchFolders(provider, rootFolder.id);
+              }
+            } else {
+              // Fallback to root
+              setFolderPath([rootFolder]);
+              updateFormData("storageFolderId", rootFolder.id);
+              updateFormData("storageFolderPath", rootFolder.path);
+              await fetchFolders(provider, rootFolder.id);
+            }
+          }
         }
-      } else if (rootRes.status === 403 || rootRes.status === 401) {
-        // Token expired, the hook will refresh automatically
-        console.log("Storage token expired, will refresh automatically");
+      } else {
+        // Dropbox: start at dysumcorp folder (using path-based navigation)
+        const rootRes = await fetch(
+          `/api/storage/list?provider=${provider}&rootOnly=true`,
+        );
+
+        if (rootRes.ok) {
+          const rootFolder = await rootRes.json();
+
+          if (rootFolder && rootFolder.id) {
+            // Try to fetch dysumcorp folder
+            const dysumRes = await fetch(
+              `/api/storage/list?provider=${provider}&parentFolderId=/dysumcorp`,
+            );
+
+            if (dysumRes.ok) {
+              const dysumFolder = await dysumRes.json();
+              
+              if (dysumFolder && dysumFolder.id) {
+                // Set breadcrumb to show: root > dysumcorp
+                setFolderPath([rootFolder, dysumFolder]);
+                updateFormData("storageFolderId", dysumFolder.id);
+                updateFormData("storageFolderPath", dysumFolder.path || "/dysumcorp");
+                // Load subfolders of dysumcorp
+                await fetchFolders(provider, dysumFolder.id);
+              } else {
+                // dysumcorp doesn't exist yet, show root
+                setFolderPath([rootFolder]);
+                updateFormData("storageFolderId", rootFolder.id);
+                updateFormData("storageFolderPath", rootFolder.path);
+                await fetchFolders(provider, rootFolder.id);
+              }
+            } else {
+              // Fallback to root
+              setFolderPath([rootFolder]);
+              updateFormData("storageFolderId", rootFolder.id);
+              updateFormData("storageFolderPath", rootFolder.path);
+              await fetchFolders(provider, rootFolder.id);
+            }
+          }
+        }
       }
     } catch (error) {
       console.error("Error initializing storage:", error);
