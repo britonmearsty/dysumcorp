@@ -56,6 +56,8 @@ export default function DashboardPage() {
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const [deleteFileModalOpen, setDeleteFileModalOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [togglingPortal, setTogglingPortal] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     const hour = new Date().getHours();
