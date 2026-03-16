@@ -419,8 +419,8 @@ export default function UploadsPage() {
                         className="w-full flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-5 text-left hover:bg-muted/50 transition-colors group"
                         onClick={() => handleUploadClick(upload)}
                       >
-                        <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground group-hover:bg-bg-card transition-colors flex-shrink-0">
-                          <Upload className="w-5 h-5" />
+                        <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-950/50 transition-colors flex-shrink-0">
+                          <Upload className="w-5 h-5 text-blue-500" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
@@ -490,8 +490,8 @@ export default function UploadsPage() {
             >
               <div className="p-4 sm:p-6 lg:p-8 border-b border-border bg-muted/50 flex justify-between items-start gap-4">
                 <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                  <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-card shadow-sm border border-border flex items-center justify-center flex-shrink-0">
-                    <Upload className="w-6 h-6 text-foreground" />
+                  <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-950/30 shadow-sm border border-blue-200 dark:border-blue-900/40 flex items-center justify-center flex-shrink-0">
+                    <Upload className="w-6 h-6 text-blue-500" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="text-lg sm:text-2xl font-bold text-foreground leading-tight truncate">

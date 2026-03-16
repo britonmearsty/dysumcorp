@@ -434,7 +434,7 @@ export default function ClientsPage() {
                             className="w-full flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-5 text-left hover:bg-muted/50 transition-colors group"
                             onClick={() => handleClientClick(client)}
                           >
-                            <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground font-bold group-hover:bg-bg-card transition-colors flex-shrink-0">
+                            <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-900/40 flex items-center justify-center text-violet-600 dark:text-violet-400 font-bold group-hover:bg-violet-100 dark:group-hover:bg-violet-950/50 transition-colors flex-shrink-0">
                               {client.name?.charAt(0) ||
                                 client.email?.charAt(0).toUpperCase() ||
                                 "?"}
@@ -592,7 +592,7 @@ export default function ClientsPage() {
             >
               <div className="p-4 sm:p-6 lg:p-8 border-b border-border bg-muted/50 flex justify-between items-start gap-4">
                 <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-card shadow-sm border border-border flex items-center justify-center text-lg sm:text-xl font-bold text-foreground">
+                  <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-violet-50 dark:bg-violet-950/30 shadow-sm border border-violet-200 dark:border-violet-900/40 flex items-center justify-center text-lg sm:text-xl font-bold text-violet-600 dark:text-violet-400">
                     {selectedClient.name?.charAt(0) ||
                       selectedClient.email?.charAt(0).toUpperCase()}
                   </div>
