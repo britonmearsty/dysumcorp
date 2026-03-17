@@ -51,7 +51,7 @@ export function PaywallModal({
   };
 
   const minimumPlan = getMinimumPlan();
-  const recommendedPlan = currentPlan === "free" ? "pro" : "pro";
+  const recommendedPlan: "pro" = "pro";
 
   const plan = PRICING_PLANS[recommendedPlan];
   const minimumPlanDetails = PRICING_PLANS[minimumPlan];
@@ -111,7 +111,7 @@ export function PaywallModal({
                       <p className="text-sm text-default-600 mt-1">{reason}</p>
                       <div className="flex items-center gap-2 mt-2">
                         <Chip color="default" size="sm" variant="flat">
-                          Current: {PRICING_PLANS[currentPlan].name}
+                          Current: {currentPlan}
                         </Chip>
                         <span>→</span>
                         <Chip color="primary" size="sm" variant="flat">
@@ -283,7 +283,7 @@ export function usePaywall() {
     requiredPlan?: PlanType;
   }>({
     isOpen: false,
-    currentPlan: "free",
+    currentPlan: "trial" as PlanType,
     feature: "",
     reason: "",
   });

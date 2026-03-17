@@ -30,10 +30,8 @@ export function UpgradePrompt({
   const router = useRouter();
 
   // Determine recommended upgrade
-  const getRecommendedPlan = (): PlanType => {
-    if (currentPlan === "free") return "pro";
-
-    return "pro"; // Only Pro plan available
+  const getRecommendedPlan = (): "pro" => {
+    return "pro";
   };
 
   const recommendedPlan = getRecommendedPlan();
@@ -74,8 +72,7 @@ export function UpgradePrompt({
         <div>
           <h3 className="text-xl font-bold font-mono">Upgrade Required</h3>
           <p className="text-sm text-default-500 mt-1">
-            You've reached the limits of your {PRICING_PLANS[currentPlan].name}{" "}
-            plan
+            You've reached the limits of your current plan
           </p>
         </div>
         {onClose && (

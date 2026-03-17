@@ -110,7 +110,7 @@ export function SoftPaywallModal({
                       </p>
                       <div className="flex items-center gap-2 mt-2">
                         <Chip color="default" size="sm" variant="flat">
-                          Current: {PRICING_PLANS[currentPlan].name}
+                          Current: {currentPlan}
                         </Chip>
                         {recommendedPlan && (
                           <>
@@ -260,7 +260,7 @@ export function useSoftPaywall() {
     onProceed?: () => void;
   }>({
     isOpen: false,
-    currentPlan: "free",
+    currentPlan: "trial" as PlanType,
     feature: "",
     reason: "",
   });

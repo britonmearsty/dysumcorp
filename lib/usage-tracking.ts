@@ -15,7 +15,7 @@ function formatBytes(bytes: number): string {
 }
 
 function getPlanLimits(plan: PlanType) {
-  return PRICING_PLANS[plan]?.limits || PRICING_PLANS.free.limits;
+  return PRICING_PLANS[plan as "pro"]?.limits || PRICING_PLANS.pro.limits;
 }
 
 export async function updateUsageTracking() {
@@ -165,7 +165,7 @@ export async function sendWeeklyReports() {
     for (const user of users) {
       try {
         const planLimits = getPlanLimits(
-          (user.subscriptionPlan as PlanType) || "free",
+          (user.subscriptionPlan as PlanType) || "pro",
         );
         const storageLimitBytes = planLimits.storage * 1024 * 1024 * 1024;
 
@@ -355,7 +355,7 @@ export async function getUserUsageStats(userId: string) {
   }
 
   const planLimits = getPlanLimits(
-    (user.subscriptionPlan as PlanType) || "free",
+    (user.subscriptionPlan as PlanType) || "pro",
   );
   const storageLimitBytes = planLimits.storage * 1024 * 1024 * 1024;
 

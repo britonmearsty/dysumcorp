@@ -61,7 +61,7 @@ export async function POST(request: Request) {
       },
     });
 
-    const currentPlanId = user?.subscriptionPlan || "free";
+    const currentPlanId = user?.subscriptionPlan || "trial";
 
     if (currentPlanId === newPlanId) {
       return NextResponse.json(
@@ -79,8 +79,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // If user is on free plan, create a new checkout
-    if (currentPlanId === "free") {
+    // If user is not on pro, create a new checkout
+    if (currentPlanId !== "pro") {
       const productId = newPlan.creemProductId;
 
       if (!productId) {

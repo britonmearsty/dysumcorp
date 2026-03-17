@@ -17,17 +17,12 @@ export function PricingClient() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
     "monthly",
   );
-  const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
+  const currentPlan = (session?.user as any)?.subscriptionPlan || "trial";
   const { showToast } = useToast();
 
   const handleSubscribe = async (planId: string, isAnnual: boolean) => {
     if (!session?.user) {
       router.push("/auth?redirect=/pricing");
-
-      return;
-    }
-    if (planId === "free") {
-      router.push("/dashboard");
 
       return;
     }

@@ -1199,7 +1199,7 @@ export default function EditPortalPage() {
   const { data: session } = useSession();
   const { showPaywall, PaywallModal } = usePaywall();
   const [currentStep, setCurrentStep] = useState<Step>("identity");
-  const [userPlan, setUserPlan] = useState<PlanType>("free");
+  const [userPlan, setUserPlan] = useState<PlanType>("trial");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");

@@ -20,8 +20,8 @@ export function SubscriptionStatus() {
   const [loading, setLoading] = useState(true);
 
   // Get plan from session (User table)
-  const userPlan = (session?.user as any)?.subscriptionPlan || "free";
-  const userStatus = (session?.user as any)?.subscriptionStatus || "active";
+  const userPlan = (session?.user as any)?.subscriptionPlan || "trial";
+  const userStatus = (session?.user as any)?.subscriptionStatus || "trialing";
   const planDetails = PRICING_PLANS[userPlan as keyof typeof PRICING_PLANS];
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export function SubscriptionStatus() {
   }
 
   // Determine subscription status
-  const hasPaidPlan = userPlan !== "free";
+  const hasPaidPlan = userPlan === "pro";
   const isUserActive = userStatus === "active";
   const hasScheduledCancel = userStatus === "scheduled_cancel";
   const hasCreemAccess =

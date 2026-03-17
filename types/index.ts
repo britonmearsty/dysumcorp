@@ -4,7 +4,7 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
 };
 
-export type PlanType = "free" | "pro";
+export type PlanType = "trial" | "pro" | "expired";
 
 export type SubscriptionStatus =
   | "active"
