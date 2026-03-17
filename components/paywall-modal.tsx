@@ -42,15 +42,7 @@ export function PaywallModal({
 }: PaywallModalProps) {
   const { onOpenChange } = useDisclosure({ isOpen });
 
-  // Determine the minimum plan needed for this feature
-  const getMinimumPlan = (): PlanType => {
-    if (requiredPlan) return requiredPlan;
-
-    // All premium features require Pro plan
-    return "pro";
-  };
-
-  const minimumPlan = getMinimumPlan();
+  const minimumPlan: "pro" = "pro";
   const recommendedPlan: "pro" = "pro";
 
   const plan = PRICING_PLANS[recommendedPlan];

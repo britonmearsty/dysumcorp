@@ -1,6 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { PRICING_PLANS, PlanType, PlanLimits } from "@/config/pricing";
 
+// trial gets pro limits; expired gets zero limits (no access)
+function getEffectivePlan(planType: PlanType) {
+  if (planType === "pro" || planType === "trial") return PRICING_PLANS["pro"];
+  return {
+    ...PRICING_PLANS["pro"],
+    limits: { ...PRICING_PLANS["pro"].limits, portals: 0, storage: 0, customDomains: 0 },
+  };
+}
+
 export interface PlanLimitCheck {
   allowed: boolean;
   reason?: string;
@@ -20,18 +29,14 @@ export async function checkPortalLimit(
   planType: PlanType,
   softMode: boolean = false,
 ): Promise<PlanLimitCheck> {
-  const limits = PRICING_PLANS[planType].limits;
-  const currentCount = await prisma.portal.count({
-    where: { userId },
-  });
+  const limits = getEffectivePlan(planType).limits;
+  const currentCount = await prisma.portal.count({ where: { userId } });
 
-  // In soft mode, allow 10% overage or 1 extra portal minimum
   const effectiveLimit = softMode
     ? limits.portals + Math.max(Math.ceil(limits.portals * 0.1), 1)
     : limits.portals;
 
   if (currentCount >= effectiveLimit) {
-    // Hard block - exceeded even the soft limit
     return {
       allowed: false,
       reason: `Portal limit exceeded. Your ${planType} plan allows ${limits.portals} portal(s) and grace period is exhausted.`,
@@ -42,7 +47,6 @@ export async function checkPortalLimit(
 
   if (currentCount >= limits.portals) {
     if (softMode) {
-      // Allow with warning in soft mode
       return {
         allowed: true,
         reason: `Portal limit reached. Your ${planType} plan allows ${limits.portals} portal(s). You have ${effectiveLimit - currentCount} grace uses remaining.`,
@@ -50,7 +54,6 @@ export async function checkPortalLimit(
         limit: limits.portals,
       };
     } else {
-      // Hard block in non-soft mode
       return {
         allowed: false,
         reason: `Portal limit reached. Your ${planType} plan allows ${limits.portals} portal(s).`,
@@ -68,39 +71,29 @@ export async function checkStorageLimit(
   planType: PlanType,
   additionalBytes: number = 0,
 ): Promise<PlanLimitCheck> {
-  const limits = PRICING_PLANS[planType].limits;
-  const limitBytes = limits.storage * 1024 * 1024 * 1024; // Convert GB to bytes
+  const limits = getEffectivePlan(planType).limits;
+  const limitBytes = limits.storage * 1024 * 1024 * 1024;
 
-  // Get all files for user's portals
   const files = await prisma.file.findMany({
-    where: {
-      portal: {
-        userId,
-      },
-    },
-    select: {
-      size: true,
-    },
+    where: { portal: { userId } },
+    select: { size: true },
   });
 
-  const currentBytes = files.reduce(
-    (acc: number, file: any) => acc + Number(file.size),
-    0,
-  );
-  const totalBytes = currentBytes + additionalBytes;
+  const usedBytes = files.reduce((acc: number, f: { size: bigint | number }) => acc + Number(f.size), 0);
+  const totalBytes = usedBytes + additionalBytes;
 
   if (totalBytes > limitBytes) {
     return {
       allowed: false,
       reason: `Storage limit exceeded. Your ${planType} plan allows ${limits.storage}GB.`,
-      current: Math.round((currentBytes / (1024 * 1024 * 1024)) * 100) / 100,
+      current: Math.round((usedBytes / (1024 * 1024 * 1024)) * 100) / 100,
       limit: limits.storage,
     };
   }
 
   return {
     allowed: true,
-    current: Math.round((currentBytes / (1024 * 1024 * 1024)) * 100) / 100,
+    current: Math.round((usedBytes / (1024 * 1024 * 1024)) * 100) / 100,
     limit: limits.storage,
   };
 }
@@ -109,7 +102,7 @@ export async function checkCustomDomainLimit(
   userId: string,
   planType: PlanType,
 ): Promise<PlanLimitCheck> {
-  const limits = PRICING_PLANS[planType].limits;
+  const limits = getEffectivePlan(planType).limits;
 
   if (limits.customDomains === 0) {
     return {
@@ -121,12 +114,7 @@ export async function checkCustomDomainLimit(
   }
 
   const currentCount = await prisma.portal.count({
-    where: {
-      userId,
-      customDomain: {
-        not: null,
-      },
-    },
+    where: { userId, customDomain: { not: null } },
   });
 
   if (currentCount >= limits.customDomains) {
@@ -145,7 +133,7 @@ export function checkFeatureAccess(
   planType: PlanType,
   feature: keyof PlanLimits,
 ): FeatureAccessCheck {
-  const limits = PRICING_PLANS[planType].limits;
+  const limits = getEffectivePlan(planType).limits;
   const allowed = limits[feature] === true;
 
   if (!allowed) {
@@ -161,43 +149,6 @@ export function checkFeatureAccess(
 }
 
 export async function getUserPlanType(userId: string): Promise<PlanType> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  return (user?.subscriptionPlan as PlanType) || "free";
-}
-
-export async function recordGraceUsage(
-  userId: string,
-  resourceType: "portal" | "storage",
-  amount: number = 1,
-  notes?: string,
-): Promise<void> {
-  await prisma.graceUsage.create({
-    data: {
-      userId,
-      resourceType,
-      amount,
-      notes,
-    },
-  });
-}
-
-export async function getGraceUsage(
-  userId: string,
-  resourceType: "portal" | "storage",
-): Promise<number> {
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  const records = await prisma.graceUsage.findMany({
-    where: {
-      userId,
-      resourceType,
-      usedAt: {
-        gte: new Date(`${currentMonth}-01`),
-      },
-    },
-  });
-
-  return records.reduce((acc, record) => acc + record.amount, 0);
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  return (user?.subscriptionPlan as PlanType) || "trial";
 }

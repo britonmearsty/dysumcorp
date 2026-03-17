@@ -9,17 +9,26 @@ import { PRICING_PLANS } from "@/config/pricing";
 
 const pricingPlans = [
   {
-    ...PRICING_PLANS.free,
+    name: "14-Day Free Trial",
+    description: "Try everything free, no credit card required",
     price: "0",
-    period: "/month",
-    cta: "Get Started",
+    period: "/14 days",
+    cta: "Start Free Trial",
     popular: false,
+    features: [
+      "Full access to all Pro features",
+      "Unlimited portals during trial",
+      "Google Drive & Dropbox integration",
+      "Custom branding & white-labeling",
+      "Password protection & expiring links",
+      "No credit card required",
+    ],
   },
   {
     ...PRICING_PLANS.pro,
     price: "29",
     period: "/month",
-    cta: "Start Free Trial",
+    cta: "Upgrade to Pro",
     popular: true,
   },
 ];

@@ -48,9 +48,7 @@ export function SoftPaywallModal({
 }: SoftPaywallModalProps) {
   const { onOpenChange } = useDisclosure({ isOpen });
 
-  const plan = recommendedPlan
-    ? PRICING_PLANS[recommendedPlan]
-    : PRICING_PLANS.pro;
+  const plan = PRICING_PLANS.pro;
 
   const handleUpgrade = () => {
     onClose();
@@ -116,7 +114,7 @@ export function SoftPaywallModal({
                           <>
                             <span>→</span>
                             <Chip color="primary" size="sm" variant="flat">
-                              Recommended: {PRICING_PLANS[recommendedPlan].name}
+                              Recommended: {PRICING_PLANS.pro.name}
                             </Chip>
                           </>
                         )}
