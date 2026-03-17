@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin";
 
+const VALID_PLANS = ["trial", "pro", "expired"] as const;
+type ValidPlan = (typeof VALID_PLANS)[number];
+
 export async function POST(request: Request) {
   try {
     const adminCheck = await isAdmin(request.headers);
@@ -24,31 +27,54 @@ export async function POST(request: Request) {
       );
     }
 
-    const validPlans = ["free", "pro"];
-
-    if (!validPlans.includes(planId)) {
+    if (!VALID_PLANS.includes(planId as ValidPlan)) {
       return NextResponse.json(
-        { error: "Invalid planId. Must be 'free' or 'pro'" },
+        { error: "Invalid planId. Must be 'trial', 'pro', or 'expired'" },
         { status: 400 },
       );
     }
 
-    const updatedUser = await prisma.user.update({
+    // Determine subscription status based on plan
+    const subscriptionStatus =
+      planId === "pro" ? "active" :
+      planId === "trial" ? "trialing" :
+      "cancelled";
+
+    // Build update data
+    const updateData: Record<string, unknown> = {
+      subscriptionPlan: planId,
+      subscriptionStatus,
+    };
+
+    // When setting to trial, set trialStartedAt only if not already set
+    if (planId === "trial") {
+      // Use raw query to check since generated client may not have trialStartedAt yet
+      const rows = await prisma.$queryRaw<{ trialStartedAt: Date | null }[]>`
+        SELECT "trialStartedAt" FROM "user" WHERE id = ${userId} LIMIT 1
+      `;
+      const existingTrialStart = rows[0]?.trialStartedAt;
+
+      if (!existingTrialStart) {
+        updateData.trialStartedAt = new Date();
+        updateData.hadTrial = true;
+      }
+    }
+
+    const updatedUser = await (prisma.user.update as any)({
       where: { id: userId },
-      data: {
-        subscriptionPlan: planId,
-        subscriptionStatus: "active",
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        subscriptionPlan: true,
+        subscriptionStatus: true,
+        trialStartedAt: true,
       },
     });
 
     return NextResponse.json({
       success: true,
-      user: {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        subscriptionPlan: updatedUser.subscriptionPlan,
-        subscriptionStatus: updatedUser.subscriptionStatus,
-      },
+      user: updatedUser,
     });
   } catch (error: unknown) {
     console.error("Manual sync error:", error);

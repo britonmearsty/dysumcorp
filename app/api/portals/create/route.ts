@@ -3,12 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { hashPassword, validatePassword } from "@/lib/password-utils";
-import {
-  checkPortalLimit,
-  checkCustomDomainLimit,
-  getUserPlanType,
-  checkFeatureAccess,
-} from "@/lib/plan-limits";
+import { checkAccess } from "@/lib/trial";
 import { sendPortalCreatedNotification } from "@/lib/email-service";
 
 export async function POST(request: Request) {
@@ -20,18 +15,18 @@ export async function POST(request: Request) {
     }
 
     const userId = session.user.id;
-    const planType = await getUserPlanType(userId);
 
-    const portalCheck = await checkPortalLimit(userId, planType);
+    // Check trial/subscription access
+    const access = await checkAccess(userId);
 
-    if (!portalCheck.allowed) {
+    if (!access.allowed) {
       return NextResponse.json(
         {
-          error: portalCheck.reason,
-          upgrade: true,
-          currentPlan: planType,
+          error: "Trial expired. Subscribe to continue.",
+          trialExpired: true,
+          code: "TRIAL_EXPIRED",
         },
-        { status: 403 },
+        { status: 402 },
       );
     }
 
@@ -106,22 +101,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check custom domain limit if provided
+    // Check if custom domain is already taken
     if (customDomain) {
-      const domainCheck = await checkCustomDomainLimit(userId, planType);
-
-      if (!domainCheck.allowed) {
-        return NextResponse.json(
-          {
-            error: domainCheck.reason,
-            upgrade: true,
-            currentPlan: planType,
-          },
-          { status: 403 },
-        );
-      }
-
-      // Check if custom domain is already taken
       const existingDomain = await prisma.portal.findUnique({
         where: { customDomain },
       });
@@ -132,18 +113,6 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-    }
-
-    // Check white-labeling feature access
-    if (whiteLabeled && !checkFeatureAccess(planType, "whiteLabeling")) {
-      return NextResponse.json(
-        {
-          error: "White-labeling is not available on your current plan",
-          upgrade: true,
-          currentPlan: planType,
-        },
-        { status: 403 },
-      );
     }
 
     // Validate password strength if password provided

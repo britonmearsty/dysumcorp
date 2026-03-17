@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 import { validateUploadToken } from "@/lib/upload-tokens";
+import { prisma } from "@/lib/prisma";
+import { checkAccess } from "@/lib/trial";
 
 // Increase function timeout for large uploads
 export const maxDuration = 60;
@@ -45,6 +47,28 @@ export async function POST(request: NextRequest) {
           { error: "Invalid or expired upload token" },
           { status: 401 }
         );
+      }
+
+      // On first chunk, verify portal owner still has access
+      if (chunkStart === "0") {
+        const portal = await prisma.portal.findUnique({
+          where: { id: tokenData.portalId },
+          select: { userId: true },
+        });
+
+        if (portal) {
+          const access = await checkAccess(portal.userId);
+          if (!access.allowed) {
+            return NextResponse.json(
+              {
+                error: "Trial expired. Subscribe to continue.",
+                trialExpired: true,
+                code: "TRIAL_EXPIRED",
+              },
+              { status: 402 }
+            );
+          }
+        }
       }
       
       // Cache the validated token

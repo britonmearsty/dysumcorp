@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password-utils";
-import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
 import { validateUploadToken } from "@/lib/upload-tokens";
 
 // Helper function to format file size
@@ -98,29 +97,6 @@ export async function POST(request: NextRequest) {
       console.log("[Portal Confirm Upload] Portal not found:", portalId);
 
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
-    }
-
-    // Check storage limit before saving file
-    const planType = await getUserPlanType(portal.userId);
-    const storageCheck = await checkStorageLimit(
-      portal.userId,
-      planType,
-      Number(fileSize),
-    );
-
-    if (!storageCheck.allowed) {
-      console.log("[Portal Confirm Upload] Storage limit exceeded:", {
-        current: storageCheck.current,
-        limit: storageCheck.limit,
-      });
-
-      return NextResponse.json(
-        {
-          error: storageCheck.reason || "Storage limit exceeded",
-          upgrade: true,
-        },
-        { status: 403 },
-      );
     }
 
     // Hash password if provided

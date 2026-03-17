@@ -20,8 +20,9 @@ model User {
   updatedAt          DateTime  @updatedAt
   creemCustomerId    String?
   hadTrial           Boolean?  @default(false)
-  subscriptionPlan   String?   @default("free")
-  subscriptionStatus String?   @default("active")
+  trialStartedAt     DateTime?
+  subscriptionPlan   String?   @default("trial")
+  subscriptionStatus String?   @default("trialing")
   accounts           Account[]
   portals            Portal[]
   sessions           Session[]
@@ -202,15 +203,4 @@ model UsageTracking {
   @@map("usage_tracking")
 }
 
-model GraceUsage {
-  id           String   @id @default(cuid())
-  userId       String
-  resourceType String   // 'portal', 'storage', etc.
-  usedAt       DateTime @default(now())
-  amount       Int      @default(1)
-  notes        String?
 
-  @@index([userId, resourceType])
-  @@index([usedAt])
-  @@map("grace_usage")
-}

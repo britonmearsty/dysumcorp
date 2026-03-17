@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { checkFeatureAccess, getUserPlanType } from "@/lib/plan-limits";
 
 export async function PUT(
   request: Request,
@@ -34,21 +33,6 @@ export async function PUT(
           error: "Expiration date must be in the future",
         },
         { status: 400 },
-      );
-    }
-
-    // Check if user has access to expiring links feature
-    const planType = await getUserPlanType(session.user.id);
-    const featureCheck = checkFeatureAccess(planType, "expiringLinks");
-
-    if (!featureCheck.allowed) {
-      return NextResponse.json(
-        {
-          error: featureCheck.reason || "Expiring links require a Pro plan",
-          upgrade: true,
-          currentPlan: planType,
-        },
-        { status: 403 },
       );
     }
 

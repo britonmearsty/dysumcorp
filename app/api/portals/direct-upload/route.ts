@@ -7,7 +7,6 @@ import {
   findOrCreatePortalFolder,
   findOrCreateClientFolder 
 } from "@/lib/storage-api";
-import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 import { generateUploadToken } from "@/lib/upload-tokens";
 
@@ -194,27 +193,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check storage limit before allowing upload
-    const planType = await getUserPlanType(portal.userId);
-    const storageCheck = await checkStorageLimit(
-      portal.userId,
-      planType,
-      Number(fileSize),
-    );
-
-    if (!storageCheck.allowed) {
-      console.log("[Portal Direct Upload] Storage limit exceeded:", {
-        current: storageCheck.current,
-        limit: storageCheck.limit,
-      });
-
-      return NextResponse.json(
-        {
-          error: storageCheck.reason || "Storage limit exceeded",
-          upgrade: true,
-        },
-        { status: 403 },
-      );
-    }
+    // Storage limits removed — all trial/pro users have full access
 
     // Get cloud storage token for portal owner based on portal's storageProvider setting
     console.log(

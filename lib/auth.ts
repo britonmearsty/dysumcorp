@@ -3,6 +3,7 @@ import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { creem } from "@creem_io/better-auth";
 import { sendWelcomeEmail, sendSignInNotification } from "@/lib/email-service";
 import { prisma } from "@/lib/prisma";
+import { provisionTrial } from "@/lib/trial";
 
 // Validate required environment variables
 if (!process.env.DATABASE_URL) {
@@ -26,12 +27,12 @@ export const auth = betterAuth({
     additionalFields: {
       subscriptionPlan: {
         type: "string",
-        defaultValue: "free",
+        defaultValue: "trial",
         input: false,
       },
       subscriptionStatus: {
         type: "string",
-        defaultValue: "active",
+        defaultValue: "trialing",
         input: false,
       },
       creemCustomerId: {
@@ -43,6 +44,11 @@ export const auth = betterAuth({
         type: "string",
         defaultValue: null,
         input: true,
+      },
+      trialStartedAt: {
+        type: "string",
+        defaultValue: null,
+        input: false,
       },
     },
   },
@@ -94,20 +100,30 @@ export const auth = betterAuth({
     after: async (ctx) => {
       const url = ctx.request?.url || "";
       const path = url.includes("?") ? url.split("?")[0] : url;
+      const isCallback = path.includes("/callback/");
       const isSignup =
         path === "/sign-up" ||
         path === "/signup" ||
-        path.includes("/callback/");
+        isCallback;
       const isSignIn = path === "/sign-in" || path === "/signin";
 
       const body = ctx.body as
-        | { user?: { email: string; name?: string | null } }
+        | { user?: { id?: string; email: string; name?: string | null } }
         | undefined;
       const user = body?.user;
 
       if (!user) return ctx;
 
       const userName = user.name || user.email.split("@")[0];
+
+      // Provision trial for new users (idempotent — won't overwrite existing trialStartedAt)
+      if (isCallback && user.id) {
+        try {
+          await provisionTrial(user.id);
+        } catch (error) {
+          console.error("Failed to provision trial:", error);
+        }
+      }
 
       if (isSignup) {
         try {
@@ -158,15 +174,15 @@ export const auth = betterAuth({
           const userId = metadata?.userId as string | undefined;
           const productId = metadata?.productId as string | undefined;
 
-          if (!customer?.email || !planId || planId === "free") {
+          if (!customer?.email) {
             return;
           }
 
-          // Update user subscription
+          // Update user subscription to pro/active
           await prisma.user.updateMany({
             where: { email: customer.email },
             data: {
-              subscriptionPlan: planId,
+              subscriptionPlan: "pro",
               subscriptionStatus: "active",
               creemCustomerId: customer.id,
             },
@@ -174,7 +190,7 @@ export const auth = betterAuth({
 
           // Create or update Creem_subscription record
           if (userId) {
-            const periodEnd = billingCycle === "annual" 
+            const periodEnd = billingCycle === "annual"
               ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
               : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
@@ -206,10 +222,11 @@ export const auth = betterAuth({
       onRevokeAccess: async ({ customer }) => {
         try {
           if (customer?.email) {
+            // Set to expired rather than reverting to free
             await prisma.user.updateMany({
               where: { email: customer.email },
               data: {
-                subscriptionPlan: "free",
+                subscriptionPlan: "expired",
                 subscriptionStatus: "cancelled",
               },
             });

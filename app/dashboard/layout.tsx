@@ -1,10 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 import { useSession } from "@/lib/auth-client";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { TrialBanner } from "@/components/trial-banner";
+import { Paywall } from "@/components/paywall";
+import type { AccessResult } from "@/lib/trial";
 
 export default function DashboardRootLayout({
   children,
@@ -13,6 +16,22 @@ export default function DashboardRootLayout({
 }) {
   const { data: session, isPending } = useSession();
   const router = useRouter();
+  const [access, setAccess] = useState<AccessResult | null>(null);
+  const [accessLoading, setAccessLoading] = useState(true);
+
+  const fetchAccess = useCallback(async () => {
+    try {
+      const res = await fetch("/api/access");
+      if (res.ok) {
+        const data = await res.json();
+        setAccess(data);
+      }
+    } catch {
+      // On error, allow access — don't block the dashboard
+    } finally {
+      setAccessLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -20,7 +39,30 @@ export default function DashboardRootLayout({
     }
   }, [session, isPending, router]);
 
-  if (isPending) {
+  useEffect(() => {
+    if (session?.user) {
+      fetchAccess();
+    }
+  }, [session, fetchAccess]);
+
+  const handleCheckout = async () => {
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: "pro", billingCycle: "monthly" }),
+      });
+      const data = await res.json();
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      }
+    } catch {
+      // fallback: navigate to billing page
+      router.push("/dashboard/billing");
+    }
+  };
+
+  if (isPending || (session && accessLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-lg font-mono">Loading...</div>
@@ -32,5 +74,25 @@ export default function DashboardRootLayout({
     return null;
   }
 
-  return <DashboardLayout>{children}</DashboardLayout>;
+  // Trial expired — show paywall instead of dashboard
+  if (access?.reason === "trial_expired") {
+    return (
+      <Paywall
+        daysExpired={access.trialDaysExpired ?? 0}
+        onCheckout={handleCheckout}
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      {/* Trial banner shown above the dashboard when trial is active */}
+      {access?.reason === "trial_active" && access.trialDaysRemaining !== undefined && (
+        <TrialBanner daysRemaining={access.trialDaysRemaining} />
+      )}
+      <div className="flex-1">
+        <DashboardLayout>{children}</DashboardLayout>
+      </div>
+    </div>
+  );
 }

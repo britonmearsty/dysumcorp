@@ -16,6 +16,7 @@ import {
 } from "@/lib/rate-limit";
 import { sendFileUploadNotification } from "@/lib/email-service";
 import { hashPassword } from "@/lib/password-utils";
+import { checkAccess } from "@/lib/trial";
 
 // Route segment config for App Router
 export const runtime = "nodejs";
@@ -151,6 +152,20 @@ export async function POST(request: NextRequest) {
       `[Portal Upload] Portal found: ${portal.name}, Owner: ${portal.user.email}`,
     );
     const userId = portal.userId;
+
+    // Check portal owner's trial/subscription access
+    const access = await checkAccess(userId);
+
+    if (!access.allowed) {
+      return NextResponse.json(
+        {
+          error: "Trial expired. Subscribe to continue.",
+          trialExpired: true,
+          code: "TRIAL_EXPIRED",
+        },
+        { status: 402 },
+      );
+    }
 
     // Get cloud storage token based on portal's storageProvider setting
     const portalProvider =

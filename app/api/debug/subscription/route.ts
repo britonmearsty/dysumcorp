@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-server";
 import { isAdmin } from "@/lib/admin";
+import { getTrialExpiry } from "@/lib/trial";
 
 export async function GET(request: Request) {
   try {
@@ -29,23 +30,35 @@ export async function GET(request: Request) {
         subscriptionPlan: true,
         subscriptionStatus: true,
         creemCustomerId: true,
+        trialStartedAt: true,
+        hadTrial: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+
+    // Compute trialExpired
+    let trialExpired: boolean | null = null;
+    if (user?.trialStartedAt) {
+      const expiry = getTrialExpiry(user.trialStartedAt);
+      trialExpired = new Date() >= expiry;
+    }
 
     // Get Creem subscriptions from database
     const creemSubscriptions = await prisma.creem_subscription.findMany({
       where: {
         OR: [
           { referenceId: session.user.id },
-          { creemCustomerId: user?.creemCustomerId },
+          { creemCustomerId: user?.creemCustomerId ?? undefined },
         ],
       },
     });
 
     return NextResponse.json({
-      userFromDB: user,
+      userFromDB: {
+        ...user,
+        trialExpired,
+      },
       userFromSession: session.user,
       creemSubscriptions,
       timestamp: new Date().toISOString(),

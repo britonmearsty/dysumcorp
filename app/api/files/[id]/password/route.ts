@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { hashPassword, validatePassword } from "@/lib/password-utils";
-import { checkFeatureAccess, getUserPlanType } from "@/lib/plan-limits";
 
 // PUT /api/files/[id]/password - Set password protection on a file
 export async function PUT(
@@ -37,22 +36,6 @@ export async function PUT(
           details: validation.errors,
         },
         { status: 400 },
-      );
-    }
-
-    // Check if user has access to password protection feature
-    const planType = await getUserPlanType(session.user.id);
-    const featureCheck = checkFeatureAccess(planType, "passwordProtection");
-
-    if (!featureCheck.allowed) {
-      return NextResponse.json(
-        {
-          error:
-            featureCheck.reason || "Password protection requires a Pro plan",
-          upgrade: true,
-          currentPlan: planType,
-        },
-        { status: 403 },
       );
     }
 

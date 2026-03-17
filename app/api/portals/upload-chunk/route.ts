@@ -17,7 +17,6 @@ import {
   getFallbackUploadSessions,
   UploadSession,
 } from "@/lib/upload-sessions";
-import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 
 function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
@@ -222,22 +221,7 @@ export async function POST(request: NextRequest) {
 
     // Check storage limit on first chunk
     if (chunkIndex === 0) {
-      const planType = await getUserPlanType(portal.userId);
-      const storageCheck = await checkStorageLimit(
-        portal.userId,
-        planType,
-        fileSize,
-      );
-
-      if (!storageCheck.allowed) {
-        return NextResponse.json(
-          {
-            error: storageCheck.reason || "Storage limit exceeded",
-            upgrade: true,
-          },
-          { status: 403 },
-        );
-      }
+      // Storage limits removed — all trial/pro users have full access
     }
 
     // Validate file size

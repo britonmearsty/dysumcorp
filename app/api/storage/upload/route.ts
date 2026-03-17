@@ -7,7 +7,7 @@ import {
   uploadToDropbox,
   type StorageProvider,
 } from "@/lib/storage-api";
-import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -136,23 +136,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Invalid provider. Must be 'google' or 'dropbox'" },
         { status: 400 },
-      );
-    }
-
-    // Check storage limit before uploading
-    const planType = await getUserPlanType(userId);
-    const storageCheck = await checkStorageLimit(userId, planType, file.size);
-
-    if (!storageCheck.allowed) {
-      return NextResponse.json(
-        {
-          error: storageCheck.reason,
-          upgrade: true,
-          currentPlan: planType,
-          currentUsage: storageCheck.current,
-          limit: storageCheck.limit,
-        },
-        { status: 403 },
       );
     }
 

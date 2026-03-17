@@ -1,4 +1,4 @@
-export type PlanType = "free" | "pro";
+export type PlanType = "trial" | "pro" | "expired";
 
 export interface PlanLimits {
   portals: number;
@@ -19,42 +19,14 @@ export interface PricingPlan {
   description: string;
   price: number;
   priceAnnual: number;
-  creemProductId: string; // You'll get this from Creem dashboard
+  creemProductId: string;
   creemProductIdAnnual: string;
   limits: PlanLimits;
   features: string[];
   popular?: boolean;
 }
 
-export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
-  free: {
-    id: "free",
-    name: "Free",
-    description: "Perfect for trying out the platform",
-    price: 0,
-    priceAnnual: 0,
-    creemProductId: "", // No product ID for free plan
-    creemProductIdAnnual: "",
-    limits: {
-      portals: 1,
-      storage: 1, // 1GB
-      customDomains: 0,
-      whiteLabeling: false,
-      passwordProtection: false,
-      expiringLinks: false,
-      analytics: false,
-      apiAccess: false,
-      prioritySupport: false,
-      customBranding: false,
-    },
-    features: [
-      "1 Portal",
-      "1GB Storage",
-      "Basic file sharing",
-      "Community support",
-      "Powered by branding",
-    ],
-  },
+export const PRICING_PLANS: Record<"pro", PricingPlan> = {
   pro: {
     id: "pro",
     name: "Pro",
@@ -89,10 +61,6 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
   },
 };
 
-export function getPlanLimits(planType: PlanType): PlanLimits {
-  return PRICING_PLANS[planType].limits;
-}
-
 export function getPlanByCreemProductId(productId: string): PricingPlan | null {
   for (const plan of Object.values(PRICING_PLANS)) {
     if (
@@ -102,7 +70,6 @@ export function getPlanByCreemProductId(productId: string): PricingPlan | null {
       return plan;
     }
   }
-
   return null;
 }
 
@@ -110,7 +77,6 @@ export function formatStorage(gb: number): string {
   if (gb >= 1000) {
     return `${gb / 1000}TB`;
   }
-
   return `${gb}GB`;
 }
 

@@ -8,7 +8,6 @@ import {
   findOrCreateClientFolder,
 } from "@/lib/storage-api";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
-import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -63,29 +62,6 @@ export async function POST(request: NextRequest) {
     if (!portal.isActive) {
       return NextResponse.json(
         { error: "Portal is not accepting uploads" },
-        { status: 403 },
-      );
-    }
-
-    // Check storage limit before allowing upload
-    const planType = await getUserPlanType(portal.userId);
-    const storageCheck = await checkStorageLimit(
-      portal.userId,
-      planType,
-      Number(fileSize),
-    );
-
-    if (!storageCheck.allowed) {
-      console.log("[Portal Upload URL] Storage limit exceeded:", {
-        current: storageCheck.current,
-        limit: storageCheck.limit,
-      });
-
-      return NextResponse.json(
-        {
-          error: storageCheck.reason || "Storage limit exceeded",
-          upgrade: true,
-        },
         { status: 403 },
       );
     }

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { getUserPlanType, checkPortalLimit } from "@/lib/plan-limits";
+import { getUserPlanType } from "@/lib/plan-limits";
+import { checkAccess } from "@/lib/trial";
 import { isAdmin } from "@/lib/admin";
 
 export async function GET(request: Request) {
@@ -71,25 +72,25 @@ export async function GET(request: Request) {
         diagnostics.errors.push("Plan type check failed");
       }
 
-      // 4. Check portal limits
+      // 4. Check access via trial system
       if (diagnostics.checks.planType.planType) {
         diagnostics.checks.portalLimit = { status: "checking" };
         try {
-          const limitCheck = await checkPortalLimit(
+          const accessResult = await checkAccess(
             diagnostics.checks.session.userId,
-            diagnostics.checks.planType.planType,
           );
 
           diagnostics.checks.portalLimit = {
             status: "success",
-            ...limitCheck,
+            allowed: accessResult.allowed,
+            reason: accessResult.reason,
           };
         } catch (error) {
           diagnostics.checks.portalLimit = {
             status: "error",
             error: error instanceof Error ? error.message : String(error),
           };
-          diagnostics.errors.push("Portal limit check failed");
+          diagnostics.errors.push("Access check failed");
         }
       }
 

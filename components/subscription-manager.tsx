@@ -32,7 +32,7 @@ export function SubscriptionManager({
     text: string;
   } | null>(null);
 
-  const isFreePlan = currentPlan === "free";
+  const isFreePlan = false; // free plan removed
   const currentPlanDetails =
     PRICING_PLANS[currentPlan as keyof typeof PRICING_PLANS];
 
@@ -72,11 +72,11 @@ export function SubscriptionManager({
     }
   };
 
-  if (isFreePlan) {
+  if (isFreePlan || !currentPlanDetails) {
     return (
       <Card className="bg-card border border-border rounded-xl" shadow="none">
         <CardBody className="text-center py-8">
-          <p className="text-muted-foreground mb-4">You are on the Free plan</p>
+          <p className="text-muted-foreground mb-4">No active subscription</p>
         </CardBody>
       </Card>
     );
@@ -123,8 +123,8 @@ export function SubscriptionManager({
             <p>Are you sure you want to cancel your subscription?</p>
             <p className="text-small text-default-500 mt-2">
               You will continue to have access until the end of your current
-              billing period. After that, your account will be downgraded to the
-              Free plan.
+              billing period. After that, your account will be downgraded and
+              you will need to resubscribe to regain access.
             </p>
           </ModalBody>
           <ModalFooter>
