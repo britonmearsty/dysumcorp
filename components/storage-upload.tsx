@@ -34,7 +34,6 @@ export function StorageUpload() {
       const res = await uploadFile({
         file,
         portalId: "temp-portal-id", // In a real app, this would be passed as a prop
-        provider,
         onProgress: (p) => setProgress(p),
       });
 
