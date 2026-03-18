@@ -1,7 +1,13 @@
 /**
- * Upload Manager - Hybrid upload system
- * Automatically chooses between API upload (< 4MB) and direct upload (>= 4MB)
- * Enhanced with chunked uploading and retries for reliability
+ * Upload Manager — R2 + Cloudflare Worker flow
+ *
+ * Flow:
+ *  1. POST /api/portals/r2-presign  → presignedUrl, uploadToken, stagingKey, workerUrl
+ *  2. XHR PUT presignedUrl          → file bytes go directly to R2 (progress 0–80%)
+ *  3. POST workerUrl/transfer       → Worker picks up from R2, streams to Drive/Dropbox
+ *  4. Poll /api/portals/r2-status   → wait for Worker callback (progress 80–100%)
+ *
+ * Vercel never touches file bytes.
  */
 
 export interface UploadOptions {
@@ -10,8 +16,8 @@ export interface UploadOptions {
   password?: string;
   uploaderName?: string;
   uploaderEmail?: string;
+  uploaderNotes?: string;
   onProgress?: (progress: number) => void;
-  provider?: "google" | "dropbox";
   skipNotification?: boolean;
 }
 
@@ -19,380 +25,183 @@ export interface UploadResult {
   success: boolean;
   file?: any;
   error?: string;
-  method: "api" | "direct";
+  method: "r2";
 }
 
-const SIZE_THRESHOLD = 0; // Force all files through direct upload to bypass Vercel limits
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
 const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 1000; // 1 second
+const POLL_INTERVAL_MS = 2000;
+const POLL_MAX_ATTEMPTS = 60; // 120 s total
 
-/**
- * Upload file using the appropriate method based on file size
- */
-export async function uploadFile(
-  options: UploadOptions,
-): Promise<UploadResult> {
-  const { file } = options;
-
-  // Decide upload method based on file size
-  if (file.size < SIZE_THRESHOLD) {
-    // Small file: Use API upload (simple, fast)
-    return uploadViaAPI(options);
-  } else {
-    // Large file: Use direct upload with chunking and retries
-    return uploadDirectToCloudChunked(options);
-  }
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
- * Upload via API route (for files < 4MB)
+ * Upload a file via R2 presigned PUT + Cloudflare Worker transfer.
  */
-async function uploadViaAPI(options: UploadOptions): Promise<UploadResult> {
+export async function uploadFile(options: UploadOptions): Promise<UploadResult> {
+  return uploadViaR2(options);
+}
+
+async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
   const {
     file,
     portalId,
     password,
     uploaderName,
     uploaderEmail,
+    uploaderNotes,
     onProgress,
     skipNotification,
   } = options;
 
-  try {
-    const formData = new FormData();
-
-    formData.append("files", file);
-    formData.append("portalId", portalId);
-
-    if (password) formData.append("passwords", password);
-    if (uploaderName) formData.append("uploaderName", uploaderName);
-    if (uploaderEmail) formData.append("uploaderEmail", uploaderEmail);
-    if (skipNotification) formData.append("skipNotification", "true");
-
-    // Create XMLHttpRequest for progress tracking
-    const result = await new Promise<any>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-
-      xhr.upload.addEventListener("progress", (e) => {
-        if (e.lengthComputable && onProgress) {
-          const percentComplete = (e.loaded / e.total) * 100;
-
-          onProgress(percentComplete);
-        }
-      });
-
-      xhr.addEventListener("load", () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(JSON.parse(xhr.responseText));
-        } else {
-          reject(new Error(`Upload failed: ${xhr.statusText}`));
-        }
-      });
-
-      xhr.addEventListener("error", () => {
-        reject(new Error("Network error"));
-      });
-
-      xhr.open("POST", "/api/portals/upload");
-      xhr.send(formData);
-    });
-
-    return {
-      success: true,
-      file: result.files?.[0],
-      method: "api",
-    };
-  } catch (error) {
-    console.error("API upload error:", error);
-
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Upload failed",
-      method: "api",
-    };
-  }
-}
-
-/**
- * Helper for exponential backoff retries
- */
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  retries: number = MAX_RETRIES,
-  delay: number = INITIAL_RETRY_DELAY,
-): Promise<T> {
-  try {
-    return await fn();
-  } catch (error) {
-    if (retries <= 0) throw error;
-    console.warn(
-      `Retry attempt remaining: ${retries}. Retrying in ${delay}ms...`,
-    );
-    await new Promise((resolve) => setTimeout(resolve, delay));
-
-    return withRetry(fn, retries - 1, delay * 2);
-  }
-}
-
-/**
- * Upload directly to cloud storage using chunking and retries
- */
-async function uploadDirectToCloudChunked(
-  options: UploadOptions,
-): Promise<UploadResult> {
-  const {
-    file,
-    portalId,
-    password,
-    uploaderName,
-    uploaderEmail,
-    onProgress,
-    provider,
-    skipNotification,
-  } = options;
+  // ── Step 1: Get presigned URL from Vercel ──────────────────────────────────
+  let presignedUrl: string;
+  let uploadToken: string;
+  let stagingKey: string;
+  let workerUrl: string;
 
   try {
-    // Step 1: Get upload session info from our API
-    const uploadUrlResponse = await fetch("/api/portals/upload-url", {
+    const res = await fetch("/api/portals/r2-presign", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        portalId,
         fileName: file.name,
         fileSize: file.size,
-        mimeType: file.type,
-        portalId,
-        provider: provider || "google",
+        mimeType: file.type || "application/octet-stream",
         uploaderName,
+        uploaderEmail,
+        uploaderNotes,
+        password,
       }),
     });
 
-    if (!uploadUrlResponse.ok) {
-      const errorData = await uploadUrlResponse.json();
-
-      throw new Error(errorData.error || "Failed to get upload session");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return { success: false, error: (data as any).error ?? "Failed to get upload URL", method: "r2" };
     }
 
-    const uploadData = await uploadUrlResponse.json();
-    let storageUrl = "";
-    let storageFileId = "";
-
-    // Step 2: Perform chunked upload based on provider
-    if (uploadData.provider === "google") {
-      const result = await uploadToGoogleDriveChunked(
-        uploadData.uploadUrl,
-        file,
-        onProgress,
-      );
-
-      storageUrl =
-        result.webViewLink ||
-        `https://drive.google.com/file/d/${result.id}/view`;
-      storageFileId = result.id;
-    } else if (uploadData.provider === "dropbox") {
-      const result = await uploadToDropboxChunked(
-        uploadData.accessToken,
-        uploadData.path,
-        file,
-        onProgress,
-      );
-
-      storageUrl = "";
-      storageFileId = result.id;
-    }
-
-    // Step 3: Confirm upload and save metadata
-    const confirmResponse = await withRetry(() =>
-      fetch("/api/portals/confirm-upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          portalId,
-          fileName: file.name,
-          fileSize: file.size,
-          mimeType: file.type,
-          storageUrl,
-          storageFileId,
-          password,
-          uploaderName,
-          uploaderEmail,
-          skipNotification,
-        }),
-      }),
-    );
-
-    if (!confirmResponse.ok) {
-      throw new Error("Failed to confirm upload");
-    }
-
-    const confirmData = await confirmResponse.json();
-
-    return {
-      success: true,
-      file: confirmData.file,
-      method: "direct",
-    };
-  } catch (error) {
-    console.error("Direct chunked upload error:", error);
-
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Upload failed",
-      method: "direct",
-    };
+    const data = await res.json();
+    presignedUrl = data.presignedUrl;
+    uploadToken = data.uploadToken;
+    stagingKey = data.stagingKey;
+    workerUrl = data.workerUrl;
+  } catch (err) {
+    return { success: false, error: "Network error during presign", method: "r2" };
   }
-}
 
-/**
- * Google Drive Chunked Upload (Resumable)
- */
-async function uploadToGoogleDriveChunked(
-  uploadUrl: string,
-  file: File,
-  onProgress?: (progress: number) => void,
-): Promise<any> {
-  const totalSize = file.size;
-  let uploadedBytes = 0;
+  // ── Step 2: PUT file directly to R2 (with retries + progress 0–80%) ────────
+  let putAttempt = 0;
+  let putSuccess = false;
 
-  while (uploadedBytes < totalSize) {
-    const chunk = file.slice(
-      uploadedBytes,
-      Math.min(uploadedBytes + CHUNK_SIZE, totalSize),
-    );
-    const chunkStart = uploadedBytes;
-    const chunkEnd = chunkStart + chunk.size - 1;
+  while (putAttempt < MAX_RETRIES && !putSuccess) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
 
-    await withRetry(async () => {
-      const response = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Range": `bytes ${chunkStart}-${chunkEnd}/${totalSize}`,
-          "Content-Type": file.type || "application/octet-stream",
-        },
-        body: chunk,
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable && onProgress) {
+            onProgress((e.loaded / e.total) * 80);
+          }
+        });
+
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`R2 PUT failed: ${xhr.status} ${xhr.statusText}`));
+          }
+        });
+
+        xhr.addEventListener("error", () => reject(new Error("Network error during R2 PUT")));
+
+        xhr.open("PUT", presignedUrl);
+        xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+        xhr.send(file);
       });
 
-      // Google returns 308 Resume Incomplete for intermediate chunks
-      if (!response.ok && response.status !== 308) {
-        throw new Error(`Google Drive upload failed: ${response.statusText}`);
+      putSuccess = true;
+    } catch (err) {
+      putAttempt++;
+      if (putAttempt >= MAX_RETRIES) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : "R2 upload failed after retries",
+          method: "r2",
+        };
       }
-
-      if (uploadedBytes + chunk.size === totalSize) {
-        // Last chunk
-        return await response.json();
-      }
-    });
-
-    uploadedBytes += chunk.size;
-    if (onProgress) {
-      onProgress(Math.min((uploadedBytes / totalSize) * 100, 99));
+      await sleep(1000 * Math.pow(2, putAttempt - 1)); // 1s, 2s, 4s
     }
   }
 
-  // After loop, we need to get the final response if the last chunk didn't return it
-  // But in the logic above, we should have it. Let's refine to return the result.
-  // We'll verify the last chunk's JSON response.
-  const finalResponse = await withRetry(() =>
-    fetch(uploadUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Range": `bytes */${totalSize}`,
-      },
-    }),
-  );
+  // ── Step 3: Trigger Worker transfer ────────────────────────────────────────
+  const callbackUrl = `${window.location.origin}/api/portals/r2-confirm`;
 
-  if (onProgress) onProgress(100);
-
-  return await finalResponse.json();
-}
-
-/**
- * Dropbox Chunked Upload (Upload Session)
- */
-async function uploadToDropboxChunked(
-  accessToken: string,
-  path: string,
-  file: File,
-  onProgress?: (progress: number) => void,
-): Promise<any> {
-  const totalSize = file.size;
-
-  // Step 1: Start Session
-  const startResponse = await withRetry(() =>
-    fetch("https://content.dropboxapi.com/2/files/upload_session/start", {
+  try {
+    const res = await fetch(`${workerUrl}/transfer`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Dropbox-API-Arg": JSON.stringify({ close: false }),
-        "Content-Type": "application/octet-stream",
-      },
-    }),
-  );
-
-  if (!startResponse.ok) {
-    throw new Error(
-      `Dropbox start session failed: ${startResponse.statusText}`,
-    );
-  }
-
-  const { session_id } = await startResponse.json();
-  let uploadedBytes = 0;
-
-  // Step 2: Append Chunks
-  while (uploadedBytes < totalSize - CHUNK_SIZE) {
-    const chunk = file.slice(uploadedBytes, uploadedBytes + CHUNK_SIZE);
-
-    await withRetry(() =>
-      fetch("https://content.dropboxapi.com/2/files/upload_session/append_v2", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Dropbox-API-Arg": JSON.stringify({
-            cursor: { session_id, offset: uploadedBytes },
-            close: false,
-          }),
-          "Content-Type": "application/octet-stream",
-        },
-        body: chunk,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        uploadToken,
+        stagingKey,
+        portalId,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type || "application/octet-stream",
+        uploaderName,
+        uploaderEmail,
+        uploaderNotes,
+        callbackUrl,
+        skipNotification,
       }),
-    );
+    });
 
-    uploadedBytes += chunk.size;
-    if (onProgress) onProgress((uploadedBytes / totalSize) * 100);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return { success: false, error: (data as any).error ?? "Worker rejected transfer", method: "r2" };
+    }
+  } catch (err) {
+    return { success: false, error: "Failed to reach transfer worker", method: "r2" };
   }
 
-  // Step 3: Finish Session
-  const finalChunk = file.slice(uploadedBytes);
-  const finishResponse = await withRetry(() =>
-    fetch("https://content.dropboxapi.com/2/files/upload_session/finish", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Dropbox-API-Arg": JSON.stringify({
-          cursor: { session_id, offset: uploadedBytes },
-          commit: {
-            path: path.startsWith("/") ? path : `/${path}`,
-            mode: "add",
-            autorename: true,
-          },
-        }),
-        "Content-Type": "application/octet-stream",
-      },
-      body: finalChunk,
-    }),
-  );
+  if (onProgress) onProgress(80);
 
-  if (!finishResponse.ok) {
-    throw new Error(`Dropbox finish failed: ${finishResponse.statusText}`);
+  // ── Step 4: Poll r2-status until completed / failed / timeout ──────────────
+  for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
+    await sleep(POLL_INTERVAL_MS);
+
+    try {
+      const params = new URLSearchParams({ stagingKey, uploadToken });
+      const res = await fetch(`/api/portals/r2-status?${params}`);
+
+      if (!res.ok) continue;
+
+      const data = await res.json();
+
+      if (onProgress) {
+        // Map poll progress 80 → 99
+        onProgress(80 + (attempt / POLL_MAX_ATTEMPTS) * 19);
+      }
+
+      if (data.status === "completed") {
+        if (onProgress) onProgress(100);
+        return { success: true, file: data.file, method: "r2" };
+      }
+
+      if (data.status === "failed") {
+        return { success: false, error: "Transfer failed in worker", method: "r2" };
+      }
+    } catch {
+      // transient poll error — keep trying
+    }
   }
 
-  if (onProgress) onProgress(100);
-
-  return await finishResponse.json();
+  return { success: false, error: "Transfer timed out after 120s", method: "r2" };
 }
 
 /**
- * Upload multiple files and send a single batch notification report
+ * Upload multiple files and send a single batch notification report.
  */
 export async function uploadFiles(
   files: File[],
@@ -405,7 +214,7 @@ export async function uploadFiles(
     const result = await uploadFile({
       ...options,
       file,
-      skipNotification: true, // Skip individual notification for batch uploads
+      skipNotification: true, // suppress per-file emails; send one batch email below
     });
 
     results.push(result);
@@ -415,7 +224,6 @@ export async function uploadFiles(
     }
   }
 
-  // Send batch notification if there were successes
   if (successfulFiles.length > 0) {
     try {
       await fetch("/api/portals/batch-notification", {
@@ -428,15 +236,8 @@ export async function uploadFiles(
           uploaderEmail: options.uploaderEmail,
         }),
       });
-      console.log(
-        `[Upload Manager] Batch notification sent for ${successfulFiles.length} files`,
-      );
-    } catch (error) {
-      console.error(
-        "[Upload Manager] Failed to send batch notification:",
-        error,
-      );
-      // Don't fail the whole process if notification fails
+    } catch (err) {
+      console.error("[Upload Manager] Batch notification failed:", err);
     }
   }
 

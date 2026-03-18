@@ -203,4 +203,19 @@ model UsageTracking {
   @@map("usage_tracking")
 }
 
+model R2StagingUpload {
+  id            String   @id @default(cuid())
+  stagingKey    String   @unique
+  portalId      String
+  fileSize      BigInt
+  status        String   @default("pending") // pending | completed | failed
+  uploaderName  String?
+  uploaderEmail String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@map("r2_staging_upload")
+}
+
 

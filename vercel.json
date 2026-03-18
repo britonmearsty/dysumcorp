@@ -2,6 +2,12 @@
   "buildCommand": "prisma generate && next build",
   "framework": "nextjs",
   "regions": ["iad1"],
+  "crons": [
+    {
+      "path": "/api/admin/r2-cleanup",
+      "schedule": "0 2 * * *"
+    }
+  ],
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 10,
@@ -33,6 +39,26 @@
     },
     "app/api/storage/confirm-upload/route.ts": {
       "maxDuration": 10,
+      "memory": 1024
+    },
+    "app/api/portals/r2-presign/route.ts": {
+      "maxDuration": 10,
+      "memory": 1024
+    },
+    "app/api/portals/r2-confirm/route.ts": {
+      "maxDuration": 10,
+      "memory": 1024
+    },
+    "app/api/portals/r2-status/route.ts": {
+      "maxDuration": 10,
+      "memory": 1024
+    },
+    "app/api/portals/r2-worker-context/route.ts": {
+      "maxDuration": 10,
+      "memory": 1024
+    },
+    "app/api/admin/r2-cleanup/route.ts": {
+      "maxDuration": 30,
       "memory": 1024
     }
   }

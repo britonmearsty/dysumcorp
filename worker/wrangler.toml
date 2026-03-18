@@ -1,0 +1,21 @@
+name = "dysumcorp-transfer"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+# R2 bucket binding — Worker accesses the bucket via env.R2_BUCKET
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "dysumcorp-uploads"
+
+# Public vars (non-secret)
+[vars]
+VERCEL_APP_URL = "https://app.dysumcorp.com"
+
+# ── Secrets (never put real values here) ──────────────────────────────────────
+# Set each secret once via CLI:
+#
+#   wrangler secret put WORKER_SECRET
+#   wrangler secret put BETTER_AUTH_SECRET
+#
+# WORKER_SECRET    — shared secret used by Vercel to authenticate Worker callbacks
+# BETTER_AUTH_SECRET — same value as your Vercel BETTER_AUTH_SECRET (for token HMAC)
