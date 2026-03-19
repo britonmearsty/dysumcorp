@@ -23,7 +23,11 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/api/portals/upload") ||
     pathname.startsWith("/api/portals/direct-upload") ||
     pathname.startsWith("/api/portals/stream-upload") ||
-    pathname.startsWith("/api/portals/confirm-upload");
+    pathname.startsWith("/api/portals/confirm-upload") ||
+    pathname.startsWith("/api/portals/r2-presign") ||
+    pathname.startsWith("/api/portals/r2-worker-context") ||
+    pathname.startsWith("/api/portals/r2-confirm") ||
+    pathname.startsWith("/api/portals/r2-status");
 
   if (isDashboardRoute && !isAuthenticated) {
     return NextResponse.redirect(new URL("/auth", request.url));
