@@ -19,19 +19,34 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { uploadToken, uploaderName } = body;
+    const { uploadToken, uploaderName, workerSecret } = body;
 
     if (!uploadToken) {
       return NextResponse.json({ error: "uploadToken is required" }, { status: 400 });
     }
 
-    const token = validateUploadToken(uploadToken);
-    if (!token) {
-      return NextResponse.json({ error: "Invalid or expired upload token" }, { status: 401 });
+    // Accept either a valid WORKER_SECRET (from the Cloudflare Worker)
+    // or a valid upload token (from direct calls). Worker path is preferred
+    // because the token HMAC may differ between Node crypto and Web Crypto.
+    const isWorkerCall = workerSecret && workerSecret === process.env.WORKER_SECRET;
+
+    if (!isWorkerCall) {
+      const token = validateUploadToken(uploadToken);
+      if (!token) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    }
+
+    // Decode token payload (skip signature check for worker calls — worker already validated)
+    let tokenPayload: { portalId: string; uploaderName?: string };
+    try {
+      tokenPayload = JSON.parse(Buffer.from(uploadToken, "base64").toString("utf-8"));
+    } catch {
+      return NextResponse.json({ error: "Invalid token format" }, { status: 400 });
     }
 
     const portal = await prisma.portal.findUnique({
-      where: { id: token.portalId },
+      where: { id: tokenPayload.portalId },
       select: {
         id: true,
         name: true,
@@ -77,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Client sub-folder if enabled
-    const clientName = uploaderName ?? token.uploaderName;
+    const clientName = uploaderName ?? tokenPayload.uploaderName;
     if (portal.useClientFolders && clientName?.trim()) {
       const clientFolder = await findOrCreateClientFolder(
         accessToken,
