@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Lock, Loader2, AlertCircle, Upload } from "lucide-react";
 import { Toaster, toast } from "sonner";
@@ -12,6 +12,7 @@ import { PortalDropZone } from "@/components/portal/portal-drop-zone";
 import { PortalFileList } from "@/components/portal/portal-file-list";
 import { PortalButton } from "@/components/portal/portal-button";
 import { PortalSuccessView } from "@/components/portal/portal-success-view";
+import { uploadFiles } from "@/lib/upload-manager";
 
 interface Portal {
   id: string;
@@ -80,10 +81,8 @@ export default function PublicPortalPage() {
   const [uploaderEmail, setUploaderEmail] = useState("");
   const [portalPassword, setPortalPassword] = useState("");
   const [textboxValue, setTextboxValue] = useState("");
-  const [uploadSessionId, setUploadSessionId] = useState<string | null>(null);
   const [sentFiles, setSentFiles] = useState<Array<{ name: string; size: number; type: string }>>([]);
-  const [lastUploaderInfo, setLastUploaderInfo] = useState<{ name: string; email: string; notes: string } | null>(null);
-  const uploadSessionIdRef = useRef<string | null>(null); // Use ref to avoid race conditions
+
 
   useEffect(() => {
     fetchPortal();
@@ -246,7 +245,7 @@ export default function PublicPortalPage() {
 
   const handleUpload = async () => {
     const validFiles = files.filter((f) => f.status === "pending");
-    
+
     if (validFiles.length === 0) {
       setErrorMessage("Please select at least one valid file");
       setUploadStatus("error");
@@ -288,374 +287,70 @@ export default function PublicPortalPage() {
     setUploading(true);
     setUploadStatus("idle");
     setErrorMessage("");
-    
-    // Check if user info has changed - if so, reset session
-    const currentInfo = {
-      name: uploaderName.trim(),
-      email: uploaderEmail.trim(),
-      notes: textboxValue.trim(),
-    };
-    
-    if (lastUploaderInfo && (
-      lastUploaderInfo.name !== currentInfo.name ||
-      lastUploaderInfo.email !== currentInfo.email ||
-      lastUploaderInfo.notes !== currentInfo.notes
-    )) {
-      // User info changed, start new session
-      setUploadSessionId(null);
-      uploadSessionIdRef.current = null;
-    }
-    
-    setLastUploaderInfo(currentInfo);
 
-    // Create upload session BEFORE starting any file uploads to ensure all files use the same session
-    if (!uploadSessionIdRef.current) {
-      try {
-        const sessionResponse = await fetch("/api/portals/create-upload-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            portalId: portal.id,
-            uploaderName: uploaderName.trim(),
-            uploaderEmail: uploaderEmail.trim(),
-            uploaderNotes: textboxValue.trim() || null,
-          }),
-        });
-
-        if (sessionResponse.ok) {
-          const sessionData = await sessionResponse.json();
-          uploadSessionIdRef.current = sessionData.uploadSessionId;
-          setUploadSessionId(sessionData.uploadSessionId);
-          console.log("[Upload] Created upload session:", sessionData.uploadSessionId);
-        } else {
-          console.error("[Upload] Failed to create upload session, will create on first file");
-        }
-      } catch (error) {
-        console.error("[Upload] Error creating upload session:", error);
-        // Continue anyway, session will be created with first file
-      }
-    }
-
-    const successfulFiles: Array<{ name: string; size: number; type: string }> = [];
-    let allCompleted = false;
+    // Mark all pending files as uploading
+    setFiles((prev) =>
+      prev.map((f) => (f.status === "pending" ? { ...f, status: "uploading" as const, progress: 0 } : f))
+    );
 
     try {
-      const uploadPromises = validFiles.map(async (uploadFile) => {
-        const file = uploadFile.file;
-        const portalMaxSize = parseInt(portal.maxFileSize);
-
-        if (file.size > portalMaxSize) {
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === uploadFile.id
-                ? { ...f, status: "error" as const, error: `Exceeds ${(portalMaxSize / 1024 / 1024).toFixed(0)}MB limit` }
-                : f
-            )
-          );
-          return null;
+      const results = await uploadFiles(
+        validFiles.map((f) => f.file),
+        {
+          portalId: portal.id,
+          password: portalPassword || undefined,
+          uploaderName: uploaderName.trim(),
+          uploaderEmail: uploaderEmail.trim(),
+          uploaderNotes: textboxValue.trim() || undefined,
+          onProgress: (progress) => {
+            // Apply progress to all currently uploading files
+            setFiles((prev) =>
+              prev.map((f) => (f.status === "uploading" ? { ...f, progress } : f))
+            );
+          },
         }
+      );
 
-        console.log(`[Upload] Starting upload for file: ${file.name}`);
+      const successful: Array<{ name: string; size: number; type: string }> = [];
 
-        setFiles((prev) =>
-          prev.map((f) => (f.id === uploadFile.id ? { ...f, status: "uploading" as const, progress: 0 } : f))
-        );
-
-        try {
-          // Step 1: Get upload URL/credentials
-          const directUploadResponse = await fetch("/api/portals/direct-upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              fileName: file.name,
-              fileSize: file.size,
-              mimeType: file.type || "application/octet-stream",
-              portalId: portal.id,
-              clientName: uploaderName.trim(),
-              clientEmail: uploaderEmail.trim(),
-            }),
-          });
-
-          if (!directUploadResponse.ok) {
-            const errorData = await directUploadResponse.json();
-            throw new Error(errorData.error || "Failed to prepare upload");
-          }
-
-          const uploadData = await directUploadResponse.json();
-
-          console.log(`[Upload] Upload credentials received for ${file.name}, provider: ${uploadData.provider}`);
-
-          // Step 2: Upload to cloud storage via streaming
-          let storageUrl = "";
-          let storageFileId = "";
-
-          if (uploadData.method === "stream") {
-            const chunkSize = uploadData.chunkSize || 4 * 1024 * 1024;
-            const totalChunks = Math.ceil(file.size / chunkSize);
-
-            console.log(`[Upload] Streaming ${file.name} in ${totalChunks} chunks`);
-
-            if (uploadData.provider === "google") {
-              let fileData = null;
-
-              for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-                const start = chunkIndex * chunkSize;
-                const end = Math.min(start + chunkSize, file.size);
-                const chunk = file.slice(start, end);
-
-                const formData = new FormData();
-                formData.append("chunk", chunk);
-                formData.append("provider", "google");
-                formData.append("uploadUrl", uploadData.uploadUrl);
-                formData.append("chunkStart", start.toString());
-                formData.append("chunkEnd", end.toString());
-                formData.append("totalSize", file.size.toString());
-                formData.append("uploadToken", uploadData.uploadToken);
-
-                const response = await fetch("/api/portals/stream-upload", {
-                  method: "POST",
-                  body: formData,
-                });
-
-                if (!response.ok) {
-                  const error = await response.json();
-                  throw new Error(error.error || "Upload failed");
-                }
-
-                const result = await response.json();
-
-                setFiles((prev) =>
-                  prev.map((f) =>
-                    f.id === uploadFile.id ? { ...f, progress: Math.round((end / file.size) * 100) } : f
-                  )
-                );
-
-                if (result.complete && result.fileData) {
-                  fileData = result.fileData;
-                  break;
-                }
-              }
-
-              if (!fileData?.id) {
-                throw new Error("Upload completed but no file data received");
-              }
-
-              storageFileId = fileData.id;
-              storageUrl = `https://drive.google.com/file/d/${fileData.id}/view`;
-              console.log(`[Upload] File uploaded to Google Drive: ${file.name}`);
-            } else if (uploadData.provider === "dropbox") {
-              const MAX_CONCURRENT_CHUNKS = 8;
-              const concurrency = Math.max(1, Math.floor(MAX_CONCURRENT_CHUNKS / validFiles.length));
-
-              console.log(`[Upload] Dropbox parallel upload: ${concurrency} chunks at once for ${file.name}`);
-
-              let sessionId = "";
-              let uploadedBytes = 0;
-
-              // Phase 1: Start session with first chunk
-              const firstChunk = file.slice(0, Math.min(chunkSize, file.size));
-              const startFormData = new FormData();
-              startFormData.append("chunk", firstChunk);
-              startFormData.append("provider", "dropbox");
-              startFormData.append("accessToken", uploadData.accessToken);
-              startFormData.append("uploadPath", uploadData.uploadPath);
-              startFormData.append("uploadToken", uploadData.uploadToken);
-              startFormData.append("isLastChunk", (totalChunks === 1).toString());
-              startFormData.append("chunkIndex", "0");
-
-              const startResponse = await fetch("/api/portals/stream-upload", {
-                method: "POST",
-                body: startFormData,
-              });
-
-              if (!startResponse.ok) {
-                const error = await startResponse.json();
-                throw new Error(error.error || "Failed to start Dropbox session");
-              }
-
-              const startResult = await startResponse.json();
-              sessionId = startResult.sessionId;
-              uploadedBytes = Math.min(chunkSize, file.size);
-
-              setFiles((prev) =>
-                prev.map((f) =>
-                  f.id === uploadFile.id ? { ...f, progress: Math.round((uploadedBytes / file.size) * 100) } : f
-                )
-              );
-
-              if (totalChunks === 1 && startResult.complete) {
-                storageFileId = startResult.fileData.id;
-                storageUrl = startResult.fileData.id;
-                console.log(`[Upload] Single chunk file uploaded to Dropbox: ${file.name}`);
-              } else {
-                // Phase 2: Upload remaining chunks SEQUENTIALLY (Dropbox requires sequential append)
-                console.log(`[Upload] Dropbox sequential upload for ${file.name}`);
-                
-                for (let chunkIndex = 1; chunkIndex < totalChunks; chunkIndex++) {
-                  const start = chunkIndex * chunkSize;
-                  const end = Math.min(start + chunkSize, file.size);
-                  const chunk = file.slice(start, end);
-                  const isLastChunk = chunkIndex === totalChunks - 1;
-
-                  const formData = new FormData();
-                  formData.append("chunk", chunk);
-                  formData.append("provider", "dropbox");
-                  formData.append("accessToken", uploadData.accessToken);
-                  formData.append("uploadPath", uploadData.uploadPath);
-                  formData.append("uploadToken", uploadData.uploadToken);
-                  formData.append("isLastChunk", isLastChunk.toString());
-                  formData.append("chunkIndex", chunkIndex.toString());
-                  formData.append("sessionId", sessionId);
-                  formData.append("offset", uploadedBytes.toString());
-
-                  const response = await fetch("/api/portals/stream-upload", {
-                    method: "POST",
-                    body: formData,
-                  });
-
-                  if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(`Chunk ${chunkIndex} failed: ${error.error}`);
-                  }
-
-                  const result = await response.json();
-                  uploadedBytes += (end - start);
-
-                  setFiles((prev) =>
-                    prev.map((f) =>
-                      f.id === uploadFile.id ? { ...f, progress: Math.round((uploadedBytes / file.size) * 100) } : f
-                    )
-                  );
-
-                  if (isLastChunk && result.complete && result.fileData) {
-                    storageFileId = result.fileData.id;
-                    storageUrl = result.fileData.id;
-                    console.log(`[Upload] File uploaded to Dropbox: ${file.name}`);
-                  }
-                }
-              }
-            } else {
-              throw new Error(`Unsupported provider: ${uploadData.provider}`);
-            }
-          } else {
-            throw new Error(`Unsupported upload method: ${uploadData.method}`);
-          }
-
-          // Step 3: Confirm upload and save metadata
-          console.log(`[Upload] Confirming upload for ${file.name}, sessionId: ${uploadSessionIdRef.current}`);
-          
-          const confirmResponse = await fetch("/api/portals/confirm-upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              portalId: portal.id,
-              fileName: file.name,
-              fileSize: file.size,
-              mimeType: file.type || "application/octet-stream",
-              storageUrl,
-              storageFileId,
-              provider: uploadData.provider,
-              uploaderName: uploaderName.trim(),
-              uploaderEmail: uploaderEmail.trim(),
-              uploaderNotes: textboxValue.trim() || null,
-              uploadSessionId: uploadSessionIdRef.current, // Use pre-created session ID
-            }),
-          });
-
-          if (!confirmResponse.ok) {
-            const errorData = await confirmResponse.json();
-            throw new Error(errorData.error || "Failed to confirm upload");
-          }
-
-          const confirmData = await confirmResponse.json();
-          
-          console.log(`[Upload] Confirm response sessionId: ${confirmData.uploadSessionId}`);
-          
-          // Store session ID if it was created by the backend (fallback)
-          if (confirmData.uploadSessionId && !uploadSessionIdRef.current) {
-            console.log(`[Upload] Storing fallback sessionId: ${confirmData.uploadSessionId}`);
-            uploadSessionIdRef.current = confirmData.uploadSessionId;
-            setUploadSessionId(confirmData.uploadSessionId);
-          }
-
-          console.log(`[Upload] Upload confirmed for ${file.name}`);
-
-          // Mark file as done and move to completed
+      results.forEach((result, i) => {
+        const uploadFile = validFiles[i];
+        if (result.success) {
+          successful.push({ name: uploadFile.file.name, size: uploadFile.file.size, type: uploadFile.file.type });
           setFiles((prev) =>
             prev.map((f) => (f.id === uploadFile.id ? { ...f, progress: 100, status: "done" as const } : f))
           );
-
-          // Move to completed drawer after a brief delay
           setTimeout(() => {
             setFiles((prev) => {
               const completed = prev.find((f) => f.id === uploadFile.id);
-              if (completed) {
-                setCompletedFiles((c) => [...c, completed]);
-              }
+              if (completed) setCompletedFiles((c) => [...c, completed]);
               return prev.filter((f) => f.id !== uploadFile.id);
             });
           }, 600);
-
-          return {
-            name: file.name,
-            size: file.size,
-            type: file.type,
-          };
-        } catch (error) {
-          console.error(`[Upload] Failed to upload ${file.name}:`, error);
-          const errorMsg = error instanceof Error ? error.message : "Upload failed";
-          
+        } else {
           setFiles((prev) =>
             prev.map((f) =>
-              f.id === uploadFile.id ? { ...f, status: "error" as const, error: errorMsg, progress: 0 } : f
+              f.id === uploadFile.id
+                ? { ...f, status: "error" as const, error: result.error ?? "Upload failed", progress: 0 }
+                : f
             )
           );
-          
-          return null;
         }
       });
 
-      const results = await Promise.all(uploadPromises);
-      const successful = results.filter((r): r is { name: string; size: number; type: string } => r !== null);
-      successfulFiles.push(...successful);
-
-      // Send batch notification
-      if (successfulFiles.length > 0) {
-        try {
-          await fetch("/api/portals/batch-notification", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              portalId: portal.id,
-              files: successfulFiles,
-              uploaderName: uploaderName.trim(),
-              uploaderEmail: uploaderEmail.trim(),
-            }),
-          });
-        } catch (notifError) {
-          console.error("[Upload] Failed to send notification:", notifError);
-        }
-      }
-
-      // Check if all files are done (either completed or error)
-      allCompleted = true;
-      
-      if (successfulFiles.length > 0) {
-        setSentFiles(successfulFiles);
+      if (successful.length > 0) {
+        setSentFiles(successful);
         setUploadStatus("success");
       } else {
         setErrorMessage("All uploads failed. Please try again.");
         setUploadStatus("error");
       }
     } catch (error) {
-      console.error("Upload failed:", error);
       const errorMsg = error instanceof Error ? error.message : "Upload failed. Please try again.";
       setErrorMessage(errorMsg);
       setUploadStatus("error");
     } finally {
-      if (allCompleted) {
-        setUploading(false);
-      }
+      setUploading(false);
     }
   };
 
@@ -664,8 +359,6 @@ export default function PublicPortalPage() {
     setFiles([]);
     setCompletedFiles([]);
     setSentFiles([]);
-    // Keep uploadSessionId to continue adding to the same session
-    // It will only be reset if user changes their info
   };
 
   if (loading) {
