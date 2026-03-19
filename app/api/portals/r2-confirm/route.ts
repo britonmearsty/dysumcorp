@@ -91,7 +91,6 @@ export async function POST(request: NextRequest) {
           portalId,
           uploaderName: uploaderName ?? null,
           uploaderEmail: uploaderEmail ?? null,
-          uploaderNotes: uploaderNotes ?? null,
           uploadSessionId: resolvedSessionId,
         },
       });
