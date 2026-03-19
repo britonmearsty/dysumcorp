@@ -382,15 +382,39 @@ async function runTransfer(
   }
 }
 
+// ── CORS helpers ─────────────────────────────────────────────────────────────
+
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "https://dysumcorppro.vercel.app",
+  "https://app.dysumcorp.com",
+];
+
+function corsHeaders(origin: string | null): Record<string, string> {
+  const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "3600",
+  };
+}
+
 // ── Request handler ───────────────────────────────────────────────────────────
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    const origin = request.headers.get("Origin");
+
+    // Handle CORS preflight
+    if (request.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: corsHeaders(origin) });
+    }
 
     if (request.method === "GET" && url.pathname === "/health") {
       return new Response(JSON.stringify({ ok: true }), {
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
       });
     }
 
@@ -404,7 +428,7 @@ export default {
     } catch {
       return new Response(JSON.stringify({ error: "Invalid JSON" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
       });
     }
 
@@ -413,7 +437,7 @@ export default {
     if (!uploadToken || !stagingKey) {
       return new Response(
         JSON.stringify({ error: "uploadToken and stagingKey are required" }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } },
       );
     }
 
@@ -422,7 +446,7 @@ export default {
     if (!token) {
       return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
         status: 401,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
       });
     }
 
@@ -431,7 +455,7 @@ export default {
 
     return new Response(
       JSON.stringify({ accepted: true, stagingKey }),
-      { status: 202, headers: { "Content-Type": "application/json" } },
+      { status: 202, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } },
     );
   },
 };
