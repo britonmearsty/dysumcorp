@@ -16,7 +16,7 @@ function formatFileSize(bytes: number): string {
 /**
  * POST /api/portals/r2-confirm
  * Called by the Cloudflare Worker after completing (or failing) the R2 → Drive/Dropbox transfer.
- * Validates WORKER_SECRET, then saves the File record and updates the staging record.
+ * Validates WORKER_SECRET, creates/updates UploadSession, saves File record, updates staging record.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
       uploaderName,
       uploaderEmail,
       uploaderNotes,
-      uploadSessionId,
+      uploadSessionId: clientSessionId,
+      skipNotification,
       error: transferError,
     } = body;
 
@@ -52,7 +53,34 @@ export async function POST(request: NextRequest) {
     }
 
     if (status === "completed") {
-      // Save file metadata
+      // ── Resolve or create UploadSession ──────────────────────────────────
+      let resolvedSessionId: string | null = clientSessionId ?? null;
+
+      if (resolvedSessionId) {
+        // Session already exists — increment counts
+        await prisma.uploadSession.update({
+          where: { id: resolvedSessionId },
+          data: {
+            fileCount: { increment: 1 },
+            totalSize: { increment: BigInt(fileSize) },
+          },
+        });
+      } else {
+        // No session yet — create one (first file in this batch)
+        const session = await prisma.uploadSession.create({
+          data: {
+            portalId,
+            uploaderName: uploaderName ?? null,
+            uploaderEmail: uploaderEmail ?? null,
+            uploaderNotes: uploaderNotes ?? null,
+            fileCount: 1,
+            totalSize: BigInt(fileSize),
+          },
+        });
+        resolvedSessionId = session.id;
+      }
+
+      // ── Save File record ──────────────────────────────────────────────────
       const file = await prisma.file.create({
         data: {
           name: fileName,
@@ -63,40 +91,45 @@ export async function POST(request: NextRequest) {
           portalId,
           uploaderName: uploaderName ?? null,
           uploaderEmail: uploaderEmail ?? null,
-          uploadSessionId: uploadSessionId ?? null,
+          uploaderNotes: uploaderNotes ?? null,
+          uploadSessionId: resolvedSessionId,
         },
       });
 
+      // ── Update staging record with fileId ─────────────────────────────────
       await prisma.r2StagingUpload.update({
         where: { stagingKey },
-        data: { status: "completed" },
+        data: { status: "completed", fileId: file.id },
       });
 
-      // Send email notification (respects portal owner's notification prefs)
-      try {
-        const portal = await prisma.portal.findUnique({
-          where: { id: portalId },
-          select: { name: true, slug: true, user: { select: { email: true } } },
-        });
-
-        if (portal) {
-          await sendFileUploadNotification({
-            userEmail: portal.user.email,
-            portalName: portal.name,
-            portalSlug: portal.slug,
-            files: [{ name: fileName, size: formatFileSize(Number(fileSize)) }],
-            uploaderName: uploaderName ?? undefined,
-            uploaderEmail: uploaderEmail ?? undefined,
+      // ── Email notification (respects skipNotification + user prefs) ───────
+      if (!skipNotification) {
+        try {
+          const portal = await prisma.portal.findUnique({
+            where: { id: portalId },
+            select: { name: true, slug: true, user: { select: { email: true } } },
           });
+
+          if (portal) {
+            await sendFileUploadNotification({
+              userEmail: portal.user.email,
+              portalName: portal.name,
+              portalSlug: portal.slug,
+              files: [{ name: fileName, size: formatFileSize(Number(fileSize)) }],
+              uploaderName: uploaderName ?? undefined,
+              uploaderEmail: uploaderEmail ?? undefined,
+            });
+          }
+        } catch (emailErr) {
+          console.error("[r2-confirm] Email notification failed:", emailErr);
+          // Non-fatal
         }
-      } catch (emailErr) {
-        console.error("[r2-confirm] Email notification failed:", emailErr);
-        // Non-fatal — file is already saved
       }
 
       return NextResponse.json({
         success: true,
         fileId: file.id,
+        uploadSessionId: resolvedSessionId,
       });
     }
 

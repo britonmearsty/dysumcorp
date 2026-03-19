@@ -47,29 +47,25 @@ export async function GET(request: NextRequest) {
     }
 
     if (staging.status === "completed") {
-      // Fetch the associated File record (matched by portalId + name + approximate time)
-      const file = await prisma.file.findFirst({
-        where: {
-          portalId: staging.portalId,
-          name: token.fileName,
-          uploaderEmail: staging.uploaderEmail ?? undefined,
-        },
-        orderBy: { uploadedAt: "desc" },
-        select: {
-          id: true,
-          name: true,
-          size: true,
-          mimeType: true,
-          storageUrl: true,
-          uploadedAt: true,
-        },
-      });
+      // Use the direct fileId FK set by r2-confirm — no fuzzy matching
+      const file = staging.fileId
+        ? await prisma.file.findUnique({
+            where: { id: staging.fileId },
+            select: {
+              id: true,
+              name: true,
+              size: true,
+              mimeType: true,
+              storageUrl: true,
+              uploadedAt: true,
+              uploadSessionId: true,
+            },
+          })
+        : null;
 
       return NextResponse.json({
         status: "completed",
-        file: file
-          ? { ...file, size: file.size.toString() }
-          : null,
+        file: file ? { ...file, size: file.size.toString() } : null,
       });
     }
 

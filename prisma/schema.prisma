@@ -211,6 +211,7 @@ model R2StagingUpload {
   status        String   @default("pending") // pending | completed | failed
   uploaderName  String?
   uploaderEmail String?
+  fileId        String?  // set after r2-confirm creates the File record
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

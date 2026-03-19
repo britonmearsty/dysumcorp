@@ -164,9 +164,10 @@ export async function GET(
           const dropboxToken = await getValidToken(session.user.id, "dropbox");
 
           if (dropboxToken) {
-            // For Dropbox, storageUrl is the file ID, we need to get the file path
-            // This is a simplified approach - you might need to store the full path
-            buffer = await downloadFromDropbox(dropboxToken, file.storageUrl);
+            // Use storageFileId (Dropbox file ID like "id:abc123") if available,
+            // otherwise fall back to storageUrl (legacy path-based storage)
+            const dropboxRef = file.storageFileId || file.storageUrl;
+            buffer = await downloadFromDropbox(dropboxToken, dropboxRef);
           } else if (storageProvider === "dropbox") {
             // Dropbox file but no token available
             return NextResponse.json(

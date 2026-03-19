@@ -168,7 +168,7 @@ export default function PublicPortalPage() {
 
     // Extension → MIME category map for browsers that report empty file.type
     const extToCategory: Record<string, string> = {
-      mp3: "audio", mp4: "audio", wav: "audio", ogg: "audio", flac: "audio",
+      mp3: "audio", wav: "audio", ogg: "audio", flac: "audio",
       aac: "audio", m4a: "audio", wma: "audio", opus: "audio",
       mp4: "video", mov: "video", avi: "video", mkv: "video", webm: "video",
       wmv: "video", flv: "video", m4v: "video",
