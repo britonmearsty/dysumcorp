@@ -79,12 +79,31 @@ export async function POST(request: NextRequest) {
 
     // File type validation
     if (portal.allowedFileTypes.length > 0) {
-      const allowed = portal.allowedFileTypes.map((t) => t.toLowerCase());
+      const allowed = portal.allowedFileTypes.map((t) => t.toLowerCase().trim());
       const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
       const mime = mimeType.toLowerCase();
-      const typeAllowed = allowed.some(
-        (t) => t === mime || t === `.${ext}` || t === ext,
-      );
+
+      // Extension → MIME category fallback for when browser sends application/octet-stream
+      const extToCategory: Record<string, string> = {
+        mp3: "audio", wav: "audio", ogg: "audio", flac: "audio", aac: "audio", m4a: "audio", wma: "audio", opus: "audio",
+        mp4: "video", mov: "video", avi: "video", mkv: "video", webm: "video", wmv: "video", flv: "video", m4v: "video",
+        jpg: "image", jpeg: "image", png: "image", gif: "image", webp: "image", svg: "image", bmp: "image",
+      };
+
+      const typeAllowed = allowed.some((t) => {
+        if (t === mime) return true;
+        if (t === `.${ext}` || t === ext) return true;
+        if (t.endsWith("/*")) {
+          const base = t.replace("/*", "");
+          if (mime.startsWith(base)) return true;
+          // fallback: check extension category when mime is generic
+          if (mime === "application/octet-stream" || !mime) {
+            return extToCategory[ext] === base;
+          }
+        }
+        return false;
+      });
+
       if (!typeAllowed) {
         return NextResponse.json(
           { error: `File type not allowed. Allowed: ${allowed.join(", ")}` },

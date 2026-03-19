@@ -166,6 +166,16 @@ export default function PublicPortalPage() {
     const fileName = file.name.toLowerCase();
     const fileExtension = fileName.split(".").pop() || "";
 
+    // Extension → MIME category map for browsers that report empty file.type
+    const extToCategory: Record<string, string> = {
+      mp3: "audio", mp4: "audio", wav: "audio", ogg: "audio", flac: "audio",
+      aac: "audio", m4a: "audio", wma: "audio", opus: "audio",
+      mp4: "video", mov: "video", avi: "video", mkv: "video", webm: "video",
+      wmv: "video", flv: "video", m4v: "video",
+      jpg: "image", jpeg: "image", png: "image", gif: "image", webp: "image",
+      svg: "image", bmp: "image", ico: "image", tiff: "image",
+    };
+
     const textExtensions = [
       "txt", "md", "markdown", "js", "jsx", "ts", "tsx", "json", "html", "htm",
       "css", "scss", "sass", "less", "xml", "yaml", "yml", "csv", "log", "py",
@@ -175,17 +185,19 @@ export default function PublicPortalPage() {
     ];
 
     return allowedTypes.some((allowedType) => {
-      const allowed = allowedType.toLowerCase();
+      const allowed = allowedType.toLowerCase().trim();
 
       if (allowed.endsWith("/*")) {
         const baseType = allowed.replace("/*", "");
         if (baseType === "text") {
           return textExtensions.includes(fileExtension) || fileType.startsWith("text");
         }
-        return fileType.startsWith(baseType);
+        // Match by MIME type, or fall back to extension category when file.type is empty
+        if (fileType) return fileType.startsWith(baseType);
+        return extToCategory[fileExtension] === baseType;
       }
 
-      if (fileType === allowed) return true;
+      if (fileType && fileType === allowed) return true;
       if (allowed.startsWith(".")) return fileName.endsWith(allowed);
       if (fileExtension === allowed) return true;
       if (allowed.includes(",")) {
