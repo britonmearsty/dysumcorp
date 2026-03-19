@@ -60,6 +60,10 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
     skipNotification,
   } = options;
 
+  const t0 = performance.now();
+  const elapsed = () => `${Math.round(performance.now() - t0)}ms`;
+  console.log(`[upload] START file="${file.name}" size=${file.size}`);
+
   // ── Step 1: Get presigned URL from Vercel ──────────────────────────────────
   let presignedUrl: string;
   let uploadToken: string;
@@ -92,6 +96,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
     uploadToken = data.uploadToken;
     stagingKey = data.stagingKey;
     workerUrl = data.workerUrl;
+    console.log(`[upload] presign done (${elapsed()})`);
   } catch (err) {
     return { success: false, error: "Network error during presign", method: "r2" };
   }
@@ -99,6 +104,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
   // ── Step 2: PUT file directly to R2 (with retries + progress 0–80%) ────────
   let putAttempt = 0;
   let putSuccess = false;
+  const tPut = performance.now();
 
   while (putAttempt < MAX_RETRIES && !putSuccess) {
     try {
@@ -127,6 +133,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
       });
 
       putSuccess = true;
+      console.log(`[upload] R2 PUT done (${elapsed()}, r2=${Math.round(performance.now() - tPut)}ms)`);
     } catch (err) {
       putAttempt++;
       if (putAttempt >= MAX_RETRIES) {
@@ -142,6 +149,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
 
   // ── Step 3: Trigger Worker transfer ────────────────────────────────────────
   const callbackUrl = `${window.location.origin}/api/portals/r2-confirm`;
+  const tWorker = performance.now();
 
   try {
     const res = await fetch(`${workerUrl}/transfer`, {
@@ -166,6 +174,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
       const data = await res.json().catch(() => ({}));
       return { success: false, error: (data as any).error ?? "Worker rejected transfer", method: "r2" };
     }
+    console.log(`[upload] worker accepted (${elapsed()}, dispatch=${Math.round(performance.now() - tWorker)}ms)`);
   } catch (err) {
     return { success: false, error: "Failed to reach transfer worker", method: "r2" };
   }
@@ -173,6 +182,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
   if (onProgress) onProgress(80);
 
   // ── Step 4: Poll r2-status until completed / failed / timeout ──────────────
+  const tPoll = performance.now();
   for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
     await sleep(POLL_INTERVAL_MS);
 
@@ -191,10 +201,12 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
 
       if (data.status === "completed") {
         if (onProgress) onProgress(100);
+        console.log(`[upload] DONE ✓ file="${file.name}" total=${elapsed()} poll=${Math.round(performance.now() - tPoll)}ms`);
         return { success: true, file: data.file, method: "r2" };
       }
 
       if (data.status === "failed") {
+        console.log(`[upload] worker reported failed after ${elapsed()}`);
         return { success: false, error: "Transfer failed in worker", method: "r2" };
       }
     } catch {
@@ -202,6 +214,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
     }
   }
 
+  console.log(`[upload] TIMEOUT file="${file.name}" after ${elapsed()}`);
   return { success: false, error: "Transfer timed out after 120s", method: "r2" };
 }
 

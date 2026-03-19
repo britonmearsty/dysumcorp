@@ -85,7 +85,9 @@ async function validateUploadToken(
   }
 }
 
-// ── Google Drive resumable upload ─────────────────────────────────────────────
+// ── Google Drive resumable chunked upload ─────────────────────────────────────
+
+const DRIVE_CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB — Google's minimum resumable chunk size
 
 async function uploadToGoogleDrive(
   accessToken: string,
@@ -95,6 +97,7 @@ async function uploadToGoogleDrive(
   body: ReadableStream<Uint8Array>,
   fileSize: number,
 ): Promise<{ id: string; webViewLink?: string }> {
+  const t0 = Date.now();
   console.log("[drive] initiating resumable upload, size:", fileSize, "parent:", parentFolderId);
 
   const initRes = await fetch(
@@ -118,27 +121,70 @@ async function uploadToGoogleDrive(
 
   const uploadUrl = initRes.headers.get("Location");
   if (!uploadUrl) throw new Error("Drive did not return a resumable upload URL");
-  console.log("[drive] got resumable URL, starting stream...");
+  console.log(`[drive] got resumable URL (${Date.now() - t0}ms), starting chunked stream...`);
 
-  const uploadRes = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: {
-      "Content-Type": mimeType,
-      "Content-Length": String(fileSize),
-    },
-    body,
-    // @ts-ignore
-    duplex: "half",
-  });
+  // Stream R2 body into chunks and upload each one
+  const reader = body.getReader();
+  let offset = 0;
+  let buffer = new Uint8Array(0);
+  let done = false;
+  let chunkCount = 0;
 
-  if (!uploadRes.ok) {
-    const text = await uploadRes.text();
-    throw new Error(`Drive upload failed: ${uploadRes.status} ${text}`);
+  while (!done || buffer.length > 0) {
+    // Fill buffer up to DRIVE_CHUNK_SIZE
+    while (buffer.length < DRIVE_CHUNK_SIZE && !done) {
+      const { value, done: streamDone } = await reader.read();
+      done = streamDone;
+      if (value) {
+        const merged = new Uint8Array(buffer.length + value.length);
+        merged.set(buffer);
+        merged.set(value, buffer.length);
+        buffer = merged;
+      }
+    }
+
+    if (buffer.length === 0) break;
+
+    const isLast = done || offset + buffer.length >= fileSize;
+    const chunk = isLast ? buffer : buffer.slice(0, DRIVE_CHUNK_SIZE);
+    buffer = isLast ? new Uint8Array(0) : buffer.slice(DRIVE_CHUNK_SIZE);
+    chunkCount++;
+
+    const rangeEnd = offset + chunk.length - 1;
+    const tc = Date.now();
+    console.log(`[drive] chunk ${chunkCount}: bytes ${offset}-${rangeEnd}/${isLast ? fileSize : "*"} (${chunk.length} bytes)`);
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": mimeType,
+        "Content-Length": String(chunk.length),
+        "Content-Range": `bytes ${offset}-${rangeEnd}/${isLast ? fileSize : "*"}`,
+      },
+      body: chunk,
+    });
+
+    console.log(`[drive] chunk ${chunkCount} response: ${uploadRes.status} (${Date.now() - tc}ms)`);
+
+    if (isLast) {
+      if (!uploadRes.ok) {
+        const text = await uploadRes.text();
+        throw new Error(`Drive final chunk failed: ${uploadRes.status} ${text}`);
+      }
+      const result = await uploadRes.json() as { id: string; webViewLink?: string };
+      console.log(`[drive] upload complete, fileId: ${result.id} total=${Date.now() - t0}ms`);
+      return result;
+    } else {
+      // 308 Resume Incomplete is expected for non-final chunks
+      if (uploadRes.status !== 308 && !uploadRes.ok) {
+        const text = await uploadRes.text();
+        throw new Error(`Drive chunk ${chunkCount} failed: ${uploadRes.status} ${text}`);
+      }
+      offset += chunk.length;
+    }
   }
 
-  const result = await uploadRes.json() as { id: string; webViewLink?: string };
-  console.log("[drive] upload complete, fileId:", result.id);
-  return result;
+  throw new Error("Drive upload loop exited without finishing");
 }
 
 // ── Dropbox chunked upload ────────────────────────────────────────────────────
@@ -290,6 +336,8 @@ async function runTransfer(
   } = body;
 
   const baseUrl = env.VERCEL_APP_URL;
+  const t0 = Date.now();
+  const elapsed = () => `${Date.now() - t0}ms`;
   console.log(`[transfer] START stagingKey=${stagingKey} file="${fileName}" size=${fileSize}`);
   console.log(`[transfer] callbackUrl=${callbackUrl} baseUrl=${baseUrl}`);
 
@@ -325,14 +373,14 @@ async function runTransfer(
     }
 
     // 2. Get storage credentials from Vercel
-    console.log("[transfer] step 2: fetching worker context from Vercel...");
+    console.log(`[transfer] step 2: fetching worker context (${elapsed()})...`);
     const ctxRes = await fetch(`${baseUrl}/api/portals/r2-worker-context`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ uploadToken, uploaderName, workerSecret: env.WORKER_SECRET }),
     });
 
-    console.log("[transfer] worker-context response:", ctxRes.status);
+    console.log(`[transfer] worker-context response: ${ctxRes.status} (${elapsed()})`)
     if (!ctxRes.ok) {
       const text = await ctxRes.text();
       console.log("[transfer] worker-context error:", text);
@@ -350,17 +398,18 @@ async function runTransfer(
     console.log("[transfer] storage provider:", ctx.provider, "folder:", ctx.folderPath);
 
     // 3. Get R2 object
-    console.log("[transfer] step 3: fetching R2 object:", stagingKey);
+    console.log(`[transfer] step 3: fetching R2 object (${elapsed()}):`, stagingKey);
     const r2Object = await env.R2_BUCKET.get(stagingKey);
     if (!r2Object) {
       console.log("[transfer] R2 object not found for key:", stagingKey);
       await postCallback({ stagingKey, status: "failed", error: "R2 object not found" });
       return;
     }
-    console.log("[transfer] R2 object found, size:", r2Object.size);
+    console.log(`[transfer] R2 object found, size: ${r2Object.size} (${elapsed()})`);
 
     // 4. Stream to cloud storage
-    console.log("[transfer] step 4: streaming to", ctx.provider, "...");
+    const tCloud = Date.now();
+    console.log(`[transfer] step 4: streaming to ${ctx.provider} (${elapsed()})...`);
     let storageFileId: string;
     let storageUrl: string;
 
@@ -386,7 +435,7 @@ async function runTransfer(
       storageFileId = result.id;
       storageUrl = "";
     }
-    console.log("[transfer] cloud upload done, storageFileId:", storageFileId);
+    console.log(`[transfer] cloud upload done, storageFileId: ${storageFileId} (${elapsed()}, cloud=${Date.now() - tCloud}ms)`);
 
     // 5. Delete from R2
     console.log("[transfer] step 5: deleting from R2...");
@@ -416,7 +465,7 @@ async function runTransfer(
       skipNotification: skipNotification ?? false,
     });
 
-    console.log("[transfer] DONE ✓");
+    console.log(`[transfer] DONE ✓ total=${elapsed()}`);
   } catch (err) {
     console.error("[transfer] UNCAUGHT ERROR:", err);
     await postCallback({
