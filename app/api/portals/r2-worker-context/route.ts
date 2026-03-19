@@ -30,6 +30,10 @@ export async function POST(request: NextRequest) {
     // because the token HMAC may differ between Node crypto and Web Crypto.
     const isWorkerCall = workerSecret && workerSecret === process.env.WORKER_SECRET;
 
+    console.log("[worker-context] isWorkerCall:", isWorkerCall);
+    console.log("[worker-context] received secret prefix:", workerSecret?.slice(0, 8));
+    console.log("[worker-context] env secret prefix:", process.env.WORKER_SECRET?.slice(0, 8));
+
     if (!isWorkerCall) {
       const token = validateUploadToken(uploadToken);
       if (!token) {
