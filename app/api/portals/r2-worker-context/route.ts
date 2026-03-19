@@ -23,10 +23,10 @@ export async function POST(request: NextRequest) {
 
     const envSecret = process.env.WORKER_SECRET;
 
-    // Log for debugging — remove after confirmed working
-    console.log("[worker-context] called, workerSecret present:", !!workerSecret);
-    console.log("[worker-context] env WORKER_SECRET present:", !!envSecret);
-    console.log("[worker-context] secrets match:", workerSecret === envSecret);
+    // Debug logging
+    console.log("[worker-context] workerSecret present:", !!workerSecret, "prefix:", workerSecret?.slice(0, 6));
+    console.log("[worker-context] env WORKER_SECRET present:", !!envSecret, "prefix:", envSecret?.slice(0, 6));
+    console.log("[worker-context] match:", workerSecret === envSecret);
 
     // Authenticate: WORKER_SECRET takes priority (worker calls)
     const isWorkerCall = !!(workerSecret && envSecret && workerSecret === envSecret);
