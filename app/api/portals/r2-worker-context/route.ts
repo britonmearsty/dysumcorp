@@ -14,39 +14,48 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/portals/r2-worker-context
  * Called by the Cloudflare Worker to get storage credentials before transferring.
- * Validates the upload token and returns the access token + folder info.
+ * Auth: either WORKER_SECRET header/body OR valid upload token.
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { uploadToken, uploaderName, workerSecret } = body;
 
-    if (!uploadToken) {
-      return NextResponse.json({ error: "uploadToken is required" }, { status: 400 });
-    }
+    const envSecret = process.env.WORKER_SECRET;
 
-    // Accept either a valid WORKER_SECRET (from the Cloudflare Worker)
-    // or a valid upload token (from direct calls). Worker path is preferred
-    // because the token HMAC may differ between Node crypto and Web Crypto.
-    const isWorkerCall = workerSecret && workerSecret === process.env.WORKER_SECRET;
+    // Log for debugging — remove after confirmed working
+    console.log("[worker-context] called, workerSecret present:", !!workerSecret);
+    console.log("[worker-context] env WORKER_SECRET present:", !!envSecret);
+    console.log("[worker-context] secrets match:", workerSecret === envSecret);
 
-    console.log("[worker-context] isWorkerCall:", isWorkerCall);
-    console.log("[worker-context] received secret prefix:", workerSecret?.slice(0, 8));
-    console.log("[worker-context] env secret prefix:", process.env.WORKER_SECRET?.slice(0, 8));
+    // Authenticate: WORKER_SECRET takes priority (worker calls)
+    const isWorkerCall = !!(workerSecret && envSecret && workerSecret === envSecret);
 
     if (!isWorkerCall) {
+      // Fall back to upload token validation (direct/browser calls)
+      if (!uploadToken) {
+        return NextResponse.json({ error: "uploadToken is required" }, { status: 400 });
+      }
       const token = validateUploadToken(uploadToken);
       if (!token) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
     }
 
-    // Decode token payload (skip signature check for worker calls — worker already validated)
+    // Decode token payload to get portalId
+    if (!uploadToken) {
+      return NextResponse.json({ error: "uploadToken is required" }, { status: 400 });
+    }
+
     let tokenPayload: { portalId: string; uploaderName?: string };
     try {
       tokenPayload = JSON.parse(Buffer.from(uploadToken, "base64").toString("utf-8"));
     } catch {
       return NextResponse.json({ error: "Invalid token format" }, { status: 400 });
+    }
+
+    if (!tokenPayload.portalId) {
+      return NextResponse.json({ error: "Invalid token: missing portalId" }, { status: 400 });
     }
 
     const portal = await prisma.portal.findUnique({
@@ -107,6 +116,8 @@ export async function POST(request: NextRequest) {
       parentFolderId = clientFolder.id;
       folderPath = `${folderPath}/${clientFolder.name}`;
     }
+
+    console.log("[worker-context] success, provider:", provider, "portalId:", portal.id);
 
     return NextResponse.json({
       provider,
