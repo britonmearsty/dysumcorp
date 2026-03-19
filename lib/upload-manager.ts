@@ -21,6 +21,11 @@ export interface UploadOptions {
   skipNotification?: boolean;
 }
 
+export interface BatchUploadOptions extends Omit<UploadOptions, "file"> {
+  /** Called with (fileIndex, progress 0-100) for each file individually */
+  onFileProgress?: (fileIndex: number, progress: number) => void;
+}
+
 export interface UploadResult {
   success: boolean;
   file?: any;
@@ -102,7 +107,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
 
         xhr.upload.addEventListener("progress", (e) => {
           if (e.lengthComputable && onProgress) {
-            onProgress((e.loaded / e.total) * 80);
+            onProgress(Math.floor((e.loaded / e.total) * 80));
           }
         });
 
@@ -180,8 +185,8 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
       const data = await res.json();
 
       if (onProgress) {
-        // Map poll progress 80 → 99
-        onProgress(80 + (attempt / POLL_MAX_ATTEMPTS) * 19);
+        // Map poll progress 80 → 99 (whole numbers only)
+        onProgress(Math.floor(80 + (attempt / POLL_MAX_ATTEMPTS) * 19));
       }
 
       if (data.status === "completed") {
@@ -205,16 +210,20 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
  */
 export async function uploadFiles(
   files: File[],
-  options: Omit<UploadOptions, "file">,
+  options: BatchUploadOptions,
 ): Promise<UploadResult[]> {
   const results: UploadResult[] = [];
   const successfulFiles: Array<{ name: string; size: number }> = [];
 
-  for (const file of files) {
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
     const result = await uploadFile({
       ...options,
       file,
       skipNotification: true, // suppress per-file emails; send one batch email below
+      onProgress: options.onFileProgress
+        ? (progress) => options.onFileProgress!(i, progress)
+        : options.onProgress,
     });
 
     results.push(result);

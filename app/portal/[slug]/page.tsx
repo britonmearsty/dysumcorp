@@ -314,10 +314,11 @@ export default function PublicPortalPage() {
           uploaderName: uploaderName.trim(),
           uploaderEmail: uploaderEmail.trim(),
           uploaderNotes: textboxValue.trim() || undefined,
-          onProgress: (progress) => {
-            // Apply progress to all currently uploading files
+          onFileProgress: (fileIndex, progress) => {
+            const fileId = validFiles[fileIndex]?.id;
+            if (!fileId) return;
             setFiles((prev) =>
-              prev.map((f) => (f.status === "uploading" ? { ...f, progress } : f))
+              prev.map((f) => (f.id === fileId ? { ...f, progress: Math.floor(progress) } : f))
             );
           },
         }

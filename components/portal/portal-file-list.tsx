@@ -132,7 +132,7 @@ export function PortalFileList({
                     <>
                       <span className="text-slate-300 text-xs">·</span>
                       <span className="text-xs font-medium" style={{ color: primaryColor }}>
-                        {f.progress}%
+                        {Math.floor(f.progress)}%
                       </span>
                     </>
                   )}
