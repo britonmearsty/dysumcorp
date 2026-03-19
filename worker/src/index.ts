@@ -251,6 +251,7 @@ async function runTransfer(
     uploaderEmail?: string;
     uploaderNotes?: string;
     uploadSessionId?: string;
+    skipNotification?: boolean;
     callbackUrl: string;
   },
 ): Promise<void> {
@@ -265,6 +266,7 @@ async function runTransfer(
     uploaderEmail,
     uploaderNotes,
     uploadSessionId,
+    skipNotification,
     callbackUrl,
   } = body;
 
@@ -368,6 +370,7 @@ async function runTransfer(
       uploaderEmail,
       uploaderNotes,
       uploadSessionId,
+      skipNotification: skipNotification ?? false,
     });
   } catch (err) {
     console.error("[Worker] Transfer error:", err);
