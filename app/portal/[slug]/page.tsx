@@ -305,8 +305,10 @@ export default function PublicPortalPage() {
       prev.map((f) => (f.status === "pending" ? { ...f, status: "uploading" as const, progress: 0 } : f))
     );
 
+    const successful: Array<{ name: string; size: number; type: string }> = [];
+
     try {
-      const results = await uploadFiles(
+      await uploadFiles(
         validFiles.map((f) => f.file),
         {
           portalId: portal.id,
@@ -321,35 +323,35 @@ export default function PublicPortalPage() {
               prev.map((f) => (f.id === fileId ? { ...f, progress: Math.floor(progress) } : f))
             );
           },
+          // Fires immediately when each file finishes — moves it to the drawer right away
+          onFileComplete: (fileIndex, result) => {
+            const uploadFile = validFiles[fileIndex];
+            if (!uploadFile) return;
+            if (result.success) {
+              successful.push({ name: uploadFile.file.name, size: uploadFile.file.size, type: uploadFile.file.type });
+              // Mark done, then after a short flash move to completed drawer
+              setFiles((prev) =>
+                prev.map((f) => (f.id === uploadFile.id ? { ...f, progress: 100, status: "done" as const } : f))
+              );
+              setTimeout(() => {
+                setFiles((prev) => {
+                  const completed = prev.find((f) => f.id === uploadFile.id);
+                  if (completed) setCompletedFiles((c) => [...c, { ...completed, progress: 100, status: "done" as const }]);
+                  return prev.filter((f) => f.id !== uploadFile.id);
+                });
+              }, 600);
+            } else {
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === uploadFile.id
+                    ? { ...f, status: "error" as const, error: result.error ?? "Upload failed", progress: 0 }
+                    : f
+                )
+              );
+            }
+          },
         }
       );
-
-      const successful: Array<{ name: string; size: number; type: string }> = [];
-
-      results.forEach((result, i) => {
-        const uploadFile = validFiles[i];
-        if (result.success) {
-          successful.push({ name: uploadFile.file.name, size: uploadFile.file.size, type: uploadFile.file.type });
-          setFiles((prev) =>
-            prev.map((f) => (f.id === uploadFile.id ? { ...f, progress: 100, status: "done" as const } : f))
-          );
-          setTimeout(() => {
-            setFiles((prev) => {
-              const completed = prev.find((f) => f.id === uploadFile.id);
-              if (completed) setCompletedFiles((c) => [...c, completed]);
-              return prev.filter((f) => f.id !== uploadFile.id);
-            });
-          }, 600);
-        } else {
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === uploadFile.id
-                ? { ...f, status: "error" as const, error: result.error ?? "Upload failed", progress: 0 }
-                : f
-            )
-          );
-        }
-      });
 
       if (successful.length > 0) {
         setSentFiles(successful);

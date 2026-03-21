@@ -1,13 +1,21 @@
 /**
- * Upload Manager — R2 + Cloudflare Worker flow
+ * Upload Manager — R2 multipart + parallel transfer
  *
  * Flow:
- *  1. POST /api/portals/r2-presign  → presignedUrl, uploadToken, stagingKey, workerUrl
- *  2. XHR PUT presignedUrl          → file bytes go directly to R2 (progress 0–80%)
+ *  1. POST /api/portals/r2-presign  → single presignedUrl OR multipart {uploadId, partUrls[]}
+ *  2a. (small)  XHR PUT presignedUrl          → file goes to R2 in one shot
+ *  2b. (large)  XHR PUT each partUrl in parallel (6 at a time) → collect ETags
+ *               POST /api/portals/r2-complete → R2 assembles the object
  *  3. POST workerUrl/transfer       → Worker picks up from R2, streams to Drive/Dropbox
  *  4. Poll /api/portals/r2-status   → wait for Worker callback (progress 80–100%)
  *
- * Vercel never touches file bytes.
+ * Parallelism:
+ *  - PART_CONCURRENCY (6): simultaneous part uploads within one file.
+ *    6 × 10 MB = 60 MB in-flight per file — saturates any realistic upstream.
+ *    Beyond 6 you fragment bandwidth without gain.
+ *  - FILE_CONCURRENCY (3): simultaneous files uploading at once.
+ *    3 files × 6 parts = 18 XHRs max. Beyond 3 you just slice the pipe thinner.
+ *  Both are tunable constants below.
  */
 
 export interface UploadOptions {
@@ -24,6 +32,8 @@ export interface UploadOptions {
 export interface BatchUploadOptions extends Omit<UploadOptions, "file"> {
   /** Called with (fileIndex, progress 0-100) for each file individually */
   onFileProgress?: (fileIndex: number, progress: number) => void;
+  /** Called immediately when a single file finishes (success or failure), before all files are done */
+  onFileComplete?: (fileIndex: number, result: UploadResult) => void;
 }
 
 export interface UploadResult {
@@ -33,17 +43,87 @@ export interface UploadResult {
   method: "r2";
 }
 
+// ── Tunable constants ──────────────────────────────────────────────────────────
+/** Max simultaneous part uploads within a single file */
+const PART_CONCURRENCY = 6;
+/**
+ * Max simultaneous files for large files (>= 10 MB, multipart).
+ * Each large file runs 6 part uploads — 3 × 6 = 18 XHRs max.
+ */
+const FILE_CONCURRENCY_LARGE = 3;
+/**
+ * Max simultaneous files for small files (< 10 MB, single-shot).
+ * Each small file is one XHR — 8 concurrent is fine and saturates most upstreams.
+ */
+const FILE_CONCURRENCY_SMALL = 8;
+/** Threshold that matches r2-presign MULTIPART_THRESHOLD */
+const MULTIPART_THRESHOLD = 10 * 1024 * 1024; // 10 MB
+
 const MAX_RETRIES = 3;
 const POLL_INTERVAL_MS = 2000;
-const POLL_MAX_ATTEMPTS = 60; // 120 s total
+const POLL_MAX_ATTEMPTS = 90; // 180 s total — large files need more time in worker
 
-async function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+/** Upload a single XHR part, returns the ETag from the response headers. */
+function uploadPart(
+  url: string,
+  data: Blob,
+  onProgress?: (loaded: number, total: number) => void,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable && onProgress) onProgress(e.loaded, e.total);
+    });
+
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        // R2 returns ETag in the response header
+        const etag = xhr.getResponseHeader("ETag") ?? xhr.getResponseHeader("etag") ?? "";
+        resolve(etag);
+      } else {
+        reject(new Error(`Part upload failed: ${xhr.status} ${xhr.statusText}`));
+      }
+    });
+
+    xhr.addEventListener("error", () => reject(new Error("Network error during part upload")));
+    xhr.addEventListener("abort", () => reject(new Error("Part upload aborted")));
+
+    xhr.open("PUT", url);
+    // Do NOT set Content-Type on parts — presigned URL already encodes it
+    xhr.send(data);
+  });
 }
 
 /**
- * Upload a file via R2 presigned PUT + Cloudflare Worker transfer.
+ * Run an array of async tasks with a max concurrency limit.
+ * Returns results in the same order as the input tasks.
  */
+async function pLimit<T>(
+  tasks: (() => Promise<T>)[],
+  concurrency: number,
+): Promise<T[]> {
+  const results: T[] = new Array(tasks.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < tasks.length) {
+      const i = nextIndex++;
+      results[i] = await tasks[i]();
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, worker);
+  await Promise.all(workers);
+  return results;
+}
+
+// ── Main upload entry points ───────────────────────────────────────────────────
+
 export async function uploadFile(options: UploadOptions): Promise<UploadResult> {
   return uploadViaR2(options);
 }
@@ -62,301 +142,281 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
 
   const t0 = performance.now();
   const elapsed = () => `${Math.round(performance.now() - t0)}ms`;
-  console.log(`[upload] ═══════════════════════════════════════════════════════`);
-  console.log(`[upload] START file="${file.name}" size=${file.size} type="${file.type}"`);
-  console.log(`[upload] portalId="${portalId}" uploaderName="${uploaderName}" uploaderEmail="${uploaderEmail}"`);
-  console.log(`[upload] password provided: ${!!password}`);
+  console.log(`[upload] START file="${file.name}" size=${file.size}`);
 
-  // ── Step 1: Get presigned URL from Vercel ──────────────────────────────────
-  let presignedUrl: string;
-  let uploadToken: string;
-  let stagingKey: string;
-  let workerUrl: string;
-
+  // ── Step 1: Get presign response ───────────────────────────────────────────
+  let presignData: any;
   try {
-    console.log(`[upload] STEP 1: Requesting presigned URL from /api/portals/r2-presign`);
-    const presignBody = {
-      portalId,
-      fileName: file.name,
-      fileSize: file.size,
-      mimeType: file.type || "application/octet-stream",
-      uploaderName,
-      uploaderEmail,
-      uploaderNotes,
-      password,
-    };
-    console.log(`[upload] presign request body:`, JSON.stringify(presignBody, null, 2));
-
     const res = await fetch("/api/portals/r2-presign", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(presignBody),
+      body: JSON.stringify({
+        portalId,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type || "application/octet-stream",
+        uploaderName,
+        uploaderEmail,
+        uploaderNotes,
+        password,
+      }),
     });
-
-    console.log(`[upload] presign response status: ${res.status} ${res.statusText}`);
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      console.error(`[upload] ❌ STEP 1 FAILED: presign rejected`, data);
       return { success: false, error: (data as any).error ?? "Failed to get upload URL", method: "r2" };
     }
 
-    const data = await res.json();
-    presignedUrl = data.presignedUrl;
-    uploadToken = data.uploadToken;
-    stagingKey = data.stagingKey;
-    workerUrl = data.workerUrl;
-    console.log(`[upload] ✓ STEP 1 SUCCESS (${elapsed()})`);
-    console.log(`[upload] stagingKey: ${stagingKey}`);
-    console.log(`[upload] workerUrl: ${workerUrl}`);
-    console.log(`[upload] presignedUrl length: ${presignedUrl.length} chars`);
-    console.log(`[upload] uploadToken length: ${uploadToken.length} chars`);
+    presignData = await res.json();
+    console.log(`[upload] ✓ presign (${elapsed()}) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`);
   } catch (err) {
-    console.error(`[upload] ❌ STEP 1 EXCEPTION:`, err);
     return { success: false, error: "Network error during presign", method: "r2" };
   }
 
-  // ── Step 2: PUT file directly to R2 (with retries + progress 0–80%) ────────
-  let putAttempt = 0;
-  let putSuccess = false;
-  const tPut = performance.now();
+  const { uploadToken, stagingKey, workerUrl } = presignData;
 
-  console.log(`[upload] ───────────────────────────────────────────────────────`);
-  console.log(`[upload] STEP 2: Direct PUT to R2 (max ${MAX_RETRIES} attempts)`);
-
-  while (putAttempt < MAX_RETRIES && !putSuccess) {
-    putAttempt++;
-    console.log(`[upload] STEP 2 attempt ${putAttempt}/${MAX_RETRIES} starting...`);
-
-    try {
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        let lastProgress = 0;
-
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            const progress = Math.floor((e.loaded / e.total) * 80);
-            if (progress !== lastProgress) {
-              console.log(`[upload] R2 PUT progress: ${progress}% (${e.loaded}/${e.total} bytes)`);
-              lastProgress = progress;
-            }
-            if (onProgress) {
-              onProgress(progress);
-            }
-          }
-        });
-
-        xhr.addEventListener("load", () => {
-          console.log(`[upload] R2 PUT XHR load event: status=${xhr.status} statusText="${xhr.statusText}"`);
-          if (xhr.status >= 200 && xhr.status < 300) {
-            console.log(`[upload] R2 PUT response headers:`, xhr.getAllResponseHeaders());
-            resolve();
-          } else {
-            console.error(`[upload] ❌ R2 PUT failed with status ${xhr.status}`);
-            console.error(`[upload] Response text:`, xhr.responseText);
-            reject(new Error(`R2 PUT failed: ${xhr.status} ${xhr.statusText}`));
-          }
-        });
-
-        xhr.addEventListener("error", () => {
-          console.error(`[upload] ❌ R2 PUT network error (XHR error event)`);
-          reject(new Error("Network error during R2 PUT"));
-        });
-
-        xhr.addEventListener("abort", () => {
-          console.error(`[upload] ❌ R2 PUT aborted`);
-          reject(new Error("R2 PUT aborted"));
-        });
-
-        console.log(`[upload] Opening XHR PUT to presigned URL (length: ${presignedUrl.length})`);
-        xhr.open("PUT", presignedUrl);
-        xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
-        console.log(`[upload] Sending file bytes (${file.size} bytes)...`);
-        xhr.send(file);
-      });
-
-      putSuccess = true;
-      console.log(`[upload] ✓ STEP 2 SUCCESS: R2 PUT completed (${elapsed()}, r2=${Math.round(performance.now() - tPut)}ms)`);
-    } catch (err) {
-      console.error(`[upload] ❌ STEP 2 attempt ${putAttempt} FAILED:`, err);
-      if (putAttempt >= MAX_RETRIES) {
-        console.error(`[upload] ❌ STEP 2 EXHAUSTED all ${MAX_RETRIES} retries`);
-        return {
-          success: false,
-          error: err instanceof Error ? err.message : "R2 upload failed after retries",
-          method: "r2",
-        };
-      }
-      const backoffMs = 1000 * Math.pow(2, putAttempt - 1);
-      console.log(`[upload] Retrying after ${backoffMs}ms backoff...`);
-      await sleep(backoffMs);
-    }
+  // ── Step 2: Upload to R2 ───────────────────────────────────────────────────
+  if (presignData.uploadType === "multipart") {
+    const result = await uploadMultipart(file, presignData, onProgress, elapsed);
+    if (!result.ok) return { success: false, error: result.error, method: "r2" };
+  } else {
+    const result = await uploadSingleShot(file, presignData.presignedUrl, onProgress, elapsed);
+    if (!result.ok) return { success: false, error: result.error, method: "r2" };
   }
 
-  // ── Step 3: Trigger Worker transfer ────────────────────────────────────────
-  const callbackUrl = `${window.location.origin}/api/portals/r2-confirm`;
-  const tWorker = performance.now();
-
-  console.log(`[upload] ───────────────────────────────────────────────────────`);
-  console.log(`[upload] STEP 3: Triggering Worker transfer`);
-  console.log(`[upload] workerUrl: ${workerUrl}`);
-  console.log(`[upload] callbackUrl: ${callbackUrl}`);
-
-  const transferBody = {
-    uploadToken,
-    stagingKey,
-    portalId,
-    fileName: file.name,
-    fileSize: file.size,
-    mimeType: file.type || "application/octet-stream",
-    uploaderName,
-    uploaderEmail,
-    uploaderNotes,
-    callbackUrl,
-    skipNotification,
-  };
-  console.log(`[upload] transfer request body:`, JSON.stringify(transferBody, null, 2));
-
+  // ── Step 3: Trigger Worker transfer ───────────────────────────────────────
   try {
     const res = await fetch(`${workerUrl}/transfer`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(transferBody),
+      body: JSON.stringify({
+        uploadToken,
+        stagingKey,
+        portalId,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type || "application/octet-stream",
+        uploaderName,
+        uploaderEmail,
+        uploaderNotes,
+        callbackUrl: `${window.location.origin}/api/portals/r2-confirm`,
+        skipNotification,
+      }),
     });
-
-    console.log(`[upload] worker response status: ${res.status} ${res.statusText}`);
-    console.log(`[upload] worker response headers:`, Object.fromEntries(res.headers.entries()));
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      console.error(`[upload] ❌ STEP 3 FAILED: Worker rejected transfer`, data);
       return { success: false, error: (data as any).error ?? "Worker rejected transfer", method: "r2" };
     }
-
-    const responseData = await res.json();
-    console.log(`[upload] ✓ STEP 3 SUCCESS: Worker accepted (${elapsed()}, dispatch=${Math.round(performance.now() - tWorker)}ms)`);
-    console.log(`[upload] worker response data:`, responseData);
+    console.log(`[upload] ✓ worker accepted (${elapsed()})`);
   } catch (err) {
-    console.error(`[upload] ❌ STEP 3 EXCEPTION:`, err);
     return { success: false, error: "Failed to reach transfer worker", method: "r2" };
   }
 
-  if (onProgress) {
-    console.log(`[upload] Setting progress to 80% (worker accepted)`);
-    onProgress(80);
-  }
+  if (onProgress) onProgress(80);
 
-  // ── Step 4: Poll r2-status until completed / failed / timeout ──────────────
-  const tPoll = performance.now();
-  console.log(`[upload] ───────────────────────────────────────────────────────`);
-  console.log(`[upload] STEP 4: Polling /api/portals/r2-status (every ${POLL_INTERVAL_MS}ms, max ${POLL_MAX_ATTEMPTS} attempts = ${POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS / 1000}s)`);
-
+  // ── Step 4: Poll for completion ────────────────────────────────────────────
   for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
     await sleep(POLL_INTERVAL_MS);
 
-    const pollAttemptNum = attempt + 1;
-    console.log(`[upload] Poll attempt ${pollAttemptNum}/${POLL_MAX_ATTEMPTS} (${elapsed()})...`);
-
     try {
       const params = new URLSearchParams({ stagingKey, uploadToken });
-      const statusUrl = `/api/portals/r2-status?${params}`;
-      console.log(`[upload] Fetching: ${statusUrl}`);
-
-      const res = await fetch(statusUrl);
-      console.log(`[upload] Poll response: ${res.status} ${res.statusText}`);
-
-      if (!res.ok) {
-        console.warn(`[upload] ⚠️ Poll attempt ${pollAttemptNum} returned ${res.status}, continuing...`);
-        continue;
-      }
+      const res = await fetch(`/api/portals/r2-status?${params}`);
+      if (!res.ok) continue;
 
       const data = await res.json();
-      console.log(`[upload] Poll data:`, JSON.stringify(data, null, 2));
-
-      const currentProgress = Math.floor(80 + (attempt / POLL_MAX_ATTEMPTS) * 19);
-      if (onProgress) {
-        console.log(`[upload] Updating progress to ${currentProgress}%`);
-        onProgress(currentProgress);
-      }
+      if (onProgress) onProgress(Math.floor(80 + (attempt / POLL_MAX_ATTEMPTS) * 19));
 
       if (data.status === "completed") {
-        if (onProgress) {
-          console.log(`[upload] Setting progress to 100% (completed)`);
-          onProgress(100);
-        }
-        console.log(`[upload] ✓ STEP 4 SUCCESS: Transfer completed`);
-        console.log(`[upload] ═══════════════════════════════════════════════════════`);
-        console.log(`[upload] ✓✓✓ DONE ✓✓✓ file="${file.name}" total=${elapsed()} poll=${Math.round(performance.now() - tPoll)}ms attempts=${pollAttemptNum}`);
-        console.log(`[upload] File record:`, data.file);
+        if (onProgress) onProgress(100);
+        console.log(`[upload] ✓ DONE file="${file.name}" total=${elapsed()}`);
         return { success: true, file: data.file, method: "r2" };
       }
-
       if (data.status === "failed") {
-        console.error(`[upload] ❌ STEP 4 FAILED: Worker reported transfer failed`);
-        console.error(`[upload] Failed after ${elapsed()}, poll attempts: ${pollAttemptNum}`);
         return { success: false, error: "Transfer failed in worker", method: "r2" };
       }
-
-      console.log(`[upload] Status still "${data.status}", continuing to poll...`);
-    } catch (pollErr) {
-      console.error(`[upload] ⚠️ Poll attempt ${pollAttemptNum} exception (non-fatal):`, pollErr);
+    } catch {
       // transient poll error — keep trying
     }
   }
 
-  console.error(`[upload] ❌ STEP 4 TIMEOUT: No completion after ${POLL_MAX_ATTEMPTS} attempts (${elapsed()})`);
-  console.error(`[upload] ═══════════════════════════════════════════════════════`);
-  return { success: false, error: "Transfer timed out after 120s", method: "r2" };
+  return { success: false, error: "Transfer timed out", method: "r2" };
 }
 
-/**
- * Upload multiple files and send a single batch notification report.
- */
+// ── Single-shot upload (< 10 MB) ──────────────────────────────────────────────
+
+async function uploadSingleShot(
+  file: File,
+  presignedUrl: string,
+  onProgress: ((p: number) => void) | undefined,
+  elapsed: () => string,
+): Promise<{ ok: boolean; error?: string }> {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        let last = 0;
+
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            const p = Math.floor((e.loaded / e.total) * 78);
+            if (p !== last) { last = p; if (onProgress) onProgress(p); }
+          }
+        });
+
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`R2 PUT failed: ${xhr.status}`));
+        });
+        xhr.addEventListener("error", () => reject(new Error("Network error during R2 PUT")));
+        xhr.addEventListener("abort", () => reject(new Error("R2 PUT aborted")));
+
+        xhr.open("PUT", presignedUrl);
+        xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+        xhr.send(file);
+      });
+
+      console.log(`[upload] ✓ single-shot PUT complete (${elapsed()})`);
+      if (onProgress) onProgress(78);
+      return { ok: true };
+    } catch (err) {
+      if (attempt >= MAX_RETRIES) {
+        return { ok: false, error: err instanceof Error ? err.message : "R2 upload failed" };
+      }
+      await sleep(1000 * Math.pow(2, attempt - 1));
+    }
+  }
+  return { ok: false, error: "R2 upload failed" };
+}
+
+// ── Multipart upload (>= 10 MB) ───────────────────────────────────────────────
+
+async function uploadMultipart(
+  file: File,
+  presignData: {
+    uploadId: string;
+    partUrls: string[];
+    partSize: number;
+    partCount: number;
+    stagingKey: string;
+    uploadToken: string;
+  },
+  onProgress: ((p: number) => void) | undefined,
+  elapsed: () => string,
+): Promise<{ ok: boolean; error?: string }> {
+  const { uploadId, partUrls, partSize, partCount, stagingKey, uploadToken } = presignData;
+
+  console.log(`[upload] multipart: ${partCount} parts × ${partSize / 1024 / 1024} MB, concurrency=${PART_CONCURRENCY}`);
+
+  // Track bytes uploaded across all parts for aggregate progress (0–78%)
+  const partLoaded = new Array(partCount).fill(0);
+  const totalBytes = file.size;
+
+  function reportProgress() {
+    if (!onProgress) return;
+    const loaded = partLoaded.reduce((a, b) => a + b, 0);
+    onProgress(Math.floor((loaded / totalBytes) * 78));
+  }
+
+  // Build one task per part
+  const tasks = partUrls.map((url, i) => async () => {
+    const start = i * partSize;
+    const end = Math.min(start + partSize, file.size);
+    const blob = file.slice(start, end);
+    const partNumber = i + 1;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const etag = await uploadPart(url, blob, (loaded) => {
+          partLoaded[i] = loaded;
+          reportProgress();
+        });
+        console.log(`[upload] ✓ part ${partNumber}/${partCount} etag=${etag} (${elapsed()})`);
+        return { partNumber, etag };
+      } catch (err) {
+        if (attempt >= MAX_RETRIES) throw err;
+        console.warn(`[upload] part ${partNumber} attempt ${attempt} failed, retrying...`);
+        await sleep(1000 * Math.pow(2, attempt - 1));
+      }
+    }
+    throw new Error(`Part ${partNumber} failed after ${MAX_RETRIES} retries`);
+  });
+
+  let parts: { partNumber: number; etag: string }[];
+  try {
+    parts = await pLimit(tasks, PART_CONCURRENCY);
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Multipart upload failed" };
+  }
+
+  if (onProgress) onProgress(78);
+
+  // Finalize
+  try {
+    const res = await fetch("/api/portals/r2-complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uploadToken, stagingKey, uploadId, parts }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return { ok: false, error: (data as any).error ?? "Failed to complete multipart upload" };
+    }
+
+    console.log(`[upload] ✓ multipart complete (${elapsed()})`);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: "Network error during multipart complete" };
+  }
+}
+
+// ── Batch upload (parallel files) ─────────────────────────────────────────────
+
 export async function uploadFiles(
   files: File[],
   options: BatchUploadOptions,
 ): Promise<UploadResult[]> {
-  console.log(`[uploadFiles] ═══════════════════════════════════════════════════════`);
-  console.log(`[uploadFiles] BATCH START: ${files.length} files`);
-  console.log(`[uploadFiles] Files:`, files.map(f => `${f.name} (${f.size} bytes)`));
+  // Pick concurrency based on whether the batch is all-small or mixed/large.
+  // If any file is large we cap at FILE_CONCURRENCY_LARGE to avoid 18+ XHRs per file.
+  const hasLargeFile = files.some((f) => f.size >= MULTIPART_THRESHOLD);
+  const concurrency = hasLargeFile ? FILE_CONCURRENCY_LARGE : FILE_CONCURRENCY_SMALL;
+  console.log(`[uploadFiles] BATCH START: ${files.length} files, concurrency=${concurrency} (${hasLargeFile ? "large" : "small"})`);
 
-  const results: UploadResult[] = [];
+  const results: UploadResult[] = new Array(files.length);
   const successfulFiles: Array<{ name: string; size: number }> = [];
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    console.log(`[uploadFiles] ───────────────────────────────────────────────────────`);
-    console.log(`[uploadFiles] Processing file ${i + 1}/${files.length}: "${file.name}"`);
-
+  // Build per-file tasks
+  const tasks = files.map((file, i) => async () => {
+    console.log(`[uploadFiles] starting file ${i + 1}/${files.length}: "${file.name}"`);
     const result = await uploadFile({
       ...options,
       file,
-      skipNotification: true, // suppress per-file emails; send one batch email below
+      skipNotification: true,
       onProgress: options.onFileProgress
-        ? (progress) => {
-            console.log(`[uploadFiles] File ${i + 1} progress: ${progress}%`);
-            options.onFileProgress!(i, progress);
-          }
+        ? (progress) => options.onFileProgress!(i, progress)
         : options.onProgress,
     });
-
-    results.push(result);
-
+    results[i] = result;
     if (result.success) {
-      console.log(`[uploadFiles] ✓ File ${i + 1} SUCCESS`);
       successfulFiles.push({ name: file.name, size: file.size });
+      console.log(`[uploadFiles] ✓ file ${i + 1} done`);
     } else {
-      console.error(`[uploadFiles] ❌ File ${i + 1} FAILED:`, result.error);
+      console.error(`[uploadFiles] ❌ file ${i + 1} failed: ${result.error}`);
     }
-  }
+    // Fire immediately so the UI can move this file to the completed drawer
+    // without waiting for the rest of the batch to finish.
+    options.onFileComplete?.(i, result);
+    return result;
+  });
 
-  console.log(`[uploadFiles] ───────────────────────────────────────────────────────`);
+  await pLimit(tasks, concurrency);
+
   console.log(`[uploadFiles] BATCH COMPLETE: ${successfulFiles.length}/${files.length} succeeded`);
 
   if (successfulFiles.length > 0) {
-    console.log(`[uploadFiles] Sending batch notification for ${successfulFiles.length} files...`);
     try {
-      const notifRes = await fetch("/api/portals/batch-notification", {
+      await fetch("/api/portals/batch-notification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -366,12 +426,10 @@ export async function uploadFiles(
           uploaderEmail: options.uploaderEmail,
         }),
       });
-      console.log(`[uploadFiles] Batch notification response: ${notifRes.status}`);
     } catch (err) {
-      console.error("[uploadFiles] ❌ Batch notification failed:", err);
+      console.error("[uploadFiles] batch notification failed:", err);
     }
   }
 
-  console.log(`[uploadFiles] ═══════════════════════════════════════════════════════`);
   return results;
 }

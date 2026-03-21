@@ -45,7 +45,8 @@ export function generateUploadToken(data: {
   };
 
   // Use sorted keys and no Unicode escaping for consistent HMAC across Node.js and Workers
-  const canonicalJson = JSON.stringify(tokenData, Object.keys(tokenData).sort());
+  // Sort keys AFTER JSON.stringify to only include keys that will actually be in the output
+  const canonicalJson = JSON.stringify(tokenData, Object.keys(JSON.parse(JSON.stringify(tokenData))).sort());
 
   const signature = crypto
     .createHmac("sha256", SECRET)
@@ -84,7 +85,8 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
     };
 
     // Use sorted keys and no Unicode escaping for consistent HMAC across Node.js and Workers
-    const canonicalJson = JSON.stringify(dataToSign, Object.keys(dataToSign).sort());
+    // Sort keys AFTER JSON.stringify to only include keys that will actually be in the output
+    const canonicalJson = JSON.stringify(dataToSign, Object.keys(JSON.parse(JSON.stringify(dataToSign))).sort());
 
     const expectedSignature = crypto
       .createHmac("sha256", SECRET)
