@@ -75,15 +75,17 @@ export async function validateUploadToken(
       mimeType: token.mimeType,
       uploaderEmail: token.uploaderEmail,
       uploaderName: token.uploaderName,
-      uploaderNotes: token.uploaderNotes,
-      stagingKey: token.stagingKey,
+      // Normalise optional fields to "" — must match lib/upload-tokens.ts exactly
+      uploaderNotes: token.uploaderNotes ?? "",
+      stagingKey: token.stagingKey ?? "",
       expiresAt: token.expiresAt,
     };
 
-    const canonicalJson = JSON.stringify(
-      dataToSign,
-      Object.keys(JSON.parse(JSON.stringify(dataToSign))).sort(),
-    );
+    // Fixed key order — same as generateUploadToken in lib/upload-tokens.ts
+    const canonicalJson = JSON.stringify(dataToSign, [
+      "portalId", "fileName", "fileSize", "mimeType",
+      "uploaderEmail", "uploaderName", "uploaderNotes", "stagingKey", "expiresAt",
+    ]);
     const expected = await hmacSign(secret, canonicalJson);
 
     if (token.signature !== expected) {
