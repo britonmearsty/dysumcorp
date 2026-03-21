@@ -48,16 +48,46 @@ export interface UploadResult {
 const PART_CONCURRENCY = 6;
 /**
  * Max simultaneous files for large files (>= 10 MB, multipart).
- * Each large file runs 6 part uploads — 3 × 6 = 18 XHRs max.
+ * Each large file runs up to 6 part uploads — 3 × 6 = 18 XHRs max.
  */
 const FILE_CONCURRENCY_LARGE = 3;
 /**
  * Max simultaneous files for small files (< 10 MB, single-shot).
- * Each small file is one XHR — 8 concurrent is fine and saturates most upstreams.
+ * Each small file is one XHR — 8 concurrent is fine.
  */
 const FILE_CONCURRENCY_SMALL = 8;
 /** Threshold that matches r2-presign MULTIPART_THRESHOLD */
 const MULTIPART_THRESHOLD = 10 * 1024 * 1024; // 10 MB
+
+/**
+ * Compute per-file concurrency dynamically.
+ * Each file slot "costs" based on its size:
+ *   - large file (multipart) costs PART_CONCURRENCY slots
+ *   - small file costs 1 slot
+ * We cap total in-flight XHRs at MAX_TOTAL_XHRS.
+ * For a mixed batch this naturally gives small files more parallelism
+ * while large files still get their 6 part slots each.
+ */
+const MAX_TOTAL_XHRS = 18;
+
+function computeFileConcurrency(files: File[]): number {
+  const largeCount = files.filter((f) => f.size >= MULTIPART_THRESHOLD).length;
+  const smallCount = files.length - largeCount;
+
+  if (largeCount === 0) return FILE_CONCURRENCY_SMALL; // all small → 8
+  if (smallCount === 0) return FILE_CONCURRENCY_LARGE; // all large → 3
+
+  // Mixed: budget MAX_TOTAL_XHRS across large + small files.
+  // Each large file consumes PART_CONCURRENCY slots, each small file consumes 1.
+  // Solve: largeSlots * PART_CONCURRENCY + smallSlots * 1 <= MAX_TOTAL_XHRS
+  // Simple heuristic: allow up to FILE_CONCURRENCY_LARGE large files, rest of
+  // the XHR budget goes to small files.
+  const xhrsUsedByLarge = Math.min(largeCount, FILE_CONCURRENCY_LARGE) * PART_CONCURRENCY;
+  const remainingXhrs = Math.max(1, MAX_TOTAL_XHRS - xhrsUsedByLarge);
+  const smallConcurrency = Math.min(smallCount, remainingXhrs);
+  // Total file concurrency = large slots + small slots
+  return Math.min(largeCount, FILE_CONCURRENCY_LARGE) + smallConcurrency;
+}
 
 const MAX_RETRIES = 3;
 const POLL_INTERVAL_MS = 2000;
@@ -377,11 +407,8 @@ export async function uploadFiles(
   files: File[],
   options: BatchUploadOptions,
 ): Promise<UploadResult[]> {
-  // Pick concurrency based on whether the batch is all-small or mixed/large.
-  // If any file is large we cap at FILE_CONCURRENCY_LARGE to avoid 18+ XHRs per file.
-  const hasLargeFile = files.some((f) => f.size >= MULTIPART_THRESHOLD);
-  const concurrency = hasLargeFile ? FILE_CONCURRENCY_LARGE : FILE_CONCURRENCY_SMALL;
-  console.log(`[uploadFiles] BATCH START: ${files.length} files, concurrency=${concurrency} (${hasLargeFile ? "large" : "small"})`);
+  const concurrency = computeFileConcurrency(files);
+  console.log(`[uploadFiles] BATCH START: ${files.length} files, concurrency=${concurrency}`);
 
   const results: UploadResult[] = new Array(files.length);
   const successfulFiles: Array<{ name: string; size: number }> = [];

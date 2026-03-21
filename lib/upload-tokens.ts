@@ -39,14 +39,18 @@ export function generateUploadToken(data: {
     mimeType: data.mimeType,
     uploaderEmail: data.uploaderEmail,
     uploaderName: data.uploaderName,
-    uploaderNotes: data.uploaderNotes,
-    stagingKey: data.stagingKey,
+    // Normalise optional fields: always include them, use "" for undefined so the
+    // HMAC payload is identical whether the field was omitted or explicitly empty.
+    uploaderNotes: data.uploaderNotes ?? "",
+    stagingKey: data.stagingKey ?? "",
     expiresAt,
   };
 
-  // Use sorted keys and no Unicode escaping for consistent HMAC across Node.js and Workers
-  // Sort keys AFTER JSON.stringify to only include keys that will actually be in the output
-  const canonicalJson = JSON.stringify(tokenData, Object.keys(JSON.parse(JSON.stringify(tokenData))).sort());
+  // Stable canonical JSON: fixed key order, no surprises from undefined dropping.
+  const canonicalJson = JSON.stringify(tokenData, [
+    "portalId", "fileName", "fileSize", "mimeType",
+    "uploaderEmail", "uploaderName", "uploaderNotes", "stagingKey", "expiresAt",
+  ]);
 
   const signature = crypto
     .createHmac("sha256", SECRET)
@@ -79,14 +83,16 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
       mimeType: token.mimeType,
       uploaderEmail: token.uploaderEmail,
       uploaderName: token.uploaderName,
-      uploaderNotes: token.uploaderNotes,
-      stagingKey: token.stagingKey,
+      uploaderNotes: token.uploaderNotes ?? "",
+      stagingKey: token.stagingKey ?? "",
       expiresAt: token.expiresAt,
     };
 
-    // Use sorted keys and no Unicode escaping for consistent HMAC across Node.js and Workers
-    // Sort keys AFTER JSON.stringify to only include keys that will actually be in the output
-    const canonicalJson = JSON.stringify(dataToSign, Object.keys(JSON.parse(JSON.stringify(dataToSign))).sort());
+    // Same fixed key order as generateUploadToken
+    const canonicalJson = JSON.stringify(dataToSign, [
+      "portalId", "fileName", "fileSize", "mimeType",
+      "uploaderEmail", "uploaderName", "uploaderNotes", "stagingKey", "expiresAt",
+    ]);
 
     const expectedSignature = crypto
       .createHmac("sha256", SECRET)
