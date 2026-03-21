@@ -95,7 +95,12 @@ async function validateUploadToken(
     };
 
     console.log(`[token:${validationId}] Computing HMAC signature...`);
-    const expected = await hmacSign(secret, JSON.stringify(dataToSign));
+    // Use sorted keys for consistent serialization across Node.js and Workers
+    const sortedKeys = Object.keys(dataToSign).sort();
+    const canonicalJson = JSON.stringify(dataToSign, sortedKeys);
+    console.log(`[token:${validationId}] Canonical JSON (first 200 chars): ${canonicalJson.slice(0, 200)}`);
+
+    const expected = await hmacSign(secret, canonicalJson);
     console.log(`[token:${validationId}] Expected signature: ${expected.slice(0, 16)}...`);
     console.log(`[token:${validationId}] Token signature:   ${token.signature.slice(0, 16)}...`);
 
@@ -103,7 +108,8 @@ async function validateUploadToken(
       console.error(`[token:${validationId}] ❌ Signature mismatch`);
       console.error(`[token:${validationId}] Full expected: ${expected}`);
       console.error(`[token:${validationId}] Full received: ${token.signature}`);
-      console.error(`[token:${validationId}] Secret may be incorrect or data tampered`);
+      console.error(`[token:${validationId}] Canonical JSON used for signing:`);
+      console.error(`[token:${validationId}] ${canonicalJson}`);
       return null;
     }
 

@@ -44,9 +44,12 @@ export function generateUploadToken(data: {
     expiresAt,
   };
 
+  // Use sorted keys and no Unicode escaping for consistent HMAC across Node.js and Workers
+  const canonicalJson = JSON.stringify(tokenData, Object.keys(tokenData).sort());
+
   const signature = crypto
     .createHmac("sha256", SECRET)
-    .update(JSON.stringify(tokenData))
+    .update(canonicalJson)
     .digest("hex");
 
   const token: UploadToken = { ...tokenData, signature };
@@ -80,13 +83,18 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
       expiresAt: token.expiresAt,
     };
 
+    // Use sorted keys and no Unicode escaping for consistent HMAC across Node.js and Workers
+    const canonicalJson = JSON.stringify(dataToSign, Object.keys(dataToSign).sort());
+
     const expectedSignature = crypto
       .createHmac("sha256", SECRET)
-      .update(JSON.stringify(dataToSign))
+      .update(canonicalJson)
       .digest("hex");
 
     if (token.signature !== expectedSignature) {
       console.error("[Upload Token] Invalid signature");
+      console.error("[Upload Token] Expected:", expectedSignature);
+      console.error("[Upload Token] Received:", token.signature);
       return null;
     }
 
