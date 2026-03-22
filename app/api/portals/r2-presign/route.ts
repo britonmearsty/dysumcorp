@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 // Files >= this size use multipart upload (must be > 5 MB, R2 minimum part size)
 const MULTIPART_THRESHOLD = 10 * 1024 * 1024; // 10 MB
-const PART_SIZE = 10 * 1024 * 1024; // 10 MB per part
+const PART_SIZE = 25 * 1024 * 1024; // 25 MB per part
 
 export async function POST(request: NextRequest) {
   const requestId = Math.random().toString(36).slice(2, 8);
