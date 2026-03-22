@@ -91,7 +91,29 @@ function computeFileConcurrency(files: File[]): number {
 
 const MAX_RETRIES = 3;
 const POLL_INTERVAL_MS = 2000;
-const POLL_MAX_ATTEMPTS = 90; // 180 s total — large files need more time in worker
+
+/**
+ * Compute how many poll attempts to allow based on file size.
+ * The worker transfers from R2 to Drive/Dropbox — budget ~2 Mbps sustained
+ * (conservative for Drive API) plus a fixed overhead for worker startup.
+ *
+ * Formula: overhead (60s) + transfer time at 2 Mbps, minimum 90 attempts (180s).
+ * Each attempt = POLL_INTERVAL_MS (2s).
+ *
+ * Examples:
+ *   10 MB  → ~100 attempts (200s)
+ *   100 MB → ~250 attempts (500s)
+ *   500 MB → ~1060 attempts (~35 min)
+ *   1 GB   → ~2090 attempts (~70 min)
+ */
+function computePollAttempts(fileSizeBytes: number): number {
+  const OVERHEAD_S = 60;                    // worker startup + Drive auth
+  const TRANSFER_MBPS = 2;                  // conservative Drive/Dropbox sustained write
+  const transferSeconds = (fileSizeBytes / (1024 * 1024)) / TRANSFER_MBPS;
+  const totalSeconds = OVERHEAD_S + transferSeconds;
+  const attempts = Math.ceil(totalSeconds / (POLL_INTERVAL_MS / 1000));
+  return Math.max(90, attempts); // floor at 180s for small files
+}
 
 function sleep(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -245,8 +267,11 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
 
   if (onProgress) onProgress(80);
 
-  // ── Step 4: Poll for completion ────────────────────────────────────────────
-  for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
+  // ── Step 4: Poll for completion (timeout scales with file size) ────────────
+  const pollMaxAttempts = computePollAttempts(file.size);
+  console.log(`[upload] polling up to ${pollMaxAttempts} attempts (~${Math.round(pollMaxAttempts * POLL_INTERVAL_MS / 1000)}s) for ${(file.size / 1024 / 1024).toFixed(1)} MB file`);
+
+  for (let attempt = 0; attempt < pollMaxAttempts; attempt++) {
     await sleep(POLL_INTERVAL_MS);
 
     try {
@@ -255,7 +280,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
       if (!res.ok) continue;
 
       const data = await res.json();
-      if (onProgress) onProgress(Math.floor(80 + (attempt / POLL_MAX_ATTEMPTS) * 19));
+      if (onProgress) onProgress(Math.floor(80 + (attempt / pollMaxAttempts) * 19));
 
       if (data.status === "completed") {
         if (onProgress) onProgress(100);

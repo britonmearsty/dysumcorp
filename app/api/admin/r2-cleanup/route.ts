@@ -18,14 +18,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2 hours ago
+  // Records stuck in "pending" for > 2 hours — browser never triggered the worker
+  const pendingCutoff = new Date(Date.now() - 2 * 60 * 60 * 1000);
+  // Records stuck in "transferring" for > 6 hours — worker crashed mid-transfer.
+  // 6 hours is generous: even a 5 GB file at 2 Mbps takes ~5.5 hours.
+  // Anything older than that is definitively dead.
+  const transferringCutoff = new Date(Date.now() - 6 * 60 * 60 * 1000);
 
   const orphans = await prisma.r2StagingUpload.findMany({
     where: {
-      status: "pending",
-      createdAt: { lt: cutoff },
+      OR: [
+        { status: "pending",      createdAt: { lt: pendingCutoff } },
+        { status: "transferring", createdAt: { lt: transferringCutoff } },
+        // "uploaded" means r2-complete succeeded but worker was never triggered
+        // or the worker callback never fired — treat same as pending after 2h
+        { status: "uploaded",     createdAt: { lt: pendingCutoff } },
+      ],
     },
-    select: { id: true, stagingKey: true, createdAt: true },
+    select: { id: true, stagingKey: true, status: true, createdAt: true },
   });
 
   let deleted = 0;
@@ -39,7 +49,7 @@ export async function GET(request: NextRequest) {
         data: { status: "failed" },
       });
       console.log(
-        `[r2-cleanup] Deleted orphan stagingKey=${record.stagingKey} age=${Math.round((Date.now() - record.createdAt.getTime()) / 60000)}min`,
+        `[r2-cleanup] Deleted orphan status=${record.status} stagingKey=${record.stagingKey} age=${Math.round((Date.now() - record.createdAt.getTime()) / 60000)}min`,
       );
       deleted++;
     } catch (err) {
