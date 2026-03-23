@@ -16,7 +16,18 @@ export const dynamic = "force-dynamic";
 
 // Files >= this size use multipart upload (must be > 5 MB, R2 minimum part size)
 const MULTIPART_THRESHOLD = 10 * 1024 * 1024; // 10 MB
-const PART_SIZE = 25 * 1024 * 1024; // 25 MB per part
+
+/** Part size scales with file size to reduce part count and TCP slow-start overhead.
+ *  R2 supports up to 5 GB per part; minimum is 5 MB (except last part).
+ *    < 500 MB  → 25 MB parts  (up to 20 parts)
+ *    ≥ 500 MB  → 50 MB parts  (up to 60 parts for 3 GB)
+ *    ≥ 2 GB    → 100 MB parts (up to 30 parts for 3 GB)
+ */
+function getPartSize(fileSizeBytes: number): number {
+  if (fileSizeBytes >= 2 * 1024 * 1024 * 1024) return 100 * 1024 * 1024; // ≥ 2 GB → 100 MB
+  if (fileSizeBytes >= 500 * 1024 * 1024) return 50 * 1024 * 1024;        // ≥ 500 MB → 50 MB
+  return 25 * 1024 * 1024;                                                  // default → 25 MB
+}
 
 export async function POST(request: NextRequest) {
   const requestId = Math.random().toString(36).slice(2, 8);
@@ -161,6 +172,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Multipart upload for large files ──────────────────────────────────────
+    const PART_SIZE = getPartSize(fileSize);
     const partCount = Math.ceil(fileSize / PART_SIZE);
     console.log(`[r2-presign:${requestId}] Multipart upload: ${fileSize} bytes → ${partCount} parts × ${PART_SIZE / 1024 / 1024} MB`);
 

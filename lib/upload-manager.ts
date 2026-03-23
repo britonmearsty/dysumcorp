@@ -49,14 +49,16 @@ const MULTIPART_THRESHOLD = 10 * 1024 * 1024; // 10 MB
 
 /**
  * Part concurrency scales with file size.
- * At 25 MB/part, more than 3 concurrent parts fragments bandwidth without gain.
- * For very large files (>= 200 MB) we drop to 2 — the pipe is already full
- * with 2 × 25 MB = 50 MB in-flight, and more parts just cause TCP contention.
+ * Larger files use bigger parts (50–100 MB), so fewer concurrent parts are needed
+ * to saturate the pipe. More than 2 concurrent 100 MB parts = 200 MB in-flight,
+ * which fragments bandwidth badly on any realistic upstream.
  */
 function computePartConcurrency(fileSizeBytes: number): number {
-  if (fileSizeBytes >= 200 * 1024 * 1024) return 2; // ≥ 200 MB → 2 parts
-  if (fileSizeBytes >= 50 * 1024 * 1024) return 3;  // ≥ 50 MB  → 3 parts
-  return 4;                                           // < 50 MB  → 4 parts
+  if (fileSizeBytes >= 2 * 1024 * 1024 * 1024) return 1;  // ≥ 2 GB → 100 MB parts, 1 at a time
+  if (fileSizeBytes >= 500 * 1024 * 1024) return 2;        // ≥ 500 MB → 50 MB parts, 2 concurrent
+  if (fileSizeBytes >= 200 * 1024 * 1024) return 2;        // ≥ 200 MB → 25 MB parts, 2 concurrent
+  if (fileSizeBytes >= 50 * 1024 * 1024) return 3;         // ≥ 50 MB  → 25 MB parts, 3 concurrent
+  return 4;                                                  // < 50 MB  → 25 MB parts, 4 concurrent
 }
 
 /**
