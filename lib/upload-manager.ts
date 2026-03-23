@@ -123,22 +123,54 @@ function sleep(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
+/** Wall-clock timestamp prefix for logs: HH:MM:SS.mmm */
+function ts(): string {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}.${String(d.getMilliseconds()).padStart(3,"0")}`;
+}
+
+/** Format bytes/s as human-readable speed string */
+function fmtSpeed(bytesPerSec: number): string {
+  if (bytesPerSec >= 1024 * 1024) return `${(bytesPerSec / 1024 / 1024).toFixed(1)} MB/s`;
+  if (bytesPerSec >= 1024) return `${(bytesPerSec / 1024).toFixed(0)} KB/s`;
+  return `${bytesPerSec.toFixed(0)} B/s`;
+}
+
 /** Upload a single XHR part, returns the ETag from the response headers. */
 function uploadPart(
   url: string,
   data: Blob,
+  label: string,
   onProgress?: (loaded: number, total: number) => void,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    const partStart = performance.now();
+    let lastLoaded = 0;
+    let lastSampleTime = partStart;
 
     xhr.upload.addEventListener("progress", (e) => {
-      if (e.lengthComputable && onProgress) onProgress(e.loaded, e.total);
+      if (!e.lengthComputable) return;
+      if (onProgress) onProgress(e.loaded, e.total);
+
+      // Log speed sample every ~2s
+      const now = performance.now();
+      const dt = now - lastSampleTime;
+      if (dt >= 2000) {
+        const bytesInWindow = e.loaded - lastLoaded;
+        const speed = bytesInWindow / (dt / 1000);
+        const pct = Math.floor((e.loaded / e.total) * 100);
+        console.log(`[upload:spd] ${ts()} ${label} ${pct}% — ${fmtSpeed(speed)} (${(e.loaded/1024/1024).toFixed(1)}/${(e.total/1024/1024).toFixed(1)} MB)`);
+        lastLoaded = e.loaded;
+        lastSampleTime = now;
+      }
     });
 
     xhr.addEventListener("load", () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        // R2 returns ETag in the response header
+        const duration = Math.round(performance.now() - partStart);
+        const avgSpeed = data.size / (duration / 1000);
+        console.log(`[upload:spd] ${ts()} ${label} DONE — avg ${fmtSpeed(avgSpeed)} in ${duration}ms`);
         const etag = xhr.getResponseHeader("ETag") ?? xhr.getResponseHeader("etag") ?? "";
         resolve(etag);
       } else {
@@ -198,7 +230,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
 
   const t0 = performance.now();
   const elapsed = () => `${Math.round(performance.now() - t0)}ms`;
-  console.log(`[upload] START file="${file.name}" size=${file.size}`);
+  console.log(`[upload] ${ts()} START "${file.name}" ${(file.size/1024/1024).toFixed(2)} MB type=${file.size >= MULTIPART_THRESHOLD ? "multipart" : "single-shot"}`);
 
   // ── Step 1: Get presign response ───────────────────────────────────────────
   let presignData: any;
@@ -224,7 +256,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
     }
 
     presignData = await res.json();
-    console.log(`[upload] ✓ presign (${elapsed()}) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`);
+    console.log(`[upload] ${ts()} ✓ presign (${elapsed()}) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`);
   } catch (err) {
     return { success: false, error: "Network error during presign", method: "r2" };
   }
@@ -264,7 +296,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
       const data = await res.json().catch(() => ({}));
       return { success: false, error: (data as any).error ?? "Worker rejected transfer", method: "r2" };
     }
-    console.log(`[upload] ✓ worker accepted (${elapsed()})`);
+    console.log(`[upload] ${ts()} ✓ worker accepted (${elapsed()})`);
   } catch (err) {
     return { success: false, error: "Failed to reach transfer worker", method: "r2" };
   }
@@ -273,7 +305,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
 
   // ── Step 4: Poll for completion (timeout scales with file size) ────────────
   const pollMaxAttempts = computePollAttempts(file.size);
-  console.log(`[upload] polling up to ${pollMaxAttempts} attempts (~${Math.round(pollMaxAttempts * POLL_INTERVAL_MS / 1000)}s) for ${(file.size / 1024 / 1024).toFixed(1)} MB file`);
+  console.log(`[upload] ${ts()} polling "${file.name}" up to ${pollMaxAttempts} attempts (~${Math.round(pollMaxAttempts * POLL_INTERVAL_MS / 1000)}s) for ${(file.size / 1024 / 1024).toFixed(1)} MB`);
 
   for (let attempt = 0; attempt < pollMaxAttempts; attempt++) {
     await sleep(POLL_INTERVAL_MS);
@@ -288,7 +320,7 @@ async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
 
       if (data.status === "completed") {
         if (onProgress) onProgress(100);
-        console.log(`[upload] ✓ DONE file="${file.name}" total=${elapsed()}`);
+        console.log(`[upload] ${ts()} ✓ DONE "${file.name}" total=${elapsed()}`);
         return { success: true, file: data.file, method: "r2" };
       }
       if (data.status === "failed") {
@@ -310,16 +342,30 @@ async function uploadSingleShot(
   onProgress: ((p: number) => void) | undefined,
   elapsed: () => string,
 ): Promise<{ ok: boolean; error?: string }> {
+  const label = `"${file.name}"`;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const attemptStart = performance.now();
     try {
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         let last = 0;
+        let lastLoaded = 0;
+        let lastSampleTime = performance.now();
 
         xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            const p = Math.floor((e.loaded / e.total) * 78);
-            if (p !== last) { last = p; if (onProgress) onProgress(p); }
+          if (!e.lengthComputable) return;
+          const p = Math.floor((e.loaded / e.total) * 78);
+          if (p !== last) { last = p; if (onProgress) onProgress(p); }
+
+          // Speed sample every ~2s
+          const now = performance.now();
+          const dt = now - lastSampleTime;
+          if (dt >= 2000) {
+            const speed = (e.loaded - lastLoaded) / (dt / 1000);
+            const pct = Math.floor((e.loaded / e.total) * 100);
+            console.log(`[upload:spd] ${ts()} ${label} single ${pct}% — ${fmtSpeed(speed)} (${(e.loaded/1024/1024).toFixed(1)}/${(e.total/1024/1024).toFixed(1)} MB)`);
+            lastLoaded = e.loaded;
+            lastSampleTime = now;
           }
         });
 
@@ -335,13 +381,16 @@ async function uploadSingleShot(
         xhr.send(file);
       });
 
-      console.log(`[upload] ✓ single-shot PUT complete (${elapsed()})`);
+      const duration = Math.round(performance.now() - attemptStart);
+      const avgSpeed = file.size / (duration / 1000);
+      console.log(`[upload] ✓ single-shot PUT complete — avg ${fmtSpeed(avgSpeed)} (${elapsed()})`);
       if (onProgress) onProgress(78);
       return { ok: true };
     } catch (err) {
       if (attempt >= MAX_RETRIES) {
         return { ok: false, error: err instanceof Error ? err.message : "R2 upload failed" };
       }
+      console.warn(`[upload] ${ts()} ${label} single-shot attempt ${attempt} failed, retrying...`);
       await sleep(1000 * Math.pow(2, attempt - 1));
     }
   }
@@ -366,7 +415,7 @@ async function uploadMultipart(
   const { uploadId, partUrls, partSize, partCount, stagingKey, uploadToken } = presignData;
   const partConcurrency = computePartConcurrency(file.size);
 
-  console.log(`[upload] multipart: ${partCount} parts × ${partSize / 1024 / 1024} MB, concurrency=${partConcurrency}`);
+  console.log(`[upload] ${ts()} multipart START "${file.name}" ${partCount} parts × ${partSize / 1024 / 1024} MB, concurrency=${partConcurrency}`);
 
   // Track bytes uploaded across all parts for aggregate progress (0–78%)
   const partLoaded = new Array(partCount).fill(0);
@@ -387,11 +436,12 @@ async function uploadMultipart(
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const etag = await uploadPart(url, blob, (loaded) => {
+        const label = `"${file.name}" part ${partNumber}/${partCount}`;
+        const etag = await uploadPart(url, blob, label, (loaded) => {
           partLoaded[i] = loaded;
           reportProgress();
         });
-        console.log(`[upload] ✓ part ${partNumber}/${partCount} etag=${etag} (${elapsed()})`);
+        console.log(`[upload] ${ts()} ✓ part ${partNumber}/${partCount} etag=${etag} (${elapsed()})`);
         return { partNumber, etag };
       } catch (err) {
         if (attempt >= MAX_RETRIES) throw err;
@@ -424,7 +474,7 @@ async function uploadMultipart(
       return { ok: false, error: (data as any).error ?? "Failed to complete multipart upload" };
     }
 
-    console.log(`[upload] ✓ multipart complete (${elapsed()})`);
+    console.log(`[upload] ${ts()} ✓ multipart complete "${file.name}" (${elapsed()})`);
     return { ok: true };
   } catch (err) {
     return { ok: false, error: "Network error during multipart complete" };
@@ -438,14 +488,14 @@ export async function uploadFiles(
   options: BatchUploadOptions,
 ): Promise<UploadResult[]> {
   const concurrency = computeFileConcurrency(files);
-  console.log(`[uploadFiles] BATCH START: ${files.length} files, concurrency=${concurrency}`);
+  console.log(`[uploadFiles] ${ts()} BATCH START: ${files.length} files, concurrency=${concurrency}`);
 
   const results: UploadResult[] = new Array(files.length);
   const successfulFiles: Array<{ name: string; size: number }> = [];
 
   // Build per-file tasks
   const tasks = files.map((file, i) => async () => {
-    console.log(`[uploadFiles] starting file ${i + 1}/${files.length}: "${file.name}"`);
+    console.log(`[uploadFiles] ${ts()} starting file ${i + 1}/${files.length}: "${file.name}" ${(file.size/1024/1024).toFixed(2)} MB`);
     const result = await uploadFile({
       ...options,
       file,
@@ -457,9 +507,9 @@ export async function uploadFiles(
     results[i] = result;
     if (result.success) {
       successfulFiles.push({ name: file.name, size: file.size });
-      console.log(`[uploadFiles] ✓ file ${i + 1} done`);
+      console.log(`[uploadFiles] ${ts()} ✓ file ${i + 1} done: "${file.name}"`);
     } else {
-      console.error(`[uploadFiles] ❌ file ${i + 1} failed: ${result.error}`);
+      console.error(`[uploadFiles] ${ts()} ❌ file ${i + 1} failed: "${file.name}" — ${result.error}`);
     }
     // Fire immediately so the UI can move this file to the completed drawer
     // without waiting for the rest of the batch to finish.
@@ -469,7 +519,7 @@ export async function uploadFiles(
 
   await pLimit(tasks, concurrency);
 
-  console.log(`[uploadFiles] BATCH COMPLETE: ${successfulFiles.length}/${files.length} succeeded`);
+  console.log(`[uploadFiles] ${ts()} BATCH COMPLETE: ${successfulFiles.length}/${files.length} succeeded`);
 
   if (successfulFiles.length > 0) {
     try {
