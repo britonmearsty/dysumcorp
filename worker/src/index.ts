@@ -61,7 +61,10 @@ export async function validateUploadToken(
   secret: string,
 ): Promise<UploadToken | null> {
   try {
-    const token: UploadToken = JSON.parse(atob(encoded));
+    // atob() only handles Latin-1; use TextDecoder to correctly handle UTF-8
+    // filenames that contain non-ASCII characters (e.g. °, é, ñ).
+    const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
+    const token: UploadToken = JSON.parse(new TextDecoder().decode(bytes));
 
     if (Date.now() > token.expiresAt) {
       console.error("[token] ❌ expired");
