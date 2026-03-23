@@ -48,15 +48,17 @@ async function makeToken(overrides: Partial<{
     mimeType: base.mimeType,
     uploaderEmail: base.uploaderEmail,
     uploaderName: base.uploaderName,
-    uploaderNotes: base.uploaderNotes,
-    stagingKey: base.stagingKey,
+    // Normalize optional fields to "" — must match validateUploadToken exactly
+    uploaderNotes: base.uploaderNotes ?? "",
+    stagingKey: base.stagingKey ?? "",
     expiresAt: base.expiresAt,
   };
 
-  const canonical = JSON.stringify(
-    dataToSign,
-    Object.keys(JSON.parse(JSON.stringify(dataToSign))).sort(),
-  );
+  // Fixed key order — must match validateUploadToken in index.ts exactly
+  const canonical = JSON.stringify(dataToSign, [
+    "portalId", "fileName", "fileSize", "mimeType",
+    "uploaderEmail", "uploaderName", "uploaderNotes", "stagingKey", "expiresAt",
+  ]);
   const signature = await hmacSign(SECRET, canonical);
   return btoa(JSON.stringify({ ...base, signature }));
 }

@@ -214,126 +214,14 @@ async function pLimit<T>(
 
 // ── Main upload entry points ───────────────────────────────────────────────────
 
+/** Single-file upload — used when calling uploadFile directly (not via batch). */
 export async function uploadFile(options: UploadOptions): Promise<UploadResult> {
-  return uploadViaR2(options);
-}
-
-async function uploadViaR2(options: UploadOptions): Promise<UploadResult> {
-  const {
-    file,
-    portalId,
-    password,
-    uploaderName,
-    uploaderEmail,
-    uploaderNotes,
-    onProgress,
-    skipNotification,
-  } = options;
-
-  const t0 = performance.now();
-  const elapsed = () => `${Math.round(performance.now() - t0)}ms`;
-  console.log(`[upload] ${ts()} START "${file.name}" ${(file.size/1024/1024).toFixed(2)} MB type=${file.size >= MULTIPART_THRESHOLD ? "multipart" : "single-shot"}`);
-
-  // ── Step 1: Get presign response ───────────────────────────────────────────
-  let presignData: any;
-  try {
-    const res = await fetch("/api/portals/r2-presign", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        portalId,
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type || "application/octet-stream",
-        uploaderName,
-        uploaderEmail,
-        uploaderNotes,
-        password,
-      }),
+  return new Promise<UploadResult>((resolve) => {
+    uploadViaR2WithDetachedPoll({
+      ...options,
+      onPollResult: resolve,
     });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      return { success: false, error: (data as any).error ?? "Failed to get upload URL", method: "r2" };
-    }
-
-    presignData = await res.json();
-    console.log(`[upload] ${ts()} ✓ presign (${elapsed()}) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`);
-  } catch (err) {
-    return { success: false, error: "Network error during presign", method: "r2" };
-  }
-
-  const { uploadToken, stagingKey, workerUrl } = presignData;
-
-  // ── Step 2: Upload to R2 ───────────────────────────────────────────────────
-  if (presignData.uploadType === "multipart") {
-    const result = await uploadMultipart(file, presignData, onProgress, elapsed);
-    if (!result.ok) return { success: false, error: result.error, method: "r2" };
-  } else {
-    const result = await uploadSingleShot(file, presignData.presignedUrl, onProgress, elapsed);
-    if (!result.ok) return { success: false, error: result.error, method: "r2" };
-  }
-
-  // ── Step 3: Trigger Worker transfer ───────────────────────────────────────
-  try {
-    const res = await fetch(`${workerUrl}/transfer`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        uploadToken,
-        stagingKey,
-        portalId,
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type || "application/octet-stream",
-        uploaderName,
-        uploaderEmail,
-        uploaderNotes,
-        callbackUrl: `${window.location.origin}/api/portals/r2-confirm`,
-        skipNotification,
-      }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      return { success: false, error: (data as any).error ?? "Worker rejected transfer", method: "r2" };
-    }
-    console.log(`[upload] ${ts()} ✓ worker accepted (${elapsed()})`);
-  } catch (err) {
-    return { success: false, error: "Failed to reach transfer worker", method: "r2" };
-  }
-
-  if (onProgress) onProgress(80);
-
-  // ── Step 4: Poll for completion (timeout scales with file size) ────────────
-  const pollMaxAttempts = computePollAttempts(file.size);
-  console.log(`[upload] ${ts()} polling "${file.name}" up to ${pollMaxAttempts} attempts (~${Math.round(pollMaxAttempts * POLL_INTERVAL_MS / 1000)}s) for ${(file.size / 1024 / 1024).toFixed(1)} MB`);
-
-  for (let attempt = 0; attempt < pollMaxAttempts; attempt++) {
-    await sleep(POLL_INTERVAL_MS);
-
-    try {
-      const params = new URLSearchParams({ stagingKey, uploadToken });
-      const res = await fetch(`/api/portals/r2-status?${params}`);
-      if (!res.ok) continue;
-
-      const data = await res.json();
-      if (onProgress) onProgress(Math.floor(80 + (attempt / pollMaxAttempts) * 19));
-
-      if (data.status === "completed") {
-        if (onProgress) onProgress(100);
-        console.log(`[upload] ${ts()} ✓ DONE "${file.name}" total=${elapsed()}`);
-        return { success: true, file: data.file, method: "r2" };
-      }
-      if (data.status === "failed") {
-        return { success: false, error: "Transfer failed in worker", method: "r2" };
-      }
-    } catch {
-      // transient poll error — keep trying
-    }
-  }
-
-  return { success: false, error: "Transfer timed out", method: "r2" };
+  });
 }
 
 // ── Single-shot upload (< 10 MB) ──────────────────────────────────────────────
@@ -495,31 +383,42 @@ export async function uploadFiles(
   const results: UploadResult[] = new Array(files.length);
   const successfulFiles: Array<{ name: string; size: number }> = [];
 
-  // Build per-file tasks
+  // Collect poll promises so we can await them all at the end without
+  // holding a concurrency slot during the worker-transfer phase.
+  const pollPromises: Promise<void>[] = [];
+
+  // Build per-file tasks — each task covers presign + R2 upload + worker trigger only.
+  // Polling is detached so the slot is freed as soon as the browser-side upload is done.
   const tasks = files.map((file, i) => async () => {
     console.log(`[uploadFiles] ${ts()} starting file ${i + 1}/${files.length}: "${file.name}" ${(file.size/1024/1024).toFixed(2)} MB`);
-    const result = await uploadFile({
+
+    const pollPromise = uploadViaR2WithDetachedPoll({
       ...options,
       file,
       skipNotification: true,
       onProgress: options.onFileProgress
         ? (progress) => options.onFileProgress!(i, progress)
         : options.onProgress,
+      onPollResult: (result) => {
+        results[i] = result;
+        if (result.success) {
+          successfulFiles.push({ name: file.name, size: file.size });
+          console.log(`[uploadFiles] ${ts()} ✓ file ${i + 1} done: "${file.name}"`);
+        } else {
+          console.error(`[uploadFiles] ${ts()} ❌ file ${i + 1} failed: "${file.name}" — ${result.error}`);
+        }
+        options.onFileComplete?.(i, result);
+      },
     });
-    results[i] = result;
-    if (result.success) {
-      successfulFiles.push({ name: file.name, size: file.size });
-      console.log(`[uploadFiles] ${ts()} ✓ file ${i + 1} done: "${file.name}"`);
-    } else {
-      console.error(`[uploadFiles] ${ts()} ❌ file ${i + 1} failed: "${file.name}" — ${result.error}`);
-    }
-    // Fire immediately so the UI can move this file to the completed drawer
-    // without waiting for the rest of the batch to finish.
-    options.onFileComplete?.(i, result);
-    return result;
+
+    pollPromises.push(pollPromise);
+    // Return immediately — slot is freed for the next file
   });
 
   await pLimit(tasks, concurrency);
+
+  // Wait for all in-flight worker transfers to finish
+  await Promise.all(pollPromises);
 
   console.log(`[uploadFiles] ${ts()} BATCH COMPLETE: ${successfulFiles.length}/${files.length} succeeded`);
 
@@ -541,4 +440,155 @@ export async function uploadFiles(
   }
 
   return results;
+}
+
+/**
+ * Like uploadViaR2 but returns a Promise<void> that resolves when the poll
+ * completes. The browser-side upload (presign + R2 PUT + worker trigger) runs
+ * synchronously inside this function; polling is kicked off and the returned
+ * promise resolves when it finishes. This lets the caller free its concurrency
+ * slot after the R2 upload is done without waiting for the worker transfer.
+ */
+async function uploadViaR2WithDetachedPoll(
+  options: UploadOptions & { onPollResult: (result: UploadResult) => void },
+): Promise<void> {
+  const { onPollResult, ...uploadOptions } = options;
+
+  // Run presign + R2 upload + worker trigger (the browser-side work)
+  const result = await uploadViaR2Internal(uploadOptions);
+
+  if (!result.pollContext) {
+    // Failed before reaching poll stage — report immediately
+    onPollResult({ success: false, error: result.error, method: "r2" });
+    return;
+  }
+
+  // Poll in the background — this promise is what the caller awaits at the end
+  const { stagingKey, uploadToken, file, onProgress } = result.pollContext;
+  const pollMaxAttempts = computePollAttempts(file.size);
+  console.log(`[upload] ${ts()} polling "${file.name}" up to ${pollMaxAttempts} attempts (~${Math.round(pollMaxAttempts * POLL_INTERVAL_MS / 1000)}s) for ${(file.size / 1024 / 1024).toFixed(1)} MB`);
+
+  const t0 = result.pollContext.t0;
+  const elapsed = () => `${Math.round(performance.now() - t0)}ms`;
+
+  for (let attempt = 0; attempt < pollMaxAttempts; attempt++) {
+    await sleep(POLL_INTERVAL_MS);
+    try {
+      const params = new URLSearchParams({ stagingKey, uploadToken });
+      const res = await fetch(`/api/portals/r2-status?${params}`);
+      if (!res.ok) continue;
+
+      const data = await res.json();
+      if (onProgress) onProgress(Math.floor(80 + (attempt / pollMaxAttempts) * 19));
+
+      if (data.status === "completed") {
+        if (onProgress) onProgress(100);
+        console.log(`[upload] ${ts()} ✓ DONE "${file.name}" total=${elapsed()}`);
+        onPollResult({ success: true, file: data.file, method: "r2" });
+        return;
+      }
+      if (data.status === "failed") {
+        onPollResult({ success: false, error: "Transfer failed in worker", method: "r2" });
+        return;
+      }
+    } catch {
+      // transient poll error — keep trying
+    }
+  }
+
+  onPollResult({ success: false, error: "Transfer timed out", method: "r2" });
+}
+
+/** Internal: runs presign + R2 upload + worker trigger. Returns poll context on success. */
+async function uploadViaR2Internal(options: UploadOptions): Promise<
+  | { pollContext: { stagingKey: string; uploadToken: string; file: File; onProgress: ((p: number) => void) | undefined; t0: number } }
+  | { pollContext: null; error: string }
+> {
+  const {
+    file,
+    portalId,
+    password,
+    uploaderName,
+    uploaderEmail,
+    uploaderNotes,
+    onProgress,
+    skipNotification,
+  } = options;
+
+  const t0 = performance.now();
+  const elapsed = () => `${Math.round(performance.now() - t0)}ms`;
+  console.log(`[upload] ${ts()} START "${file.name}" ${(file.size/1024/1024).toFixed(2)} MB type=${file.size >= MULTIPART_THRESHOLD ? "multipart" : "single-shot"}`);
+
+  // Step 1: Presign
+  let presignData: any;
+  try {
+    const res = await fetch("/api/portals/r2-presign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        portalId,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type || "application/octet-stream",
+        uploaderName,
+        uploaderEmail,
+        uploaderNotes,
+        password,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return { pollContext: null, error: (data as any).error ?? "Failed to get upload URL" };
+    }
+
+    presignData = await res.json();
+    console.log(`[upload] ${ts()} ✓ presign (${elapsed()}) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`);
+  } catch {
+    return { pollContext: null, error: "Network error during presign" };
+  }
+
+  const { uploadToken, stagingKey, workerUrl } = presignData;
+
+  // Step 2: Upload to R2
+  if (presignData.uploadType === "multipart") {
+    const result = await uploadMultipart(file, presignData, onProgress, elapsed);
+    if (!result.ok) return { pollContext: null, error: result.error ?? "Multipart upload failed" };
+  } else {
+    const result = await uploadSingleShot(file, presignData.presignedUrl, onProgress, elapsed);
+    if (!result.ok) return { pollContext: null, error: result.error ?? "Single-shot upload failed" };
+  }
+
+  // Step 3: Trigger worker
+  try {
+    const res = await fetch(`${workerUrl}/transfer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        uploadToken,
+        stagingKey,
+        portalId,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type || "application/octet-stream",
+        uploaderName,
+        uploaderEmail,
+        uploaderNotes,
+        callbackUrl: `${window.location.origin}/api/portals/r2-confirm`,
+        skipNotification,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return { pollContext: null, error: (data as any).error ?? "Worker rejected transfer" };
+    }
+    console.log(`[upload] ${ts()} ✓ worker accepted (${elapsed()})`);
+  } catch {
+    return { pollContext: null, error: "Failed to reach transfer worker" };
+  }
+
+  if (onProgress) onProgress(80);
+
+  return { pollContext: { stagingKey, uploadToken, file, onProgress, t0 } };
 }
