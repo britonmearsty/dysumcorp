@@ -387,32 +387,43 @@ export async function uploadFiles(
   // holding a concurrency slot during the worker-transfer phase.
   const pollPromises: Promise<void>[] = [];
 
-  // Build per-file tasks — each task covers presign + R2 upload + worker trigger only.
-  // Polling is detached so the slot is freed as soon as the browser-side upload is done.
+  // Build per-file tasks — each task covers presign + R2 upload only.
+  // uploadViaR2Internal is awaited (holds the slot), then polling is kicked off
+  // as a detached promise so the slot is freed before the worker transfer runs.
   const tasks = files.map((file, i) => async () => {
     console.log(`[uploadFiles] ${ts()} starting file ${i + 1}/${files.length}: "${file.name}" ${(file.size/1024/1024).toFixed(2)} MB`);
 
-    const pollPromise = uploadViaR2WithDetachedPoll({
+    const onPollResult = (result: UploadResult) => {
+      results[i] = result;
+      if (result.success) {
+        successfulFiles.push({ name: file.name, size: file.size });
+        console.log(`[uploadFiles] ${ts()} ✓ file ${i + 1} done: "${file.name}"`);
+      } else {
+        console.error(`[uploadFiles] ${ts()} ❌ file ${i + 1} failed: "${file.name}" — ${result.error}`);
+      }
+      options.onFileComplete?.(i, result);
+    };
+
+    // Run presign + R2 upload + worker trigger — holds the concurrency slot
+    const r2Result = await uploadViaR2Internal({
       ...options,
       file,
       skipNotification: true,
       onProgress: options.onFileProgress
         ? (progress) => options.onFileProgress!(i, progress)
         : options.onProgress,
-      onPollResult: (result) => {
-        results[i] = result;
-        if (result.success) {
-          successfulFiles.push({ name: file.name, size: file.size });
-          console.log(`[uploadFiles] ${ts()} ✓ file ${i + 1} done: "${file.name}"`);
-        } else {
-          console.error(`[uploadFiles] ${ts()} ❌ file ${i + 1} failed: "${file.name}" — ${result.error}`);
-        }
-        options.onFileComplete?.(i, result);
-      },
     });
 
+    if (!r2Result.pollContext) {
+      // Failed before poll stage — report immediately, no poll needed
+      onPollResult({ success: false, error: r2Result.error, method: "r2" });
+      return; // slot freed here
+    }
+
+    // Kick off polling as a detached promise — slot is freed NOW, before poll starts
+    const pollPromise = runPoll(r2Result.pollContext, onPollResult);
     pollPromises.push(pollPromise);
-    // Return immediately — slot is freed for the next file
+    // slot freed here — next file can start immediately
   });
 
   await pLimit(tasks, concurrency);
@@ -443,33 +454,18 @@ export async function uploadFiles(
 }
 
 /**
- * Like uploadViaR2 but returns a Promise<void> that resolves when the poll
- * completes. The browser-side upload (presign + R2 PUT + worker trigger) runs
- * synchronously inside this function; polling is kicked off and the returned
- * promise resolves when it finishes. This lets the caller free its concurrency
- * slot after the R2 upload is done without waiting for the worker transfer.
+ * Polls r2-status until the worker transfer completes or times out.
+ * Resolves when done (success or failure) — never rejects.
  */
-async function uploadViaR2WithDetachedPoll(
-  options: UploadOptions & { onPollResult: (result: UploadResult) => void },
+async function runPoll(
+  pollContext: { stagingKey: string; uploadToken: string; file: File; onProgress: ((p: number) => void) | undefined; t0: number },
+  onPollResult: (result: UploadResult) => void,
 ): Promise<void> {
-  const { onPollResult, ...uploadOptions } = options;
-
-  // Run presign + R2 upload + worker trigger (the browser-side work)
-  const result = await uploadViaR2Internal(uploadOptions);
-
-  if (!result.pollContext) {
-    // Failed before reaching poll stage — report immediately
-    onPollResult({ success: false, error: result.error, method: "r2" });
-    return;
-  }
-
-  // Poll in the background — this promise is what the caller awaits at the end
-  const { stagingKey, uploadToken, file, onProgress } = result.pollContext;
+  const { stagingKey, uploadToken, file, onProgress, t0 } = pollContext;
   const pollMaxAttempts = computePollAttempts(file.size);
-  console.log(`[upload] ${ts()} polling "${file.name}" up to ${pollMaxAttempts} attempts (~${Math.round(pollMaxAttempts * POLL_INTERVAL_MS / 1000)}s) for ${(file.size / 1024 / 1024).toFixed(1)} MB`);
-
-  const t0 = result.pollContext.t0;
   const elapsed = () => `${Math.round(performance.now() - t0)}ms`;
+
+  console.log(`[upload] ${ts()} polling "${file.name}" up to ${pollMaxAttempts} attempts (~${Math.round(pollMaxAttempts * POLL_INTERVAL_MS / 1000)}s) for ${(file.size / 1024 / 1024).toFixed(1)} MB`);
 
   for (let attempt = 0; attempt < pollMaxAttempts; attempt++) {
     await sleep(POLL_INTERVAL_MS);
@@ -497,6 +493,25 @@ async function uploadViaR2WithDetachedPoll(
   }
 
   onPollResult({ success: false, error: "Transfer timed out", method: "r2" });
+}
+
+/**
+ * Like uploadViaR2 but returns a Promise<void> that resolves when the poll
+ * completes. Used by the single-file uploadFile() path.
+ */
+async function uploadViaR2WithDetachedPoll(
+  options: UploadOptions & { onPollResult: (result: UploadResult) => void },
+): Promise<void> {
+  const { onPollResult, ...uploadOptions } = options;
+
+  const result = await uploadViaR2Internal(uploadOptions);
+
+  if (!result.pollContext) {
+    onPollResult({ success: false, error: result.error, method: "r2" });
+    return;
+  }
+
+  await runPoll(result.pollContext, onPollResult);
 }
 
 /** Internal: runs presign + R2 upload + worker trigger. Returns poll context on success. */
