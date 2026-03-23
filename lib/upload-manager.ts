@@ -4,18 +4,18 @@
  * Flow:
  *  1. POST /api/portals/r2-presign  → single presignedUrl OR multipart {uploadId, partUrls[]}
  *  2a. (small)  XHR PUT presignedUrl          → file goes to R2 in one shot
- *  2b. (large)  XHR PUT each partUrl in parallel (6 at a time) → collect ETags
+ *  2b. (large)  XHR PUT each partUrl in parallel (2–4 at a time, scales with size) → collect ETags
  *               POST /api/portals/r2-complete → R2 assembles the object
  *  3. POST workerUrl/transfer       → Worker picks up from R2, streams to Drive/Dropbox
  *  4. Poll /api/portals/r2-status   → wait for Worker callback (progress 80–100%)
  *
  * Parallelism:
- *  - PART_CONCURRENCY (6): simultaneous part uploads within one file.
- *    6 × 10 MB = 60 MB in-flight per file — saturates any realistic upstream.
- *    Beyond 6 you fragment bandwidth without gain.
- *  - FILE_CONCURRENCY (3): simultaneous files uploading at once.
- *    3 files × 6 parts = 18 XHRs max. Beyond 3 you just slice the pipe thinner.
- *  Both are tunable constants below.
+ *  - Part concurrency scales with file size: 2 parts for ≥200 MB, 3 for ≥50 MB, 4 for smaller.
+ *    At 25 MB/part, 2–3 concurrent parts already saturates most upstreams.
+ *    More parts fragment bandwidth via TCP contention without throughput gain.
+ *  - FILE_CONCURRENCY_LARGE (2): simultaneous large files uploading at once.
+ *    2 files × 2–3 parts = 4–6 XHRs max. Keeps the pipe full without
+ *    fragmenting bandwidth across too many competing streams.
  */
 
 export interface UploadOptions {
@@ -44,48 +44,52 @@ export interface UploadResult {
 }
 
 // ── Tunable constants ──────────────────────────────────────────────────────────
-/** Max simultaneous part uploads within a single file */
-const PART_CONCURRENCY = 6;
-/**
- * Max simultaneous files for large files (>= 10 MB, multipart).
- * Each large file runs up to 6 part uploads — 3 × 6 = 18 XHRs max.
- */
-const FILE_CONCURRENCY_LARGE = 3;
-/**
- * Max simultaneous files for small files (< 10 MB, single-shot).
- * Each small file is one XHR — 8 concurrent is fine.
- */
-const FILE_CONCURRENCY_SMALL = 8;
 /** Threshold that matches r2-presign MULTIPART_THRESHOLD */
 const MULTIPART_THRESHOLD = 10 * 1024 * 1024; // 10 MB
 
 /**
- * Compute per-file concurrency dynamically.
- * Each file slot "costs" based on its size:
- *   - large file (multipart) costs PART_CONCURRENCY slots
- *   - small file costs 1 slot
- * We cap total in-flight XHRs at MAX_TOTAL_XHRS.
- * For a mixed batch this naturally gives small files more parallelism
- * while large files still get their 6 part slots each.
+ * Part concurrency scales with file size.
+ * At 25 MB/part, more than 3 concurrent parts fragments bandwidth without gain.
+ * For very large files (>= 200 MB) we drop to 2 — the pipe is already full
+ * with 2 × 25 MB = 50 MB in-flight, and more parts just cause TCP contention.
  */
-const MAX_TOTAL_XHRS = 18;
+function computePartConcurrency(fileSizeBytes: number): number {
+  if (fileSizeBytes >= 200 * 1024 * 1024) return 2; // ≥ 200 MB → 2 parts
+  if (fileSizeBytes >= 50 * 1024 * 1024) return 3;  // ≥ 50 MB  → 3 parts
+  return 4;                                           // < 50 MB  → 4 parts
+}
+
+/**
+ * Max simultaneous files for large files (>= 10 MB, multipart).
+ * With 2–3 parts each, 2 concurrent large files = 4–6 XHRs — enough to
+ * saturate upstream without fragmenting bandwidth across too many streams.
+ */
+const FILE_CONCURRENCY_LARGE = 2;
+/**
+ * Max simultaneous files for small files (< 10 MB, single-shot).
+ * Each small file is one XHR — 6 concurrent is fine.
+ */
+const FILE_CONCURRENCY_SMALL = 6;
+
+/**
+ * Total in-flight XHR budget. Used for mixed-batch concurrency calculation.
+ * 2 large files × 3 parts + 2 small = 8 — keeps the pipe full without
+ * fragmenting bandwidth across too many simultaneous streams.
+ */
+const MAX_TOTAL_XHRS = 8;
 
 function computeFileConcurrency(files: File[]): number {
   const largeCount = files.filter((f) => f.size >= MULTIPART_THRESHOLD).length;
   const smallCount = files.length - largeCount;
 
-  if (largeCount === 0) return FILE_CONCURRENCY_SMALL; // all small → 8
-  if (smallCount === 0) return FILE_CONCURRENCY_LARGE; // all large → 3
+  if (largeCount === 0) return FILE_CONCURRENCY_SMALL; // all small → 6
+  if (smallCount === 0) return FILE_CONCURRENCY_LARGE; // all large → 2
 
-  // Mixed: budget MAX_TOTAL_XHRS across large + small files.
-  // Each large file consumes PART_CONCURRENCY slots, each small file consumes 1.
-  // Solve: largeSlots * PART_CONCURRENCY + smallSlots * 1 <= MAX_TOTAL_XHRS
-  // Simple heuristic: allow up to FILE_CONCURRENCY_LARGE large files, rest of
-  // the XHR budget goes to small files.
-  const xhrsUsedByLarge = Math.min(largeCount, FILE_CONCURRENCY_LARGE) * PART_CONCURRENCY;
+  // Mixed: cap total in-flight XHRs at MAX_TOTAL_XHRS.
+  // Large files use 2–3 part slots each; small files use 1 slot each.
+  const xhrsUsedByLarge = Math.min(largeCount, FILE_CONCURRENCY_LARGE) * 3; // assume 3 parts avg
   const remainingXhrs = Math.max(1, MAX_TOTAL_XHRS - xhrsUsedByLarge);
   const smallConcurrency = Math.min(smallCount, remainingXhrs);
-  // Total file concurrency = large slots + small slots
   return Math.min(largeCount, FILE_CONCURRENCY_LARGE) + smallConcurrency;
 }
 
@@ -360,8 +364,9 @@ async function uploadMultipart(
   elapsed: () => string,
 ): Promise<{ ok: boolean; error?: string }> {
   const { uploadId, partUrls, partSize, partCount, stagingKey, uploadToken } = presignData;
+  const partConcurrency = computePartConcurrency(file.size);
 
-  console.log(`[upload] multipart: ${partCount} parts × ${partSize / 1024 / 1024} MB, concurrency=${PART_CONCURRENCY}`);
+  console.log(`[upload] multipart: ${partCount} parts × ${partSize / 1024 / 1024} MB, concurrency=${partConcurrency}`);
 
   // Track bytes uploaded across all parts for aggregate progress (0–78%)
   const partLoaded = new Array(partCount).fill(0);
@@ -399,7 +404,7 @@ async function uploadMultipart(
 
   let parts: { partNumber: number; etag: string }[];
   try {
-    parts = await pLimit(tasks, PART_CONCURRENCY);
+    parts = await pLimit(tasks, partConcurrency);
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Multipart upload failed" };
   }
