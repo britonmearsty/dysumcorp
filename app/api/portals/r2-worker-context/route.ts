@@ -6,6 +6,7 @@ import {
   findOrCreateRootFolder,
   findOrCreatePortalFolder,
   findOrCreateClientFolder,
+  verifyGoogleDriveFolderExists,
 } from "@/lib/storage-api";
 
 export const runtime = "nodejs";
@@ -127,9 +128,43 @@ export async function POST(request: NextRequest) {
 
     if (portal.storageFolderId) {
       console.log(`[worker-context:${requestId}] Using portal's configured folder`);
-      parentFolderId = portal.storageFolderId;
-      folderPath = portal.storageFolderPath || portal.name;
-      console.log(`[worker-context:${requestId}] parentFolderId: ${parentFolderId}, folderPath: ${folderPath}`);
+
+      // Verify the stored folder still exists (may have been deleted from Drive/Dropbox)
+      let folderStillExists = true;
+      if (provider === "google") {
+        folderStillExists = await verifyGoogleDriveFolderExists(accessToken, portal.storageFolderId);
+        if (!folderStillExists) {
+          console.warn(`[worker-context:${requestId}] ⚠️ Stored folder ${portal.storageFolderId} not found in Drive, falling back to auto-create`);
+        }
+      }
+
+      if (folderStillExists) {
+        parentFolderId = portal.storageFolderId;
+        folderPath = portal.storageFolderPath || portal.name;
+        console.log(`[worker-context:${requestId}] parentFolderId: ${parentFolderId}, folderPath: ${folderPath}`);
+      } else {
+        // Folder is gone — create a new one and update the portal record
+        const rootFolder = await findOrCreateRootFolder(accessToken, portal.userId, provider);
+        console.log(`[worker-context:${requestId}] ✓ Root folder: ${rootFolder.id}`);
+
+        const portalFolder = await findOrCreatePortalFolder(
+          accessToken,
+          rootFolder.id,
+          portal.name,
+          provider,
+        );
+        console.log(`[worker-context:${requestId}] ✓ New portal folder: ${portalFolder.id}`);
+
+        parentFolderId = portalFolder.id;
+        folderPath = `dysumcorp/${portal.name}`;
+
+        // Persist the new folder ID so future uploads don't hit this again
+        await prisma.portal.update({
+          where: { id: portal.id },
+          data: { storageFolderId: parentFolderId, storageFolderPath: folderPath },
+        });
+        console.log(`[worker-context:${requestId}] ✓ Portal storageFolderId updated to ${parentFolderId}`);
+      }
     } else {
       console.log(`[worker-context:${requestId}] Creating default folder structure...`);
       const rootFolder = await findOrCreateRootFolder(accessToken, portal.userId, provider);

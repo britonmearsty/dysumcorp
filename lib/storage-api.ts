@@ -597,6 +597,22 @@ async function findOrCreateDropboxFolder(
 // ============================================================================
 
 /**
+ * Verify a Google Drive folder still exists. Returns true if accessible, false if 404/deleted.
+ */
+export async function verifyGoogleDriveFolderExists(
+  accessToken: string,
+  folderId: string,
+): Promise<boolean> {
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,trashed`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  if (!res.ok) return false;
+  const data = await res.json();
+  return !data.trashed;
+}
+
+/**
  * Find or create the root "dysumcorp" folder
  */
 export async function findOrCreateRootFolder(
