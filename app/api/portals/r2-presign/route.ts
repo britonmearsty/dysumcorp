@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { prisma } from "@/lib/prisma";
-import { applyUploadRateLimit } from "@/lib/rate-limit";
+import { applyUploadRateLimit, applyPasswordRateLimit } from "@/lib/rate-limit";
 import { checkAccess } from "@/lib/trial";
 import { verifyPasswordWithMigration } from "@/lib/password-utils";
 import { generateUploadToken } from "@/lib/upload-tokens";
@@ -83,6 +83,10 @@ export async function POST(request: NextRequest) {
       if (!password) {
         return NextResponse.json({ error: "Password required" }, { status: 401 });
       }
+      // Rate-limit password attempts per portal — keyed on portalId so IP rotation doesn't help
+      const pwRateLimit = await applyPasswordRateLimit(portal.id);
+      if (pwRateLimit) return pwRateLimit;
+
       const { valid } = await verifyPasswordWithMigration(password, portal.password);
       if (!valid) {
         return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
@@ -160,7 +164,7 @@ export async function POST(request: NextRequest) {
     // ── Single-shot upload for small files ────────────────────────────────────
     if (fileSize < MULTIPART_THRESHOLD) {
       console.log(`[r2-presign:${requestId}] Single-shot upload: ${fileSize} bytes`);
-      const presignedUrl = await getPresignedPutUrl(stagingKey, mimeType, 900);
+      const presignedUrl = await getPresignedPutUrl(stagingKey, mimeType, 900, fileSize);
       return NextResponse.json({
         uploadType: "single",
         presignedUrl,

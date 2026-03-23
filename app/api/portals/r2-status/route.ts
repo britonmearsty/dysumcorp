@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateUploadToken } from "@/lib/upload-tokens";
+import { applyStatusPollRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,6 +11,9 @@ export const dynamic = "force-dynamic";
  * Polled by the browser to check whether the Worker has finished the transfer.
  */
 export async function GET(request: NextRequest) {
+  const rateLimitResponse = await applyStatusPollRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const requestId = Math.random().toString(36).slice(2, 8);
   console.log(`[r2-status:${requestId}] ═══════════════════════════════════════════════════════`);
   console.log(`[r2-status:${requestId}] GET /api/portals/r2-status`);

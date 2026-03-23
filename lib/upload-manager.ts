@@ -377,8 +377,15 @@ export async function uploadFiles(
   files: File[],
   options: BatchUploadOptions,
 ): Promise<UploadResult[]> {
-  const concurrency = computeFileConcurrency(files);
-  console.log(`[uploadFiles] ${ts()} BATCH START: ${files.length} files, concurrency=${concurrency}`);
+  // Sort files smallest-first so small files complete quickly and free concurrency
+  // slots for large files. Original indices are preserved for callbacks.
+  const sortedEntries = files
+    .map((file, originalIndex) => ({ file, originalIndex }))
+    .sort((a, b) => a.file.size - b.file.size);
+
+  const sortedFiles = sortedEntries.map((e) => e.file);
+  const concurrency = computeFileConcurrency(sortedFiles);
+  console.log(`[uploadFiles] ${ts()} BATCH START: ${files.length} files, concurrency=${concurrency} (sorted small→large)`);
 
   const results: UploadResult[] = new Array(files.length);
   const successfulFiles: Array<{ name: string; size: number }> = [];
@@ -390,16 +397,17 @@ export async function uploadFiles(
   // Build per-file tasks — each task covers presign + R2 upload only.
   // uploadViaR2Internal is awaited (holds the slot), then polling is kicked off
   // as a detached promise so the slot is freed before the worker transfer runs.
-  const tasks = files.map((file, i) => async () => {
-    console.log(`[uploadFiles] ${ts()} starting file ${i + 1}/${files.length}: "${file.name}" ${(file.size/1024/1024).toFixed(2)} MB`);
+  const tasks = sortedEntries.map(({ file, originalIndex }) => async () => {
+    const i = originalIndex;
+    console.log(`[uploadFiles] ${ts()} starting "${file.name}" ${(file.size/1024/1024).toFixed(2)} MB (original index ${i})`);
 
     const onPollResult = (result: UploadResult) => {
       results[i] = result;
       if (result.success) {
         successfulFiles.push({ name: file.name, size: file.size });
-        console.log(`[uploadFiles] ${ts()} ✓ file ${i + 1} done: "${file.name}"`);
+        console.log(`[uploadFiles] ${ts()} ✓ done: "${file.name}"`);
       } else {
-        console.error(`[uploadFiles] ${ts()} ❌ file ${i + 1} failed: "${file.name}" — ${result.error}`);
+        console.error(`[uploadFiles] ${ts()} ❌ failed: "${file.name}" — ${result.error}`);
       }
       options.onFileComplete?.(i, result);
     };

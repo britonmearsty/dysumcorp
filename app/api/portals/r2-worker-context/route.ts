@@ -8,6 +8,7 @@ import {
   findOrCreateClientFolder,
   verifyGoogleDriveFolderExists,
 } from "@/lib/storage-api";
+import { applyUploadRateLimit, applyRateLimit, UPLOAD_LIMIT, FALLBACK_UPLOAD_LIMIT } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,12 @@ export async function POST(request: NextRequest) {
   const requestId = Math.random().toString(36).slice(2, 8);
   console.log(`[worker-context:${requestId}] ═══════════════════════════════════════════════════════`);
   console.log(`[worker-context:${requestId}] POST /api/portals/r2-worker-context`);
+
+  // IP-based rate limit — same budget as upload endpoints (50/min).
+  // Worker calls come from a fixed Cloudflare egress IP so this won't
+  // affect them in practice; it guards against token-holder abuse.
+  const rateLimitResponse = await applyUploadRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const body = await request.json();
@@ -52,6 +59,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
       console.log(`[worker-context:${requestId}] ✓ Upload token valid`);
+
+      // Per-stagingKey limit: 5 context fetches per key per minute.
+      // This endpoint creates Drive/Dropbox folders — spamming it is expensive.
+      if (token.stagingKey) {
+        const keyLimit = await applyRateLimit(
+          UPLOAD_LIMIT,
+          FALLBACK_UPLOAD_LIMIT,
+          `worker-ctx:${token.stagingKey}`,
+        );
+        if (keyLimit) return keyLimit;
+      }
     } else {
       console.log(`[worker-context:${requestId}] ✓ Worker authenticated via WORKER_SECRET`);
     }

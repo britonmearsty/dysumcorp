@@ -40,16 +40,25 @@ function requireEnv() {
   }
 }
 
-/** Presigned PUT URL for single-shot uploads (files < MULTIPART_THRESHOLD). */
+/** Presigned PUT URL for single-shot uploads (files < MULTIPART_THRESHOLD).
+ *  contentLength is embedded in the signature so R2 rejects any PUT that
+ *  doesn't match exactly — prevents a client lying about fileSize at presign time.
+ */
 export async function getPresignedPutUrl(
   key: string,
   contentType: string,
   expiresInSeconds: number = 900,
+  contentLength?: number,
 ): Promise<string> {
   requireEnv();
   return getSignedUrl(
     r2Client,
-    new PutObjectCommand({ Bucket: bucketName!, Key: key, ContentType: contentType }),
+    new PutObjectCommand({
+      Bucket: bucketName!,
+      Key: key,
+      ContentType: contentType,
+      ...(contentLength != null ? { ContentLength: contentLength } : {}),
+    }),
     { expiresIn: expiresInSeconds },
   );
 }

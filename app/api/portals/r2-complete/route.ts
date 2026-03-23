@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateUploadToken } from "@/lib/upload-tokens";
 import { completeMultipartUpload, abortMultipartUpload, type CompletedPart } from "@/lib/r2-client";
+import { applyUploadRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +15,9 @@ export const dynamic = "force-dynamic";
  * Body: { uploadToken, stagingKey, uploadId, parts: [{ partNumber, etag }] }
  */
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = await applyUploadRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const requestId = Math.random().toString(36).slice(2, 8);
   console.log(`[r2-complete:${requestId}] POST /api/portals/r2-complete`);
 

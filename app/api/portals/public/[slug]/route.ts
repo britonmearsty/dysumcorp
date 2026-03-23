@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { applyPublicPortalRateLimit } from "@/lib/rate-limit";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 // GET /api/portals/public/[slug] - Get portal by slug (public access)
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const rateLimitResponse = await applyPublicPortalRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const { slug } = await params;
     const portal = await prisma.portal.findUnique({
