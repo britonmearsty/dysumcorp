@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { prisma } from "@/lib/prisma";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 import { checkAccess } from "@/lib/trial";
-import { verifyPassword } from "@/lib/password-utils";
+import { verifyPasswordWithMigration } from "@/lib/password-utils";
 import { generateUploadToken } from "@/lib/upload-tokens";
 import {
   getPresignedPutUrl,
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       if (!password) {
         return NextResponse.json({ error: "Password required" }, { status: 401 });
       }
-      const valid = await verifyPassword(portal.password, password);
+      const { valid } = await verifyPasswordWithMigration(password, portal.password);
       if (!valid) {
         return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
       }
