@@ -27,6 +27,14 @@ export interface UploadOptions {
   uploaderNotes?: string;
   onProgress?: (progress: number) => void;
   skipNotification?: boolean;
+  /** Pre-resolved session ID — shared across all files in a batch */
+  uploadSessionId?: string;
+  /** Pre-resolved destination folder ID — skips folder creation race in worker */
+  parentFolderId?: string;
+  /** Pre-resolved folder path — passed alongside parentFolderId */
+  folderPath?: string;
+  /** Cached presign response — avoids a redundant presign call for the first file */
+  cachedPresignData?: any;
 }
 
 export interface BatchUploadOptions extends Omit<UploadOptions, "file"> {
@@ -377,8 +385,98 @@ export async function uploadFiles(
   files: File[],
   options: BatchUploadOptions,
 ): Promise<UploadResult[]> {
-  // Sort files smallest-first so small files complete quickly and free concurrency
-  // slots for large files. Original indices are preserved for callbacks.
+  // ── Step 0: Pre-create upload session + pre-resolve destination folder ──────
+  // Both must happen BEFORE any file starts uploading so all files share the
+  // same session ID and the same folder — preventing the race condition where
+  // concurrent worker calls each try to create the same Drive/Dropbox folder.
+
+  let sharedSessionId: string | undefined;
+  let sharedParentFolderId: string | undefined;
+  let sharedFolderPath: string | undefined;
+  // Cache the presign result for the first file so we don't presign it twice
+  let firstFilePresignCache: { fileIndex: number; data: any } | undefined;
+
+  // Pre-create the UploadSession (one per batch, not one per file)
+  try {
+    const sessionRes = await fetch("/api/portals/create-upload-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        portalId: options.portalId,
+        uploaderName: options.uploaderName,
+        uploaderEmail: options.uploaderEmail,
+        uploaderNotes: options.uploaderNotes,
+      }),
+    });
+    if (sessionRes.ok) {
+      const sessionData = await sessionRes.json();
+      sharedSessionId = sessionData.uploadSessionId;
+      console.log(`[uploadFiles] ${ts()} ✓ pre-created session: ${sharedSessionId}`);
+    } else {
+      console.warn(`[uploadFiles] ${ts()} ⚠️ session pre-create failed (${sessionRes.status}), will fall back to per-file sessions`);
+    }
+  } catch (err) {
+    console.warn(`[uploadFiles] ${ts()} ⚠️ session pre-create error (non-fatal):`, err);
+  }
+
+  // Pre-resolve the destination folder. We presign the first file (in sort order) to get a
+  // valid upload token, then call r2-worker-context once. The presign result is cached so
+  // that file doesn't get presigned again in the task loop.
+  //
+  // Note: sort happens below, so we use files[0] here (unsorted). The cache is keyed on
+  // the original index of whichever file ends up first after sorting.
+  if (files.length > 0) {
+    // Sort to find which file will be processed first (smallest first)
+    const sortedForPreresolve = files
+      .map((file, originalIndex) => ({ file, originalIndex }))
+      .sort((a, b) => a.file.size - b.file.size);
+    const firstSorted = sortedForPreresolve[0];
+
+    try {
+      const presignRes = await fetch("/api/portals/r2-presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          portalId: options.portalId,
+          fileName: firstSorted.file.name,
+          fileSize: firstSorted.file.size,
+          mimeType: firstSorted.file.type || "application/octet-stream",
+          uploaderName: options.uploaderName,
+          uploaderEmail: options.uploaderEmail,
+          uploaderNotes: options.uploaderNotes,
+          password: options.password,
+        }),
+      });
+
+      if (presignRes.ok) {
+        const presignData = await presignRes.json();
+        // Cache keyed on the original index of the first-sorted file
+        firstFilePresignCache = { fileIndex: firstSorted.originalIndex, data: presignData };
+
+        // Use the token to pre-resolve the folder once for all files
+        const ctxRes = await fetch("/api/portals/r2-worker-context", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            uploadToken: presignData.uploadToken,
+            uploaderName: options.uploaderName,
+          }),
+        });
+        if (ctxRes.ok) {
+          const ctx = await ctxRes.json();
+          sharedParentFolderId = ctx.parentFolderId;
+          sharedFolderPath = ctx.folderPath;
+          console.log(`[uploadFiles] ${ts()} ✓ pre-resolved folder: ${sharedParentFolderId} (${sharedFolderPath})`);
+        } else {
+          console.warn(`[uploadFiles] ${ts()} ⚠️ folder pre-resolve failed (${ctxRes.status}), worker will resolve per-file`);
+        }
+      }
+    } catch (err) {
+      console.warn(`[uploadFiles] ${ts()} ⚠️ folder pre-resolve error (non-fatal):`, err);
+    }
+  }
+
+  // ── Sort + concurrency setup ───────────────────────────────────────────────
   const sortedEntries = files
     .map((file, originalIndex) => ({ file, originalIndex }))
     .sort((a, b) => a.file.size - b.file.size);
@@ -394,9 +492,6 @@ export async function uploadFiles(
   // holding a concurrency slot during the worker-transfer phase.
   const pollPromises: Promise<void>[] = [];
 
-  // Build per-file tasks — each task covers presign + R2 upload only.
-  // uploadViaR2Internal is awaited (holds the slot), then polling is kicked off
-  // as a detached promise so the slot is freed before the worker transfer runs.
   const tasks = sortedEntries.map(({ file, originalIndex }) => async () => {
     const i = originalIndex;
     console.log(`[uploadFiles] ${ts()} starting "${file.name}" ${(file.size/1024/1024).toFixed(2)} MB (original index ${i})`);
@@ -412,51 +507,38 @@ export async function uploadFiles(
       options.onFileComplete?.(i, result);
     };
 
-    // Run presign + R2 upload + worker trigger — holds the concurrency slot
+    // Pass cached presign data for the first file (originalIndex 0) to avoid re-presigning
+    const cachedPresignData =
+      firstFilePresignCache && firstFilePresignCache.fileIndex === i
+        ? firstFilePresignCache.data
+        : undefined;
+
     const r2Result = await uploadViaR2Internal({
       ...options,
       file,
       skipNotification: true,
+      uploadSessionId: sharedSessionId,
+      parentFolderId: sharedParentFolderId,
+      folderPath: sharedFolderPath,
+      cachedPresignData,
       onProgress: options.onFileProgress
         ? (progress) => options.onFileProgress!(i, progress)
         : options.onProgress,
     });
 
     if (!r2Result.pollContext) {
-      // Failed before poll stage — report immediately, no poll needed
       onPollResult({ success: false, error: r2Result.error, method: "r2" });
-      return; // slot freed here
+      return;
     }
 
-    // Kick off polling as a detached promise — slot is freed NOW, before poll starts
     const pollPromise = runPoll(r2Result.pollContext, onPollResult);
     pollPromises.push(pollPromise);
-    // slot freed here — next file can start immediately
   });
 
   await pLimit(tasks, concurrency);
-
-  // Wait for all in-flight worker transfers to finish
   await Promise.all(pollPromises);
 
   console.log(`[uploadFiles] ${ts()} BATCH COMPLETE: ${successfulFiles.length}/${files.length} succeeded`);
-
-  if (successfulFiles.length > 0) {
-    try {
-      await fetch("/api/portals/batch-notification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          portalId: options.portalId,
-          files: successfulFiles,
-          uploaderName: options.uploaderName,
-          uploaderEmail: options.uploaderEmail,
-        }),
-      });
-    } catch (err) {
-      console.error("[uploadFiles] batch notification failed:", err);
-    }
-  }
 
   return results;
 }
@@ -536,39 +618,48 @@ async function uploadViaR2Internal(options: UploadOptions): Promise<
     uploaderNotes,
     onProgress,
     skipNotification,
+    uploadSessionId,
+    parentFolderId,
+    folderPath,
+    cachedPresignData,
   } = options;
 
   const t0 = performance.now();
   const elapsed = () => `${Math.round(performance.now() - t0)}ms`;
   console.log(`[upload] ${ts()} START "${file.name}" ${(file.size/1024/1024).toFixed(2)} MB type=${file.size >= MULTIPART_THRESHOLD ? "multipart" : "single-shot"}`);
 
-  // Step 1: Presign
+  // Step 1: Presign (use cached result if available — avoids double-presigning the first file)
   let presignData: any;
-  try {
-    const res = await fetch("/api/portals/r2-presign", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        portalId,
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type || "application/octet-stream",
-        uploaderName,
-        uploaderEmail,
-        uploaderNotes,
-        password,
-      }),
-    });
+  if (cachedPresignData) {
+    presignData = cachedPresignData;
+    console.log(`[upload] ${ts()} ✓ presign (cached) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`);
+  } else {
+    try {
+      const res = await fetch("/api/portals/r2-presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          portalId,
+          fileName: file.name,
+          fileSize: file.size,
+          mimeType: file.type || "application/octet-stream",
+          uploaderName,
+          uploaderEmail,
+          uploaderNotes,
+          password,
+        }),
+      });
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      return { pollContext: null, error: (data as any).error ?? "Failed to get upload URL" };
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return { pollContext: null, error: (data as any).error ?? "Failed to get upload URL" };
+      }
+
+      presignData = await res.json();
+      console.log(`[upload] ${ts()} ✓ presign (${elapsed()}) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`);
+    } catch {
+      return { pollContext: null, error: "Network error during presign" };
     }
-
-    presignData = await res.json();
-    console.log(`[upload] ${ts()} ✓ presign (${elapsed()}) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`);
-  } catch {
-    return { pollContext: null, error: "Network error during presign" };
   }
 
   const { uploadToken, stagingKey, workerUrl } = presignData;
@@ -597,6 +688,9 @@ async function uploadViaR2Internal(options: UploadOptions): Promise<
         uploaderName,
         uploaderEmail,
         uploaderNotes,
+        uploadSessionId,
+        parentFolderId,
+        folderPath,
         callbackUrl: `${window.location.origin}/api/portals/r2-confirm`,
         skipNotification,
       }),

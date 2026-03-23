@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log(`[worker-context:${requestId}] Request body:`, JSON.stringify(body, null, 2));
 
-    const { uploadToken, uploaderName, workerSecret } = body;
+    const { uploadToken, uploaderName, workerSecret, parentFolderId: preResolvedFolderId, folderPath: preResolvedFolderPath } = body;
 
     const envSecret = process.env.WORKER_SECRET;
 
@@ -144,7 +144,14 @@ export async function POST(request: NextRequest) {
     let parentFolderId: string;
     let folderPath: string;
 
-    if (portal.storageFolderId) {
+    // Short-circuit: if the client pre-resolved the folder, skip all Drive/Dropbox API calls.
+    // This prevents the race condition where concurrent worker calls each try to create
+    // the same folder, resulting in duplicate folders.
+    if (preResolvedFolderId && preResolvedFolderPath) {
+      console.log(`[worker-context:${requestId}] ✓ Using pre-resolved folder: ${preResolvedFolderId} (${preResolvedFolderPath})`);
+      parentFolderId = preResolvedFolderId;
+      folderPath = preResolvedFolderPath;
+    } else if (portal.storageFolderId) {
       console.log(`[worker-context:${requestId}] Using portal's configured folder`);
 
       // Verify the stored folder still exists (may have been deleted from Drive/Dropbox)
@@ -201,11 +208,11 @@ export async function POST(request: NextRequest) {
       console.log(`[worker-context:${requestId}] folderPath: ${folderPath}`);
     }
 
-    // Client sub-folder if enabled
+    // Client sub-folder if enabled — skip when folder was pre-resolved (already includes client folder)
     const clientName = uploaderName ?? tokenPayload.uploaderName;
-    console.log(`[worker-context:${requestId}] useClientFolders: ${portal.useClientFolders}, clientName: "${clientName}"`);
+    console.log(`[worker-context:${requestId}] useClientFolders: ${portal.useClientFolders}, clientName: "${clientName}", preResolved: ${!!preResolvedFolderId}`);
 
-    if (portal.useClientFolders && clientName?.trim()) {
+    if (!preResolvedFolderId && portal.useClientFolders && clientName?.trim()) {
       console.log(`[worker-context:${requestId}] Creating client folder for: "${clientName.trim()}"`);
       const clientFolder = await findOrCreateClientFolder(
         accessToken,

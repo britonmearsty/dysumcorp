@@ -355,6 +355,10 @@ async function runTransfer(
     uploadSessionId?: string;
     skipNotification?: boolean;
     callbackUrl: string;
+    /** Pre-resolved folder ID — skips folder creation race when provided */
+    parentFolderId?: string;
+    /** Pre-resolved folder path — passed alongside parentFolderId */
+    folderPath?: string;
   },
 ): Promise<void> {
   const {
@@ -370,6 +374,8 @@ async function runTransfer(
     uploadSessionId,
     skipNotification,
     callbackUrl,
+    parentFolderId: preResolvedFolderId,
+    folderPath: preResolvedFolderPath,
   } = body;
 
   const tid = Math.random().toString(36).slice(2, 8);
@@ -412,7 +418,14 @@ async function runTransfer(
     const ctxRes = await fetch(`${env.VERCEL_APP_URL}/api/portals/r2-worker-context`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uploadToken, uploaderName, workerSecret: env.WORKER_SECRET }),
+      body: JSON.stringify({
+        uploadToken,
+        uploaderName,
+        workerSecret: env.WORKER_SECRET,
+        // Pass pre-resolved folder so the server skips folder creation
+        parentFolderId: preResolvedFolderId,
+        folderPath: preResolvedFolderPath,
+      }),
     });
 
     if (!ctxRes.ok) {
@@ -428,7 +441,7 @@ async function runTransfer(
       folderPath: string;
       portalName: string;
     };
-    console.log(`[transfer:${tid}] ✓ context: provider=${ctx.provider} (${ms()})`);
+    console.log(`[transfer:${tid}] ✓ context: provider=${ctx.provider} parentFolderId=${ctx.parentFolderId} (${ms()})`);
 
     // 3. Verify R2 object exists
     const r2Head = await env.R2_BUCKET.head(stagingKey);
