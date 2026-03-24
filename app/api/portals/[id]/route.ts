@@ -337,10 +337,9 @@ export async function DELETE(
       else deleteFromStorage = false;
     }
 
-    // Verify ownership and load files if we need to delete from storage
+    // Verify ownership
     const existingPortal = await prisma.portal.findFirst({
       where: { id, userId: session.user.id },
-      include: deleteFromStorage ? { files: { select: { id: true, name: true, storageUrl: true, storageFileId: true } } } : undefined,
     });
 
     if (!existingPortal) {
@@ -348,9 +347,13 @@ export async function DELETE(
     }
 
     // Delete files from cloud storage if requested
-    if (deleteFromStorage && existingPortal.files) {
+    if (deleteFromStorage) {
+      const portalFiles = await prisma.file.findMany({
+        where: { portalId: id },
+        select: { id: true, name: true, storageUrl: true, storageFileId: true },
+      });
       const provider = existingPortal.storageProvider;
-      for (const file of existingPortal.files) {
+      for (const file of portalFiles) {
         try {
           const isGoogleDrive =
             file.storageUrl.includes("drive.google.com") ||
