@@ -131,16 +131,22 @@ export function PortalFileList({
                   {f.status === "uploading" && (
                     <>
                       <span className="text-slate-300 text-xs">·</span>
-                      <span className="text-xs font-medium" style={{ color: primaryColor }}>
-                        {Math.floor(f.progress)}%
-                      </span>
+                      {f.progress >= 100 ? (
+                        <span className="text-xs font-medium animate-pulse" style={{ color: primaryColor }}>
+                          Transferring...
+                        </span>
+                      ) : (
+                        <span className="text-xs font-medium" style={{ color: primaryColor }}>
+                          {Math.floor(f.progress)}%
+                        </span>
+                      )}
                     </>
                   )}
                 </div>
                 {f.status === "uploading" && (
                   <div className="mt-2 h-1.5 w-full rounded-full overflow-hidden bg-slate-200">
                     <div
-                      className="h-full rounded-full transition-all duration-150"
+                      className="h-full rounded-full transition-all duration-300"
                       style={{
                         width: `${f.progress}%`,
                         background: gradientStyle,

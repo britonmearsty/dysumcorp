@@ -252,7 +252,7 @@ async function uploadSingleShot(
 
         xhr.upload.addEventListener("progress", (e) => {
           if (!e.lengthComputable) return;
-          const p = Math.floor((e.loaded / e.total) * 78);
+          const p = Math.floor((e.loaded / e.total) * 100);
           if (p !== last) { last = p; if (onProgress) onProgress(p); }
 
           // Speed sample every ~2s
@@ -282,7 +282,7 @@ async function uploadSingleShot(
       const duration = Math.round(performance.now() - attemptStart);
       const avgSpeed = file.size / (duration / 1000);
       console.log(`[upload] ✓ single-shot PUT complete — avg ${fmtSpeed(avgSpeed)} (${elapsed()})`);
-      if (onProgress) onProgress(78);
+      if (onProgress) onProgress(100);
       return { ok: true };
     } catch (err) {
       if (attempt >= MAX_RETRIES) {
@@ -322,7 +322,7 @@ async function uploadMultipart(
   function reportProgress() {
     if (!onProgress) return;
     const loaded = partLoaded.reduce((a, b) => a + b, 0);
-    onProgress(Math.floor((loaded / totalBytes) * 78));
+    onProgress(Math.floor((loaded / totalBytes) * 100));
   }
 
   // Build one task per part
@@ -565,7 +565,6 @@ async function runPoll(
       if (!res.ok) continue;
 
       const data = await res.json();
-      if (onProgress) onProgress(Math.floor(80 + (attempt / pollMaxAttempts) * 19));
 
       if (data.status === "completed") {
         if (onProgress) onProgress(100);
@@ -704,8 +703,6 @@ async function uploadViaR2Internal(options: UploadOptions): Promise<
   } catch {
     return { pollContext: null, error: "Failed to reach transfer worker" };
   }
-
-  if (onProgress) onProgress(80);
 
   return { pollContext: { stagingKey, uploadToken, file, onProgress, t0 } };
 }
