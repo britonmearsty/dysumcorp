@@ -49,20 +49,12 @@ export async function GET() {
         let expiresAt = account.accessTokenExpiresAt;
 
         // Check if token is expired
-        let isExpired: boolean;
+        // A token is only expired if expiresAt is explicitly set AND in the past.
+        // Dropbox issues long-lived offline tokens with no expiry — a missing
+        // expiresAt does NOT mean the token is invalid.
+        const isExpired = !!(expiresAt && expiresAt <= new Date());
 
-        if (account.providerId === "dropbox") {
-          // Dropbox tokens: treat as expired if:
-          // 1. Expiration is set AND past, OR
-          // 2. No expiration is set (means token was never refreshed, assume it needs refresh)
-          // This ensures we proactively refresh Dropbox tokens
-          isExpired = !expiresAt || (expiresAt && expiresAt <= new Date());
-        } else {
-          // Google: only expired if expiration time is set and past
-          isExpired = !!(expiresAt && expiresAt <= new Date());
-        }
-
-        // Auto-refresh if token is expired and refresh token exists
+        // Auto-refresh only when the token is genuinely expired and we have a refresh token
         if (isExpired && account.refreshToken) {
           console.log(
             `[Storage Connections] Token expired for ${account.providerId}, attempting refresh...`,
@@ -80,7 +72,6 @@ export async function GET() {
               );
               accessToken = newToken.accessToken;
               expiresAt = newToken.expiresAt;
-              isExpired = false;
             } else {
               console.log(
                 `[Storage Connections] Failed to refresh token for ${account.providerId}`,
@@ -92,24 +83,10 @@ export async function GET() {
               error,
             );
           }
-        } else if (
-          account.providerId === "dropbox" &&
-          !expiresAt &&
-          accessToken &&
-          account.refreshToken
-        ) {
-          // Dropbox token has no expiration set - set one now to enable proactive refresh
-          console.log(
-            `[Storage Connections] Setting expiration for Dropbox token without expiration`,
-          );
-          const newExpiresAt = new Date(Date.now() + 3.5 * 60 * 60 * 1000);
-          await prisma.account.update({
-            where: { id: account.id },
-            data: { accessTokenExpiresAt: newExpiresAt },
-          });
-          expiresAt = newExpiresAt;
         }
 
+        // A connection is valid as long as we have an access token that isn't expired.
+        // No expiresAt = token has no expiry (e.g. Dropbox offline token) = still valid.
         const hasValidToken = !!(accessToken && !isExpired);
 
         console.log(
