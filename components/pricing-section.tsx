@@ -26,7 +26,7 @@ const pricingPlans = [
   },
   {
     ...PRICING_PLANS.pro,
-    price: "29",
+    price: "10",
     period: "/month",
     cta: "Upgrade to Pro",
     popular: true,

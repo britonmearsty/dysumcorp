@@ -31,8 +31,8 @@ export const PRICING_PLANS: Record<"pro", PricingPlan> = {
     id: "pro",
     name: "Pro",
     description: "For professionals and power users",
-    price: 29,
-    priceAnnual: 278.4, // 20% discount (29 * 12 * 0.8 = 278.4)
+    price: 10,
+    priceAnnual: 96, // 20% discount (10 * 12 * 0.8 = 96)
     creemProductId: "prod_1Rz5XOjKFlcgahDws69WiH",
     creemProductIdAnnual: "prod_4TLbnNWJvTQcOReecnTIa0",
     limits: {
