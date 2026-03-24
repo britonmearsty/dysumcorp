@@ -15,6 +15,7 @@ import {
   Camera,
   Loader2,
   Palette,
+  HardDrive,
 } from "lucide-react";
 import { Checkbox } from "@heroui/react";
 
@@ -65,6 +66,11 @@ export default function SettingsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
+  // Storage delete behavior
+  const [storageDeleteBehavior, setStorageDeleteBehavior] = useState<"ask" | "always" | "never">("ask");
+  const [storageDeleteLoading, setStorageDeleteLoading] = useState(false);
+  const [storageDeleteStatus, setStorageDeleteStatus] = useState<"idle" | "success" | "error">("idle");
+
   const tabs = [
     {
       id: "profile",
@@ -102,6 +108,12 @@ export default function SettingsPage() {
       icon: Lock,
       description: "Irreversible actions",
     },
+    {
+      id: "storage",
+      name: "Storage Deletion",
+      icon: HardDrive,
+      description: "Control storage deletion behavior",
+    },
   ];
 
   useEffect(() => {
@@ -137,6 +149,14 @@ export default function SettingsPage() {
     if (session?.user) {
       fetchNotificationSettings();
     }
+  }, [session]);
+
+  useEffect(() => {
+    if (!session?.user) return;
+    fetch("/api/user/storage-delete-behavior")
+      .then((r) => r.json())
+      .then((d) => { if (d.storageDeleteBehavior) setStorageDeleteBehavior(d.storageDeleteBehavior); })
+      .catch(() => {});
   }, [session]);
 
   const resetStatus = (
@@ -284,6 +304,26 @@ export default function SettingsPage() {
       resetStatus(setNotificationsStatus);
     } finally {
       setNotificationsLoading(false);
+    }
+  };
+
+  const handleStorageDeleteUpdate = async () => {
+    setStorageDeleteLoading(true);
+    setStorageDeleteStatus("idle");
+    try {
+      const res = await fetch("/api/user/storage-delete-behavior", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storageDeleteBehavior }),
+      });
+      if (!res.ok) throw new Error();
+      setStorageDeleteStatus("success");
+      resetStatus(setStorageDeleteStatus);
+    } catch {
+      setStorageDeleteStatus("error");
+      resetStatus(setStorageDeleteStatus);
+    } finally {
+      setStorageDeleteLoading(false);
     }
   };
 
@@ -767,6 +807,76 @@ export default function SettingsPage() {
                           </p>
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Storage Deletion */}
+                  {activeTab === "storage" && (
+                    <div className="space-y-4 sm:space-y-6">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Choose what happens to files in your connected storage (Google Drive, Dropbox) when you delete them from the app.
+                        </p>
+                        <div className="space-y-3">
+                          {[
+                            {
+                              value: "ask",
+                              label: "Ask me each time",
+                              description: "A checkbox appears in every delete dialog so you can decide per deletion.",
+                            },
+                            {
+                              value: "always",
+                              label: "Always delete from storage",
+                              description: "Files are automatically removed from Google Drive or Dropbox whenever you delete them here.",
+                            },
+                            {
+                              value: "never",
+                              label: "Never delete from storage",
+                              description: "Only the app record is removed. Files in your connected storage are never touched.",
+                            },
+                          ].map((option) => (
+                            <label
+                              key={option.value}
+                              className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                                storageDeleteBehavior === option.value
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border bg-muted hover:bg-muted/80"
+                              }`}
+                            >
+                              <input
+                                checked={storageDeleteBehavior === option.value}
+                                className="mt-0.5 accent-primary w-4 h-4 flex-shrink-0"
+                                name="storageDeleteBehavior"
+                                type="radio"
+                                value={option.value}
+                                onChange={() => setStorageDeleteBehavior(option.value as "ask" | "always" | "never")}
+                              />
+                              <div>
+                                <p className="font-semibold text-sm text-foreground">{option.label}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">{option.description}</p>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      {storageDeleteStatus !== "idle" && (
+                        <div className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${
+                          storageDeleteStatus === "success"
+                            ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                            : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
+                        }`}>
+                          {storageDeleteStatus === "success" ? "Preference saved!" : "Failed to save. Please try again."}
+                        </div>
+                      )}
+
+                      <Button
+                        className="w-full rounded-xl"
+                        disabled={storageDeleteLoading}
+                        onClick={handleStorageDeleteUpdate}
+                      >
+                        {storageDeleteLoading ? "Saving..." : "Save Preference"}
+                      </Button>
                     </div>
                   )}
 

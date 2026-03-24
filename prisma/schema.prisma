@@ -34,6 +34,9 @@ model User {
   notifyOnStorageWarning Boolean @default(true)
   weeklyReports      Boolean   @default(false)
 
+  // "ask" = show checkbox in delete modal, "always" = always delete from storage, "never" = never delete from storage
+  storageDeleteBehavior String @default("ask")
+
   @@map("user")
 }
 

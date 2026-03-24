@@ -25,6 +25,8 @@ import {
 
 import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
 import { useToast } from "@/lib/toast";
+import { useStorageDeleteBehavior } from "@/lib/use-storage-delete-behavior";
+import { DeleteFileModal } from "@/components/ui/delete-file-modal";
 
 interface File {
   id: string;
@@ -49,7 +51,7 @@ export default function AssetsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [dateFilter, setDateFilter] = useState<string>("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<{
@@ -58,6 +60,7 @@ export default function AssetsPage() {
   } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const { showToast } = useToast();
+  const { behavior: deleteBehavior } = useStorageDeleteBehavior();
 
   const tabs = [
     {
@@ -134,13 +137,15 @@ export default function AssetsPage() {
     setDeleteModalOpen(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = async (deleteFromStorage: boolean) => {
     if (!fileToDelete) return;
     setDeleteModalOpen(false);
     setDeleting(fileToDelete.id);
     try {
       const response = await fetch(`/api/files/${fileToDelete.id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deleteFromStorage }),
       });
 
       if (response.ok) {
@@ -920,49 +925,13 @@ export default function AssetsPage() {
         </main>
 
         {/* Delete Confirmation Modal */}
-        {deleteModalOpen && fileToDelete && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-            <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-red-500/20 rounded-full">
-                  <Trash2 className="w-6 h-6 text-red-500" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-foreground">
-                    Delete File
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    This action cannot be undone
-                  </p>
-                </div>
-              </div>
-              <p className="text-foreground mb-6">
-                Are you sure you want to delete{" "}
-                <span className="font-semibold">
-                  &quot;{fileToDelete.name}&quot;
-                </span>
-                ?
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  className="px-4 py-2 border border-border rounded-xl font-medium hover:bg-muted transition-colors"
-                  onClick={() => {
-                    setDeleteModalOpen(false);
-                    setFileToDelete(null);
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors"
-                  onClick={confirmDelete}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <DeleteFileModal
+          open={deleteModalOpen && !!fileToDelete}
+          fileName={fileToDelete?.name ?? ""}
+          behavior={deleteBehavior}
+          onConfirm={confirmDelete}
+          onCancel={() => { setDeleteModalOpen(false); setFileToDelete(null); }}
+        />
       </div>
     </div>
   );

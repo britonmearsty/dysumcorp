@@ -20,6 +20,8 @@ import {
 
 import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
 import { useToast } from "@/lib/toast";
+import { useStorageDeleteBehavior } from "@/lib/use-storage-delete-behavior";
+import { DeleteFileModal } from "@/components/ui/delete-file-modal";
 import { useSession } from "@/lib/auth-client";
 
 interface UploadGroup {
@@ -75,6 +77,7 @@ export default function UploadsPage() {
   const [fileToDelete, setFileToDelete] = useState<{ id: string; name: string } | null>(null);
   const { showToast } = useToast();
   const { data: session, isPending } = useSession();
+  const { behavior: deleteBehavior } = useStorageDeleteBehavior();
 
   const fetchUploads = useCallback(async () => {
     try {
@@ -280,13 +283,15 @@ export default function UploadsPage() {
     setDeleteModalOpen(true);
   };
 
-  const confirmDeleteFile = async () => {
+  const confirmDeleteFile = async (deleteFromStorage: boolean) => {
     if (!fileToDelete) return;
     setDeleteModalOpen(false);
     setDeletingFile(fileToDelete.id);
     try {
       const response = await fetch(`/api/files/${fileToDelete.id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deleteFromStorage }),
       });
 
       if (response.ok) {
@@ -651,39 +656,13 @@ export default function UploadsPage() {
       </AnimatePresence>
 
       {/* Delete Confirmation Modal */}
-      {deleteModalOpen && fileToDelete && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 bg-red-500/20 rounded-full">
-                <Trash2 className="w-6 h-6 text-red-500" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">Delete File</h3>
-                <p className="text-sm text-muted-foreground">This action cannot be undone</p>
-              </div>
-            </div>
-            <p className="text-foreground mb-6">
-              Are you sure you want to delete{" "}
-              <span className="font-semibold">&quot;{fileToDelete.name}&quot;</span>?
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                className="px-4 py-2 border border-border rounded-xl font-medium hover:bg-muted transition-colors"
-                onClick={() => { setDeleteModalOpen(false); setFileToDelete(null); }}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors"
-                onClick={confirmDeleteFile}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteFileModal
+        open={deleteModalOpen && !!fileToDelete}
+        fileName={fileToDelete?.name ?? ""}
+        behavior={deleteBehavior}
+        onConfirm={confirmDeleteFile}
+        onCancel={() => { setDeleteModalOpen(false); setFileToDelete(null); }}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { hashPassword, validatePassword } from "@/lib/password-utils";
+import { getValidToken, deleteFromGoogleDrive, deleteFromDropbox } from "@/lib/storage-api";
 
 // GET /api/portals/[id] - Get single portal
 export async function GET(
@@ -301,6 +302,7 @@ export async function PATCH(
 }
 
 // DELETE /api/portals/[id] - Delete portal
+// Body (optional): { deleteFromStorage?: boolean }
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -313,30 +315,78 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify ownership
+    // Parse optional body
+    let deleteFromStorage: boolean | undefined;
+    try {
+      const body = await request.json();
+      if (typeof body.deleteFromStorage === "boolean") {
+        deleteFromStorage = body.deleteFromStorage;
+      }
+    } catch {
+      // no body
+    }
+
+    // Resolve from user preference if not explicitly passed
+    if (deleteFromStorage === undefined) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { storageDeleteBehavior: true },
+      });
+      const behavior = user?.storageDeleteBehavior ?? "ask";
+      if (behavior === "always") deleteFromStorage = true;
+      else deleteFromStorage = false;
+    }
+
+    // Verify ownership and load files if we need to delete from storage
     const existingPortal = await prisma.portal.findFirst({
-      where: {
-        id,
-        userId: session.user.id,
-      },
+      where: { id, userId: session.user.id },
+      include: deleteFromStorage ? { files: { select: { id: true, name: true, storageUrl: true, storageFileId: true } } } : undefined,
     });
 
     if (!existingPortal) {
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
-    // Delete portal (cascade will delete files)
-    await prisma.portal.delete({
-      where: { id },
-    });
+    // Delete files from cloud storage if requested
+    if (deleteFromStorage && existingPortal.files) {
+      const provider = existingPortal.storageProvider;
+      for (const file of existingPortal.files) {
+        try {
+          const isGoogleDrive =
+            file.storageUrl.includes("drive.google.com") ||
+            file.storageUrl.includes("docs.google.com") ||
+            provider === "google";
+          const isDropbox =
+            file.storageUrl.includes("dropbox.com") ||
+            provider === "dropbox" ||
+            (file.storageFileId?.startsWith("id:") ?? false);
+
+          if (isGoogleDrive) {
+            let cloudFileId = file.storageFileId;
+            if (!cloudFileId) {
+              const match = file.storageUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || file.storageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+              if (match) cloudFileId = match[1];
+            }
+            if (cloudFileId) {
+              const token = await getValidToken(session.user.id, "google");
+              if (token) await deleteFromGoogleDrive(token, cloudFileId);
+            }
+          } else if (isDropbox && file.storageFileId) {
+            const token = await getValidToken(session.user.id, "dropbox");
+            if (token) await deleteFromDropbox(token, file.storageFileId);
+          }
+        } catch (err) {
+          console.error(`Failed to delete file ${file.id} from cloud:`, err);
+        }
+      }
+    }
+
+    // Delete portal (cascade deletes files from DB)
+    await prisma.portal.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting portal:", error);
-
-    return NextResponse.json(
-      { error: "Failed to delete portal" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to delete portal" }, { status: 500 });
   }
 }

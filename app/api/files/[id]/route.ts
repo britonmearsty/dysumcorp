@@ -8,7 +8,12 @@ import {
   deleteFromDropbox,
 } from "@/lib/storage-api";
 
-// DELETE /api/files/[id] - Delete a file
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+// DELETE /api/files/[id]
+// Body (optional): { deleteFromStorage?: boolean }
+// If deleteFromStorage is omitted, falls back to user's storageDeleteBehavior preference
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -21,91 +26,91 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Parse optional body
+    let deleteFromStorage: boolean | undefined;
+    try {
+      const body = await request.json();
+      if (typeof body.deleteFromStorage === "boolean") {
+        deleteFromStorage = body.deleteFromStorage;
+      }
+    } catch {
+      // no body — fall through to preference lookup
+    }
+
+    // If not explicitly passed, resolve from user preference
+    if (deleteFromStorage === undefined) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { storageDeleteBehavior: true },
+      });
+      const behavior = user?.storageDeleteBehavior ?? "ask";
+      if (behavior === "always") deleteFromStorage = true;
+      else if (behavior === "never") deleteFromStorage = false;
+      else deleteFromStorage = false; // "ask" with no explicit value → don't delete
+    }
+
     // Get file with portal info
     const file = await prisma.file.findFirst({
-      where: {
-        id,
-        portal: {
-          userId: session.user.id,
-        },
-      },
-      include: {
-        portal: true,
-      },
+      where: { id, portal: { userId: session.user.id } },
+      include: { portal: true },
     });
 
     if (!file) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    // Try to delete from cloud storage
-    let cloudDeleteSuccess = false;
+    let cloudDeleted = false;
 
-    // Determine storage provider and file ID
-    const isGoogleDrive =
-      file.storageUrl.includes("drive.google.com") ||
-      file.storageUrl.includes("docs.google.com") ||
-      file.storageUrl.includes("googledrive.com");
-    const isDropbox = file.storageUrl.includes("dropbox.com");
+    if (deleteFromStorage) {
+      const isGoogleDrive =
+        file.storageUrl.includes("drive.google.com") ||
+        file.storageUrl.includes("docs.google.com") ||
+        file.storageUrl.includes("googledrive.com");
 
-    // Use storageFileId if available, otherwise extract from URL
-    let cloudFileId = file.storageFileId;
+      // For Dropbox: storageUrl is empty string; detect via portal provider or storageFileId prefix
+      const isDropbox =
+        file.storageUrl.includes("dropbox.com") ||
+        file.portal.storageProvider === "dropbox" ||
+        (file.storageFileId?.startsWith("id:") ?? false);
 
-    if (!cloudFileId && isGoogleDrive) {
-      // Try to extract file ID from URL
-      const match =
-        file.storageUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
-        file.storageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-
-      if (match) {
-        cloudFileId = match[1];
+      if (isGoogleDrive) {
+        let cloudFileId = file.storageFileId;
+        if (!cloudFileId) {
+          const match =
+            file.storageUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+            file.storageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+          if (match) cloudFileId = match[1];
+        }
+        if (cloudFileId) {
+          try {
+            const accessToken = await getValidToken(session.user.id, "google");
+            if (accessToken) {
+              await deleteFromGoogleDrive(accessToken, cloudFileId);
+              cloudDeleted = true;
+            }
+          } catch (err) {
+            console.error("Failed to delete from Google Drive:", err);
+          }
+        }
+      } else if (isDropbox && file.storageFileId) {
+        // Use storageFileId (id:xxx format) — works regardless of where file was moved
+        try {
+          const accessToken = await getValidToken(session.user.id, "dropbox");
+          if (accessToken) {
+            await deleteFromDropbox(accessToken, file.storageFileId);
+            cloudDeleted = true;
+          }
+        } catch (err) {
+          console.error("Failed to delete from Dropbox:", err);
+        }
       }
     }
 
-    if (isGoogleDrive && cloudFileId) {
-      try {
-        const accessToken = await getValidToken(session.user.id, "google");
+    await prisma.file.delete({ where: { id } });
 
-        if (accessToken) {
-          await deleteFromGoogleDrive(accessToken, cloudFileId);
-          cloudDeleteSuccess = true;
-        }
-      } catch (error) {
-        console.error("Failed to delete from Google Drive:", error);
-      }
-    } else if (isDropbox) {
-      try {
-        const accessToken = await getValidToken(session.user.id, "dropbox");
-
-        if (accessToken) {
-          // For Dropbox, use the path from storageUrl or construct it
-          const dropboxPath = file.storageUrl.includes("dropbox.com")
-            ? `/${file.name}` // Dropbox paths are typically just filenames
-            : file.storageUrl;
-
-          await deleteFromDropbox(accessToken, dropboxPath);
-          cloudDeleteSuccess = true;
-        }
-      } catch (error) {
-        console.error("Failed to delete from Dropbox:", error);
-      }
-    }
-
-    // Delete from database
-    await prisma.file.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({
-      success: true,
-      cloudDeleted: cloudDeleteSuccess,
-    });
+    return NextResponse.json({ success: true, cloudDeleted });
   } catch (error) {
     console.error("Error deleting file:", error);
-
-    return NextResponse.json(
-      { error: "Failed to delete file" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to delete file" }, { status: 500 });
   }
 }
