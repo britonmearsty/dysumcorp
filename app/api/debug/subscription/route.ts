@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-server";
 import { isAdmin } from "@/lib/admin";
-import { getTrialExpiry } from "@/lib/trial";
+
 
 export async function GET(request: Request) {
   try {
@@ -37,12 +37,8 @@ export async function GET(request: Request) {
       },
     });
 
-    // Compute trialExpired
-    let trialExpired: boolean | null = null;
-    if (user?.trialStartedAt) {
-      const expiry = getTrialExpiry(user.trialStartedAt);
-      trialExpired = new Date() >= expiry;
-    }
+    // Compute trialExpired — now managed by Creem, not locally
+    const trialExpired = null;
 
     // Get Creem subscriptions from database
     const creemSubscriptions = await prisma.creem_subscription.findMany({

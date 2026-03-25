@@ -196,7 +196,7 @@ export default function BillingPage() {
                   {activeTab === "overview" && (
                     <div className="space-y-6">
                       {/* Trial status banner */}
-                      {access?.reason === "trial_active" && access.trialDaysRemaining !== undefined && (
+                      {access?.reason === "trialing" && (
                         <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl px-4 py-3">
                           <Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
                           <div>
@@ -204,7 +204,7 @@ export default function BillingPage() {
                               Free trial active
                             </p>
                             <p className="text-xs text-indigo-600 dark:text-indigo-400">
-                              {access.trialDaysRemaining} day{access.trialDaysRemaining === 1 ? "" : "s"} remaining — subscribe to keep access after your trial ends.
+                              Your card will be charged at the end of your 7-day trial. Cancel anytime before then.
                             </p>
                           </div>
                         </div>

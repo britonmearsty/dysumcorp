@@ -4,20 +4,12 @@ import { Lock, CheckCircle, Zap } from "lucide-react";
 import { PRICING_PLANS } from "@/config/pricing";
 
 export interface PaywallProps {
-  daysExpired: number;
   onCheckout: () => void;
 }
 
 const PRO_FEATURES = PRICING_PLANS.pro.features;
 
-export function Paywall({ daysExpired, onCheckout }: PaywallProps) {
-  const expiredText =
-    daysExpired === 0
-      ? "Your trial expired today."
-      : daysExpired === 1
-        ? "Your trial expired 1 day ago."
-        : `Your trial expired ${daysExpired} days ago.`;
-
+export function Paywall({ onCheckout }: PaywallProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-main-bg px-4">
       <div className="w-full max-w-md">
@@ -27,9 +19,9 @@ export function Paywall({ daysExpired, onCheckout }: PaywallProps) {
             <Lock className="w-7 h-7 text-muted-foreground" />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            Your trial has ended
+            Subscription required
           </h1>
-          <p className="text-muted-foreground text-sm">{expiredText}</p>
+          <p className="text-muted-foreground text-sm">Start your 7-day free trial to create portals and collect files.</p>
         </div>
 
         {/* Pricing card */}

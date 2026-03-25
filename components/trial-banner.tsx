@@ -4,11 +4,11 @@ import Link from "next/link";
 import { AlertTriangle, Clock, Zap } from "lucide-react";
 
 export interface TrialBannerProps {
-  daysRemaining: number;
+  daysRemaining?: number;
 }
 
 export function TrialBanner({ daysRemaining }: TrialBannerProps) {
-  const isWarning = daysRemaining <= 3;
+  const isWarning = daysRemaining !== undefined && daysRemaining <= 3;
 
   if (isWarning) {
     return (
@@ -19,7 +19,11 @@ export function TrialBanner({ daysRemaining }: TrialBannerProps) {
             <span className="text-sm font-medium">
               {daysRemaining === 0
                 ? "Your trial expires today."
-                : `Your trial expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}.`}
+                : daysRemaining === 1
+                  ? "Your trial expires in 1 day."
+                  : daysRemaining !== undefined
+                    ? `Your trial expires in ${daysRemaining} days.`
+                    : "Your trial is ending soon."}
             </span>
           </div>
           <Link
@@ -39,7 +43,9 @@ export function TrialBanner({ daysRemaining }: TrialBannerProps) {
         <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300">
           <Clock className="w-4 h-4 shrink-0" />
           <span className="text-sm">
-            <span className="font-medium">{daysRemaining} days</span> remaining in your free trial.
+            {daysRemaining !== undefined
+              ? <><span className="font-medium">{daysRemaining} days</span> remaining in your free trial.</>
+              : <span className="font-medium">Free trial active.</span>}
           </span>
         </div>
         <Link
