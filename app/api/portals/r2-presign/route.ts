@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     const access = await checkAccess(portal.userId);
     if (!access.allowed) {
       return NextResponse.json(
-        { error: "Trial expired. Subscribe to continue.", code: "TRIAL_EXPIRED" },
+        { error: "This portal is not currently accepting uploads", code: "PORTAL_UNAVAILABLE" },
         { status: 402 },
       );
     }

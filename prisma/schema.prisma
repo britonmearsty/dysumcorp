@@ -21,6 +21,7 @@ model User {
   creemCustomerId    String?
   hadTrial           Boolean?  @default(false)
   trialStartedAt     DateTime?
+  trialUploadCount   Int       @default(0)
   subscriptionPlan   String?   @default("trial")
   subscriptionStatus String?   @default("trialing")
   accounts           Account[]

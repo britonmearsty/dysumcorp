@@ -16,15 +16,14 @@ export async function POST(request: Request) {
 
     const userId = session.user.id;
 
-    // Check trial/subscription access
+    // Check subscription access — user must have completed checkout (trialing or active)
     const access = await checkAccess(userId);
 
     if (!access.allowed) {
       return NextResponse.json(
         {
-          error: "Trial expired. Subscribe to continue.",
-          trialExpired: true,
-          code: "TRIAL_EXPIRED",
+          error: "A subscription is required to create portals.",
+          code: access.reason === "expired" ? "SUBSCRIPTION_EXPIRED" : "CHECKOUT_REQUIRED",
         },
         { status: 402 },
       );

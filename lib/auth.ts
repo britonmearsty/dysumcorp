@@ -3,7 +3,6 @@ import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { creem } from "@creem_io/better-auth";
 import { sendWelcomeEmail, sendSignInNotification } from "@/lib/email-service";
 import { prisma } from "@/lib/prisma";
-import { provisionTrial } from "@/lib/trial";
 
 // Validate required environment variables
 if (!process.env.DATABASE_URL) {
@@ -116,15 +115,6 @@ export const auth = betterAuth({
 
       const userName = user.name || user.email.split("@")[0];
 
-      // Provision trial for new users (idempotent — won't overwrite existing trialStartedAt)
-      if (isCallback && user.id) {
-        try {
-          await provisionTrial(user.id);
-        } catch (error) {
-          console.error("Failed to provision trial:", error);
-        }
-      }
-
       if (isSignup) {
         try {
           await sendWelcomeEmail({ to: user.email, userName });
@@ -167,7 +157,7 @@ export const auth = betterAuth({
           console.error("Error in onCheckoutCompleted:", error);
         }
       },
-      onGrantAccess: async ({ customer, metadata }) => {
+      onGrantAccess: async ({ customer, metadata, reason }) => {
         try {
           const planId = metadata?.planId as string | undefined;
           const billingCycle = metadata?.billingCycle as string | undefined;
@@ -178,17 +168,21 @@ export const auth = betterAuth({
             return;
           }
 
-          // Update user subscription to pro/active
+          // trialing = card on file, within trial period
+          // active / paid = fully charged subscriber
+          const newStatus = reason === "subscription_trialing" ? "trialing" : "active";
+
           await prisma.user.updateMany({
             where: { email: customer.email },
             data: {
               subscriptionPlan: "pro",
-              subscriptionStatus: "active",
+              subscriptionStatus: newStatus,
               creemCustomerId: customer.id,
+              // Record when trial started (first time only)
+              ...(newStatus === "trialing" ? { trialStartedAt: new Date() } : {}),
             },
           });
 
-          // Create or update Creem_subscription record
           if (userId) {
             const periodEnd = billingCycle === "annual"
               ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
@@ -202,13 +196,13 @@ export const auth = betterAuth({
                 referenceId: userId,
                 creemCustomerId: customer.id,
                 creemSubscriptionId: customer.id,
-                status: "active",
+                status: newStatus,
                 periodStart: new Date(),
                 periodEnd: periodEnd,
                 cancelAtPeriodEnd: false,
               },
               update: {
-                status: "active",
+                status: newStatus,
                 periodStart: new Date(),
                 periodEnd: periodEnd,
                 cancelAtPeriodEnd: false,

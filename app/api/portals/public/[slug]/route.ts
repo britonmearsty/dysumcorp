@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { applyPublicPortalRateLimit } from "@/lib/rate-limit";
+import { checkAccess } from "@/lib/trial";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ export async function GET(
         customDomain: true,
         whiteLabeled: true,
         isActive: true,
+        userId: true,
         // Branding
         primaryColor: true,
         secondaryColor: true,
@@ -56,7 +58,6 @@ export async function GET(
         textboxSectionEnabled: true,
         textboxSectionTitle: true,
         textboxSectionRequired: true,
-        // Note: userId is intentionally excluded to prevent user enumeration
       },
     });
 
@@ -65,17 +66,20 @@ export async function GET(
     }
 
     if (!portal.isActive) {
-      return NextResponse.json(
-        { error: "Portal is not active" },
-        { status: 403 },
-      );
+      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
-    // Serialize BigInt - do NOT apply defaults for messaging fields
+    // Check owner's trial/subscription — return generic unavailable, never expose trial details
+    const access = await checkAccess(portal.userId);
+    if (!access.allowed) {
+      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
+    }
+
+    // Serialize BigInt — strip userId before returning
+    const { userId: _userId, ...portalData } = portal;
     const serializedPortal = {
-      ...portal,
+      ...portalData,
       maxFileSize: portal.maxFileSize.toString(),
-      // Keep messaging fields as-is (null if not set)
       welcomeMessage: portal.welcomeMessage,
       welcomeToastMessage: portal.welcomeToastMessage,
       welcomeToastDelay: portal.welcomeToastDelay ?? 1000,

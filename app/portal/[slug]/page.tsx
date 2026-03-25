@@ -120,12 +120,10 @@ export default function PublicPortalPage() {
         } else {
           setAuthenticated(true);
         }
-      } else {
-        setErrorMessage("Portal not found");
       }
-    } catch (error) {
-      console.error("Failed to fetch portal:", error);
-      setErrorMessage("Failed to load portal");
+      // Any non-200 (404, 403, 500) → portal stays null → shows unavailable screen
+    } catch {
+      // Network error → portal stays null → shows unavailable screen
     } finally {
       setLoading(false);
     }
@@ -390,10 +388,14 @@ export default function PublicPortalPage() {
   if (!portal) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#f1f5f9" }}>
-        <div className="text-center">
-          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-          <h1 className="text-2xl font-bold mb-2 text-slate-800">Portal Not Found</h1>
-          <p className="text-slate-500">{errorMessage}</p>
+        <div className="text-center max-w-sm px-6">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-slate-100 flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-slate-400" />
+          </div>
+          <h1 className="text-xl font-bold mb-2 text-slate-800">Portal Unavailable</h1>
+          <p className="text-slate-500 text-sm leading-relaxed">
+            This portal is not currently accepting uploads. Please contact the portal owner for assistance.
+          </p>
         </div>
       </div>
     );
