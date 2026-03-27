@@ -19,19 +19,33 @@ export async function POST(request: Request) {
     // Check subscription access
     const access = await checkAccess(userId);
 
-    if (!access.allowed) {
-      // Trial limit exceeded - block and tell them to upgrade
-      if (access.reason === "trial_limit_exceeded") {
+    // Trial users: check if they already have a portal (limit to 1)
+    if (
+      access.reason === "trialing" ||
+      access.reason === "trial_limit_exceeded"
+    ) {
+      const existingPortalCount = await prisma.portal.count({
+        where: { userId },
+      });
+      if (existingPortalCount >= 1) {
         return NextResponse.json(
           {
-            error: "Your trial file limit has been reached.",
-            code: "TRIAL_LIMIT_EXCEEDED",
-            fileCount: access.fileCount,
-            fileLimit: access.fileLimit,
+            error:
+              "Trial users can only create one portal. Upgrade to create more.",
+            code: "TRIAL_PORTAL_LIMIT",
+            reason: access.reason,
           },
           { status: 402 },
         );
       }
+    }
+
+    // Non-trial users without subscription need to checkout
+    if (
+      !access.allowed &&
+      access.reason !== "trialing" &&
+      access.reason !== "trial_limit_exceeded"
+    ) {
       return NextResponse.json(
         {
           error: "A subscription is required to create portals.",
@@ -42,23 +56,6 @@ export async function POST(request: Request) {
         },
         { status: 402 },
       );
-    }
-
-    // Trial users: check if they already have a portal (limit to 1)
-    if (access.reason === "trialing") {
-      const existingPortalCount = await prisma.portal.count({
-        where: { userId },
-      });
-      if (existingPortalCount >= 1) {
-        return NextResponse.json(
-          {
-            error:
-              "Trial users can only create one portal. Upgrade to create more.",
-            code: "TRIAL_PORTAL_LIMIT",
-          },
-          { status: 402 },
-        );
-      }
     }
 
     const body = await request.json();
@@ -158,6 +155,9 @@ export async function POST(request: Request) {
       }
     }
 
+    // Determine if portal should be active based on trial limit
+    const shouldBeInactive = access.reason === "trial_limit_exceeded";
+
     // Get user's default branding and notification settings
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -175,6 +175,7 @@ export async function POST(request: Request) {
         customDomain: customDomain || null,
         whiteLabeled: whiteLabeled || false,
         userId,
+        isActive: !shouldBeInactive,
         // Branding
         primaryColor: primaryColor || "#6366f1",
         secondaryColor: secondaryColor || "#8b5cf6",
@@ -236,6 +237,7 @@ export async function POST(request: Request) {
       success: true,
       portal: portalResponse,
       message: "Portal created successfully",
+      createdAsInactive: shouldBeInactive,
     });
   } catch (error) {
     console.error("[/api/portals/create] Error creating portal:", error);

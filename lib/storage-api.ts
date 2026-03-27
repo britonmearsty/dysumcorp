@@ -141,7 +141,7 @@ export async function refreshStorageToken(
         accessToken: data.access_token,
         accessTokenExpiresAt: data.expires_in
           ? new Date(Date.now() + data.expires_in * 1000)
-          : null,
+          : null, // No expiration for Dropbox long-lived tokens
       },
     });
 

@@ -141,6 +141,29 @@ export default function DashboardPage() {
     }
   };
 
+  const handleCreatePortal = async () => {
+    // Check access before allowing creation for trial users
+    const response = await fetch("/api/access");
+    if (response.ok) {
+      const access = await response.json();
+      // For trial users (including those who exceeded limit), show paywall if they already have a portal
+      if (
+        (access.reason === "trialing" ||
+          access.reason === "trial_limit_exceeded") &&
+        activePortalsList.length > 0
+      ) {
+        setTrialLimitExceeded({
+          fileCount:
+            access.fileCount || activePortalsList[0]?._count?.files || 0,
+          fileLimit: access.fileLimit || 15,
+        });
+        setShowUpgradeModal(true);
+        return;
+      }
+    }
+    router.push("/dashboard/portals/create");
+  };
+
   const handlePortalClick = async (portal: Portal) => {
     setSelectedPortal(portal);
     setShowFilesModal(true);
@@ -342,14 +365,14 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <Link
+        <button
           className="flex items-center justify-center gap-1.5 bg-primary text-primary-foreground border-none rounded-[10px] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold cursor-pointer hover:opacity-90 transition-opacity w-full sm:w-auto"
-          href="/dashboard/portals/create"
+          onClick={handleCreatePortal}
         >
           <span className="text-lg font-medium">+</span>{" "}
           <span className="sm:hidden">New</span>
           <span className="hidden sm:inline">Create Portal</span>
-        </Link>
+        </button>
       </header>
 
       {/* Stats Grid - 4 columns */}

@@ -74,12 +74,6 @@ export function UsageDashboard() {
       unit: "GB",
       formatter: formatStorage,
     },
-    {
-      label: "Custom Domains",
-      used: usage.customDomainsUsed,
-      limit: limits?.customDomains || 0,
-      unit: "",
-    },
   ];
 
   return (

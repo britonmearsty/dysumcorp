@@ -136,7 +136,26 @@ export default function PortalsPage() {
     }
   };
 
-  const handleCreatePortal = () => {
+  const handleCreatePortal = async () => {
+    // Check access before allowing creation for trial users
+    const response = await fetch("/api/access");
+    if (response.ok) {
+      const access = await response.json();
+      // For trial users (including those who exceeded limit), show paywall if they already have a portal
+      if (
+        access.reason === "trialing" ||
+        access.reason === "trial_limit_exceeded"
+      ) {
+        if (portals.length > 0) {
+          setTrialLimitExceeded({
+            fileCount: access.fileCount || portals[0]?._count?.files || 0,
+            fileLimit: access.fileLimit || 15,
+          });
+          setShowUpgradeModal(true);
+          return;
+        }
+      }
+    }
     router.push("/dashboard/portals/create");
   };
 

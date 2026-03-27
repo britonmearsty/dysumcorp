@@ -52,7 +52,13 @@ export async function GET() {
         // A token is only expired if expiresAt is explicitly set AND in the past.
         // Dropbox issues long-lived offline tokens with no expiry — a missing
         // expiresAt does NOT mean the token is invalid.
-        const isExpired = !!(expiresAt && expiresAt <= new Date());
+        let isExpired = !!(expiresAt && expiresAt <= new Date());
+
+        // For Dropbox, tokens are long-lived - if there's no expiration set,
+        // we should not treat it as expired even if expiresAt is null
+        if (!expiresAt && account.providerId === "dropbox") {
+          isExpired = false;
+        }
 
         // Auto-refresh only when the token is genuinely expired and we have a refresh token
         if (isExpired && account.refreshToken) {
@@ -87,7 +93,7 @@ export async function GET() {
 
         // A connection is valid as long as we have an access token that isn't expired.
         // No expiresAt = token has no expiry (e.g. Dropbox offline token) = still valid.
-        const hasValidToken = !!(accessToken && !isExpired);
+        const hasValidToken = !!accessToken && !isExpired;
 
         console.log(
           `[Storage Connections] ${account.providerId}: hasToken=${!!accessToken}, expiresAt=${expiresAt}, isValid=${hasValidToken}`,
@@ -174,16 +180,14 @@ async function refreshAccessToken(
     const newAccessToken = data.access_token;
 
     // Google returns expires_in, Dropbox doesn't (long-lived tokens)
-    // Always set expiration for Dropbox to ensure proactive refresh
+    // For Dropbox, we don't set an expiration since they are long-lived
     let expiresAt: Date | null = null;
 
     if (data.expires_in) {
       expiresAt = new Date(Date.now() + data.expires_in * 1000);
-    } else if (provider === "dropbox") {
-      // Dropbox tokens are long-lived but still expire
-      // Set 3.5 hour expiration to refresh before actual expiration
-      expiresAt = new Date(Date.now() + 3.5 * 60 * 60 * 1000);
     }
+    // Dropbox tokens are long-lived and don't require refresh
+    // Only Google tokens need expiration tracking
 
     // Update the access token in the database
     await prisma.account.update({
