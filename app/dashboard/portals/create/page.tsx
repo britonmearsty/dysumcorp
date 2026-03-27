@@ -2883,14 +2883,17 @@ export default function CreatePortalPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowUpgradeModal(false)}
+            onClick={() => {
+              setShowUpgradeModal(false);
+              setTrialLimitExceeded(null);
+            }}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative bg-card border border-border rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl"
+            className="relative bg-card border border-border rounded-2xl p-6 sm:p-8 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto"
           >
-            <div className="text-center">
+            <div className="text-center mb-6">
               <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
                   className="w-8 h-8 text-indigo-600 dark:text-indigo-400"
@@ -2909,12 +2912,129 @@ export default function CreatePortalPage() {
               <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
                 Your portal has received {trialLimitExceeded.fileCount} files
               </h2>
-              <p className="text-muted-foreground text-sm mb-6">
+              <p className="text-muted-foreground text-sm">
                 Upgrade to keep collecting files without interruption. Your card
                 won't be charged for 7 days.
               </p>
+            </div>
+
+            <div className="bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 mb-6">
+              <div className="flex items-center gap-3">
+                <svg
+                  className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+                <div>
+                  <p className="font-semibold text-sm text-indigo-700 dark:text-indigo-300">
+                    Start Your Free Trial
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    No charges for 7 days, then $10/month
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <div className="flex items-baseline gap-2 justify-center">
+                <span className="text-3xl font-bold text-foreground">$10</span>
+                <span className="text-muted-foreground">/month</span>
+                <span className="text-xs text-green-500 font-medium">
+                  Save 20% annually
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <p className="text-muted-foreground text-xs">Portals</p>
+                  <p className="font-semibold">Unlimited</p>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <p className="text-muted-foreground text-xs">Storage</p>
+                  <p className="font-semibold">Unlimited</p>
+                </div>
+              </div>
+
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4 text-primary flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span>Full white-labeling</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4 text-primary flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span>Password protection</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4 text-primary flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span>Expiring links</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4 text-primary flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span>Custom branding & themes</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col gap-2">
               <button
-                className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-all mb-3"
+                className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-all"
                 onClick={async () => {
                   try {
                     const response = await fetch("/api/checkout", {
@@ -2934,10 +3054,10 @@ export default function CreatePortalPage() {
                   }
                 }}
               >
-                Start Free Trial
+                Start Your Free Trial
               </button>
               <button
-                className="text-muted-foreground text-sm hover:text-foreground transition-colors"
+                className="w-full py-2 text-muted-foreground text-sm hover:text-foreground transition-colors"
                 onClick={() => {
                   setShowUpgradeModal(false);
                   setTrialLimitExceeded(null);
@@ -2946,6 +3066,28 @@ export default function CreatePortalPage() {
                 Maybe later
               </button>
             </div>
+
+            <button
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => {
+                setShowUpgradeModal(false);
+                setTrialLimitExceeded(null);
+              }}
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
           </motion.div>
         </div>
       )}
