@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSessionFromRequest } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const session = await auth.api.getSession({
-      headers: { "Content-Type": "application/json" },
-    });
+    const session = await getSessionFromRequest(request);
 
     if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -25,6 +23,19 @@ export async function POST() {
     });
 
     if (!user?.creemCustomerId) {
+      // Check if user is on trial
+      if (
+        user?.subscriptionPlan === "trial" ||
+        user?.subscriptionStatus === "trialing"
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "You are on a free trial. Subscribe to access billing management.",
+          },
+          { status: 400 },
+        );
+      }
       return NextResponse.json(
         { error: "No active subscription found. Please subscribe first." },
         { status: 400 },
