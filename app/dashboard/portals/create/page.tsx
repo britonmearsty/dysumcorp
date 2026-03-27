@@ -1198,6 +1198,8 @@ export default function CreatePortalPage() {
     fileCount: number;
     fileLimit: number;
     message: string;
+    context: "create" | "activate";
+    userType: "exploring" | "trial";
   } | null>(null);
 
   // Storage section state lifted here to survive step navigation
@@ -1723,6 +1725,8 @@ export default function CreatePortalPage() {
             fileCount: data.fileCount || 0,
             fileLimit: data.fileLimit || 15,
             message: data.error,
+            context: "create",
+            userType: data.reason === "trialing" ? "trial" : "exploring",
           });
           setShowUpgradeModal(true);
           setCurrentStep("identity");
@@ -2910,11 +2914,20 @@ export default function CreatePortalPage() {
                 </svg>
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
-                Your portal has received {trialLimitExceeded.fileCount} files
+                {trialLimitExceeded.context === "activate"
+                  ? trialLimitExceeded.fileCount > 0
+                    ? `Your portal has received ${trialLimitExceeded.fileCount} files`
+                    : "Start receiving files through your portal"
+                  : "Upgrade to unlock unlimited portals"}
               </h2>
               <p className="text-muted-foreground text-sm">
-                Upgrade to keep collecting files without interruption. Your card
-                won't be charged for 7 days.
+                {trialLimitExceeded.userType === "trial"
+                  ? "Continue exploring with 7 days free trial. Subscribe to keep your plan going."
+                  : trialLimitExceeded.context === "activate"
+                    ? trialLimitExceeded.fileCount > 0
+                      ? "Upgrade to keep collecting files without interruption. Your card won't be charged for 7 days."
+                      : "Upgrade to start receiving files. Your card won't be charged for 7 days."
+                    : "You've reached your portal limit on the free trial. Upgrade to create unlimited portals and collect files without restrictions."}
               </p>
             </div>
 

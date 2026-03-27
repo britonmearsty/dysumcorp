@@ -76,6 +76,8 @@ export default function PortalsPage() {
   const [trialLimitExceeded, setTrialLimitExceeded] = useState<{
     fileCount: number;
     fileLimit: number;
+    context: "create" | "activate";
+    userType: "exploring" | "trial";
   } | null>(null);
   const { showToast } = useToast();
   const { behavior: deleteBehavior } = useStorageDeleteBehavior();
@@ -150,6 +152,8 @@ export default function PortalsPage() {
           setTrialLimitExceeded({
             fileCount: access.fileCount || portals[0]?._count?.files || 0,
             fileLimit: access.fileLimit || 15,
+            context: "create",
+            userType: access.reason === "trialing" ? "trial" : "exploring",
           });
           setShowUpgradeModal(true);
           return;
@@ -299,6 +303,8 @@ export default function PortalsPage() {
           setTrialLimitExceeded({
             fileCount: data.fileCount,
             fileLimit: data.fileLimit,
+            context: "activate",
+            userType: "exploring",
           });
           setShowUpgradeModal(true);
           return;
@@ -320,6 +326,8 @@ export default function PortalsPage() {
           setTrialLimitExceeded({
             fileCount: errorData.fileCount,
             fileLimit: errorData.fileLimit,
+            context: "activate",
+            userType: "exploring",
           });
           setShowUpgradeModal(true);
         } else {
@@ -956,11 +964,20 @@ export default function PortalsPage() {
                 </svg>
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
-                Your portal has received {trialLimitExceeded.fileCount} files
+                {trialLimitExceeded.context === "activate"
+                  ? trialLimitExceeded.fileCount > 0
+                    ? `Your portal has received ${trialLimitExceeded.fileCount} files`
+                    : "Start receiving files through your portal"
+                  : "Upgrade to unlock unlimited portals"}
               </h2>
               <p className="text-muted-foreground text-sm">
-                Upgrade to keep collecting files without interruption. Your card
-                won't be charged for 7 days.
+                {trialLimitExceeded.userType === "trial"
+                  ? "Continue exploring with 7 days free trial. Subscribe to keep your plan going."
+                  : trialLimitExceeded.context === "activate"
+                    ? trialLimitExceeded.fileCount > 0
+                      ? "Upgrade to keep collecting files without interruption. Your card won't be charged for 7 days."
+                      : "Upgrade to start receiving files. Your card won't be charged for 7 days."
+                    : "You've reached your portal limit on the free trial. Upgrade to create unlimited portals and collect files without restrictions."}
               </p>
             </div>
 
