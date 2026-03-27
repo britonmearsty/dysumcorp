@@ -55,8 +55,16 @@ export default function DashboardPage() {
   const [portalFiles, setPortalFiles] = useState<any[]>([]);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const [deleteFileModalOpen, setDeleteFileModalOpen] = useState(false);
-  const [fileToDelete, setFileToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [fileToDelete, setFileToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [togglingPortal, setTogglingPortal] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [trialLimitExceeded, setTrialLimitExceeded] = useState<{
+    fileCount: number;
+    fileLimit: number;
+  } | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -146,6 +154,23 @@ export default function DashboardPage() {
   ) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // If trying to activate (turn on), check if they're at trial limit
+    if (!currentStatus) {
+      const response = await fetch("/api/access");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.reason === "trial_limit_exceeded") {
+          setTrialLimitExceeded({
+            fileCount: data.fileCount,
+            fileLimit: data.fileLimit,
+          });
+          setShowUpgradeModal(true);
+          return;
+        }
+      }
+    }
+
     setTogglingPortal(portalId);
     try {
       const response = await fetch(`/api/portals/${portalId}/toggle-active`, {
@@ -166,7 +191,16 @@ export default function DashboardPage() {
           setActivePortalsList(activePortals);
         }
       } else {
-        showToast("Failed to toggle portal status", "error");
+        const errorData = await response.json();
+        if (errorData.reason === "trial_limit_exceeded") {
+          setTrialLimitExceeded({
+            fileCount: errorData.fileCount,
+            fileLimit: errorData.fileLimit,
+          });
+          setShowUpgradeModal(true);
+        } else {
+          showToast("Failed to toggle portal status", "error");
+        }
       }
     } catch (error) {
       console.error("Failed to toggle portal status:", error);
@@ -950,18 +984,28 @@ export default function DashboardPage() {
                 <Trash2 className="w-6 h-6 text-red-500" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-foreground">Delete File</h3>
-                <p className="text-sm text-muted-foreground">This action cannot be undone</p>
+                <h3 className="text-lg font-bold text-foreground">
+                  Delete File
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  This action cannot be undone
+                </p>
               </div>
             </div>
             <p className="text-foreground mb-6">
               Are you sure you want to delete{" "}
-              <span className="font-semibold">&quot;{fileToDelete.name}&quot;</span>?
+              <span className="font-semibold">
+                &quot;{fileToDelete.name}&quot;
+              </span>
+              ?
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 className="px-4 py-2 border border-border rounded-xl font-medium hover:bg-muted transition-colors"
-                onClick={() => { setDeleteFileModalOpen(false); setFileToDelete(null); }}
+                onClick={() => {
+                  setDeleteFileModalOpen(false);
+                  setFileToDelete(null);
+                }}
               >
                 Cancel
               </button>
@@ -973,6 +1017,77 @@ export default function DashboardPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Upgrade Modal for Trial Limit Exceeded */}
+      {showUpgradeModal && trialLimitExceeded && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowUpgradeModal(false)}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative bg-card border border-border rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl"
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-indigo-600 dark:text-indigo-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
+                Your portal has received {trialLimitExceeded.fileCount} files
+              </h2>
+              <p className="text-muted-foreground text-sm mb-6">
+                Upgrade to keep collecting files without interruption. Your card
+                won't be charged for 7 days.
+              </p>
+              <button
+                className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-all mb-3"
+                onClick={async () => {
+                  try {
+                    const response = await fetch("/api/checkout", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        planId: "pro",
+                        billingCycle: "monthly",
+                      }),
+                    });
+                    const data = await response.json();
+                    if (data.checkoutUrl) {
+                      window.location.href = data.checkoutUrl;
+                    } else {
+                      showToast("Failed to start checkout", "error");
+                    }
+                  } catch (err) {
+                    showToast("Failed to start checkout", "error");
+                  }
+                }}
+              >
+                Start Free Trial
+              </button>
+              <button
+                className="text-muted-foreground text-sm hover:text-foreground transition-colors"
+                onClick={() => setShowUpgradeModal(false)}
+              >
+                Maybe later
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
     </main>

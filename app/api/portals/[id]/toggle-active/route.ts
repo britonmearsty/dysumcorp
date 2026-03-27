@@ -28,6 +28,35 @@ export async function POST(
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
+    // Check if trying to activate a portal that's currently inactive
+    if (!existingPortal.isActive) {
+      // Check trial file limit for trial users
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          subscriptionPlan: true,
+          trialFileLimit: true,
+          trialFileCount: true,
+        },
+      });
+
+      if (
+        user &&
+        user.subscriptionPlan === "trial" &&
+        user.trialFileCount >= user.trialFileLimit
+      ) {
+        return NextResponse.json(
+          {
+            error: "Trial file limit exceeded",
+            reason: "trial_limit_exceeded",
+            fileCount: user.trialFileCount,
+            fileLimit: user.trialFileLimit,
+          },
+          { status: 403 },
+        );
+      }
+    }
+
     // Toggle active status
     const portal = await prisma.portal.update({
       where: { id },

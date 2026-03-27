@@ -75,6 +75,25 @@ export async function GET(
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
+    // Check trial file limit for free users (trial plan with no subscription)
+    const user = await prisma.user.findUnique({
+      where: { id: portal.userId },
+      select: {
+        subscriptionPlan: true,
+        subscriptionStatus: true,
+        trialFileLimit: true,
+        trialFileCount: true,
+      },
+    });
+
+    if (
+      user &&
+      user.subscriptionPlan === "trial" &&
+      user.trialFileCount >= user.trialFileLimit
+    ) {
+      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
+    }
+
     // Serialize BigInt — strip userId before returning
     const { userId: _userId, ...portalData } = portal;
     const serializedPortal = {

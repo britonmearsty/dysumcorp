@@ -22,6 +22,8 @@ model User {
   hadTrial           Boolean?  @default(false)
   trialStartedAt     DateTime?
   trialUploadCount   Int       @default(0)
+  trialFileLimit     Int       @default(15)
+  trialFileCount     Int       @default(0)
   subscriptionPlan   String?   @default("trial")
   subscriptionStatus String?   @default("trialing")
   accounts           Account[]

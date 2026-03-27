@@ -52,7 +52,9 @@ export async function POST(request: NextRequest) {
       const tokenData = validateUploadToken(uploadToken);
 
       if (!tokenData) {
-        console.error("[Portal Confirm Upload] Invalid or expired upload token");
+        console.error(
+          "[Portal Confirm Upload] Invalid or expired upload token",
+        );
         return NextResponse.json(
           { error: "Invalid or expired upload token" },
           { status: 401 },
@@ -72,7 +74,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log("[Portal Confirm Upload] Upload token validated successfully");
+      console.log(
+        "[Portal Confirm Upload] Upload token validated successfully",
+      );
     }
 
     if (!portalId || !fileName || !fileSize || !storageFileId) {
@@ -110,7 +114,9 @@ export async function POST(request: NextRequest) {
     let sessionId = uploadSessionId;
     if (!sessionId) {
       // Create new upload session
-      console.log("[Portal Confirm Upload] No sessionId provided, creating new session");
+      console.log(
+        "[Portal Confirm Upload] No sessionId provided, creating new session",
+      );
       const session = await prisma.uploadSession.create({
         data: {
           portalId,
@@ -122,9 +128,15 @@ export async function POST(request: NextRequest) {
         },
       });
       sessionId = session.id;
-      console.log("[Portal Confirm Upload] Created new upload session:", sessionId);
+      console.log(
+        "[Portal Confirm Upload] Created new upload session:",
+        sessionId,
+      );
     } else {
-      console.log("[Portal Confirm Upload] Using provided sessionId:", sessionId);
+      console.log(
+        "[Portal Confirm Upload] Using provided sessionId:",
+        sessionId,
+      );
     }
 
     // Save file metadata to database
@@ -154,6 +166,15 @@ export async function POST(request: NextRequest) {
     });
 
     console.log("[Portal Confirm Upload] File metadata saved:", file.id);
+
+    // Increment trial file count for trial users
+    if (portal.user.subscriptionPlan === "trial") {
+      await prisma.user.update({
+        where: { id: portal.userId },
+        data: { trialFileCount: { increment: 1 } },
+      });
+      console.log("[Portal Confirm Upload] Trial file count incremented");
+    }
 
     return NextResponse.json({
       success: true,
