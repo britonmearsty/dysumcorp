@@ -11,9 +11,7 @@ interface SubscriptionManagerProps {
   onSubscriptionChanged?: () => void;
 }
 
-export function SubscriptionManager({
-  currentPlan,
-}: SubscriptionManagerProps) {
+export function SubscriptionManager({ currentPlan }: SubscriptionManagerProps) {
   const currentPlanDetails =
     PRICING_PLANS[currentPlan as keyof typeof PRICING_PLANS];
 
@@ -38,7 +36,8 @@ export function SubscriptionManager({
       <CardBody className="gap-4">
         <p className="text-sm text-muted-foreground">
           To cancel or update your subscription, use the Creem customer portal.
-          You can cancel anytime — access continues until the end of your billing period.
+          You can cancel anytime — access continues until the end of your
+          billing period.
         </p>
         <div className="grid gap-3">
           <CustomerPortalButton

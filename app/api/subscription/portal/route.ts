@@ -23,15 +23,24 @@ export async function POST(request: Request) {
     });
 
     if (!user?.creemCustomerId) {
-      // Check if user is on trial
-      if (
-        user?.subscriptionPlan === "trial" ||
-        user?.subscriptionStatus === "trialing"
-      ) {
+      // Check if user is on trial (waiting to be charged)
+      if (user?.subscriptionStatus === "trialing") {
         return NextResponse.json(
           {
             error:
-              "You are on a free trial. Subscribe to access billing management.",
+              "You're currently on your 7-day free trial. Your billing portal will be available after the trial ends. Contact support if you need assistance.",
+            code: "TRIALING",
+          },
+          { status: 400 },
+        );
+      }
+      // Free user exploring
+      if (user?.subscriptionPlan === "trial") {
+        return NextResponse.json(
+          {
+            error:
+              "Subscribe to access billing management and the customer portal.",
+            code: "NO_SUBSCRIPTION",
           },
           { status: 400 },
         );
@@ -50,6 +59,8 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log("[Portal] Creating portal for customer:", user.creemCustomerId);
+
     const response = await fetch("https://api.creem.io/v1/customers/portal", {
       method: "POST",
       headers: {
@@ -64,10 +75,16 @@ export async function POST(request: Request) {
 
     const data = await response.json();
 
+    console.log("[Portal] Creem response:", response.status, data);
+
     if (!response.ok) {
       console.error("Creem portal error:", data);
       return NextResponse.json(
-        { error: data.message || "Failed to create portal session" },
+        {
+          error: data.message || `Creem error: ${response.status}`,
+          details: data,
+          creemStatus: response.status,
+        },
         { status: response.status },
       );
     }
