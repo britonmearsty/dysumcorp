@@ -198,7 +198,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
       const connectedAccounts = accounts.filter(
         (a) => a.storageStatus === "ACTIVE" && a.isConnected,
       );
-      
+
       if (connectedAccounts.length > 0) {
         // Prefer Google Drive if available, otherwise use first connected account
         const preferredAccount =
@@ -279,7 +279,10 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                 // Set breadcrumb to show: My Drive > Dysumcorp
                 setFolderPath([rootFolder, dysumFolder]);
                 updateFormData("storageFolderId", dysumFolder.id);
-                updateFormData("storageFolderPath", `${rootFolder.path}/${dysumFolder.name}`);
+                updateFormData(
+                  "storageFolderPath",
+                  `${rootFolder.path}/${dysumFolder.name}`,
+                );
                 // Load subfolders of Dysumcorp
                 await fetchFolders(provider, dysumFolder.id);
               } else {
@@ -349,7 +352,10 @@ const StorageSection: React.FC<StorageSectionProps> = ({
               // Set breadcrumb to show: Dropbox > dysumcorp
               setFolderPath([rootFolder, dysumFolder]);
               updateFormData("storageFolderId", dysumFolder.id);
-              updateFormData("storageFolderPath", dysumFolder.path || "/dysumcorp");
+              updateFormData(
+                "storageFolderPath",
+                dysumFolder.path || "/dysumcorp",
+              );
               // Load subfolders of dysumcorp
               await fetchFolders(provider, dysumFolder.id);
             } else {
@@ -844,7 +850,6 @@ const StorageSection: React.FC<StorageSectionProps> = ({
             </div>
           </label>
         </div>
-
       </div>
 
       <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
@@ -1014,13 +1019,38 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
                 title={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
                   </svg>
                 ) : (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
                   </svg>
                 )}
               </button>
@@ -1163,12 +1193,22 @@ export default function CreatePortalPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [requiresUpgrade, setRequiresUpgrade] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [trialLimitExceeded, setTrialLimitExceeded] = useState<{
+    fileCount: number;
+    fileLimit: number;
+    message: string;
+  } | null>(null);
 
   // Storage section state lifted here to survive step navigation
-  const [storageFolderPath, setStorageFolderPath] = useState<StorageFolder[]>([]);
+  const [storageFolderPath, setStorageFolderPath] = useState<StorageFolder[]>(
+    [],
+  );
   const [storageFolders, setStorageFolders] = useState<StorageFolder[]>([]);
   const [storageHasUserSelected, setStorageHasUserSelected] = useState(false);
-  const [storageExpandedFolders, setStorageExpandedFolders] = useState<Set<string>>(new Set());
+  const [storageExpandedFolders, setStorageExpandedFolders] = useState<
+    Set<string>
+  >(new Set());
   const [expandedSections, setExpandedSections] = useState<{
     welcomeMessage: boolean;
     welcomeToast: boolean;
@@ -1180,8 +1220,10 @@ export default function CreatePortalPage() {
   });
 
   // Constants for default messages
-  const DEFAULT_WELCOME_MESSAGE = "Send us your files securely — we'll take it from here.\nFill in your details and attach the files you'd like to share with our team. All uploads are encrypted and handled with care.";
-  const DEFAULT_WELCOME_TOAST = "👋 Welcome! Please fill in your details and upload your files.";
+  const DEFAULT_WELCOME_MESSAGE =
+    "Send us your files securely — we'll take it from here.\nFill in your details and attach the files you'd like to share with our team. All uploads are encrypted and handled with care.";
+  const DEFAULT_WELCOME_TOAST =
+    "👋 Welcome! Please fill in your details and upload your files.";
 
   // Slug validation state
   const [slugValidation, setSlugValidation] = useState<{
@@ -1651,8 +1693,12 @@ export default function CreatePortalPage() {
           allowedFileTypes: formData.allowedFileTypes,
 
           // Messaging
-          welcomeMessage: expandedSections.welcomeMessage ? (formData.welcomeMessage || DEFAULT_WELCOME_MESSAGE) : null,
-          welcomeToastMessage: expandedSections.welcomeToast ? (formData.welcomeToastMessage || DEFAULT_WELCOME_TOAST) : null,
+          welcomeMessage: expandedSections.welcomeMessage
+            ? formData.welcomeMessage || DEFAULT_WELCOME_MESSAGE
+            : null,
+          welcomeToastMessage: expandedSections.welcomeToast
+            ? formData.welcomeToastMessage || DEFAULT_WELCOME_TOAST
+            : null,
           welcomeToastDelay: formData.welcomeToastDelay,
           welcomeToastDuration: formData.welcomeToastDuration,
           submitButtonText: formData.submitButtonText,
@@ -1668,6 +1714,21 @@ export default function CreatePortalPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        // Trial limit exceeded - show upgrade modal
+        if (
+          data.code === "TRIAL_LIMIT_EXCEEDED" ||
+          data.code === "TRIAL_PORTAL_LIMIT"
+        ) {
+          setTrialLimitExceeded({
+            fileCount: data.fileCount || 0,
+            fileLimit: data.fileLimit || 15,
+            message: data.error,
+          });
+          setShowUpgradeModal(true);
+          setCurrentStep("identity");
+          return;
+        }
+
         if (data.upgrade) {
           // Show error message with upgrade option
           setError(
@@ -1913,7 +1974,10 @@ export default function CreatePortalPage() {
                                 type="text"
                                 value={formData.companyWebsite}
                                 onChange={(e) =>
-                                  updateFormData("companyWebsite", e.target.value)
+                                  updateFormData(
+                                    "companyWebsite",
+                                    e.target.value,
+                                  )
                                 }
                               />
                               <p className="text-xs text-muted-foreground mt-1">
@@ -2277,7 +2341,10 @@ export default function CreatePortalPage() {
                                 className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                                 checked={formData.gradientEnabled}
                                 onChange={(e) =>
-                                  updateFormData("gradientEnabled", e.target.checked)
+                                  updateFormData(
+                                    "gradientEnabled",
+                                    e.target.checked,
+                                  )
                                 }
                               />
                               <div>
@@ -2285,7 +2352,8 @@ export default function CreatePortalPage() {
                                   Enable Gradient Buttons
                                 </span>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                  Use gradient from primary to secondary color for buttons
+                                  Use gradient from primary to secondary color
+                                  for buttons
                                 </p>
                               </div>
                             </label>
@@ -2417,7 +2485,10 @@ export default function CreatePortalPage() {
                                   rows={3}
                                   value={formData.welcomeMessage}
                                   onChange={(e) =>
-                                    updateFormData("welcomeMessage", e.target.value)
+                                    updateFormData(
+                                      "welcomeMessage",
+                                      e.target.value,
+                                    )
                                   }
                                 />
                                 <p className="text-xs text-muted-foreground">
@@ -2504,11 +2575,15 @@ export default function CreatePortalPage() {
                                     placeholder={DEFAULT_WELCOME_TOAST}
                                     value={formData.welcomeToastMessage}
                                     onChange={(e) =>
-                                      updateFormData("welcomeToastMessage", e.target.value)
+                                      updateFormData(
+                                        "welcomeToastMessage",
+                                        e.target.value,
+                                      )
                                     }
                                   />
                                   <p className="text-xs text-muted-foreground mt-1">
-                                    Popup notification shown when visitors enter the portal
+                                    Popup notification shown when visitors enter
+                                    the portal
                                   </p>
                                 </div>
 
@@ -2524,11 +2599,15 @@ export default function CreatePortalPage() {
                                       step="100"
                                       value={formData.welcomeToastDelay}
                                       onChange={(e) =>
-                                        updateFormData("welcomeToastDelay", parseInt(e.target.value) || 0)
+                                        updateFormData(
+                                          "welcomeToastDelay",
+                                          parseInt(e.target.value) || 0,
+                                        )
                                       }
                                     />
                                     <p className="text-xs text-muted-foreground mt-1">
-                                      Time before toast appears (1000ms = 1 second)
+                                      Time before toast appears (1000ms = 1
+                                      second)
                                     </p>
                                   </div>
 
@@ -2543,7 +2622,10 @@ export default function CreatePortalPage() {
                                       step="100"
                                       value={formData.welcomeToastDuration}
                                       onChange={(e) =>
-                                        updateFormData("welcomeToastDuration", parseInt(e.target.value) || 3000)
+                                        updateFormData(
+                                          "welcomeToastDuration",
+                                          parseInt(e.target.value) || 3000,
+                                        )
                                       }
                                     />
                                     <p className="text-xs text-muted-foreground mt-1">
@@ -2608,7 +2690,9 @@ export default function CreatePortalPage() {
                             </div>
                             <ChevronRight
                               className={`w-5 h-5 text-muted-foreground transition-transform ${
-                                expandedSections.textboxSection ? "rotate-90" : ""
+                                expandedSections.textboxSection
+                                  ? "rotate-90"
+                                  : ""
                               }`}
                             />
                           </button>
@@ -2648,7 +2732,9 @@ export default function CreatePortalPage() {
                                         <input
                                           type="checkbox"
                                           className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-                                          checked={formData.textboxSectionRequired}
+                                          checked={
+                                            formData.textboxSectionRequired
+                                          }
                                           onChange={(e) =>
                                             updateFormData(
                                               "textboxSectionRequired",
@@ -2791,6 +2877,78 @@ export default function CreatePortalPage() {
 
       {/* Paywall Modal */}
       <PaywallModal />
+
+      {/* Upgrade Modal for Trial Limit Exceeded */}
+      {showUpgradeModal && trialLimitExceeded && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowUpgradeModal(false)}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative bg-card border border-border rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl"
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-indigo-600 dark:text-indigo-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
+                Your portal has received {trialLimitExceeded.fileCount} files
+              </h2>
+              <p className="text-muted-foreground text-sm mb-6">
+                Upgrade to keep collecting files without interruption. Your card
+                won't be charged for 7 days.
+              </p>
+              <button
+                className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-all mb-3"
+                onClick={async () => {
+                  try {
+                    const response = await fetch("/api/checkout", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        planId: "pro",
+                        billingCycle: "monthly",
+                      }),
+                    });
+                    const data = await response.json();
+                    if (data.checkoutUrl) {
+                      window.location.href = data.checkoutUrl;
+                    }
+                  } catch (err) {
+                    console.error("Checkout error:", err);
+                  }
+                }}
+              >
+                Start Free Trial
+              </button>
+              <button
+                className="text-muted-foreground text-sm hover:text-foreground transition-colors"
+                onClick={() => {
+                  setShowUpgradeModal(false);
+                  setTrialLimitExceeded(null);
+                }}
+              >
+                Maybe later
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

@@ -46,7 +46,7 @@ const faqData = {
       name: "Is there a free trial for Pro?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Our Free plan is available forever with no credit card required. You can try the platform and upgrade to Pro anytime to unlock unlimited portals, 500GB storage, and all premium features.",
+        text: "Our Free plan is available forever with no credit card required. You can try the platform and upgrade to Pro anytime to unlock unlimited portals, unlimited storage, and all premium features.",
       },
     },
   ],

@@ -61,11 +61,12 @@ export default async function PremiumPage() {
           <div className="border-t pt-4">
             <h3 className="font-semibold mb-2">Premium Features:</h3>
             <ul className="space-y-2 text-sm">
+              <li>✓ Unlimited portals</li>
               <li>✓ Unlimited storage</li>
-              <li>✓ Priority support</li>
-              <li>✓ Advanced analytics</li>
-              <li>✓ Custom integrations</li>
-              <li>✓ API access</li>
+              <li>✓ Full white-labeling</li>
+              <li>✓ Password protection</li>
+              <li>✓ Expiring links</li>
+              <li>✓ Custom branding</li>
             </ul>
           </div>
         </CardBody>

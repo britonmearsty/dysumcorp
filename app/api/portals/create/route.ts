@@ -16,17 +16,49 @@ export async function POST(request: Request) {
 
     const userId = session.user.id;
 
-    // Check subscription access — user must have completed checkout (trialing or active)
+    // Check subscription access
     const access = await checkAccess(userId);
 
     if (!access.allowed) {
+      // Trial limit exceeded - block and tell them to upgrade
+      if (access.reason === "trial_limit_exceeded") {
+        return NextResponse.json(
+          {
+            error: "Your trial file limit has been reached.",
+            code: "TRIAL_LIMIT_EXCEEDED",
+            fileCount: access.fileCount,
+            fileLimit: access.fileLimit,
+          },
+          { status: 402 },
+        );
+      }
       return NextResponse.json(
         {
           error: "A subscription is required to create portals.",
-          code: access.reason === "expired" ? "SUBSCRIPTION_EXPIRED" : "CHECKOUT_REQUIRED",
+          code:
+            access.reason === "expired"
+              ? "SUBSCRIPTION_EXPIRED"
+              : "CHECKOUT_REQUIRED",
         },
         { status: 402 },
       );
+    }
+
+    // Trial users: check if they already have a portal (limit to 1)
+    if (access.reason === "trialing") {
+      const existingPortalCount = await prisma.portal.count({
+        where: { userId },
+      });
+      if (existingPortalCount >= 1) {
+        return NextResponse.json(
+          {
+            error:
+              "Trial users can only create one portal. Upgrade to create more.",
+            code: "TRIAL_PORTAL_LIMIT",
+          },
+          { status: 402 },
+        );
+      }
     }
 
     const body = await request.json();
@@ -168,8 +200,10 @@ export async function POST(request: Request) {
         // Messaging
         welcomeMessage: welcomeMessage || null,
         welcomeToastMessage: welcomeToastMessage || null,
-        welcomeToastDelay: welcomeToastDelay !== undefined ? welcomeToastDelay : 1000,
-        welcomeToastDuration: welcomeToastDuration !== undefined ? welcomeToastDuration : 3000,
+        welcomeToastDelay:
+          welcomeToastDelay !== undefined ? welcomeToastDelay : 1000,
+        welcomeToastDuration:
+          welcomeToastDuration !== undefined ? welcomeToastDuration : 3000,
         submitButtonText: submitButtonText || "Initialize Transfer",
         successMessage: successMessage || "Transmission Verified",
       },

@@ -7,9 +7,6 @@ export interface PlanLimits {
   whiteLabeling: boolean;
   passwordProtection: boolean;
   expiringLinks: boolean;
-  analytics: boolean;
-  apiAccess: boolean;
-  prioritySupport: boolean;
   customBranding: boolean;
 }
 
@@ -37,25 +34,20 @@ export const PRICING_PLANS: Record<"pro", PricingPlan> = {
     creemProductIdAnnual: "prod_4TLbnNWJvTQcOReecnTIa0",
     limits: {
       portals: 999999, // Unlimited
-      storage: 500, // 500GB
-      customDomains: 1,
+      storage: 999999, // Unlimited
+      customDomains: 0, // Not implemented
       whiteLabeling: true,
       passwordProtection: true,
       expiringLinks: true,
-      analytics: true,
-      apiAccess: true,
-      prioritySupport: true,
       customBranding: true,
     },
     features: [
       "Unlimited Portals",
-      "500GB Storage",
+      "Unlimited Storage",
       "Full white-labeling",
       "Password protection",
       "Expiring links",
-      "Advanced analytics",
       "Custom branding & themes",
-      "Priority email support",
     ],
     popular: true,
   },

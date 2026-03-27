@@ -2,7 +2,14 @@ import { prisma } from "@/lib/prisma";
 
 export interface AccessResult {
   allowed: boolean;
-  reason: "active_subscription" | "trialing" | "no_subscription" | "expired";
+  reason:
+    | "active_subscription"
+    | "trialing"
+    | "no_subscription"
+    | "expired"
+    | "trial_limit_exceeded";
+  fileCount?: number;
+  fileLimit?: number;
 }
 
 /**
@@ -13,6 +20,7 @@ export interface AccessResult {
  * Allowed states:
  *   - pro + active    → paid subscriber
  *   - pro + trialing  → card on file, within 7-day trial (Creem will charge on day 7)
+ *   - trial + not over file limit → can create 1 portal, limited to 15 files
  */
 export async function checkAccess(userId: string): Promise<AccessResult> {
   const user = await prisma.user.findUnique({
@@ -20,6 +28,8 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
     select: {
       subscriptionPlan: true,
       subscriptionStatus: true,
+      trialFileLimit: true,
+      trialFileCount: true,
     },
   });
 
@@ -30,6 +40,7 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
   const plan = user.subscriptionPlan;
   const status = user.subscriptionStatus;
 
+  // Paid subscriber - full access
   if (plan === "pro" && status === "active") {
     return { allowed: true, reason: "active_subscription" };
   }
@@ -38,6 +49,20 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
     return { allowed: true, reason: "trialing" };
   }
 
+  // Trial users - check file limit
+  if (plan === "trial") {
+    if (user.trialFileCount >= user.trialFileLimit) {
+      return {
+        allowed: false,
+        reason: "trial_limit_exceeded",
+        fileCount: user.trialFileCount,
+        fileLimit: user.trialFileLimit,
+      };
+    }
+    return { allowed: true, reason: "trialing" };
+  }
+
+  // Expired or no subscription
   if (status === "cancelled" || plan === "expired") {
     return { allowed: false, reason: "expired" };
   }
