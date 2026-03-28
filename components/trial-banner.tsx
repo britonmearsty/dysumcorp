@@ -5,9 +5,13 @@ import { AlertTriangle, Clock, Zap } from "lucide-react";
 
 export interface TrialBannerProps {
   daysRemaining?: number;
+  isLimitedTrial?: boolean;
 }
 
-export function TrialBanner({ daysRemaining }: TrialBannerProps) {
+export function TrialBanner({
+  daysRemaining,
+  isLimitedTrial,
+}: TrialBannerProps) {
   const isWarning = daysRemaining !== undefined && daysRemaining <= 3;
 
   if (isWarning) {
@@ -43,13 +47,20 @@ export function TrialBanner({ daysRemaining }: TrialBannerProps) {
         <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300">
           <Clock className="w-4 h-4 shrink-0" />
           <span className="text-sm">
-            {daysRemaining !== undefined
-              ? <><span className="font-medium">{daysRemaining} days</span> remaining in your free trial.</>
-              : <span className="font-medium">Free trial active.</span>}
+            {daysRemaining !== undefined ? (
+              <>
+                <span className="font-medium">{daysRemaining} days</span>{" "}
+                remaining in your {isLimitedTrial ? "limited " : ""}free trial.
+              </>
+            ) : (
+              <span className="font-medium">
+                {isLimitedTrial ? "Limited " : ""}Free trial active.
+              </span>
+            )}
           </span>
         </div>
         <Link
-          href="/dashboard/billing"
+          href="/dashboard/billing?tab=plans"
           className="shrink-0 flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 transition-colors"
         >
           <Zap className="w-3 h-3" />

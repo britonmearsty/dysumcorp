@@ -14,7 +14,10 @@ export async function GET(request: Request) {
     const access = await checkAccess(session.user.id);
 
     // If user is on trial, also check trial file limit
-    if (access.allowed && access.reason === "trialing") {
+    if (
+      access.allowed &&
+      (access.reason === "trialing" || access.reason === "limited_trial")
+    ) {
       const user = await prisma.user.findUnique({
         where: { id: session.user.id },
         select: {

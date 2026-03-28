@@ -57,6 +57,7 @@ export async function GET(
         successMessage: true,
         textboxSectionEnabled: true,
         textboxSectionTitle: true,
+        textboxSectionPlaceholder: true,
         textboxSectionRequired: true,
       },
     });
@@ -94,6 +95,10 @@ export async function GET(
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
+    // Determine if owner is a subscriber (pro plan with active subscription)
+    const isSubscriber =
+      user?.subscriptionPlan === "pro" && user?.subscriptionStatus === "active";
+
     // Serialize BigInt — strip userId before returning
     const { userId: _userId, ...portalData } = portal;
     const serializedPortal = {
@@ -105,6 +110,7 @@ export async function GET(
       welcomeToastDuration: portal.welcomeToastDuration ?? 3000,
       submitButtonText: portal.submitButtonText || "Initialize Transfer",
       successMessage: portal.successMessage || "Transmission Verified",
+      isOwnerSubscriber: isSubscriber,
     };
 
     return NextResponse.json({ portal: serializedPortal });

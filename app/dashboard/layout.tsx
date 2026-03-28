@@ -76,18 +76,15 @@ export default function DashboardRootLayout({
 
   // No subscription or expired — show paywall
   if (access?.reason === "expired" || access?.reason === "no_subscription") {
-    return (
-      <Paywall
-        onCheckout={handleCheckout}
-      />
-    );
+    return <Paywall onCheckout={handleCheckout} />;
   }
 
   return (
     <div className="flex flex-col min-h-screen">
       {/* Trial banner shown when user is in their 7-day trial */}
-      {access?.reason === "trialing" && (
-        <TrialBanner />
+      {(access?.reason === "trialing" ||
+        access?.reason === "limited_trial") && (
+        <TrialBanner isLimitedTrial={access?.reason === "limited_trial"} />
       )}
       <div className="flex-1">
         <DashboardLayout>{children}</DashboardLayout>

@@ -4,7 +4,14 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, Tab } from "@heroui/tabs";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CreditCard, BarChart3, Package, ChevronRight, Clock, CheckCircle } from "lucide-react";
+import {
+  CreditCard,
+  BarChart3,
+  Package,
+  ChevronRight,
+  Clock,
+  CheckCircle,
+} from "lucide-react";
 
 import { SubscriptionStatus } from "@/components/subscription-status";
 import { SubscriptionManager } from "@/components/subscription-manager";
@@ -20,7 +27,9 @@ export default function BillingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("overview");
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
+    "monthly",
+  );
   const [showSuccess, setShowSuccess] = useState(false);
   const [showCanceled, setShowCanceled] = useState(false);
   const [access, setAccess] = useState<AccessResult | null>(null);
@@ -51,8 +60,10 @@ export default function BillingPage() {
   // Fetch access status for trial info
   useEffect(() => {
     fetch("/api/access")
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (data) setAccess(data); })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setAccess(data);
+      })
       .catch(() => {});
   }, [session]);
 
@@ -157,7 +168,10 @@ export default function BillingPage() {
                   <Icon className="w-4 sm:w-5 h-4 sm:h-5" />
                   <span className="font-medium text-sm">{tab.name}</span>
                   {isActive && (
-                    <motion.div className="ml-auto" layoutId="billing-indicator">
+                    <motion.div
+                      className="ml-auto"
+                      layoutId="billing-indicator"
+                    >
                       <ChevronRight className="w-4 h-4" />
                     </motion.div>
                   )}
@@ -196,15 +210,21 @@ export default function BillingPage() {
                   {activeTab === "overview" && (
                     <div className="space-y-6">
                       {/* Trial status banner */}
-                      {access?.reason === "trialing" && (
+                      {(access?.reason === "trialing" ||
+                        access?.reason === "limited_trial") && (
                         <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl px-4 py-3">
                           <Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
                           <div>
                             <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">
+                              {access?.reason === "limited_trial"
+                                ? "Limited "
+                                : ""}
                               Free trial active
                             </p>
                             <p className="text-xs text-indigo-600 dark:text-indigo-400">
-                              Your card will be charged at the end of your 7-day trial. Cancel anytime before then.
+                              {access?.reason === "limited_trial"
+                                ? `You're in exploration mode with ${access?.fileLimit || 15} file limit. Upgrade to Pro for unlimited files and full access.`
+                                : "Your card will be charged at the end of your 7-day trial. Cancel anytime before then."}
                             </p>
                           </div>
                         </div>

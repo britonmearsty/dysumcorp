@@ -21,6 +21,7 @@ interface Portal {
   customDomain: string | null;
   whiteLabeled: boolean;
   isActive: boolean;
+  isOwnerSubscriber: boolean;
   // Branding
   primaryColor: string;
   secondaryColor?: string;
@@ -51,6 +52,7 @@ interface Portal {
   successMessage: string;
   textboxSectionEnabled: boolean;
   textboxSectionTitle: string | null;
+  textboxSectionPlaceholder: string | null;
   textboxSectionRequired: boolean;
   userId: string;
 }
@@ -667,8 +669,11 @@ export default function PublicPortalPage() {
                 {/* Textbox Section */}
                 {portal.textboxSectionEnabled && (
                   <PortalTextarea
-                    label={portal.textboxSectionTitle || "Notes"}
-                    placeholder="Enter any notes or comments..."
+                    label="Notes"
+                    placeholder={
+                      portal.textboxSectionPlaceholder ||
+                      "Enter any notes or comments..."
+                    }
                     rows={4}
                     value={textboxValue}
                     onChange={(e) => setTextboxValue(e.target.value)}
@@ -755,20 +760,22 @@ export default function PublicPortalPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full py-5 px-6 border-t border-slate-200 bg-white flex flex-col items-center gap-1">
-        <div className="flex items-center gap-1">
-          <span className="text-slate-400 text-xs">
-            Secure file delivery powered by
+      {/* Footer - hidden for subscribers */}
+      {!portal.isOwnerSubscriber && (
+        <footer className="w-full py-5 px-6 border-t border-slate-200 bg-white flex flex-col items-center gap-1">
+          <div className="flex items-center gap-1">
+            <span className="text-slate-400 text-xs">
+              Secure file delivery powered by
+            </span>
+            <span className="text-slate-700 text-xs ml-1 font-bold">
+              Dysumcorp
+            </span>
+          </div>
+          <span className="text-slate-300 text-xs">
+            © 2026 Dysumcorp · All rights reserved.
           </span>
-          <span className="text-slate-700 text-xs ml-1 font-bold">
-            Dysumcorp
-          </span>
-        </div>
-        <span className="text-slate-300 text-xs">
-          © 2026 Dysumcorp · All rights reserved.
-        </span>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

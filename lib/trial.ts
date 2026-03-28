@@ -5,6 +5,7 @@ export interface AccessResult {
   reason:
     | "active_subscription"
     | "trialing"
+    | "limited_trial"
     | "no_subscription"
     | "expired"
     | "trial_limit_exceeded";
@@ -30,10 +31,15 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
       subscriptionStatus: true,
       trialFileLimit: true,
       trialFileCount: true,
+      status: true,
     },
   });
 
   if (!user) {
+    return { allowed: false, reason: "no_subscription" };
+  }
+
+  if (user.status === "deleted") {
     return { allowed: false, reason: "no_subscription" };
   }
 
@@ -59,7 +65,7 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
         fileLimit: user.trialFileLimit,
       };
     }
-    return { allowed: true, reason: "trialing" };
+    return { allowed: true, reason: "limited_trial" };
   }
 
   // Expired or no subscription

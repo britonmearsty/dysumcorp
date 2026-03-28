@@ -26,6 +26,8 @@ model User {
   trialFileCount     Int       @default(0)
   subscriptionPlan   String?   @default("trial")
   subscriptionStatus String?   @default("trialing")
+  status             String    @default("active") // active, deleted, suspended
+  deletedAt          DateTime?
   accounts           Account[]
   portals            Portal[]
   sessions           Session[]
@@ -141,6 +143,7 @@ model Portal {
   successMessage      String   @default("Transmission Verified")
   textboxSectionEnabled Boolean @default(false)
   textboxSectionTitle  String?
+  textboxSectionPlaceholder String?
   textboxSectionRequired Boolean @default(false)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

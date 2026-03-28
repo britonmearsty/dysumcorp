@@ -49,6 +49,16 @@ export const auth = betterAuth({
         defaultValue: null,
         input: false,
       },
+      status: {
+        type: "string",
+        defaultValue: "active",
+        input: false,
+      },
+      deletedAt: {
+        type: "string",
+        defaultValue: null,
+        input: false,
+      },
     },
   },
   socialProviders: {
@@ -100,10 +110,7 @@ export const auth = betterAuth({
       const url = ctx.request?.url || "";
       const path = url.includes("?") ? url.split("?")[0] : url;
       const isCallback = path.includes("/callback/");
-      const isSignup =
-        path === "/sign-up" ||
-        path === "/signup" ||
-        isCallback;
+      const isSignup = path === "/sign-up" || path === "/signup" || isCallback;
       const isSignIn = path === "/sign-in" || path === "/signin";
 
       const body = ctx.body as
@@ -170,7 +177,8 @@ export const auth = betterAuth({
 
           // trialing = card on file, within trial period
           // active / paid = fully charged subscriber
-          const newStatus = reason === "subscription_trialing" ? "trialing" : "active";
+          const newStatus =
+            reason === "subscription_trialing" ? "trialing" : "active";
 
           await prisma.user.updateMany({
             where: { email: customer.email },
@@ -179,14 +187,17 @@ export const auth = betterAuth({
               subscriptionStatus: newStatus,
               creemCustomerId: customer.id,
               // Record when trial started (first time only)
-              ...(newStatus === "trialing" ? { trialStartedAt: new Date() } : {}),
+              ...(newStatus === "trialing"
+                ? { trialStartedAt: new Date() }
+                : {}),
             },
           });
 
           if (userId) {
-            const periodEnd = billingCycle === "annual"
-              ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            const periodEnd =
+              billingCycle === "annual"
+                ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
             await prisma.creem_subscription.upsert({
               where: { id: customer.id },

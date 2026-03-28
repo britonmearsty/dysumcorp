@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { hashPassword, validatePassword } from "@/lib/password-utils";
-import { getValidToken, deleteFromGoogleDrive, deleteFromDropbox } from "@/lib/storage-api";
+import {
+  getValidToken,
+  deleteFromGoogleDrive,
+  deleteFromDropbox,
+} from "@/lib/storage-api";
 
 // GET /api/portals/[id] - Get single portal
 export async function GET(
@@ -129,6 +133,7 @@ export async function PATCH(
       successMessage,
       textboxSectionEnabled,
       textboxSectionTitle,
+      textboxSectionPlaceholder,
       textboxSectionRequired,
     } = body;
 
@@ -158,16 +163,20 @@ export async function PATCH(
 
     // Branding
     if (primaryColor !== undefined) updateData.primaryColor = primaryColor;
-    if (secondaryColor !== undefined) updateData.secondaryColor = secondaryColor;
+    if (secondaryColor !== undefined)
+      updateData.secondaryColor = secondaryColor;
     if (textColor !== undefined) updateData.textColor = textColor;
     if (backgroundColor !== undefined)
       updateData.backgroundColor = backgroundColor;
     if (cardBackgroundColor !== undefined)
       updateData.cardBackgroundColor = cardBackgroundColor;
-    if (gradientEnabled !== undefined) updateData.gradientEnabled = gradientEnabled;
+    if (gradientEnabled !== undefined)
+      updateData.gradientEnabled = gradientEnabled;
     if (logoUrl !== undefined) updateData.logoUrl = logoUrl || null;
-    if (companyWebsite !== undefined) updateData.companyWebsite = companyWebsite || null;
-    if (companyEmail !== undefined) updateData.companyEmail = companyEmail || null;
+    if (companyWebsite !== undefined)
+      updateData.companyWebsite = companyWebsite || null;
+    if (companyEmail !== undefined)
+      updateData.companyEmail = companyEmail || null;
     if (customDomain !== undefined)
       updateData.customDomain = customDomain || null;
     if (whiteLabeled !== undefined) updateData.whiteLabeled = whiteLabeled;
@@ -182,17 +191,9 @@ export async function PATCH(
     if (useClientFolders !== undefined)
       updateData.useClientFolders = useClientFolders;
 
-    // Security - handle password with async hashing
+    // Security - handle password with async hashing (no validation - allow any password)
     if (password !== undefined) {
       if (password) {
-        const passwordValidation = validatePassword(password);
-
-        if (!passwordValidation.isValid) {
-          return NextResponse.json(
-            { error: passwordValidation.errors.join(". ") },
-            { status: 400 },
-          );
-        }
         updateData.password = await hashPassword(password);
       } else {
         updateData.password = null;
@@ -255,6 +256,8 @@ export async function PATCH(
       updateData.textboxSectionEnabled = textboxSectionEnabled;
     if (textboxSectionTitle !== undefined)
       updateData.textboxSectionTitle = textboxSectionTitle || null;
+    if (textboxSectionPlaceholder !== undefined)
+      updateData.textboxSectionPlaceholder = textboxSectionPlaceholder || null;
     if (textboxSectionRequired !== undefined)
       updateData.textboxSectionRequired = textboxSectionRequired;
 
@@ -367,7 +370,9 @@ export async function DELETE(
           if (isGoogleDrive) {
             let cloudFileId = file.storageFileId;
             if (!cloudFileId) {
-              const match = file.storageUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || file.storageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+              const match =
+                file.storageUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+                file.storageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
               if (match) cloudFileId = match[1];
             }
             if (cloudFileId) {
@@ -390,6 +395,9 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting portal:", error);
-    return NextResponse.json({ error: "Failed to delete portal" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete portal" },
+      { status: 500 },
+    );
   }
 }

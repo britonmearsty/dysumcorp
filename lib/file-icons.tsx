@@ -98,7 +98,10 @@ export function getFileIconColor(mimeType: string): string {
   if (
     mimeType.includes("javascript") ||
     mimeType.includes("typescript") ||
-    mimeType.includes("json")
+    mimeType.includes("json") ||
+    mimeType.includes("html") ||
+    mimeType.includes("css") ||
+    mimeType.includes("xml")
   )
     return "text-yellow-500";
 

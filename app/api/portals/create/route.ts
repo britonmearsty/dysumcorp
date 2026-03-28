@@ -146,17 +146,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Validate password strength if password provided
-    if (password) {
-      const passwordValidation = validatePassword(password);
-
-      if (!passwordValidation.isValid) {
-        return NextResponse.json(
-          { error: passwordValidation.errors.join(". ") },
-          { status: 400 },
-        );
-      }
-    }
+    // No password validation - allow any password length
 
     // Determine if portal should be active based on trial limit
     const shouldBeInactive = access.reason === "trial_limit_exceeded";

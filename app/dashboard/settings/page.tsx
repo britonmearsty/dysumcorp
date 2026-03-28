@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Checkbox } from "@heroui/react";
 
-import { useSession } from "@/lib/auth-client";
+import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,9 +67,13 @@ export default function SettingsPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   // Storage delete behavior
-  const [storageDeleteBehavior, setStorageDeleteBehavior] = useState<"ask" | "always" | "never">("ask");
+  const [storageDeleteBehavior, setStorageDeleteBehavior] = useState<
+    "ask" | "always" | "never"
+  >("ask");
   const [storageDeleteLoading, setStorageDeleteLoading] = useState(false);
-  const [storageDeleteStatus, setStorageDeleteStatus] = useState<"idle" | "success" | "error">("idle");
+  const [storageDeleteStatus, setStorageDeleteStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
 
   const tabs = [
     {
@@ -155,7 +159,10 @@ export default function SettingsPage() {
     if (!session?.user) return;
     fetch("/api/user/storage-delete-behavior")
       .then((r) => r.json())
-      .then((d) => { if (d.storageDeleteBehavior) setStorageDeleteBehavior(d.storageDeleteBehavior); })
+      .then((d) => {
+        if (d.storageDeleteBehavior)
+          setStorageDeleteBehavior(d.storageDeleteBehavior);
+      })
       .catch(() => {});
   }, [session]);
 
@@ -344,6 +351,7 @@ export default function SettingsPage() {
 
       if (!response.ok) throw new Error("Failed to delete account");
 
+      await signOut();
       router.push("/");
     } catch (error) {
       setDeleteLoading(false);
@@ -815,24 +823,29 @@ export default function SettingsPage() {
                     <div className="space-y-4 sm:space-y-6">
                       <div>
                         <p className="text-sm text-muted-foreground mb-4">
-                          Choose what happens to files in your connected storage (Google Drive, Dropbox) when you delete them from the app.
+                          Choose what happens to files in your connected storage
+                          (Google Drive, Dropbox) when you delete them from the
+                          app.
                         </p>
                         <div className="space-y-3">
                           {[
                             {
                               value: "ask",
                               label: "Ask me each time",
-                              description: "A checkbox appears in every delete dialog so you can decide per deletion.",
+                              description:
+                                "A checkbox appears in every delete dialog so you can decide per deletion.",
                             },
                             {
                               value: "always",
                               label: "Always delete from storage",
-                              description: "Files are automatically removed from Google Drive or Dropbox whenever you delete them here.",
+                              description:
+                                "Files are automatically removed from Google Drive or Dropbox whenever you delete them here.",
                             },
                             {
                               value: "never",
                               label: "Never delete from storage",
-                              description: "Only the app record is removed. Files in your connected storage are never touched.",
+                              description:
+                                "Only the app record is removed. Files in your connected storage are never touched.",
                             },
                           ].map((option) => (
                             <label
@@ -849,11 +862,19 @@ export default function SettingsPage() {
                                 name="storageDeleteBehavior"
                                 type="radio"
                                 value={option.value}
-                                onChange={() => setStorageDeleteBehavior(option.value as "ask" | "always" | "never")}
+                                onChange={() =>
+                                  setStorageDeleteBehavior(
+                                    option.value as "ask" | "always" | "never",
+                                  )
+                                }
                               />
                               <div>
-                                <p className="font-semibold text-sm text-foreground">{option.label}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">{option.description}</p>
+                                <p className="font-semibold text-sm text-foreground">
+                                  {option.label}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {option.description}
+                                </p>
                               </div>
                             </label>
                           ))}
@@ -861,12 +882,16 @@ export default function SettingsPage() {
                       </div>
 
                       {storageDeleteStatus !== "idle" && (
-                        <div className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${
-                          storageDeleteStatus === "success"
-                            ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                            : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
-                        }`}>
-                          {storageDeleteStatus === "success" ? "Preference saved!" : "Failed to save. Please try again."}
+                        <div
+                          className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${
+                            storageDeleteStatus === "success"
+                              ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                              : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
+                          }`}
+                        >
+                          {storageDeleteStatus === "success"
+                            ? "Preference saved!"
+                            : "Failed to save. Please try again."}
                         </div>
                       )}
 
@@ -887,10 +912,12 @@ export default function SettingsPage() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-xl border-2 border-red-500/50 bg-red-50 dark:bg-red-950/20">
                           <div>
                             <p className="font-semibold text-sm text-foreground">
-                              Delete Account
+                              Delete my data and deactivate my account
                             </p>
                             <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                              Permanently delete your account and all data
+                              This will remove your access to the app, revoke
+                              Google Drive/Dropbox permissions, and permanently
+                              erase all app data.
                             </p>
                           </div>
                           <Button
@@ -909,9 +936,18 @@ export default function SettingsPage() {
                               Are you absolutely sure?
                             </p>
                             <p className="text-xs sm:text-sm text-red-600 dark:text-red-400 mt-1 sm:mt-2">
-                              This action cannot be undone. This will
-                              permanently delete your account and remove all
-                              your data from our servers.
+                              This will remove your access to the app, revoke
+                              Google Drive/Dropbox permissions, and permanently
+                              erase all app data.
+                            </p>
+                            <p className="text-xs sm:text-sm text-red-600 dark:text-red-400 mt-2">
+                              Files and folders in your Google Drive/Dropbox
+                              will NOT be deleted. You may manually remove the
+                              "dysumcorp" folder from your storage if you wish.
+                            </p>
+                            <p className="text-xs sm:text-sm text-red-600 dark:text-red-400 mt-2">
+                              Billing records are retained for legal and
+                              accounting purposes. This action cannot be undone.
                             </p>
                           </div>
 

@@ -1105,6 +1105,10 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
               A passkey is currently set. Leave blank to keep it unchanged.
             </p>
           )}
+          <p className="text-[10px] text-muted-foreground mt-1.5">
+            Recommendation: Use a strong password with uppercase, numbers, and
+            special characters for better security.
+          </p>
         </div>
       </div>
 
@@ -1319,6 +1323,7 @@ export default function EditPortalPage() {
     successMessage: "Transmission Verified",
     textboxSectionEnabled: false,
     textboxSectionTitle: "",
+    textboxSectionPlaceholder: "",
     textboxSectionRequired: false,
   });
 
@@ -1386,6 +1391,7 @@ export default function EditPortalPage() {
         successMessage: p.successMessage || "Transmission Verified",
         textboxSectionEnabled: p.textboxSectionEnabled ?? false,
         textboxSectionTitle: p.textboxSectionTitle || "",
+        textboxSectionPlaceholder: p.textboxSectionPlaceholder || "",
         textboxSectionRequired: p.textboxSectionRequired ?? false,
       });
 
@@ -1717,6 +1723,7 @@ export default function EditPortalPage() {
         successMessage: formData.successMessage,
         textboxSectionEnabled: formData.textboxSectionEnabled,
         textboxSectionTitle: formData.textboxSectionTitle || null,
+        textboxSectionPlaceholder: formData.textboxSectionPlaceholder || null,
         textboxSectionRequired: formData.textboxSectionRequired,
       };
 
@@ -2707,16 +2714,18 @@ export default function EditPortalPage() {
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                           <label className="block text-sm font-semibold text-foreground mb-2">
-                                            Textbox Label
+                                            Textbox Placeholder
                                           </label>
                                           <input
-                                            className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
+                                            className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none text-muted-foreground"
                                             type="text"
-                                            placeholder="e.g., Notes or Comments"
-                                            value={formData.textboxSectionTitle}
+                                            placeholder="e.g., Enter any notes or comments..."
+                                            value={
+                                              formData.textboxSectionPlaceholder
+                                            }
                                             onChange={(e) =>
                                               updateFormData(
-                                                "textboxSectionTitle",
+                                                "textboxSectionPlaceholder",
                                                 e.target.value,
                                               )
                                             }
