@@ -92,6 +92,9 @@ export async function POST(request: Request) {
       welcomeToastDuration,
       submitButtonText,
       successMessage,
+      textboxSectionEnabled,
+      textboxSectionTitle,
+      textboxSectionRequired,
     } = body;
 
     // Validate required fields
@@ -207,6 +210,9 @@ export async function POST(request: Request) {
           welcomeToastDuration !== undefined ? welcomeToastDuration : 3000,
         submitButtonText: submitButtonText || "Initialize Transfer",
         successMessage: successMessage || "Transmission Verified",
+        textboxSectionEnabled: textboxSectionEnabled ?? false,
+        textboxSectionTitle: textboxSectionTitle || null,
+        textboxSectionRequired: textboxSectionRequired ?? false,
       },
     });
 

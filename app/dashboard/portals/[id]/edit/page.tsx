@@ -190,25 +190,35 @@ const StorageSection: React.FC<StorageSectionProps> = ({
 
   // Load existing portal storage configuration
   useEffect(() => {
-    if (portal && portal.storageFolderId && portal.storageProvider && !hasUserSelectedFolder) {
+    if (
+      portal &&
+      portal.storageFolderId &&
+      portal.storageProvider &&
+      !hasUserSelectedFolder
+    ) {
       // Portal has existing storage configuration, load it
       const provider = portal.storageProvider as "google_drive" | "dropbox";
       updateFormData("storageProvider", provider);
       updateFormData("storageFolderId", portal.storageFolderId);
       updateFormData("storageFolderPath", portal.storageFolderPath || "");
-      
+
       // Build folder path from the stored path
       if (portal.storageFolderPath) {
         const pathParts = portal.storageFolderPath.split("/").filter(Boolean);
         // Create folder objects for breadcrumb
-        const folderPathObjects: StorageFolder[] = pathParts.map((name: string, index: number) => ({
-          id: index === pathParts.length - 1 ? portal.storageFolderId : `folder-${index}`,
-          name: name,
-          path: pathParts.slice(0, index + 1).join("/"),
-        }));
+        const folderPathObjects: StorageFolder[] = pathParts.map(
+          (name: string, index: number) => ({
+            id:
+              index === pathParts.length - 1
+                ? portal.storageFolderId
+                : `folder-${index}`,
+            name: name,
+            path: pathParts.slice(0, index + 1).join("/"),
+          }),
+        );
         setFolderPath(folderPathObjects);
       }
-      
+
       // Load subfolders of the current folder
       setLoadingFolders(true);
       fetchFolders(provider, portal.storageFolderId).finally(() => {
@@ -231,7 +241,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
       const connectedAccounts = accounts.filter(
         (a) => a.storageStatus === "ACTIVE" && a.isConnected,
       );
-      
+
       if (connectedAccounts.length > 0) {
         // Prefer Google Drive if available, otherwise use first connected account
         const preferredAccount =
@@ -313,7 +323,10 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                 // Set breadcrumb to show: My Drive > Dysumcorp
                 setFolderPath([rootFolder, dysumFolder]);
                 updateFormData("storageFolderId", dysumFolder.id);
-                updateFormData("storageFolderPath", `${rootFolder.path}/${dysumFolder.name}`);
+                updateFormData(
+                  "storageFolderPath",
+                  `${rootFolder.path}/${dysumFolder.name}`,
+                );
                 // Load subfolders of Dysumcorp
                 await fetchFolders(provider, dysumFolder.id);
               } else {
@@ -383,7 +396,10 @@ const StorageSection: React.FC<StorageSectionProps> = ({
               // Set breadcrumb to show: Dropbox > dysumcorp
               setFolderPath([rootFolder, dysumFolder]);
               updateFormData("storageFolderId", dysumFolder.id);
-              updateFormData("storageFolderPath", dysumFolder.path || "/dysumcorp");
+              updateFormData(
+                "storageFolderPath",
+                dysumFolder.path || "/dysumcorp",
+              );
               // Load subfolders of dysumcorp
               await fetchFolders(provider, dysumFolder.id);
             } else {
@@ -876,7 +892,6 @@ const StorageSection: React.FC<StorageSectionProps> = ({
             </div>
           </label>
         </div>
-
       </div>
 
       <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
@@ -1048,13 +1063,38 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
                 title={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
                   </svg>
                 ) : (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
                   </svg>
                 )}
               </button>
@@ -1208,10 +1248,14 @@ export default function EditPortalPage() {
   const [portal, setPortal] = useState<any>(null);
 
   // Storage section state lifted here to survive step navigation
-  const [storageFolderPath, setStorageFolderPath] = useState<StorageFolder[]>([]);
+  const [storageFolderPath, setStorageFolderPath] = useState<StorageFolder[]>(
+    [],
+  );
   const [storageFolders, setStorageFolders] = useState<StorageFolder[]>([]);
   const [storageHasUserSelected, setStorageHasUserSelected] = useState(false);
-  const [storageExpandedFolders, setStorageExpandedFolders] = useState<Set<string>>(new Set());
+  const [storageExpandedFolders, setStorageExpandedFolders] = useState<
+    Set<string>
+  >(new Set());
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<{
     welcomeMessage: boolean;
@@ -1224,8 +1268,10 @@ export default function EditPortalPage() {
   });
 
   // Constants for default messages
-  const DEFAULT_WELCOME_MESSAGE = "Send us your files securely — we'll take it from here.\nFill in your details and attach the files you'd like to share with our team. All uploads are encrypted and handled with care.";
-  const DEFAULT_WELCOME_TOAST = "👋 Welcome! Please fill in your details and upload your files.";
+  const DEFAULT_WELCOME_MESSAGE =
+    "Send us your files securely — we'll take it from here.\nFill in your details and attach the files you'd like to share with our team. All uploads are encrypted and handled with care.";
+  const DEFAULT_WELCOME_TOAST =
+    "👋 Welcome! Please fill in your details and upload your files.";
 
   const [formData, setFormData] = useState({
     // Identity
@@ -1316,7 +1362,8 @@ export default function EditPortalPage() {
         textColor: p.textColor || "#1e293b",
         backgroundColor: p.backgroundColor || "#f1f5f9",
         cardBackgroundColor: p.cardBackgroundColor || "#ffffff",
-        gradientEnabled: p.gradientEnabled !== undefined ? p.gradientEnabled : true,
+        gradientEnabled:
+          p.gradientEnabled !== undefined ? p.gradientEnabled : true,
         logo: null,
         companyWebsite: p.companyWebsite || "",
         companyEmail: p.companyEmail || "",
@@ -1658,8 +1705,12 @@ export default function EditPortalPage() {
         allowedFileTypes: formData.allowedFileTypes,
 
         // Messaging
-        welcomeMessage: expandedSections.welcomeMessage ? (formData.welcomeMessage || DEFAULT_WELCOME_MESSAGE) : null,
-        welcomeToastMessage: expandedSections.welcomeToast ? (formData.welcomeToastMessage || DEFAULT_WELCOME_TOAST) : null,
+        welcomeMessage: expandedSections.welcomeMessage
+          ? formData.welcomeMessage || DEFAULT_WELCOME_MESSAGE
+          : null,
+        welcomeToastMessage: expandedSections.welcomeToast
+          ? formData.welcomeToastMessage || DEFAULT_WELCOME_TOAST
+          : null,
         welcomeToastDelay: formData.welcomeToastDelay,
         welcomeToastDuration: formData.welcomeToastDuration,
         submitButtonText: formData.submitButtonText,
@@ -1885,7 +1936,10 @@ export default function EditPortalPage() {
                                     type="text"
                                     value={formData.companyWebsite}
                                     onChange={(e) =>
-                                      updateFormData("companyWebsite", e.target.value)
+                                      updateFormData(
+                                        "companyWebsite",
+                                        e.target.value,
+                                      )
                                     }
                                   />
                                   <p className="text-xs text-muted-foreground mt-1">
@@ -1904,7 +1958,10 @@ export default function EditPortalPage() {
                                     type="email"
                                     value={formData.companyEmail}
                                     onChange={(e) =>
-                                      updateFormData("companyEmail", e.target.value)
+                                      updateFormData(
+                                        "companyEmail",
+                                        e.target.value,
+                                      )
                                     }
                                   />
                                   <p className="text-xs text-muted-foreground mt-1">
@@ -2209,11 +2266,14 @@ export default function EditPortalPage() {
                                       <div
                                         className="w-12 h-12 rounded-xl border-2 border-border cursor-pointer transition-all hover:scale-105"
                                         style={{
-                                          backgroundColor: formData.secondaryColor,
+                                          backgroundColor:
+                                            formData.secondaryColor,
                                         }}
                                         onClick={() =>
                                           document
-                                            .getElementById("secondaryColorInput")
+                                            .getElementById(
+                                              "secondaryColorInput",
+                                            )
                                             ?.click()
                                         }
                                       />
@@ -2253,7 +2313,10 @@ export default function EditPortalPage() {
                                     className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                                     checked={formData.gradientEnabled}
                                     onChange={(e) =>
-                                      updateFormData("gradientEnabled", e.target.checked)
+                                      updateFormData(
+                                        "gradientEnabled",
+                                        e.target.checked,
+                                      )
                                     }
                                   />
                                   <div>
@@ -2261,7 +2324,8 @@ export default function EditPortalPage() {
                                       Enable Gradient Buttons
                                     </span>
                                     <p className="text-xs text-muted-foreground mt-0.5">
-                                      Use gradient from primary to secondary color for buttons
+                                      Use gradient from primary to secondary
+                                      color for buttons
                                     </p>
                                   </div>
                                 </label>
@@ -2330,7 +2394,8 @@ export default function EditPortalPage() {
                               className="w-full flex items-center justify-between p-4 bg-card border border-border rounded-xl hover:bg-muted transition-all text-left group"
                               type="button"
                               onClick={() => {
-                                const newState = !expandedSections.welcomeMessage;
+                                const newState =
+                                  !expandedSections.welcomeMessage;
                                 setExpandedSections((prev) => ({
                                   ...prev,
                                   welcomeMessage: newState,
@@ -2373,7 +2438,9 @@ export default function EditPortalPage() {
                               </div>
                               <ChevronRight
                                 className={`w-5 h-5 text-muted-foreground transition-transform ${
-                                  expandedSections.welcomeMessage ? "rotate-90" : ""
+                                  expandedSections.welcomeMessage
+                                    ? "rotate-90"
+                                    : ""
                                 }`}
                               />
                             </button>
@@ -2393,9 +2460,15 @@ export default function EditPortalPage() {
                                       className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
                                       placeholder={DEFAULT_WELCOME_MESSAGE}
                                       rows={3}
-                                      value={formData.welcomeMessage || DEFAULT_WELCOME_MESSAGE}
+                                      value={
+                                        formData.welcomeMessage ||
+                                        DEFAULT_WELCOME_MESSAGE
+                                      }
                                       onChange={(e) =>
-                                        updateFormData("welcomeMessage", e.target.value)
+                                        updateFormData(
+                                          "welcomeMessage",
+                                          e.target.value,
+                                        )
                                       }
                                     />
                                     <p className="text-xs text-muted-foreground">
@@ -2456,7 +2529,9 @@ export default function EditPortalPage() {
                               </div>
                               <ChevronRight
                                 className={`w-5 h-5 text-muted-foreground transition-transform ${
-                                  expandedSections.welcomeToast ? "rotate-90" : ""
+                                  expandedSections.welcomeToast
+                                    ? "rotate-90"
+                                    : ""
                                 }`}
                               />
                             </button>
@@ -2480,13 +2555,20 @@ export default function EditPortalPage() {
                                         className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
                                         type="text"
                                         placeholder={DEFAULT_WELCOME_TOAST}
-                                        value={formData.welcomeToastMessage || DEFAULT_WELCOME_TOAST}
+                                        value={
+                                          formData.welcomeToastMessage ||
+                                          DEFAULT_WELCOME_TOAST
+                                        }
                                         onChange={(e) =>
-                                          updateFormData("welcomeToastMessage", e.target.value)
+                                          updateFormData(
+                                            "welcomeToastMessage",
+                                            e.target.value,
+                                          )
                                         }
                                       />
                                       <p className="text-xs text-muted-foreground mt-1">
-                                        Popup notification shown when visitors enter the portal
+                                        Popup notification shown when visitors
+                                        enter the portal
                                       </p>
                                     </div>
 
@@ -2502,11 +2584,15 @@ export default function EditPortalPage() {
                                           step="100"
                                           value={formData.welcomeToastDelay}
                                           onChange={(e) =>
-                                            updateFormData("welcomeToastDelay", parseInt(e.target.value) || 0)
+                                            updateFormData(
+                                              "welcomeToastDelay",
+                                              parseInt(e.target.value) || 0,
+                                            )
                                           }
                                         />
                                         <p className="text-xs text-muted-foreground mt-1">
-                                          Time before toast appears (1000ms = 1 second)
+                                          Time before toast appears (1000ms = 1
+                                          second)
                                         </p>
                                       </div>
 
@@ -2521,7 +2607,10 @@ export default function EditPortalPage() {
                                           step="100"
                                           value={formData.welcomeToastDuration}
                                           onChange={(e) =>
-                                            updateFormData("welcomeToastDuration", parseInt(e.target.value) || 3000)
+                                            updateFormData(
+                                              "welcomeToastDuration",
+                                              parseInt(e.target.value) || 3000,
+                                            )
                                           }
                                         />
                                         <p className="text-xs text-muted-foreground mt-1">
@@ -2539,17 +2628,27 @@ export default function EditPortalPage() {
                                 className="w-full flex items-center justify-between p-4 bg-card border border-border rounded-xl hover:bg-muted transition-all text-left group"
                                 type="button"
                                 onClick={() => {
-                                  const newState = !expandedSections.textboxSection;
+                                  const newState =
+                                    !expandedSections.textboxSection;
                                   setExpandedSections((prev) => ({
                                     ...prev,
                                     textboxSection: newState,
                                   }));
                                   if (!newState) {
-                                    updateFormData("textboxSectionEnabled", false);
+                                    updateFormData(
+                                      "textboxSectionEnabled",
+                                      false,
+                                    );
                                     updateFormData("textboxSectionTitle", "");
-                                    updateFormData("textboxSectionRequired", false);
+                                    updateFormData(
+                                      "textboxSectionRequired",
+                                      false,
+                                    );
                                   } else {
-                                    updateFormData("textboxSectionEnabled", true);
+                                    updateFormData(
+                                      "textboxSectionEnabled",
+                                      true,
+                                    );
                                   }
                                 }}
                               >
@@ -2580,13 +2679,16 @@ export default function EditPortalPage() {
                                       Textbox Section
                                     </h3>
                                     <p className="text-xs text-muted-foreground">
-                                      Add a text input field for clients to fill out
+                                      Add a text input field for clients to fill
+                                      out
                                     </p>
                                   </div>
                                 </div>
                                 <ChevronRight
                                   className={`w-5 h-5 text-muted-foreground transition-transform ${
-                                    expandedSections.textboxSection ? "rotate-90" : ""
+                                    expandedSections.textboxSection
+                                      ? "rotate-90"
+                                      : ""
                                   }`}
                                 />
                               </button>
@@ -2626,7 +2728,9 @@ export default function EditPortalPage() {
                                             <input
                                               type="checkbox"
                                               className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-                                              checked={formData.textboxSectionRequired}
+                                              checked={
+                                                formData.textboxSectionRequired
+                                              }
                                               onChange={(e) =>
                                                 updateFormData(
                                                   "textboxSectionRequired",
@@ -2708,21 +2812,7 @@ export default function EditPortalPage() {
                               >
                                 Cancel
                               </Link>
-                              {formData.portalUrl && (
-                                <button
-                                  className="px-4 py-3 border border-border rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-all font-bold text-sm flex items-center gap-2"
-                                  type="button"
-                                  onClick={() =>
-                                    window.open(
-                                      `/portal/${formData.portalUrl}`,
-                                      "_blank",
-                                    )
-                                  }
-                                >
-                                  <ExternalLink className="w-4 h-4" />
-                                  View Portal
-                                </button>
-                              )}
+
                               <button
                                 className="flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all shadow-md active:scale-95 disabled:opacity-50 font-bold text-sm"
                                 disabled={saving}

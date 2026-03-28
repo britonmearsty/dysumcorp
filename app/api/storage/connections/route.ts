@@ -78,6 +78,7 @@ export async function GET() {
               );
               accessToken = newToken.accessToken;
               expiresAt = newToken.expiresAt;
+              isExpired = false;
             } else {
               console.log(
                 `[Storage Connections] Failed to refresh token for ${account.providerId}`,

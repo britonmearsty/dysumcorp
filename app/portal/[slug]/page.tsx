@@ -75,14 +75,17 @@ export default function PublicPortalPage() {
   const [uploading, setUploading] = useState(false);
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [completedFiles, setCompletedFiles] = useState<UploadFile[]>([]);
-  const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle");
+  const [uploadStatus, setUploadStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [uploaderName, setUploaderName] = useState("");
   const [uploaderEmail, setUploaderEmail] = useState("");
   const [portalPassword, setPortalPassword] = useState("");
   const [textboxValue, setTextboxValue] = useState("");
-  const [sentFiles, setSentFiles] = useState<Array<{ name: string; size: number; type: string }>>([]);
-
+  const [sentFiles, setSentFiles] = useState<
+    Array<{ name: string; size: number; type: string }>
+  >([]);
 
   useEffect(() => {
     fetchPortal();
@@ -93,13 +96,13 @@ export default function PublicPortalPage() {
     if (portal && authenticated && portal.welcomeToastMessage) {
       const delay = portal.welcomeToastDelay || 1000;
       const duration = portal.welcomeToastDuration || 3000;
-      
+
       const timer = setTimeout(() => {
         toast(portal.welcomeToastMessage, {
           duration: duration,
         });
       }, delay);
-      
+
       return () => clearTimeout(timer);
     }
   }, [portal, authenticated]);
@@ -166,20 +169,80 @@ export default function PublicPortalPage() {
 
     // Extension → MIME category map for browsers that report empty file.type
     const extToCategory: Record<string, string> = {
-      mp3: "audio", wav: "audio", ogg: "audio", flac: "audio",
-      aac: "audio", m4a: "audio", wma: "audio", opus: "audio",
-      mp4: "video", mov: "video", avi: "video", mkv: "video", webm: "video",
-      wmv: "video", flv: "video", m4v: "video",
-      jpg: "image", jpeg: "image", png: "image", gif: "image", webp: "image",
-      svg: "image", bmp: "image", ico: "image", tiff: "image",
+      mp3: "audio",
+      wav: "audio",
+      ogg: "audio",
+      flac: "audio",
+      aac: "audio",
+      m4a: "audio",
+      wma: "audio",
+      opus: "audio",
+      mp4: "video",
+      mov: "video",
+      avi: "video",
+      mkv: "video",
+      webm: "video",
+      wmv: "video",
+      flv: "video",
+      m4v: "video",
+      jpg: "image",
+      jpeg: "image",
+      png: "image",
+      gif: "image",
+      webp: "image",
+      svg: "image",
+      bmp: "image",
+      ico: "image",
+      tiff: "image",
     };
 
     const textExtensions = [
-      "txt", "md", "markdown", "js", "jsx", "ts", "tsx", "json", "html", "htm",
-      "css", "scss", "sass", "less", "xml", "yaml", "yml", "csv", "log", "py",
-      "rb", "php", "java", "c", "cpp", "h", "hpp", "cs", "go", "rs", "swift",
-      "kt", "sql", "sh", "bash", "zsh", "ps1", "bat", "cmd", "ini", "conf",
-      "cfg", "toml", "env", "gitignore", "dockerfile",
+      "txt",
+      "md",
+      "markdown",
+      "js",
+      "jsx",
+      "ts",
+      "tsx",
+      "json",
+      "html",
+      "htm",
+      "css",
+      "scss",
+      "sass",
+      "less",
+      "xml",
+      "yaml",
+      "yml",
+      "csv",
+      "log",
+      "py",
+      "rb",
+      "php",
+      "java",
+      "c",
+      "cpp",
+      "h",
+      "hpp",
+      "cs",
+      "go",
+      "rs",
+      "swift",
+      "kt",
+      "sql",
+      "sh",
+      "bash",
+      "zsh",
+      "ps1",
+      "bat",
+      "cmd",
+      "ini",
+      "conf",
+      "cfg",
+      "toml",
+      "env",
+      "gitignore",
+      "dockerfile",
     ];
 
     return allowedTypes.some((allowedType) => {
@@ -188,7 +251,10 @@ export default function PublicPortalPage() {
       if (allowed.endsWith("/*")) {
         const baseType = allowed.replace("/*", "");
         if (baseType === "text") {
-          return textExtensions.includes(fileExtension) || fileType.startsWith("text");
+          return (
+            textExtensions.includes(fileExtension) ||
+            fileType.startsWith("text")
+          );
         }
         // Match by MIME type, or fall back to extension category when file.type is empty
         if (fileType) return fileType.startsWith(baseType);
@@ -215,7 +281,10 @@ export default function PublicPortalPage() {
 
     const newFiles: UploadFile[] = selectedFiles.map((file) => {
       // Check file type
-      if (portalAllowedTypes.length > 0 && !isFileTypeAllowed(file, portalAllowedTypes)) {
+      if (
+        portalAllowedTypes.length > 0 &&
+        !isFileTypeAllowed(file, portalAllowedTypes)
+      ) {
         return {
           id: Math.random().toString(36).slice(2),
           file,
@@ -288,8 +357,14 @@ export default function PublicPortalPage() {
       }
     }
 
-    if (portal.textboxSectionEnabled && portal.textboxSectionRequired && !textboxValue.trim()) {
-      setErrorMessage(`Please fill in the ${portal.textboxSectionTitle || "Notes"} field`);
+    if (
+      portal.textboxSectionEnabled &&
+      portal.textboxSectionRequired &&
+      !textboxValue.trim()
+    ) {
+      setErrorMessage(
+        `Please fill in the ${portal.textboxSectionTitle || "Notes"} field`,
+      );
       setUploadStatus("error");
       return;
     }
@@ -300,7 +375,11 @@ export default function PublicPortalPage() {
 
     // Mark all pending files as uploading
     setFiles((prev) =>
-      prev.map((f) => (f.status === "pending" ? { ...f, status: "uploading" as const, progress: 0 } : f))
+      prev.map((f) =>
+        f.status === "pending"
+          ? { ...f, status: "uploading" as const, progress: 0 }
+          : f,
+      ),
     );
 
     const successful: Array<{ name: string; size: number; type: string }> = [];
@@ -318,7 +397,9 @@ export default function PublicPortalPage() {
             const fileId = validFiles[fileIndex]?.id;
             if (!fileId) return;
             setFiles((prev) =>
-              prev.map((f) => (f.id === fileId ? { ...f, progress: Math.floor(progress) } : f))
+              prev.map((f) =>
+                f.id === fileId ? { ...f, progress: Math.floor(progress) } : f,
+              ),
             );
           },
           // Fires immediately when each file finishes — moves it to the drawer right away
@@ -326,15 +407,27 @@ export default function PublicPortalPage() {
             const uploadFile = validFiles[fileIndex];
             if (!uploadFile) return;
             if (result.success) {
-              successful.push({ name: uploadFile.file.name, size: uploadFile.file.size, type: uploadFile.file.type });
+              successful.push({
+                name: uploadFile.file.name,
+                size: uploadFile.file.size,
+                type: uploadFile.file.type,
+              });
               // Mark done, then after a short flash move to completed drawer
               setFiles((prev) =>
-                prev.map((f) => (f.id === uploadFile.id ? { ...f, progress: 100, status: "done" as const } : f))
+                prev.map((f) =>
+                  f.id === uploadFile.id
+                    ? { ...f, progress: 100, status: "done" as const }
+                    : f,
+                ),
               );
               setTimeout(() => {
                 setFiles((prev) => {
                   const completed = prev.find((f) => f.id === uploadFile.id);
-                  if (completed) setCompletedFiles((c) => [...c, { ...completed, progress: 100, status: "done" as const }]);
+                  if (completed)
+                    setCompletedFiles((c) => [
+                      ...c,
+                      { ...completed, progress: 100, status: "done" as const },
+                    ]);
                   return prev.filter((f) => f.id !== uploadFile.id);
                 });
               }, 600);
@@ -342,13 +435,18 @@ export default function PublicPortalPage() {
               setFiles((prev) =>
                 prev.map((f) =>
                   f.id === uploadFile.id
-                    ? { ...f, status: "error" as const, error: result.error ?? "Upload failed", progress: 0 }
-                    : f
-                )
+                    ? {
+                        ...f,
+                        status: "error" as const,
+                        error: result.error ?? "Upload failed",
+                        progress: 0,
+                      }
+                    : f,
+                ),
               );
             }
           },
-        }
+        },
       );
 
       if (successful.length > 0) {
@@ -359,7 +457,10 @@ export default function PublicPortalPage() {
         setUploadStatus("error");
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Upload failed. Please try again.";
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : "Upload failed. Please try again.";
       setErrorMessage(errorMsg);
       setUploadStatus("error");
     } finally {
@@ -380,21 +481,30 @@ export default function PublicPortalPage() {
         className="min-h-screen flex items-center justify-center"
         style={{ background: portal?.backgroundColor || "#f1f5f9" }}
       >
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: portal?.primaryColor || "#6366f1" }} />
+        <Loader2
+          className="w-8 h-8 animate-spin"
+          style={{ color: portal?.primaryColor || "#6366f1" }}
+        />
       </div>
     );
   }
 
   if (!portal) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#f1f5f9" }}>
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "#f1f5f9" }}
+      >
         <div className="text-center max-w-sm px-6">
           <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-slate-100 flex items-center justify-center">
             <AlertCircle className="w-8 h-8 text-slate-400" />
           </div>
-          <h1 className="text-xl font-bold mb-2 text-slate-800">Portal Unavailable</h1>
+          <h1 className="text-xl font-bold mb-2 text-slate-800">
+            Portal Unavailable
+          </h1>
           <p className="text-slate-500 text-sm leading-relaxed">
-            This portal is not currently accepting uploads. Please contact the portal owner for assistance.
+            This portal is not currently accepting uploads. Please contact the
+            portal owner for assistance.
           </p>
         </div>
       </div>
@@ -417,9 +527,16 @@ export default function PublicPortalPage() {
         >
           <div className="text-center mb-6">
             {portal.logoUrl && (
-              <img alt={portal.name} className="w-16 h-16 mx-auto mb-4 object-contain" src={portal.logoUrl} />
+              <img
+                alt={portal.name}
+                className="w-16 h-16 mx-auto mb-4 object-contain"
+                src={portal.logoUrl}
+              />
             )}
-            <h1 className="text-2xl font-bold" style={{ color: portal.textColor }}>
+            <h1
+              className="text-2xl font-bold"
+              style={{ color: portal.textColor }}
+            >
               {portal.name}
             </h1>
             <p className="mt-2 text-sm" style={{ color: portal.textColor }}>
@@ -446,7 +563,9 @@ export default function PublicPortalPage() {
                 onChange={(e) => setPortalPassword(e.target.value)}
               />
             </div>
-            {passwordError && <p className="text-sm font-bold text-red-500">{passwordError}</p>}
+            {passwordError && (
+              <p className="text-sm font-bold text-red-500">{passwordError}</p>
+            )}
             <PortalButton
               primaryColor={portal.primaryColor}
               secondaryColor={portal.secondaryColor}
@@ -463,7 +582,10 @@ export default function PublicPortalPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: portal.backgroundColor }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ background: portal.backgroundColor }}
+    >
       {/* Toast Notifications */}
       <Toaster
         position="top-center"
@@ -507,8 +629,11 @@ export default function PublicPortalPage() {
             />
           ) : (
             <div
-              className="rounded-2xl overflow-hidden bg-white border shadow-md"
-              style={{ borderColor: `${portal.primaryColor}20` }}
+              className="rounded-2xl overflow-hidden border shadow-md"
+              style={{
+                backgroundColor: portal.cardBackgroundColor || "#ffffff",
+                borderColor: `${portal.primaryColor}20`,
+              }}
             >
               <div className="p-8 space-y-5">
                 {/* Name */}
@@ -585,28 +710,31 @@ export default function PublicPortalPage() {
                       uploading={uploading}
                     />
 
-                    {!uploading && files.filter((f) => f.status === "pending").length > 0 && (
-                      <PortalButton
-                        primaryColor={portal.primaryColor}
-                        secondaryColor={portal.secondaryColor}
-                        gradientEnabled={portal.gradientEnabled}
-                        onClick={handleUpload}
-                        icon={<Upload className="w-4 h-4" />}
-                      >
-                        {portal.submitButtonText}
-                      </PortalButton>
-                    )}
+                    {!uploading &&
+                      files.filter((f) => f.status === "pending").length >
+                        0 && (
+                        <PortalButton
+                          primaryColor={portal.primaryColor}
+                          secondaryColor={portal.secondaryColor}
+                          gradientEnabled={portal.gradientEnabled}
+                          onClick={handleUpload}
+                          icon={<Upload className="w-4 h-4" />}
+                        >
+                          {portal.submitButtonText}
+                        </PortalButton>
+                      )}
                   </>
                 )}
 
                 {/* Error Message */}
-                {errorMessage && (uploadStatus === "error" || uploadStatus === "idle") && (
-                  <div className="p-4 rounded-xl border border-red-200 bg-red-50">
-                    <p className="text-red-600 text-sm font-semibold flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4" /> {errorMessage}
-                    </p>
-                  </div>
-                )}
+                {errorMessage &&
+                  (uploadStatus === "error" || uploadStatus === "idle") && (
+                    <div className="p-4 rounded-xl border border-red-200 bg-red-50">
+                      <p className="text-red-600 text-sm font-semibold flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" /> {errorMessage}
+                      </p>
+                    </div>
+                  )}
               </div>
             </div>
           )}
@@ -616,8 +744,12 @@ export default function PublicPortalPage() {
             className="mt-8 p-4 rounded-2xl border bg-white/50 text-center shadow-sm"
             style={{ borderColor: `${portal.primaryColor}20` }}
           >
-            <p className="text-sm flex items-center justify-center gap-2" style={{ color: portal.textColor }}>
-              <Lock className="w-4 h-4" /> Your files are encrypted and securely stored
+            <p
+              className="text-sm flex items-center justify-center gap-2"
+              style={{ color: portal.textColor }}
+            >
+              <Lock className="w-4 h-4" /> Your files are encrypted and securely
+              stored
             </p>
           </div>
         </div>
@@ -626,10 +758,16 @@ export default function PublicPortalPage() {
       {/* Footer */}
       <footer className="w-full py-5 px-6 border-t border-slate-200 bg-white flex flex-col items-center gap-1">
         <div className="flex items-center gap-1">
-          <span className="text-slate-400 text-xs">Secure file delivery powered by</span>
-          <span className="text-slate-700 text-xs ml-1 font-bold">Dysumcorp</span>
+          <span className="text-slate-400 text-xs">
+            Secure file delivery powered by
+          </span>
+          <span className="text-slate-700 text-xs ml-1 font-bold">
+            Dysumcorp
+          </span>
         </div>
-        <span className="text-slate-300 text-xs">© 2026 Dysumcorp · All rights reserved.</span>
+        <span className="text-slate-300 text-xs">
+          © 2026 Dysumcorp · All rights reserved.
+        </span>
       </footer>
     </div>
   );
