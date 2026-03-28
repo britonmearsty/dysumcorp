@@ -23,7 +23,6 @@ export async function POST(request: Request) {
     });
 
     if (!user?.creemCustomerId) {
-      // Check if user is on trial (waiting to be charged)
       if (user?.subscriptionStatus === "trialing") {
         return NextResponse.json(
           {
@@ -34,7 +33,6 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-      // Free user exploring
       if (user?.subscriptionPlan === "trial") {
         return NextResponse.json(
           {
@@ -61,19 +59,24 @@ export async function POST(request: Request) {
 
     console.log("[Portal] Creating portal for customer:", user.creemCustomerId);
 
-    const response = await fetch("https://api.creem.io/v1/customers/portal", {
+    const response = await fetch("https://api.creem.io/v1/customers/billing", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: creemApiKey,
+        "x-api-key": creemApiKey,
       },
       body: JSON.stringify({
         customer_id: user.creemCustomerId,
-        return_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/billing`,
       }),
     });
 
-    const data = await response.json();
+    let data;
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      data = { message: await response.text() };
+    }
 
     console.log("[Portal] Creem response:", response.status, data);
 
@@ -89,14 +92,16 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!data.url) {
+    const portalUrl = data.customer_portal_link;
+
+    if (!portalUrl) {
       return NextResponse.json(
-        { error: "No portal URL returned" },
+        { error: "No portal URL returned from Creem" },
         { status: 500 },
       );
     }
 
-    return NextResponse.json({ url: data.url });
+    return NextResponse.json({ url: portalUrl });
   } catch (error) {
     console.error("Portal session error:", error);
     return NextResponse.json(
