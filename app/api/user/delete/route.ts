@@ -22,6 +22,12 @@ export async function DELETE(req: NextRequest) {
       },
     });
 
+    const userPortals = await prisma.portal.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const portalIds = userPortals.map((p) => p.id);
+
     await prisma.$transaction([
       prisma.session.deleteMany({ where: { userId } }),
       prisma.account.deleteMany({ where: { userId } }),
@@ -33,7 +39,13 @@ export async function DELETE(req: NextRequest) {
       }),
       prisma.portal.deleteMany({ where: { userId } }),
       prisma.usageTracking.deleteMany({ where: { userId } }),
-      prisma.r2StagingUpload.deleteMany({ where: { userId } }),
+      ...(portalIds.length > 0
+        ? [
+            prisma.r2StagingUpload.deleteMany({
+              where: { portalId: { in: portalIds } },
+            }),
+          ]
+        : []),
     ]);
 
     await prisma.user.update({
