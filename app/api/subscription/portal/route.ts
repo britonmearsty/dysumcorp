@@ -58,12 +58,19 @@ export async function POST(request: Request) {
     }
 
     console.log("[Portal] Creating portal for customer:", user.creemCustomerId);
+    console.log("[Portal] API Key prefix:", creemApiKey?.substring(0, 8));
+
+    // Check if using test API key in production
+    const isTestKey = creemApiKey?.startsWith("test_");
+    if (isTestKey) {
+      console.warn("[Portal] WARNING: Using test API key in production!");
+    }
 
     const response = await fetch("https://api.creem.io/v1/customers/billing", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": creemApiKey,
+        "x-api-key": creemApiKey!,
       },
       body: JSON.stringify({
         customer_id: user.creemCustomerId,
@@ -79,6 +86,20 @@ export async function POST(request: Request) {
     }
 
     console.log("[Portal] Creem response:", response.status, data);
+
+    // 403 usually means API key issue - provide more context
+    if (response.status === 403) {
+      return NextResponse.json(
+        {
+          error:
+            "Unable to access billing portal. Please verify your API key has the correct permissions in Creem dashboard.",
+          code: "API_KEY_FORBIDDEN",
+          details: data,
+          hint: "Check that your CREEM_API_KEY has 'write' permissions in Creem settings",
+        },
+        { status: 403 },
+      );
+    }
 
     if (!response.ok) {
       console.error("Creem portal error:", data);

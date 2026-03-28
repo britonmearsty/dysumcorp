@@ -177,11 +177,7 @@ export default function DashboardPage() {
   const handleToggleActive = async (
     portalId: string,
     currentStatus: boolean,
-    e: React.MouseEvent,
   ) => {
-    e.preventDefault();
-    e.stopPropagation();
-
     // If trying to activate (turn on), check if they're at trial limit
     if (!currentStatus) {
       const response = await fetch("/api/access");
@@ -613,18 +609,7 @@ export default function DashboardPage() {
                       checked={portal.isActive}
                       loading={togglingPortal === portal.id}
                       onCheckedChange={(checked) => {
-                        const mockEvent = {
-                          stopPropagation: () => {},
-                        } as unknown as React.MouseEvent;
-
-                        handleToggleActive(
-                          portal.id,
-                          Boolean(checked),
-                          mockEvent,
-                        );
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
+                        handleToggleActive(portal.id, Boolean(checked));
                       }}
                     />
                     <Button
