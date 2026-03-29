@@ -2,13 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 export interface AccessResult {
   allowed: boolean;
-  reason:
-    | "active_subscription"
-    | "trialing"
-    | "limited_trial"
-    | "no_subscription"
-    | "expired"
-    | "trial_limit_exceeded";
+  reason: "active_subscription" | "trialing" | "no_subscription" | "expired";
   fileCount?: number;
   fileLimit?: number;
 }
@@ -21,7 +15,7 @@ export interface AccessResult {
  * Allowed states:
  *   - pro + active    → paid subscriber
  *   - pro + trialing  → card on file, within 7-day trial (Creem will charge on day 7)
- *   - trial + not over file limit → can create 1 portal, limited to 15 files
+ *   - anything else   → no access, need to subscribe
  */
 export async function checkAccess(userId: string): Promise<AccessResult> {
   const user = await prisma.user.findUnique({
@@ -29,8 +23,6 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
     select: {
       subscriptionPlan: true,
       subscriptionStatus: true,
-      trialFileLimit: true,
-      trialFileCount: true,
       status: true,
     },
   });
@@ -51,27 +43,16 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
     return { allowed: true, reason: "active_subscription" };
   }
 
+  // Pro trial - 7-day free trial before billing
   if (plan === "pro" && status === "trialing") {
     return { allowed: true, reason: "trialing" };
   }
 
-  // Trial users - check file limit
-  if (plan === "trial") {
-    if (user.trialFileCount >= user.trialFileLimit) {
-      return {
-        allowed: false,
-        reason: "trial_limit_exceeded",
-        fileCount: user.trialFileCount,
-        fileLimit: user.trialFileLimit,
-      };
-    }
-    return { allowed: true, reason: "limited_trial" };
-  }
-
-  // Expired or no subscription
+  // Expired subscription
   if (status === "cancelled" || plan === "expired") {
     return { allowed: false, reason: "expired" };
   }
 
+  // No subscription - need to subscribe
   return { allowed: false, reason: "no_subscription" };
 }

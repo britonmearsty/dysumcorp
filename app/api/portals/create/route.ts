@@ -19,33 +19,8 @@ export async function POST(request: Request) {
     // Check subscription access
     const access = await checkAccess(userId);
 
-    // Trial users: check if they already have a portal (limit to 1)
-    if (
-      access.reason === "trialing" ||
-      access.reason === "trial_limit_exceeded"
-    ) {
-      const existingPortalCount = await prisma.portal.count({
-        where: { userId },
-      });
-      if (existingPortalCount >= 1) {
-        return NextResponse.json(
-          {
-            error:
-              "Trial users can only create one portal. Upgrade to create more.",
-            code: "TRIAL_PORTAL_LIMIT",
-            reason: access.reason,
-          },
-          { status: 402 },
-        );
-      }
-    }
-
-    // Non-trial users without subscription need to checkout
-    if (
-      !access.allowed &&
-      access.reason !== "trialing" &&
-      access.reason !== "trial_limit_exceeded"
-    ) {
+    // Users with active subscription or trial can create unlimited portals
+    if (!access.allowed) {
       return NextResponse.json(
         {
           error: "A subscription is required to create portals.",
@@ -148,9 +123,6 @@ export async function POST(request: Request) {
 
     // No password validation - allow any password length
 
-    // Determine if portal should be active based on trial limit
-    const shouldBeInactive = access.reason === "trial_limit_exceeded";
-
     // Get user's default branding and notification settings
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -168,7 +140,7 @@ export async function POST(request: Request) {
         customDomain: customDomain || null,
         whiteLabeled: whiteLabeled || false,
         userId,
-        isActive: !shouldBeInactive,
+        isActive: true,
         // Branding
         primaryColor: primaryColor || "#6366f1",
         secondaryColor: secondaryColor || "#8b5cf6",
@@ -233,7 +205,6 @@ export async function POST(request: Request) {
       success: true,
       portal: portalResponse,
       message: "Portal created successfully",
-      createdAsInactive: shouldBeInactive,
     });
   } catch (error) {
     console.error("[/api/portals/create] Error creating portal:", error);

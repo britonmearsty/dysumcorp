@@ -82,20 +82,10 @@ export async function GET(
       select: {
         subscriptionPlan: true,
         subscriptionStatus: true,
-        trialFileLimit: true,
-        trialFileCount: true,
       },
     });
 
-    if (
-      user &&
-      user.subscriptionPlan === "trial" &&
-      user.trialFileCount >= user.trialFileLimit
-    ) {
-      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
-    }
-
-    // Determine if owner is a subscriber (pro plan with active subscription)
+    // Determine if owner is a subscriber (pro plan with active or trialing subscription)
     const isSubscriber =
       user?.subscriptionPlan === "pro" && user?.subscriptionStatus === "active";
 

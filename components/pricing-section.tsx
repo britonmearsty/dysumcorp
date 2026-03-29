@@ -9,26 +9,12 @@ import { PRICING_PLANS } from "@/config/pricing";
 
 const pricingPlans = [
   {
-    name: "14-Day Free Trial",
-    description: "Try everything free, no credit card required",
-    price: "0",
-    period: "/14 days",
-    cta: "Start Free Trial",
-    popular: false,
-    features: [
-      "Full access to all Pro features",
-      "Unlimited portals during trial",
-      "Google Drive & Dropbox integration",
-      "Custom branding & white-labeling",
-      "Password protection & expiring links",
-      "No credit card required",
-    ],
-  },
-  {
     ...PRICING_PLANS.pro,
+    name: "Pro",
+    description: "Start with 7-day free trial, then $10/month",
     price: "10",
     period: "/month",
-    cta: "Upgrade to Pro",
+    cta: "Start Free Trial",
     popular: true,
   },
 ];
@@ -56,7 +42,7 @@ export default function PricingSection() {
         </FadeIn>
 
         <Stagger
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 max-w-3xl mx-auto"
+          className="grid grid-cols-1 gap-6 lg:gap-8 max-w-md mx-auto"
           delay={0.15}
         >
           {pricingPlans.map((plan, index) => (

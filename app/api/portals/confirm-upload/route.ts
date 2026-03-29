@@ -167,27 +167,6 @@ export async function POST(request: NextRequest) {
 
     console.log("[Portal Confirm Upload] File metadata saved:", file.id);
 
-    // Increment trial file count for trial users
-    if (portal.user.subscriptionPlan === "trial") {
-      const updatedUser = await prisma.user.update({
-        where: { id: portal.userId },
-        data: { trialFileCount: { increment: 1 } },
-        select: { trialFileCount: true, trialFileLimit: true },
-      });
-      console.log("[Portal Confirm Upload] Trial file count incremented");
-
-      // If trial limit exceeded, deactivate all user's portals
-      if (updatedUser.trialFileCount >= updatedUser.trialFileLimit) {
-        await prisma.portal.updateMany({
-          where: { userId: portal.userId, isActive: true },
-          data: { isActive: false },
-        });
-        console.log(
-          "[Portal Confirm Upload] Trial limit exceeded - portals deactivated",
-        );
-      }
-    }
-
     return NextResponse.json({
       success: true,
       file: {

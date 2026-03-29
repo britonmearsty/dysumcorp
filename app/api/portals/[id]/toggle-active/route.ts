@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
+import { checkAccess } from "@/lib/trial";
 
 // POST /api/portals/[id]/toggle-active - Toggle portal active status
 export async function POST(
@@ -28,31 +29,16 @@ export async function POST(
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
-    // Check if trying to activate a portal that's currently inactive
+    // If trying to activate (turn ON), check subscription
     if (!existingPortal.isActive) {
-      // Check trial file limit for trial users
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          subscriptionPlan: true,
-          trialFileLimit: true,
-          trialFileCount: true,
-        },
-      });
-
-      if (
-        user &&
-        user.subscriptionPlan === "trial" &&
-        user.trialFileCount >= user.trialFileLimit
-      ) {
+      const access = await checkAccess(session.user.id);
+      if (!access.allowed) {
         return NextResponse.json(
           {
-            error: "Trial file limit exceeded",
-            reason: "trial_limit_exceeded",
-            fileCount: user.trialFileCount,
-            fileLimit: user.trialFileLimit,
+            error: "A subscription is required to activate portals.",
+            code: "SUBSCRIPTION_REQUIRED",
           },
-          { status: 403 },
+          { status: 402 },
         );
       }
     }

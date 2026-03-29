@@ -24,7 +24,7 @@ export default function DashboardRootLayout({
         setAccess(data);
       }
     } catch {
-      // On error, allow access — don't block the dashboard
+      // On error, allow access
     } finally {
       setAccessLoading(false);
     }
@@ -51,10 +51,7 @@ export default function DashboardRootLayout({
   return (
     <div className="flex flex-col min-h-screen">
       {/* Trial banner shown when user is in their 7-day trial */}
-      {(access?.reason === "trialing" ||
-        access?.reason === "limited_trial") && (
-        <TrialBanner isLimitedTrial={access?.reason === "limited_trial"} />
-      )}
+      {access?.reason === "trialing" && <TrialBanner />}
       <div className="flex-1">
         <DashboardLayout>{children}</DashboardLayout>
       </div>

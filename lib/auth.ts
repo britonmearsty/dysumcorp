@@ -227,6 +227,20 @@ export const auth = betterAuth({
       onRevokeAccess: async ({ customer }) => {
         try {
           if (customer?.email) {
+            // Find the user first
+            const user = await prisma.user.findFirst({
+              where: { email: customer.email },
+              select: { id: true },
+            });
+
+            if (user) {
+              // Deactivate all their portals
+              await prisma.portal.updateMany({
+                where: { userId: user.id },
+                data: { isActive: false },
+              });
+            }
+
             // Set to expired rather than reverting to free
             await prisma.user.updateMany({
               where: { email: customer.email },

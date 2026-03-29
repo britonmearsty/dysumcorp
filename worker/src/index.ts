@@ -87,8 +87,15 @@ export async function validateUploadToken(
 
     // Fixed key order — same as generateUploadToken in lib/upload-tokens.ts
     const canonicalJson = JSON.stringify(dataToSign, [
-      "portalId", "fileName", "fileSize", "mimeType",
-      "uploaderEmail", "uploaderName", "uploaderNotes", "stagingKey", "expiresAt",
+      "portalId",
+      "fileName",
+      "fileSize",
+      "mimeType",
+      "uploaderEmail",
+      "uploaderName",
+      "uploaderNotes",
+      "stagingKey",
+      "expiresAt",
     ]);
     const expected = await hmacSign(secret, canonicalJson);
 
@@ -118,7 +125,10 @@ export async function getR2RangeStream(
   const obj = await bucket.get(key, {
     range: { offset, length },
   });
-  if (!obj) throw new Error(`R2 range read failed: key=${key} offset=${offset} length=${length}`);
+  if (!obj)
+    throw new Error(
+      `R2 range read failed: key=${key} offset=${offset} length=${length}`,
+    );
   return obj;
 }
 
@@ -148,7 +158,9 @@ async function uploadToGoogleDrive(
   const t0 = Date.now();
   const ms = () => `${Date.now() - t0}ms`;
 
-  console.log(`[drive:${id}] START fileName="${fileName}" size=${fileSize} chunk=${CHUNK_SIZE}`);
+  console.log(
+    `[drive:${id}] START fileName="${fileName}" size=${fileSize} chunk=${CHUNK_SIZE}`,
+  );
 
   // Initiate resumable upload session
   const initRes = await fetch(
@@ -171,7 +183,8 @@ async function uploadToGoogleDrive(
   }
 
   const uploadUrl = initRes.headers.get("Location");
-  if (!uploadUrl) throw new Error("Drive did not return a resumable upload URL");
+  if (!uploadUrl)
+    throw new Error("Drive did not return a resumable upload URL");
   console.log(`[drive:${id}] ✓ resumable URL obtained (${ms()})`);
 
   // Upload chunks sequentially using R2 range reads streamed directly to Drive
@@ -186,7 +199,9 @@ async function uploadToGoogleDrive(
     const r2Obj = await getR2RangeStream(bucket, stagingKey, offset, length);
     const rangeEnd = offset + length - 1;
 
-    console.log(`[drive:${id}] chunk ${chunkNum}: bytes ${offset}-${rangeEnd}/${fileSize} (${length}b)`);
+    console.log(
+      `[drive:${id}] chunk ${chunkNum}: bytes ${offset}-${rangeEnd}/${fileSize} (${length}b)`,
+    );
 
     const res = await fetch(uploadUrl, {
       method: "PUT",
@@ -208,13 +223,17 @@ async function uploadToGoogleDrive(
         const text = await res.text();
         throw new Error(`Drive final chunk failed: ${res.status} ${text}`);
       }
-      const result = await res.json() as { id: string; webViewLink?: string };
-      console.log(`[drive:${id}] ✓ DONE fileId=${result.id} total=${ms()} chunks=${chunkNum}`);
+      const result = (await res.json()) as { id: string; webViewLink?: string };
+      console.log(
+        `[drive:${id}] ✓ DONE fileId=${result.id} total=${ms()} chunks=${chunkNum}`,
+      );
       return result;
     } else {
       if (res.status !== 308 && !res.ok) {
         const text = await res.text();
-        throw new Error(`Drive chunk ${chunkNum} failed: ${res.status} ${text}`);
+        throw new Error(
+          `Drive chunk ${chunkNum} failed: ${res.status} ${text}`,
+        );
       }
       offset += length;
     }
@@ -238,7 +257,9 @@ async function uploadToDropbox(
   const ms = () => `${Date.now() - t0}ms`;
 
   const path = `${folderPath.startsWith("/") ? "" : "/"}${folderPath}/${fileName}`;
-  console.log(`[dropbox:${id}] START fileName="${fileName}" size=${fileSize} chunk=${CHUNK_SIZE} path=${path}`);
+  console.log(
+    `[dropbox:${id}] START fileName="${fileName}" size=${fileSize} chunk=${CHUNK_SIZE} path=${path}`,
+  );
 
   // Start upload session
   const startRes = await fetch(
@@ -259,7 +280,7 @@ async function uploadToDropbox(
     throw new Error(`Dropbox session start failed: ${startRes.status} ${text}`);
   }
 
-  const { session_id } = await startRes.json() as { session_id: string };
+  const { session_id } = (await startRes.json()) as { session_id: string };
   console.log(`[dropbox:${id}] ✓ session=${session_id} (${ms()})`);
 
   // Upload chunks sequentially using R2 range reads streamed directly to Dropbox
@@ -272,7 +293,9 @@ async function uploadToDropbox(
     chunkNum++;
 
     const r2Obj = await getR2RangeStream(bucket, stagingKey, offset, length);
-    console.log(`[dropbox:${id}] chunk ${chunkNum}: offset=${offset} size=${length} isLast=${isLast}`);
+    console.log(
+      `[dropbox:${id}] chunk ${chunkNum}: offset=${offset} size=${length} isLast=${isLast}`,
+    );
 
     if (isLast) {
       const finishRes = await fetch(
@@ -301,8 +324,10 @@ async function uploadToDropbox(
         throw new Error(`Dropbox finish failed: ${finishRes.status} ${text}`);
       }
 
-      const result = await finishRes.json() as { id: string; name: string };
-      console.log(`[dropbox:${id}] ✓ DONE fileId=${result.id} total=${ms()} chunks=${chunkNum}`);
+      const result = (await finishRes.json()) as { id: string; name: string };
+      console.log(
+        `[dropbox:${id}] ✓ DONE fileId=${result.id} total=${ms()} chunks=${chunkNum}`,
+      );
       return result;
     } else {
       const appendRes = await fetch(
@@ -328,7 +353,9 @@ async function uploadToDropbox(
 
       if (!appendRes.ok) {
         const text = await appendRes.text();
-        throw new Error(`Dropbox append ${chunkNum} failed: ${appendRes.status} ${text}`);
+        throw new Error(
+          `Dropbox append ${chunkNum} failed: ${appendRes.status} ${text}`,
+        );
       }
 
       offset += length;
@@ -382,7 +409,9 @@ async function runTransfer(
   const t0 = Date.now();
   const ms = () => `${Date.now() - t0}ms`;
 
-  console.log(`[transfer:${tid}] START key=${stagingKey} file="${fileName}" size=${fileSize}`);
+  console.log(
+    `[transfer:${tid}] START key=${stagingKey} file="${fileName}" size=${fileSize}`,
+  );
 
   async function postCallback(payload: Record<string, unknown>) {
     try {
@@ -392,7 +421,10 @@ async function runTransfer(
         body: JSON.stringify({ workerSecret: env.WORKER_SECRET, ...payload }),
       });
       if (!res.ok) {
-        console.error(`[transfer:${tid}] callback ${res.status}:`, await res.text());
+        console.error(
+          `[transfer:${tid}] callback ${res.status}:`,
+          await res.text(),
+        );
       } else {
         console.log(`[transfer:${tid}] callback ✓ ${res.status}`);
       }
@@ -403,53 +435,116 @@ async function runTransfer(
 
   try {
     // 1. Validate token
-    const token = await validateUploadToken(uploadToken, env.BETTER_AUTH_SECRET);
+    const token = await validateUploadToken(
+      uploadToken,
+      env.BETTER_AUTH_SECRET,
+    );
     if (!token) {
-      await postCallback({ stagingKey, status: "failed", error: "Invalid upload token" });
+      await postCallback({
+        stagingKey,
+        status: "failed",
+        error: "Invalid upload token",
+      });
       return;
     }
     if (token.stagingKey !== stagingKey) {
-      await postCallback({ stagingKey, status: "failed", error: "stagingKey mismatch" });
+      await postCallback({
+        stagingKey,
+        status: "failed",
+        error: "stagingKey mismatch",
+      });
       return;
     }
     console.log(`[transfer:${tid}] ✓ token valid (${ms()})`);
 
     // 2. Get storage credentials from Vercel
-    const ctxRes = await fetch(`${env.VERCEL_APP_URL}/api/portals/r2-worker-context`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        uploadToken,
-        uploaderName,
-        workerSecret: env.WORKER_SECRET,
-        // Pass pre-resolved folder so the server skips folder creation
-        parentFolderId: preResolvedFolderId,
-        folderPath: preResolvedFolderPath,
-      }),
-    });
+    console.log(
+      `[transfer:${tid}] → fetching Vercel context, VERCEL_APP_URL=${env.VERCEL_APP_URL}, WORKER_SECRET present=${!!env.WORKER_SECRET}`,
+    );
 
-    if (!ctxRes.ok) {
-      const text = await ctxRes.text();
-      await postCallback({ stagingKey, status: "failed", error: `Context fetch failed: ${ctxRes.status} ${text}` });
+    let ctxRes: Response;
+    try {
+      ctxRes = await fetch(
+        `${env.VERCEL_APP_URL}/api/portals/r2-worker-context`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            uploadToken,
+            uploaderName,
+            workerSecret: env.WORKER_SECRET,
+            // Pass pre-resolved folder so the server skips folder creation
+            parentFolderId: preResolvedFolderId,
+            folderPath: preResolvedFolderPath,
+          }),
+        },
+      );
+    } catch (fetchErr) {
+      console.error(`[transfer:${tid}] ❌ ctx fetch threw:`, fetchErr);
+      await postCallback({
+        stagingKey,
+        status: "failed",
+        error: `Context fetch exception: ${fetchErr}`,
+      });
       return;
     }
 
-    const ctx = await ctxRes.json() as {
+    console.log(`[transfer:${tid}] ← ctx response status=${ctxRes.status}`);
+
+    if (!ctxRes.ok) {
+      const text = await ctxRes.text();
+      console.error(
+        `[transfer:${tid}] ❌ ctx fetch failed: ${ctxRes.status} ${text}`,
+      );
+      await postCallback({
+        stagingKey,
+        status: "failed",
+        error: `Context fetch failed: ${ctxRes.status} ${text}`,
+      });
+      return;
+    }
+
+    let ctx: {
       provider: "google" | "dropbox";
       accessToken: string;
       parentFolderId: string;
       folderPath: string;
       portalName: string;
     };
-    console.log(`[transfer:${tid}] ✓ context: provider=${ctx.provider} parentFolderId=${ctx.parentFolderId} (${ms()})`);
+    try {
+      ctx = await ctxRes.json();
+      console.log(
+        `[transfer:${tid}] ✓ context: provider=${ctx.provider} parentFolderId=${ctx.parentFolderId} (${ms()})`,
+      );
+    } catch (jsonErr) {
+      const text = await ctxRes.text();
+      console.error(
+        `[transfer:${tid}] ❌ ctx JSON parse failed:`,
+        jsonErr,
+        "body:",
+        text,
+      );
+      await postCallback({
+        stagingKey,
+        status: "failed",
+        error: `Context JSON parse failed: ${jsonErr}`,
+      });
+      return;
+    }
 
     // 3. Verify R2 object exists
     const r2Head = await env.R2_BUCKET.head(stagingKey);
     if (!r2Head) {
-      await postCallback({ stagingKey, status: "failed", error: "R2 object not found" });
+      await postCallback({
+        stagingKey,
+        status: "failed",
+        error: "R2 object not found",
+      });
       return;
     }
-    console.log(`[transfer:${tid}] ✓ R2 object exists size=${r2Head.size} (${ms()})`);
+    console.log(
+      `[transfer:${tid}] ✓ R2 object exists size=${r2Head.size} (${ms()})`,
+    );
 
     // 4. Transfer R2 → cloud storage using range reads + chunked upload
     let storageFileId: string;
@@ -466,7 +561,9 @@ async function runTransfer(
         r2Head.size,
       );
       storageFileId = result.id;
-      storageUrl = result.webViewLink ?? `https://drive.google.com/file/d/${result.id}/view`;
+      storageUrl =
+        result.webViewLink ??
+        `https://drive.google.com/file/d/${result.id}/view`;
     } else {
       const result = await uploadToDropbox(
         env.R2_BUCKET,
@@ -479,7 +576,9 @@ async function runTransfer(
       storageFileId = result.id;
       storageUrl = "";
     }
-    console.log(`[transfer:${tid}] ✓ cloud upload done storageFileId=${storageFileId} (${ms()})`);
+    console.log(
+      `[transfer:${tid}] ✓ cloud upload done storageFileId=${storageFileId} (${ms()})`,
+    );
 
     // 5. Delete from R2
     try {
@@ -529,7 +628,8 @@ const ALLOWED_ORIGINS = [
 export { CHUNK_SIZE };
 
 export function corsHeaders(origin: string | null): Record<string, string> {
-  const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowed =
+    origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": allowed,
     "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
@@ -541,7 +641,11 @@ export function corsHeaders(origin: string | null): Record<string, string> {
 // ── Request handler ───────────────────────────────────────────────────────────
 
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<Response> {
     const rid = Math.random().toString(36).slice(2, 8);
     const url = new URL(request.url);
     const origin = request.headers.get("Origin");
@@ -553,9 +657,15 @@ export default {
     }
 
     if (request.method === "GET" && url.pathname === "/health") {
-      return new Response(JSON.stringify({ ok: true, ts: Date.now(), chunkSize: CHUNK_SIZE }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
-      });
+      return new Response(
+        JSON.stringify({ ok: true, ts: Date.now(), chunkSize: CHUNK_SIZE }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders(origin),
+          },
+        },
+      );
     }
 
     if (request.method !== "POST" || url.pathname !== "/transfer") {
@@ -577,26 +687,41 @@ export default {
     if (!uploadToken || !stagingKey) {
       return new Response(
         JSON.stringify({ error: "uploadToken and stagingKey are required" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } },
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders(origin),
+          },
+        },
       );
     }
 
     // Validate token before accepting — fast fail before queuing background work
-    const token = await validateUploadToken(uploadToken, env.BETTER_AUTH_SECRET);
+    const token = await validateUploadToken(
+      uploadToken,
+      env.BETTER_AUTH_SECRET,
+    );
     if (!token) {
-      return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
-      });
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired token" }),
+        {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders(origin),
+          },
+        },
+      );
     }
 
     // Each call to ctx.waitUntil runs independently — multiple files transfer in parallel
     ctx.waitUntil(runTransfer(env, body));
 
     console.log(`[handler:${rid}] ✓ 202 accepted key=${stagingKey}`);
-    return new Response(
-      JSON.stringify({ accepted: true, stagingKey }),
-      { status: 202, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } },
-    );
+    return new Response(JSON.stringify({ accepted: true, stagingKey }), {
+      status: 202,
+      headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
+    });
   },
 };

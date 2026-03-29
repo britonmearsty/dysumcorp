@@ -1196,15 +1196,6 @@ export default function CreatePortalPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [requiresUpgrade, setRequiresUpgrade] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [trialLimitExceeded, setTrialLimitExceeded] = useState<{
-    fileCount: number;
-    fileLimit: number;
-    message: string;
-    context: "create" | "activate";
-    userType: "exploring" | "trial";
-  } | null>(null);
 
   // Storage section state lifted here to survive step navigation
   const [storageFolderPath, setStorageFolderPath] = useState<StorageFolder[]>(
@@ -1722,36 +1713,21 @@ export default function CreatePortalPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Trial limit exceeded - show upgrade modal
+        // No subscription - show upgrade modal
         if (
-          data.code === "TRIAL_LIMIT_EXCEEDED" ||
-          data.code === "TRIAL_PORTAL_LIMIT"
+          data.code === "CHECKOUT_REQUIRED" ||
+          data.code === "SUBSCRIPTION_EXPIRED"
         ) {
-          setTrialLimitExceeded({
-            fileCount: data.fileCount || 0,
-            fileLimit: data.fileLimit || 15,
-            message: data.error,
-            context: "create",
-            userType: data.reason === "trialing" ? "trial" : "exploring",
-          });
-          setShowUpgradeModal(true);
+          showPaywall(
+            userPlan,
+            "Create Portal",
+            "A subscription is required to create portals.",
+          );
           setCurrentStep("identity");
           return;
         }
 
-        if (data.upgrade) {
-          // Show error message with upgrade option
-          setError(
-            data.error ||
-              "Portal limit reached. Please upgrade your plan to continue.",
-          );
-          setRequiresUpgrade(true);
-          setCurrentStep("identity"); // Go back to first step to show error
-        } else {
-          setError(data.error || "Failed to create portal");
-          setRequiresUpgrade(false);
-        }
-
+        setError(data.error || "Failed to create portal");
         return;
       }
 
@@ -2858,7 +2834,7 @@ export default function CreatePortalPage() {
                   <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-destructive font-bold">{error}</p>
-                    {requiresUpgrade && (
+                    {error && (
                       <div className="mt-3 flex items-center gap-3">
                         <Link
                           className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
@@ -2872,7 +2848,6 @@ export default function CreatePortalPage() {
                           type="button"
                           onClick={() => {
                             setError("");
-                            setRequiresUpgrade(false);
                           }}
                         >
                           Dismiss
@@ -2887,231 +2862,8 @@ export default function CreatePortalPage() {
         </main>
       </div>
 
-      {/* Paywall Modal */}
+      {/* Paywall Modal - shown when user needs to subscribe */}
       <PaywallModal />
-
-      {/* Upgrade Modal for Trial Limit Exceeded */}
-      {showUpgradeModal && trialLimitExceeded && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => {
-              setShowUpgradeModal(false);
-              setTrialLimitExceeded(null);
-            }}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative bg-card border border-border rounded-2xl p-6 sm:p-8 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto"
-          >
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-indigo-600 dark:text-indigo-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
-                {trialLimitExceeded.context === "activate"
-                  ? trialLimitExceeded.fileCount > 0
-                    ? `Your portal has received ${trialLimitExceeded.fileCount} files`
-                    : "Start receiving files through your portal"
-                  : "Upgrade to unlock unlimited portals"}
-              </h2>
-              <p className="text-muted-foreground text-sm">
-                {trialLimitExceeded.userType === "trial"
-                  ? "Continue exploring with 7 days free trial. Subscribe to keep your plan going."
-                  : trialLimitExceeded.context === "activate"
-                    ? trialLimitExceeded.fileCount > 0
-                      ? "Upgrade to keep collecting files without interruption. Your card won't be charged for 7 days."
-                      : "Upgrade to start receiving files. Your card won't be charged for 7 days."
-                    : "You've reached your portal limit on the free trial. Upgrade to create unlimited portals and collect files without restrictions."}
-              </p>
-            </div>
-
-            <div className="bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 mb-6">
-              <div className="flex items-center gap-3">
-                <svg
-                  className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-                <div>
-                  <p className="font-semibold text-sm text-indigo-700 dark:text-indigo-300">
-                    Start Your Free Trial
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    No charges for 7 days, then $10/month
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3 mb-6">
-              <div className="flex items-baseline gap-2 justify-center">
-                <span className="text-3xl font-bold text-foreground">$10</span>
-                <span className="text-muted-foreground">/month</span>
-                <span className="text-xs text-green-500 font-medium">
-                  Save 20% annually
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <p className="text-muted-foreground text-xs">Portals</p>
-                  <p className="font-semibold">Unlimited</p>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <p className="text-muted-foreground text-xs">Storage</p>
-                  <p className="font-semibold">Unlimited</p>
-                </div>
-              </div>
-
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4 text-primary flex-shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Full white-labeling</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4 text-primary flex-shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Password protection</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4 text-primary flex-shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Expiring links</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4 text-primary flex-shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Custom branding & themes</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <button
-                className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-all"
-                onClick={async () => {
-                  try {
-                    const response = await fetch("/api/checkout", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        planId: "pro",
-                        billingCycle: "monthly",
-                      }),
-                    });
-                    const data = await response.json();
-                    if (data.checkoutUrl) {
-                      window.location.href = data.checkoutUrl;
-                    }
-                  } catch (err) {
-                    console.error("Checkout error:", err);
-                  }
-                }}
-              >
-                Start Your Free Trial
-              </button>
-              <button
-                className="w-full py-2 text-muted-foreground text-sm hover:text-foreground transition-colors"
-                onClick={() => {
-                  setShowUpgradeModal(false);
-                  setTrialLimitExceeded(null);
-                }}
-              >
-                Maybe later
-              </button>
-            </div>
-
-            <button
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => {
-                setShowUpgradeModal(false);
-                setTrialLimitExceeded(null);
-              }}
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/trial";
 
 export async function GET(request: Request) {
@@ -12,29 +11,6 @@ export async function GET(request: Request) {
     }
 
     const access = await checkAccess(session.user.id);
-
-    // If user is on trial, also check trial file limit
-    if (
-      access.allowed &&
-      (access.reason === "trialing" || access.reason === "limited_trial")
-    ) {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          trialFileLimit: true,
-          trialFileCount: true,
-        },
-      });
-
-      if (user && user.trialFileCount >= user.trialFileLimit) {
-        return NextResponse.json({
-          allowed: false,
-          reason: "trial_limit_exceeded",
-          fileCount: user.trialFileCount,
-          fileLimit: user.trialFileLimit,
-        });
-      }
-    }
 
     return NextResponse.json(access);
   } catch (error) {
