@@ -1,12 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 
 import { useSession } from "@/lib/auth-client";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { TrialBanner } from "@/components/trial-banner";
-import { Paywall } from "@/components/paywall";
 import type { AccessResult } from "@/lib/trial";
 
 export default function DashboardRootLayout({
@@ -15,7 +13,6 @@ export default function DashboardRootLayout({
   children: React.ReactNode;
 }) {
   const { data: session, isPending } = useSession();
-  const router = useRouter();
   const [access, setAccess] = useState<AccessResult | null>(null);
   const [accessLoading, setAccessLoading] = useState(true);
 
@@ -34,33 +31,10 @@ export default function DashboardRootLayout({
   }, []);
 
   useEffect(() => {
-    if (!isPending && !session) {
-      router.push("/auth");
-    }
-  }, [session, isPending, router]);
-
-  useEffect(() => {
     if (session?.user) {
       fetchAccess();
     }
   }, [session, fetchAccess]);
-
-  const handleCheckout = async () => {
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: "pro", billingCycle: "monthly" }),
-      });
-      const data = await res.json();
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      }
-    } catch {
-      // fallback: navigate to billing page
-      router.push("/dashboard/billing");
-    }
-  };
 
   if (isPending || (session && accessLoading)) {
     return (
@@ -72,11 +46,6 @@ export default function DashboardRootLayout({
 
   if (!session) {
     return null;
-  }
-
-  // No subscription or expired — show paywall
-  if (access?.reason === "expired" || access?.reason === "no_subscription") {
-    return <Paywall onCheckout={handleCheckout} />;
   }
 
   return (
