@@ -123,11 +123,47 @@ export const auth = betterAuth({
 
       const userName = user.name || user.email.split("@")[0];
 
-      if (isSignup) {
-        try {
-          await sendWelcomeEmail({ to: user.email, userName });
-        } catch (error) {
-          console.error("Failed to send welcome email:", error);
+      if (isSignup && user.id) {
+        // Check for existing deleted user with same email and reactivate
+        const deletedUser = await prisma.user.findFirst({
+          where: {
+            email: user.email,
+            status: "deleted",
+            id: { not: user.id },
+          },
+        });
+
+        if (deletedUser) {
+          // Reactivate the old deleted user instead
+          await prisma.user.update({
+            where: { id: deletedUser.id },
+            data: {
+              status: "active",
+              deletedAt: null,
+              trialStartedAt: new Date(),
+              trialFileCount: 0,
+              trialFileLimit: 15,
+            },
+          });
+
+          // Migrate session from new user to reactivated user
+          await prisma.session.updateMany({
+            where: { userId: user.id },
+            data: { userId: deletedUser.id },
+          });
+
+          // Delete the newly created duplicate user
+          await prisma.user.delete({ where: { id: user.id } });
+
+          // Update ctx to reference the reactivated user
+          (user as any).id = deletedUser.id;
+        } else {
+          // Fresh signup - send welcome email
+          try {
+            await sendWelcomeEmail({ to: user.email, userName });
+          } catch (error) {
+            console.error("Failed to send welcome email:", error);
+          }
         }
       }
 
