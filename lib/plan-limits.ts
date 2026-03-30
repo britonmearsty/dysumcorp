@@ -159,11 +159,15 @@ export function checkFeatureAccess(
 export async function getUserPlanType(userId: string): Promise<PlanType> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { subscriptionPlan: true, subscriptionStatus: true },
+    select: { subscriptionPlan: true, subscriptionStatus: true, status: true },
   });
 
   if (!user?.subscriptionPlan) {
     return "trial";
+  }
+
+  if (user.status === "deleted") {
+    return "expired";
   }
 
   const plan = user.subscriptionPlan;

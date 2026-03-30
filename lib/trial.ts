@@ -27,6 +27,8 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
     },
   });
 
+  console.log("[checkAccess] User:", userId, "Data:", user);
+
   if (!user) {
     return { allowed: false, reason: "no_subscription" };
   }
@@ -38,21 +40,40 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
   const plan = user.subscriptionPlan;
   const status = user.subscriptionStatus;
 
+  console.log(
+    "[checkAccess] plan:",
+    plan,
+    "status:",
+    status,
+    "user.status:",
+    user.status,
+  );
+
   // Paid subscriber - full access
   if (plan === "pro" && status === "active") {
+    console.log("[checkAccess] Allowing: active_subscription");
     return { allowed: true, reason: "active_subscription" };
   }
 
   // Pro trial - 7-day free trial before billing
   if (plan === "pro" && status === "trialing") {
+    console.log("[checkAccess] Allowing: trialing");
     return { allowed: true, reason: "trialing" };
   }
 
   // Expired subscription
   if (status === "cancelled" || plan === "expired") {
+    console.log("[checkAccess] Denying: expired");
     return { allowed: false, reason: "expired" };
   }
 
   // No subscription - need to subscribe
+  console.log(
+    "[checkAccess] Denying: no_subscription (plan=" +
+      plan +
+      ", status=" +
+      status +
+      ")",
+  );
   return { allowed: false, reason: "no_subscription" };
 }
