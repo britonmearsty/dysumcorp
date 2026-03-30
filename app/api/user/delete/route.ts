@@ -3,6 +3,47 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 
+async function cancelCreemSubscription(creemCustomerId: string) {
+  try {
+    const response = await fetch(
+      `https://api.creem.io/v1/customers/${creemCustomerId}/subscriptions`,
+      {
+        method: "GET",
+        headers: {
+          "x-api-key": process.env.CREEM_API_KEY || "",
+        },
+      },
+    );
+
+    if (!response.ok) {
+      console.error(
+        "Failed to get Creem subscriptions:",
+        await response.text(),
+      );
+      return;
+    }
+
+    const subscriptions = await response.json();
+
+    for (const sub of subscriptions.subscriptions || []) {
+      if (sub.status !== "canceled") {
+        await fetch(`https://api.creem.io/v1/subscriptions/${sub.id}/cancel`, {
+          method: "POST",
+          headers: {
+            "x-api-key": process.env.CREEM_API_KEY || "",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            immediate: false,
+          }),
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error canceling Creem subscription:", error);
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const session = await getSession();
@@ -21,6 +62,16 @@ export async function DELETE(req: NextRequest) {
         subscriptionStatus: true,
       },
     });
+
+    // Cancel subscription in Creem if user has one (they paid for privacy, not services)
+    if (
+      user?.creemCustomerId &&
+      user?.subscriptionPlan === "pro" &&
+      (user?.subscriptionStatus === "active" ||
+        user?.subscriptionStatus === "trialing")
+    ) {
+      await cancelCreemSubscription(user.creemCustomerId);
+    }
 
     const userPortals = await prisma.portal.findMany({
       where: { userId },

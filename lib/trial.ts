@@ -15,6 +15,7 @@ export interface AccessResult {
  * Allowed states:
  *   - pro + active    → paid subscriber
  *   - pro + trialing  → card on file, within 7-day trial (Creem will charge on day 7)
+ *   - deleted + pro + active/trialing → allow access (subscription still valid in Creem)
  *   - anything else   → no access, need to subscribe
  */
 export async function checkAccess(userId: string): Promise<AccessResult> {
@@ -27,53 +28,36 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
     },
   });
 
-  console.log("[checkAccess] User:", userId, "Data:", user);
-
   if (!user) {
-    return { allowed: false, reason: "no_subscription" };
-  }
-
-  if (user.status === "deleted") {
     return { allowed: false, reason: "no_subscription" };
   }
 
   const plan = user.subscriptionPlan;
   const status = user.subscriptionStatus;
 
-  console.log(
-    "[checkAccess] plan:",
-    plan,
-    "status:",
-    status,
-    "user.status:",
-    user.status,
-  );
+  // Deleted users with active subscription can still access (subscription valid in Creem)
+  if (user.status === "deleted") {
+    if (plan === "pro" && (status === "active" || status === "trialing")) {
+      return { allowed: true, reason: "active_subscription" };
+    }
+    return { allowed: false, reason: "no_subscription" };
+  }
 
   // Paid subscriber - full access
   if (plan === "pro" && status === "active") {
-    console.log("[checkAccess] Allowing: active_subscription");
     return { allowed: true, reason: "active_subscription" };
   }
 
   // Pro trial - 7-day free trial before billing
   if (plan === "pro" && status === "trialing") {
-    console.log("[checkAccess] Allowing: trialing");
     return { allowed: true, reason: "trialing" };
   }
 
   // Expired subscription
   if (status === "cancelled" || plan === "expired") {
-    console.log("[checkAccess] Denying: expired");
     return { allowed: false, reason: "expired" };
   }
 
   // No subscription - need to subscribe
-  console.log(
-    "[checkAccess] Denying: no_subscription (plan=" +
-      plan +
-      ", status=" +
-      status +
-      ")",
-  );
   return { allowed: false, reason: "no_subscription" };
 }

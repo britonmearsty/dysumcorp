@@ -349,7 +349,10 @@ export default function SettingsPage() {
         method: "DELETE",
       });
 
-      if (!response.ok) throw new Error("Failed to delete account");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to delete account");
+      }
 
       await signOut();
       router.push("/");
@@ -915,9 +918,10 @@ export default function SettingsPage() {
                               Delete my data and deactivate my account
                             </p>
                             <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                              This will remove your access to the app, revoke
-                              Google Drive/Dropbox permissions, and permanently
-                              erase all app data.
+                              Your account will be permanently removed
+                              immediately. Your subscription will be canceled
+                              and will not renew. Files in your Dropbox/Google
+                              Drive are not deleted.
                             </p>
                           </div>
                           <Button
@@ -936,18 +940,13 @@ export default function SettingsPage() {
                               Are you absolutely sure?
                             </p>
                             <p className="text-xs sm:text-sm text-red-600 dark:text-red-400 mt-1 sm:mt-2">
-                              This will remove your access to the app, revoke
-                              Google Drive/Dropbox permissions, and permanently
-                              erase all app data.
+                              Your account will be permanently removed
+                              immediately. Your subscription will be canceled
+                              and will not renew. Files in your Dropbox/Google
+                              Drive are not deleted.
                             </p>
                             <p className="text-xs sm:text-sm text-red-600 dark:text-red-400 mt-2">
-                              Files and folders in your Google Drive/Dropbox
-                              will NOT be deleted. You may manually remove the
-                              "dysumcorp" folder from your storage if you wish.
-                            </p>
-                            <p className="text-xs sm:text-sm text-red-600 dark:text-red-400 mt-2">
-                              Billing records are retained for legal and
-                              accounting purposes. This action cannot be undone.
+                              This action cannot be undone.
                             </p>
                           </div>
 

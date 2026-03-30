@@ -166,12 +166,16 @@ export async function getUserPlanType(userId: string): Promise<PlanType> {
     return "trial";
   }
 
-  if (user.status === "deleted") {
-    return "expired";
-  }
-
   const plan = user.subscriptionPlan;
   const status = user.subscriptionStatus;
+
+  // If user is deleted but has active subscription, show as pro
+  if (user.status === "deleted") {
+    if (plan === "pro" && (status === "active" || status === "trialing")) {
+      return "pro";
+    }
+    return "expired";
+  }
 
   if (plan === "pro" && (status === "active" || status === "trialing")) {
     return "pro";
