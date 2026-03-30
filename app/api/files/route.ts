@@ -18,6 +18,7 @@ export async function GET(request: Request) {
 
     // Try to include uploadSession, but fall back if the relation doesn't exist yet
     let files;
+
     try {
       files = await prisma.file.findMany({
         where: {
@@ -50,7 +51,10 @@ export async function GET(request: Request) {
       });
     } catch (relationError: any) {
       // If uploadSession relation doesn't exist yet, fetch without it
-      console.log("[Files API] Falling back to query without uploadSession:", relationError.message);
+      console.log(
+        "[Files API] Falling back to query without uploadSession:",
+        relationError.message,
+      );
       files = await prisma.file.findMany({
         where: {
           portal: {
@@ -75,10 +79,12 @@ export async function GET(request: Request) {
       files: files.map((f: any) => ({
         ...f,
         size: f.size.toString(), // Convert BigInt to string for JSON
-        uploadSession: f.uploadSession ? {
-          ...f.uploadSession,
-          totalSize: f.uploadSession.totalSize?.toString(),
-        } : null,
+        uploadSession: f.uploadSession
+          ? {
+              ...f.uploadSession,
+              totalSize: f.uploadSession.totalSize?.toString(),
+            }
+          : null,
       })),
     });
   } catch (error) {

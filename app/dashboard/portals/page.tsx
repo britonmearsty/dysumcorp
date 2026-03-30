@@ -85,10 +85,12 @@ export default function PortalsPage() {
 
       if (response.ok) {
         const data = await response.json();
+
         setPortals(data.portals || []);
       } else {
         console.error("Failed to fetch portals - Status:", response.status);
         const errorText = await response.text();
+
         console.error("Error response:", errorText);
         showToast("Failed to load portals", "error");
       }
@@ -275,6 +277,7 @@ export default function PortalsPage() {
         await fetchPortals();
       } else {
         const errorData = await response.json();
+
         if (
           response.status === 402 ||
           errorData.code === "SUBSCRIPTION_REQUIRED"
@@ -860,26 +863,26 @@ export default function PortalsPage() {
 
       {/* Delete Portal Confirmation Modal */}
       <DeletePortalModal
+        behavior={deleteBehavior}
         open={deleteModalOpen && !!portalToDelete}
         portalName={portalToDelete?.name ?? ""}
-        behavior={deleteBehavior}
-        onConfirm={confirmDelete}
         onCancel={() => {
           setDeleteModalOpen(false);
           setPortalToDelete(null);
         }}
+        onConfirm={confirmDelete}
       />
 
       {/* Delete File Confirmation Modal */}
       <DeleteFileModal
-        open={deleteFileModalOpen && !!fileToDelete}
-        fileName={fileToDelete?.name ?? ""}
         behavior={deleteBehavior}
-        onConfirm={confirmDeleteFile}
+        fileName={fileToDelete?.name ?? ""}
+        open={deleteFileModalOpen && !!fileToDelete}
         onCancel={() => {
           setDeleteFileModalOpen(false);
           setFileToDelete(null);
         }}
+        onConfirm={confirmDeleteFile}
       />
     </div>
   );

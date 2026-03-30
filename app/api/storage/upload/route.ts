@@ -8,7 +8,6 @@ import {
   type StorageProvider,
 } from "@/lib/storage-api";
 
-
 export async function POST(request: NextRequest) {
   try {
     // Check authentication

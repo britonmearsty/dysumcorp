@@ -11,23 +11,32 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { hmacSign, validateUploadToken, readR2Range, corsHeaders, CHUNK_SIZE } from "./index";
+
+import {
+  hmacSign,
+  validateUploadToken,
+  readR2Range,
+  corsHeaders,
+  CHUNK_SIZE,
+} from "./index";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const SECRET = "test-secret-32-chars-minimum-ok!";
 
-async function makeToken(overrides: Partial<{
-  portalId: string;
-  fileName: string;
-  fileSize: number;
-  mimeType: string;
-  uploaderEmail: string;
-  uploaderName: string;
-  uploaderNotes: string | undefined;
-  stagingKey: string | undefined;
-  expiresAt: number;
-}> = {}) {
+async function makeToken(
+  overrides: Partial<{
+    portalId: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+    uploaderEmail: string;
+    uploaderName: string;
+    uploaderNotes: string | undefined;
+    stagingKey: string | undefined;
+    expiresAt: number;
+  }> = {},
+) {
   const base = {
     portalId: "portal-123",
     fileName: "test.pdf",
@@ -56,30 +65,46 @@ async function makeToken(overrides: Partial<{
 
   // Fixed key order — must match validateUploadToken in index.ts exactly
   const canonical = JSON.stringify(dataToSign, [
-    "portalId", "fileName", "fileSize", "mimeType",
-    "uploaderEmail", "uploaderName", "uploaderNotes", "stagingKey", "expiresAt",
+    "portalId",
+    "fileName",
+    "fileSize",
+    "mimeType",
+    "uploaderEmail",
+    "uploaderName",
+    "uploaderNotes",
+    "stagingKey",
+    "expiresAt",
   ]);
   const signature = await hmacSign(SECRET, canonical);
+
   return btoa(JSON.stringify({ ...base, signature }));
 }
 
 /** Minimal R2Bucket mock */
 function makeBucket(data: Record<string, Uint8Array>): R2Bucket {
   return {
-    get: vi.fn(async (key: string, opts?: { range?: { offset: number; length: number } }) => {
-      const buf = data[key];
-      if (!buf) return null;
-      const slice = opts?.range
-        ? buf.slice(opts.range.offset, opts.range.offset + opts.range.length)
-        : buf;
-      return {
-        arrayBuffer: async () => slice.buffer,
-        body: new ReadableStream(),
-        size: slice.length,
-      };
-    }),
+    get: vi.fn(
+      async (
+        key: string,
+        opts?: { range?: { offset: number; length: number } },
+      ) => {
+        const buf = data[key];
+
+        if (!buf) return null;
+        const slice = opts?.range
+          ? buf.slice(opts.range.offset, opts.range.offset + opts.range.length)
+          : buf;
+
+        return {
+          arrayBuffer: async () => slice.buffer,
+          body: new ReadableStream(),
+          size: slice.length,
+        };
+      },
+    ),
     head: vi.fn(async (key: string) => {
       const buf = data[key];
+
       return buf ? { size: buf.length } : null;
     }),
     delete: vi.fn(async () => {}),
@@ -90,7 +115,9 @@ function makeBucket(data: Record<string, Uint8Array>): R2Bucket {
   } as unknown as R2Bucket;
 }
 
-function makeEnv(bucketData: Record<string, Uint8Array> = {}): import("./index").Env {
+function makeEnv(
+  bucketData: Record<string, Uint8Array> = {},
+): import("./index").Env {
   return {
     R2_BUCKET: makeBucket(bucketData),
     WORKER_SECRET: "worker-secret-xyz",
@@ -104,24 +131,28 @@ function makeEnv(bucketData: Record<string, Uint8Array> = {}): import("./index")
 describe("hmacSign", () => {
   it("produces a 64-char hex string", async () => {
     const sig = await hmacSign("secret", "data");
+
     expect(sig).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it("is deterministic — same inputs produce same output", async () => {
     const a = await hmacSign("secret", "data");
     const b = await hmacSign("secret", "data");
+
     expect(a).toBe(b);
   });
 
   it("differs when secret changes", async () => {
     const a = await hmacSign("secret-a", "data");
     const b = await hmacSign("secret-b", "data");
+
     expect(a).not.toBe(b);
   });
 
   it("differs when data changes", async () => {
     const a = await hmacSign("secret", "data-a");
     const b = await hmacSign("secret", "data-b");
+
     expect(a).not.toBe(b);
   });
 });
@@ -132,6 +163,7 @@ describe("validateUploadToken", () => {
   it("accepts a valid token", async () => {
     const encoded = await makeToken();
     const result = await validateUploadToken(encoded, SECRET);
+
     expect(result).not.toBeNull();
     expect(result?.portalId).toBe("portal-123");
   });
@@ -139,57 +171,74 @@ describe("validateUploadToken", () => {
   it("rejects an expired token", async () => {
     const encoded = await makeToken({ expiresAt: Date.now() - 1000 });
     const result = await validateUploadToken(encoded, SECRET);
+
     expect(result).toBeNull();
   });
 
   it("rejects a token with wrong signature", async () => {
     const token = JSON.parse(atob(await makeToken()));
+
     token.signature = "a".repeat(64); // tampered
     const encoded = btoa(JSON.stringify(token));
     const result = await validateUploadToken(encoded, SECRET);
+
     expect(result).toBeNull();
   });
 
   it("rejects a token signed with a different secret", async () => {
     const encoded = await makeToken();
     const result = await validateUploadToken(encoded, "wrong-secret");
+
     expect(result).toBeNull();
   });
 
   it("rejects a tampered portalId (signature no longer matches)", async () => {
     const token = JSON.parse(atob(await makeToken()));
+
     token.portalId = "evil-portal";
     const encoded = btoa(JSON.stringify(token));
     const result = await validateUploadToken(encoded, SECRET);
+
     expect(result).toBeNull();
   });
 
   it("rejects garbage base64", async () => {
     const result = await validateUploadToken("not-valid-base64!!!", SECRET);
+
     expect(result).toBeNull();
   });
 
   it("rejects valid base64 but invalid JSON", async () => {
     const result = await validateUploadToken(btoa("not json"), SECRET);
+
     expect(result).toBeNull();
   });
 
   it("accepts token expiring exactly 1ms in the future", async () => {
     const encoded = await makeToken({ expiresAt: Date.now() + 1 });
     const result = await validateUploadToken(encoded, SECRET);
+
     expect(result).not.toBeNull();
   });
 
   it("preserves optional fields (uploaderNotes, stagingKey)", async () => {
-    const encoded = await makeToken({ uploaderNotes: "urgent docs", stagingKey: "staging/xyz" });
+    const encoded = await makeToken({
+      uploaderNotes: "urgent docs",
+      stagingKey: "staging/xyz",
+    });
     const result = await validateUploadToken(encoded, SECRET);
+
     expect(result?.uploaderNotes).toBe("urgent docs");
     expect(result?.stagingKey).toBe("staging/xyz");
   });
 
   it("handles token with undefined optional fields", async () => {
-    const encoded = await makeToken({ uploaderNotes: undefined, stagingKey: undefined });
+    const encoded = await makeToken({
+      uploaderNotes: undefined,
+      stagingKey: undefined,
+    });
     const result = await validateUploadToken(encoded, SECRET);
+
     expect(result).not.toBeNull();
   });
 });
@@ -201,25 +250,29 @@ describe("readR2Range", () => {
     const data = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     const bucket = makeBucket({ "my-key": data });
     const result = await readR2Range(bucket, "my-key", 2, 4);
+
     expect(result).toEqual(new Uint8Array([2, 3, 4, 5]));
   });
 
   it("reads from offset 0", async () => {
     const data = new Uint8Array([10, 20, 30]);
-    const bucket = makeBucket({ "key": data });
+    const bucket = makeBucket({ key: data });
     const result = await readR2Range(bucket, "key", 0, 3);
+
     expect(result).toEqual(new Uint8Array([10, 20, 30]));
   });
 
   it("reads the last byte only", async () => {
     const data = new Uint8Array([1, 2, 3, 4, 5]);
-    const bucket = makeBucket({ "key": data });
+    const bucket = makeBucket({ key: data });
     const result = await readR2Range(bucket, "key", 4, 1);
+
     expect(result).toEqual(new Uint8Array([5]));
   });
 
   it("throws when key does not exist in R2", async () => {
     const bucket = makeBucket({});
+
     await expect(readR2Range(bucket, "missing-key", 0, 10)).rejects.toThrow(
       "R2 range read failed: key=missing-key offset=0 length=10",
     );
@@ -227,9 +280,12 @@ describe("readR2Range", () => {
 
   it("passes correct range params to bucket.get", async () => {
     const data = new Uint8Array(100).fill(0xff);
-    const bucket = makeBucket({ "k": data });
+    const bucket = makeBucket({ k: data });
+
     await readR2Range(bucket, "k", 50, 25);
-    expect(bucket.get).toHaveBeenCalledWith("k", { range: { offset: 50, length: 25 } });
+    expect(bucket.get).toHaveBeenCalledWith("k", {
+      range: { offset: 50, length: 25 },
+    });
   });
 });
 
@@ -254,21 +310,25 @@ describe("CHUNK_SIZE", () => {
 describe("corsHeaders", () => {
   it("allows a known origin", () => {
     const h = corsHeaders("https://app.dysumcorp.com");
+
     expect(h["Access-Control-Allow-Origin"]).toBe("https://app.dysumcorp.com");
   });
 
   it("falls back to localhost for unknown origin", () => {
     const h = corsHeaders("https://evil.com");
+
     expect(h["Access-Control-Allow-Origin"]).toBe("http://localhost:3000");
   });
 
   it("falls back to localhost for null origin", () => {
     const h = corsHeaders(null);
+
     expect(h["Access-Control-Allow-Origin"]).toBe("http://localhost:3000");
   });
 
   it("includes required CORS headers", () => {
     const h = corsHeaders("http://localhost:3000");
+
     expect(h["Access-Control-Allow-Methods"]).toContain("POST");
     expect(h["Access-Control-Allow-Headers"]).toContain("Content-Type");
   });
@@ -279,10 +339,18 @@ describe("corsHeaders", () => {
 import worker from "./index";
 
 function makeCtx(): ExecutionContext {
-  return { waitUntil: vi.fn(), passThroughOnException: vi.fn() } as unknown as ExecutionContext;
+  return {
+    waitUntil: vi.fn(),
+    passThroughOnException: vi.fn(),
+  } as unknown as ExecutionContext;
 }
 
-function req(method: string, path: string, body?: unknown, origin?: string): Request {
+function req(
+  method: string,
+  path: string,
+  body?: unknown,
+  origin?: string,
+): Request {
   return new Request(`https://worker.example.com${path}`, {
     method,
     headers: {
@@ -296,8 +364,10 @@ function req(method: string, path: string, body?: unknown, origin?: string): Req
 describe("HTTP handler — routing", () => {
   it("GET /health returns 200 with chunkSize", async () => {
     const res = await worker.fetch(req("GET", "/health"), makeEnv(), makeCtx());
+
     expect(res.status).toBe(200);
-    const json = await res.json() as any;
+    const json = (await res.json()) as any;
+
     expect(json.ok).toBe(true);
     expect(json.chunkSize).toBe(CHUNK_SIZE);
   });
@@ -308,17 +378,30 @@ describe("HTTP handler — routing", () => {
       makeEnv(),
       makeCtx(),
     );
+
     expect(res.status).toBe(204);
-    expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://app.dysumcorp.com");
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+      "https://app.dysumcorp.com",
+    );
   });
 
   it("GET /transfer returns 404", async () => {
-    const res = await worker.fetch(req("GET", "/transfer"), makeEnv(), makeCtx());
+    const res = await worker.fetch(
+      req("GET", "/transfer"),
+      makeEnv(),
+      makeCtx(),
+    );
+
     expect(res.status).toBe(404);
   });
 
   it("POST /unknown returns 404", async () => {
-    const res = await worker.fetch(req("POST", "/unknown", {}), makeEnv(), makeCtx());
+    const res = await worker.fetch(
+      req("POST", "/unknown", {}),
+      makeEnv(),
+      makeCtx(),
+    );
+
     expect(res.status).toBe(404);
   });
 
@@ -329,8 +412,10 @@ describe("HTTP handler — routing", () => {
       body: "not json {{{",
     });
     const res = await worker.fetch(r, makeEnv(), makeCtx());
+
     expect(res.status).toBe(400);
-    const json = await res.json() as any;
+    const json = (await res.json()) as any;
+
     expect(json.error).toMatch(/invalid json/i);
   });
 
@@ -340,6 +425,7 @@ describe("HTTP handler — routing", () => {
       makeEnv(),
       makeCtx(),
     );
+
     expect(res.status).toBe(400);
   });
 
@@ -349,6 +435,7 @@ describe("HTTP handler — routing", () => {
       makeEnv(),
       makeCtx(),
     );
+
     expect(res.status).toBe(400);
   });
 
@@ -358,6 +445,7 @@ describe("HTTP handler — routing", () => {
       makeEnv(),
       makeCtx(),
     );
+
     expect(res.status).toBe(401);
   });
 
@@ -377,8 +465,10 @@ describe("HTTP handler — routing", () => {
       makeEnv(),
       ctx,
     );
+
     expect(res.status).toBe(202);
-    const json = await res.json() as any;
+    const json = (await res.json()) as any;
+
     expect(json.accepted).toBe(true);
     expect(json.stagingKey).toBe("staging/abc");
     expect(ctx.waitUntil).toHaveBeenCalledOnce();
@@ -401,13 +491,15 @@ describe("runTransfer — failure paths", () => {
     vi.unstubAllGlobals();
   });
 
-  async function dispatchTransfer(overrides: {
-    stagingKey?: string;
-    fileSize?: number;
-    bucketData?: Record<string, Uint8Array>;
-    contextResponse?: object | null;
-    callbackUrl?: string;
-  } = {}) {
+  async function dispatchTransfer(
+    overrides: {
+      stagingKey?: string;
+      fileSize?: number;
+      bucketData?: Record<string, Uint8Array>;
+      contextResponse?: object | null;
+      callbackUrl?: string;
+    } = {},
+  ) {
     const stagingKey = overrides.stagingKey ?? "staging/abc";
     const fileSize = overrides.fileSize ?? 100;
     const encoded = await makeToken({ stagingKey, fileSize });
@@ -420,9 +512,12 @@ describe("runTransfer — failure paths", () => {
 
     // Capture the waitUntil promise
     let transferPromise: Promise<void> | undefined;
-    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation((p: Promise<void>) => {
-      transferPromise = p;
-    });
+
+    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: Promise<void>) => {
+        transferPromise = p;
+      },
+    );
 
     await worker.fetch(
       req("POST", "/transfer", {
@@ -432,7 +527,8 @@ describe("runTransfer — failure paths", () => {
         fileName: "test.pdf",
         fileSize,
         mimeType: "application/pdf",
-        callbackUrl: overrides.callbackUrl ?? "https://app.example.com/callback",
+        callbackUrl:
+          overrides.callbackUrl ?? "https://app.example.com/callback",
       }),
       env,
       ctx,
@@ -444,34 +540,44 @@ describe("runTransfer — failure paths", () => {
   it("posts failed callback when context fetch returns non-ok", async () => {
     fetchMock
       .mockResolvedValueOnce(new Response("Unauthorized", { status: 401 })) // context
-      .mockResolvedValueOnce(new Response("{}", { status: 200 }));           // callback
+      .mockResolvedValueOnce(new Response("{}", { status: 200 })); // callback
 
     const { transferPromise } = await dispatchTransfer();
+
     await transferPromise;
 
     const callbackCall = fetchMock.mock.calls[1];
     const body = JSON.parse(callbackCall[1].body);
+
     expect(body.status).toBe("failed");
     expect(body.error).toMatch(/Context fetch failed/);
   });
 
   it("posts failed callback when R2 object is missing", async () => {
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({  // context ok
-        provider: "google",
-        accessToken: "tok",
-        parentFolderId: "folder-id",
-        folderPath: "/uploads",
-        portalName: "My Portal",
-      }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            // context ok
+            provider: "google",
+            accessToken: "tok",
+            parentFolderId: "folder-id",
+            folderPath: "/uploads",
+            portalName: "My Portal",
+          }),
+          { status: 200 },
+        ),
+      )
       .mockResolvedValueOnce(new Response("{}", { status: 200 })); // callback
 
     // Empty bucket — no file
     const { transferPromise } = await dispatchTransfer({ bucketData: {} });
+
     await transferPromise;
 
     const callbackCall = fetchMock.mock.calls[1];
     const body = JSON.parse(callbackCall[1].body);
+
     expect(body.status).toBe("failed");
     expect(body.error).toMatch(/R2 object not found/);
   });
@@ -485,9 +591,12 @@ describe("runTransfer — failure paths", () => {
     const ctx = makeCtx();
 
     let transferPromise: Promise<void> | undefined;
-    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation((p: Promise<void>) => {
-      transferPromise = p;
-    });
+
+    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: Promise<void>) => {
+        transferPromise = p;
+      },
+    );
 
     fetchMock.mockResolvedValueOnce(new Response("{}", { status: 200 })); // callback
 
@@ -511,70 +620,93 @@ describe("runTransfer — failure paths", () => {
 
     const callbackCall = fetchMock.mock.calls[0];
     const body = JSON.parse(callbackCall[1].body);
+
     expect(body.status).toBe("failed");
     expect(body.error).toMatch(/stagingKey mismatch/);
   });
 
   it("posts failed callback when Drive init returns non-ok", async () => {
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({  // context ok
-        provider: "google",
-        accessToken: "tok",
-        parentFolderId: "folder-id",
-        folderPath: "/uploads",
-        portalName: "My Portal",
-      }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            // context ok
+            provider: "google",
+            accessToken: "tok",
+            parentFolderId: "folder-id",
+            folderPath: "/uploads",
+            portalName: "My Portal",
+          }),
+          { status: 200 },
+        ),
+      )
       .mockResolvedValueOnce(new Response("quota exceeded", { status: 403 })) // drive init fails
-      .mockResolvedValueOnce(new Response("{}", { status: 200 }));             // callback
+      .mockResolvedValueOnce(new Response("{}", { status: 200 })); // callback
 
     const { transferPromise } = await dispatchTransfer();
+
     await transferPromise;
 
     // calls: [0]=context, [1]=drive init, [2]=callback
     const callbackCall = fetchMock.mock.calls[2];
     const body = JSON.parse(callbackCall[1].body);
+
     expect(body.status).toBe("failed");
     expect(body.error).toMatch(/Drive init failed/);
   });
 
   it("posts failed callback when Drive init has no Location header", async () => {
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "google",
-        accessToken: "tok",
-        parentFolderId: "folder-id",
-        folderPath: "/uploads",
-        portalName: "My Portal",
-      }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            provider: "google",
+            accessToken: "tok",
+            parentFolderId: "folder-id",
+            folderPath: "/uploads",
+            portalName: "My Portal",
+          }),
+          { status: 200 },
+        ),
+      )
       .mockResolvedValueOnce(new Response("ok", { status: 200 })) // drive init — no Location
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
 
     const { transferPromise } = await dispatchTransfer();
+
     await transferPromise;
 
     const callbackCall = fetchMock.mock.calls[2];
     const body = JSON.parse(callbackCall[1].body);
+
     expect(body.status).toBe("failed");
     expect(body.error).toMatch(/resumable upload URL/);
   });
 
   it("posts failed callback when Dropbox session start fails", async () => {
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "dropbox",
-        accessToken: "tok",
-        parentFolderId: "",
-        folderPath: "/uploads",
-        portalName: "My Portal",
-      }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            provider: "dropbox",
+            accessToken: "tok",
+            parentFolderId: "",
+            folderPath: "/uploads",
+            portalName: "My Portal",
+          }),
+          { status: 200 },
+        ),
+      )
       .mockResolvedValueOnce(new Response("too_many_requests", { status: 429 })) // session start
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
 
     const { transferPromise } = await dispatchTransfer();
+
     await transferPromise;
 
     const callbackCall = fetchMock.mock.calls[2];
     const body = JSON.parse(callbackCall[1].body);
+
     expect(body.status).toBe("failed");
     expect(body.error).toMatch(/Dropbox session start failed/);
   });
@@ -583,29 +715,47 @@ describe("runTransfer — failure paths", () => {
     const fileData = new Uint8Array(100).fill(0xab);
 
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({  // context
-        provider: "google",
-        accessToken: "tok",
-        parentFolderId: "folder-id",
-        folderPath: "/uploads",
-        portalName: "My Portal",
-      }), { status: 200 }))
-      .mockResolvedValueOnce(                                // drive init — returns Location
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            // context
+            provider: "google",
+            accessToken: "tok",
+            parentFolderId: "folder-id",
+            folderPath: "/uploads",
+            portalName: "My Portal",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        // drive init — returns Location
         new Response("", {
           status: 200,
-          headers: { Location: "https://upload.googleapis.com/resumable/abc123" },
+          headers: {
+            Location: "https://upload.googleapis.com/resumable/abc123",
+          },
         }),
       )
-      .mockResolvedValueOnce(                                // drive chunk PUT — final
-        new Response(JSON.stringify({ id: "drive-file-id", webViewLink: "https://drive.google.com/file/d/drive-file-id/view" }), { status: 200 }),
+      .mockResolvedValueOnce(
+        // drive chunk PUT — final
+        new Response(
+          JSON.stringify({
+            id: "drive-file-id",
+            webViewLink: "https://drive.google.com/file/d/drive-file-id/view",
+          }),
+          { status: 200 },
+        ),
       )
       .mockResolvedValueOnce(new Response("{}", { status: 200 })); // callback
 
     const { transferPromise } = await dispatchTransfer({ fileSize: 100 });
+
     await transferPromise;
 
     const callbackCall = fetchMock.mock.calls[3];
     const body = JSON.parse(callbackCall[1].body);
+
     expect(body.status).toBe("completed");
     expect(body.storageFileId).toBe("drive-file-id");
     expect(body.provider).toBe("google");
@@ -613,26 +763,40 @@ describe("runTransfer — failure paths", () => {
 
   it("posts completed callback on successful Dropbox single-chunk upload", async () => {
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({  // context
-        provider: "dropbox",
-        accessToken: "tok",
-        parentFolderId: "",
-        folderPath: "uploads",
-        portalName: "My Portal",
-      }), { status: 200 }))
-      .mockResolvedValueOnce(                                // session start
-        new Response(JSON.stringify({ session_id: "sess-xyz" }), { status: 200 }),
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            // context
+            provider: "dropbox",
+            accessToken: "tok",
+            parentFolderId: "",
+            folderPath: "uploads",
+            portalName: "My Portal",
+          }),
+          { status: 200 },
+        ),
       )
-      .mockResolvedValueOnce(                                // finish (single chunk = last)
-        new Response(JSON.stringify({ id: "dbx-file-id", name: "test.pdf" }), { status: 200 }),
+      .mockResolvedValueOnce(
+        // session start
+        new Response(JSON.stringify({ session_id: "sess-xyz" }), {
+          status: 200,
+        }),
+      )
+      .mockResolvedValueOnce(
+        // finish (single chunk = last)
+        new Response(JSON.stringify({ id: "dbx-file-id", name: "test.pdf" }), {
+          status: 200,
+        }),
       )
       .mockResolvedValueOnce(new Response("{}", { status: 200 })); // callback
 
     const { transferPromise } = await dispatchTransfer({ fileSize: 100 });
+
     await transferPromise;
 
     const callbackCall = fetchMock.mock.calls[3];
     const body = JSON.parse(callbackCall[1].body);
+
     expect(body.status).toBe("completed");
     expect(body.storageFileId).toBe("dbx-file-id");
     expect(body.provider).toBe("dropbox");
@@ -644,21 +808,29 @@ describe("runTransfer — failure paths", () => {
     const fileData = new Uint8Array(fileSize).fill(0x01);
 
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "google",
-        accessToken: "tok",
-        parentFolderId: "folder-id",
-        folderPath: "/uploads",
-        portalName: "My Portal",
-      }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            provider: "google",
+            accessToken: "tok",
+            parentFolderId: "folder-id",
+            folderPath: "/uploads",
+            portalName: "My Portal",
+          }),
+          { status: 200 },
+        ),
+      )
       .mockResolvedValueOnce(
         new Response("", {
           status: 200,
-          headers: { Location: "https://upload.googleapis.com/resumable/multi" },
+          headers: {
+            Location: "https://upload.googleapis.com/resumable/multi",
+          },
         }),
       )
-      .mockResolvedValueOnce(new Response("", { status: 308 }))  // chunk 1 — not final
-      .mockResolvedValueOnce(                                      // chunk 2 — final
+      .mockResolvedValueOnce(new Response("", { status: 308 })) // chunk 1 — not final
+      .mockResolvedValueOnce(
+        // chunk 2 — final
         new Response(JSON.stringify({ id: "drive-multi-id" }), { status: 200 }),
       )
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
@@ -667,16 +839,19 @@ describe("runTransfer — failure paths", () => {
       fileSize,
       bucketData: { "staging/abc": fileData },
     });
+
     await transferPromise;
 
     // chunk 1: bytes 0 to CHUNK_SIZE-1
     const chunk1Call = fetchMock.mock.calls[2];
+
     expect(chunk1Call[1].headers["Content-Range"]).toBe(
       `bytes 0-${CHUNK_SIZE - 1}/${fileSize}`,
     );
 
     // chunk 2: bytes CHUNK_SIZE to end
     const chunk2Call = fetchMock.mock.calls[3];
+
     expect(chunk2Call[1].headers["Content-Range"]).toBe(
       `bytes ${CHUNK_SIZE}-${fileSize - 1}/${fileSize}`,
     );
@@ -687,19 +862,29 @@ describe("runTransfer — failure paths", () => {
     const fileData = new Uint8Array(fileSize).fill(0x02);
 
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "dropbox",
-        accessToken: "tok",
-        parentFolderId: "",
-        folderPath: "uploads",
-        portalName: "My Portal",
-      }), { status: 200 }))
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ session_id: "sess-multi" }), { status: 200 }),
+        new Response(
+          JSON.stringify({
+            provider: "dropbox",
+            accessToken: "tok",
+            parentFolderId: "",
+            folderPath: "uploads",
+            portalName: "My Portal",
+          }),
+          { status: 200 },
+        ),
       )
-      .mockResolvedValueOnce(new Response("", { status: 200 }))  // append chunk 1
-      .mockResolvedValueOnce(                                      // finish chunk 2
-        new Response(JSON.stringify({ id: "dbx-multi-id", name: "test.pdf" }), { status: 200 }),
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ session_id: "sess-multi" }), {
+          status: 200,
+        }),
+      )
+      .mockResolvedValueOnce(new Response("", { status: 200 })) // append chunk 1
+      .mockResolvedValueOnce(
+        // finish chunk 2
+        new Response(JSON.stringify({ id: "dbx-multi-id", name: "test.pdf" }), {
+          status: 200,
+        }),
       )
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
 
@@ -707,17 +892,20 @@ describe("runTransfer — failure paths", () => {
       fileSize,
       bucketData: { "staging/abc": fileData },
     });
+
     await transferPromise;
 
     // append call: cursor offset should be 0
     const appendCall = fetchMock.mock.calls[2];
     const appendArg = JSON.parse(appendCall[1].headers["Dropbox-API-Arg"]);
+
     expect(appendArg.cursor.offset).toBe(0);
     expect(appendArg.cursor.session_id).toBe("sess-multi");
 
     // finish call: cursor offset should be CHUNK_SIZE
     const finishCall = fetchMock.mock.calls[3];
     const finishArg = JSON.parse(finishCall[1].headers["Dropbox-API-Arg"]);
+
     expect(finishArg.cursor.offset).toBe(CHUNK_SIZE);
     expect(finishArg.commit.path).toContain("test.pdf");
   });
@@ -728,31 +916,54 @@ describe("runTransfer — failure paths", () => {
     const ctx = makeCtx();
 
     let transferPromise: Promise<void> | undefined;
-    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation((p: Promise<void>) => {
-      transferPromise = p;
+
+    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: Promise<void>) => {
+        transferPromise = p;
+      },
+    );
+
+    const encoded = await makeToken({
+      stagingKey: "staging/abc",
+      fileSize: 50,
     });
 
-    const encoded = await makeToken({ stagingKey: "staging/abc", fileSize: 50 });
-
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "google", accessToken: "tok",
-        parentFolderId: "fid", folderPath: "/up", portalName: "P",
-      }), { status: 200 }))
-      .mockResolvedValueOnce(new Response("", {
-        status: 200, headers: { Location: "https://upload.googleapis.com/r/x" },
-      }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "fid" }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            provider: "google",
+            accessToken: "tok",
+            parentFolderId: "fid",
+            folderPath: "/up",
+            portalName: "P",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response("", {
+          status: 200,
+          headers: { Location: "https://upload.googleapis.com/r/x" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: "fid" }), { status: 200 }),
+      )
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
 
     await worker.fetch(
       req("POST", "/transfer", {
-        uploadToken: encoded, stagingKey: "staging/abc",
-        portalId: "p", fileName: "test.pdf", fileSize: 50,
+        uploadToken: encoded,
+        stagingKey: "staging/abc",
+        portalId: "p",
+        fileName: "test.pdf",
+        fileSize: 50,
         mimeType: "application/pdf",
         callbackUrl: "https://app.example.com/callback",
       }),
-      env, ctx,
+      env,
+      ctx,
     );
 
     await transferPromise!;
@@ -762,37 +973,61 @@ describe("runTransfer — failure paths", () => {
   it("callback still fires even when R2 delete throws", async () => {
     const fileData = new Uint8Array(50).fill(0x01);
     const env = makeEnv({ "staging/abc": fileData });
+
     (env.R2_BUCKET.delete as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
       new Error("R2 delete error"),
     );
     const ctx = makeCtx();
 
     let transferPromise: Promise<void> | undefined;
-    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation((p: Promise<void>) => {
-      transferPromise = p;
+
+    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: Promise<void>) => {
+        transferPromise = p;
+      },
+    );
+
+    const encoded = await makeToken({
+      stagingKey: "staging/abc",
+      fileSize: 50,
     });
 
-    const encoded = await makeToken({ stagingKey: "staging/abc", fileSize: 50 });
-
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "google", accessToken: "tok",
-        parentFolderId: "fid", folderPath: "/up", portalName: "P",
-      }), { status: 200 }))
-      .mockResolvedValueOnce(new Response("", {
-        status: 200, headers: { Location: "https://upload.googleapis.com/r/x" },
-      }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "fid" }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            provider: "google",
+            accessToken: "tok",
+            parentFolderId: "fid",
+            folderPath: "/up",
+            portalName: "P",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response("", {
+          status: 200,
+          headers: { Location: "https://upload.googleapis.com/r/x" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: "fid" }), { status: 200 }),
+      )
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
 
     await worker.fetch(
       req("POST", "/transfer", {
-        uploadToken: encoded, stagingKey: "staging/abc",
-        portalId: "p", fileName: "test.pdf", fileSize: 50,
+        uploadToken: encoded,
+        stagingKey: "staging/abc",
+        portalId: "p",
+        fileName: "test.pdf",
+        fileSize: 50,
         mimeType: "application/pdf",
         callbackUrl: "https://app.example.com/callback",
       }),
-      env, ctx,
+      env,
+      ctx,
     );
 
     await transferPromise!;
@@ -800,65 +1035,90 @@ describe("runTransfer — failure paths", () => {
     // Callback should still have been called with completed status
     const callbackCall = fetchMock.mock.calls[3];
     const body = JSON.parse(callbackCall[1].body);
+
     expect(body.status).toBe("completed");
   });
 
   it("includes workerSecret in every callback", async () => {
     fetchMock
       .mockResolvedValueOnce(new Response("error", { status: 500 })) // context fails
-      .mockResolvedValueOnce(new Response("{}", { status: 200 }));   // callback
+      .mockResolvedValueOnce(new Response("{}", { status: 200 })); // callback
 
     const { transferPromise } = await dispatchTransfer();
+
     await transferPromise;
 
     const callbackCall = fetchMock.mock.calls[1];
     const body = JSON.parse(callbackCall[1].body);
+
     expect(body.workerSecret).toBe("worker-secret-xyz");
   });
 
   it("Dropbox path has leading slash when folderPath has no leading slash", async () => {
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "dropbox", accessToken: "tok",
-        parentFolderId: "", folderPath: "no-leading-slash",
-        portalName: "P",
-      }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            provider: "dropbox",
+            accessToken: "tok",
+            parentFolderId: "",
+            folderPath: "no-leading-slash",
+            portalName: "P",
+          }),
+          { status: 200 },
+        ),
+      )
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ session_id: "s1" }), { status: 200 }),
       )
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ id: "dbx-id", name: "test.pdf" }), { status: 200 }),
+        new Response(JSON.stringify({ id: "dbx-id", name: "test.pdf" }), {
+          status: 200,
+        }),
       )
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
 
     const { transferPromise } = await dispatchTransfer({ fileSize: 50 });
+
     await transferPromise;
 
     const finishCall = fetchMock.mock.calls[2];
     const arg = JSON.parse(finishCall[1].headers["Dropbox-API-Arg"]);
+
     expect(arg.commit.path).toMatch(/^\/no-leading-slash\//);
   });
 
   it("Dropbox path does not double-slash when folderPath already has leading slash", async () => {
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "dropbox", accessToken: "tok",
-        parentFolderId: "", folderPath: "/already-slash",
-        portalName: "P",
-      }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            provider: "dropbox",
+            accessToken: "tok",
+            parentFolderId: "",
+            folderPath: "/already-slash",
+            portalName: "P",
+          }),
+          { status: 200 },
+        ),
+      )
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ session_id: "s2" }), { status: 200 }),
       )
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ id: "dbx-id2", name: "test.pdf" }), { status: 200 }),
+        new Response(JSON.stringify({ id: "dbx-id2", name: "test.pdf" }), {
+          status: 200,
+        }),
       )
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
 
     const { transferPromise } = await dispatchTransfer({ fileSize: 50 });
+
     await transferPromise;
 
     const finishCall = fetchMock.mock.calls[2];
     const arg = JSON.parse(finishCall[1].headers["Dropbox-API-Arg"]);
+
     expect(arg.commit.path).not.toMatch(/\/\//);
     expect(arg.commit.path).toMatch(/^\/already-slash\//);
   });
@@ -883,35 +1143,54 @@ describe("runTransfer — Drive upload edge cases", () => {
     const env = makeEnv({ "staging/abc": fileData });
     const ctx = makeCtx();
     let transferPromise: Promise<void> | undefined;
-    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation((p: Promise<void>) => {
-      transferPromise = p;
-    });
+
+    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: Promise<void>) => {
+        transferPromise = p;
+      },
+    );
 
     const encoded = await makeToken({ stagingKey: "staging/abc", fileSize });
 
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "google", accessToken: "tok",
-        parentFolderId: "fid", folderPath: "/up", portalName: "P",
-      }), { status: 200 }))
-      .mockResolvedValueOnce(new Response("", {
-        status: 200, headers: { Location: "https://upload.googleapis.com/r/x" },
-      }));
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            provider: "google",
+            accessToken: "tok",
+            parentFolderId: "fid",
+            folderPath: "/up",
+            portalName: "P",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response("", {
+          status: 200,
+          headers: { Location: "https://upload.googleapis.com/r/x" },
+        }),
+      );
 
     for (const mock of driveMocks) fetchMock.mockResolvedValueOnce(mock);
     fetchMock.mockResolvedValue(new Response("{}", { status: 200 })); // callback fallback
 
     await worker.fetch(
       req("POST", "/transfer", {
-        uploadToken: encoded, stagingKey: "staging/abc",
-        portalId: "p", fileName: "test.pdf", fileSize,
+        uploadToken: encoded,
+        stagingKey: "staging/abc",
+        portalId: "p",
+        fileName: "test.pdf",
+        fileSize,
         mimeType: "application/pdf",
         callbackUrl: "https://app.example.com/callback",
       }),
-      env, ctx,
+      env,
+      ctx,
     );
 
     await transferPromise!;
+
     return fetchMock;
   }
 
@@ -921,6 +1200,7 @@ describe("runTransfer — Drive upload edge cases", () => {
     ]);
 
     const callbackBody = JSON.parse(mock.mock.calls.at(-1)![1].body);
+
     expect(callbackBody.storageUrl).toBe(
       "https://drive.google.com/file/d/no-link-id/view",
     );
@@ -928,13 +1208,18 @@ describe("runTransfer — Drive upload edge cases", () => {
 
   it("uses webViewLink from Drive response when present", async () => {
     const mock = await driveTransfer(50, [
-      new Response(JSON.stringify({
-        id: "with-link-id",
-        webViewLink: "https://drive.google.com/file/d/with-link-id/view?usp=drivesdk",
-      }), { status: 200 }),
+      new Response(
+        JSON.stringify({
+          id: "with-link-id",
+          webViewLink:
+            "https://drive.google.com/file/d/with-link-id/view?usp=drivesdk",
+        }),
+        { status: 200 },
+      ),
     ]);
 
     const callbackBody = JSON.parse(mock.mock.calls.at(-1)![1].body);
+
     expect(callbackBody.storageUrl).toBe(
       "https://drive.google.com/file/d/with-link-id/view?usp=drivesdk",
     );
@@ -947,6 +1232,7 @@ describe("runTransfer — Drive upload edge cases", () => {
     ]);
 
     const callbackBody = JSON.parse(mock.mock.calls.at(-1)![1].body);
+
     expect(callbackBody.status).toBe("failed");
     expect(callbackBody.error).toMatch(/Drive chunk 1 failed: 500/);
   });
@@ -957,6 +1243,7 @@ describe("runTransfer — Drive upload edge cases", () => {
     ]);
 
     const callbackBody = JSON.parse(mock.mock.calls.at(-1)![1].body);
+
     expect(callbackBody.status).toBe("failed");
     expect(callbackBody.error).toMatch(/Drive final chunk failed: 403/);
   });
@@ -968,6 +1255,7 @@ describe("runTransfer — Drive upload edge cases", () => {
 
     // call[0]=context, call[1]=drive init, call[2]=chunk PUT
     const initCall = fetchMock.mock.calls[1];
+
     expect(initCall[1].headers["Authorization"]).toBe("Bearer tok");
   });
 
@@ -977,8 +1265,11 @@ describe("runTransfer — Drive upload edge cases", () => {
     ]);
 
     const initCall = fetchMock.mock.calls[1];
+
     expect(initCall[1].headers["Content-Type"]).toBe("application/json");
-    expect(initCall[1].headers["X-Upload-Content-Type"]).toBe("application/pdf");
+    expect(initCall[1].headers["X-Upload-Content-Type"]).toBe(
+      "application/pdf",
+    );
   });
 
   it("makes exactly 1 R2 range read for a single-chunk file", async () => {
@@ -986,31 +1277,54 @@ describe("runTransfer — Drive upload edge cases", () => {
     const env = makeEnv({ "staging/abc": fileData });
     const ctx = makeCtx();
     let transferPromise: Promise<void> | undefined;
-    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation((p: Promise<void>) => {
-      transferPromise = p;
+
+    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: Promise<void>) => {
+        transferPromise = p;
+      },
+    );
+
+    const encoded = await makeToken({
+      stagingKey: "staging/abc",
+      fileSize: 50,
     });
 
-    const encoded = await makeToken({ stagingKey: "staging/abc", fileSize: 50 });
-
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "google", accessToken: "tok",
-        parentFolderId: "fid", folderPath: "/up", portalName: "P",
-      }), { status: 200 }))
-      .mockResolvedValueOnce(new Response("", {
-        status: 200, headers: { Location: "https://upload.googleapis.com/r/x" },
-      }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "fid" }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            provider: "google",
+            accessToken: "tok",
+            parentFolderId: "fid",
+            folderPath: "/up",
+            portalName: "P",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response("", {
+          status: 200,
+          headers: { Location: "https://upload.googleapis.com/r/x" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: "fid" }), { status: 200 }),
+      )
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
 
     await worker.fetch(
       req("POST", "/transfer", {
-        uploadToken: encoded, stagingKey: "staging/abc",
-        portalId: "p", fileName: "test.pdf", fileSize: 50,
+        uploadToken: encoded,
+        stagingKey: "staging/abc",
+        portalId: "p",
+        fileName: "test.pdf",
+        fileSize: 50,
         mimeType: "application/pdf",
         callbackUrl: "https://app.example.com/callback",
       }),
-      env, ctx,
+      env,
+      ctx,
     );
 
     await transferPromise!;
@@ -1025,32 +1339,52 @@ describe("runTransfer — Drive upload edge cases", () => {
     const env = makeEnv({ "staging/abc": fileData });
     const ctx = makeCtx();
     let transferPromise: Promise<void> | undefined;
-    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation((p: Promise<void>) => {
-      transferPromise = p;
-    });
+
+    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: Promise<void>) => {
+        transferPromise = p;
+      },
+    );
 
     const encoded = await makeToken({ stagingKey: "staging/abc", fileSize });
 
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "google", accessToken: "tok",
-        parentFolderId: "fid", folderPath: "/up", portalName: "P",
-      }), { status: 200 }))
-      .mockResolvedValueOnce(new Response("", {
-        status: 200, headers: { Location: "https://upload.googleapis.com/r/x" },
-      }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            provider: "google",
+            accessToken: "tok",
+            parentFolderId: "fid",
+            folderPath: "/up",
+            portalName: "P",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response("", {
+          status: 200,
+          headers: { Location: "https://upload.googleapis.com/r/x" },
+        }),
+      )
       .mockResolvedValueOnce(new Response("", { status: 308 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "fid" }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: "fid" }), { status: 200 }),
+      )
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
 
     await worker.fetch(
       req("POST", "/transfer", {
-        uploadToken: encoded, stagingKey: "staging/abc",
-        portalId: "p", fileName: "test.pdf", fileSize,
+        uploadToken: encoded,
+        stagingKey: "staging/abc",
+        portalId: "p",
+        fileName: "test.pdf",
+        fileSize,
         mimeType: "application/pdf",
         callbackUrl: "https://app.example.com/callback",
       }),
-      env, ctx,
+      env,
+      ctx,
     );
 
     await transferPromise!;
@@ -1063,8 +1397,10 @@ describe("runTransfer — Drive upload edge cases", () => {
     ]);
 
     const chunkCall = fetchMock.mock.calls[2];
+
     expect(chunkCall[1].headers["Content-Range"]).toBe("bytes 0-0/1");
     const callbackBody = JSON.parse(mock.mock.calls.at(-1)![1].body);
+
     expect(callbackBody.status).toBe("completed");
   });
 });
@@ -1081,24 +1417,41 @@ describe("runTransfer — Dropbox upload edge cases", () => {
     vi.unstubAllGlobals();
   });
 
-  async function dropboxTransfer(fileSize: number, folderPath: string, dropboxMocks: Response[]) {
+  async function dropboxTransfer(
+    fileSize: number,
+    folderPath: string,
+    dropboxMocks: Response[],
+  ) {
     const fileData = new Uint8Array(fileSize).fill(0x02);
     const env = makeEnv({ "staging/abc": fileData });
     const ctx = makeCtx();
     let transferPromise: Promise<void> | undefined;
-    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation((p: Promise<void>) => {
-      transferPromise = p;
-    });
+
+    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: Promise<void>) => {
+        transferPromise = p;
+      },
+    );
 
     const encoded = await makeToken({ stagingKey: "staging/abc", fileSize });
 
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "dropbox", accessToken: "dbx-tok",
-        parentFolderId: "", folderPath, portalName: "P",
-      }), { status: 200 }))
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ session_id: "sess-abc" }), { status: 200 }),
+        new Response(
+          JSON.stringify({
+            provider: "dropbox",
+            accessToken: "dbx-tok",
+            parentFolderId: "",
+            folderPath,
+            portalName: "P",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ session_id: "sess-abc" }), {
+          status: 200,
+        }),
       );
 
     for (const mock of dropboxMocks) fetchMock.mockResolvedValueOnce(mock);
@@ -1106,15 +1459,20 @@ describe("runTransfer — Dropbox upload edge cases", () => {
 
     await worker.fetch(
       req("POST", "/transfer", {
-        uploadToken: encoded, stagingKey: "staging/abc",
-        portalId: "p", fileName: "report.pdf", fileSize,
+        uploadToken: encoded,
+        stagingKey: "staging/abc",
+        portalId: "p",
+        fileName: "report.pdf",
+        fileSize,
         mimeType: "application/pdf",
         callbackUrl: "https://app.example.com/callback",
       }),
-      env, ctx,
+      env,
+      ctx,
     );
 
     await transferPromise!;
+
     return fetchMock;
   }
 
@@ -1125,6 +1483,7 @@ describe("runTransfer — Dropbox upload edge cases", () => {
     ]);
 
     const callbackBody = JSON.parse(mock.mock.calls.at(-1)![1].body);
+
     expect(callbackBody.status).toBe("failed");
     expect(callbackBody.error).toMatch(/Dropbox append 1 failed: 409/);
   });
@@ -1135,37 +1494,47 @@ describe("runTransfer — Dropbox upload edge cases", () => {
     ]);
 
     const callbackBody = JSON.parse(mock.mock.calls.at(-1)![1].body);
+
     expect(callbackBody.status).toBe("failed");
     expect(callbackBody.error).toMatch(/Dropbox finish failed: 507/);
   });
 
   it("sends Authorization Bearer header to Dropbox session start", async () => {
     await dropboxTransfer(50, "/uploads", [
-      new Response(JSON.stringify({ id: "dbx-id", name: "report.pdf" }), { status: 200 }),
+      new Response(JSON.stringify({ id: "dbx-id", name: "report.pdf" }), {
+        status: 200,
+      }),
     ]);
 
     // call[0]=context, call[1]=session start
     const startCall = fetchMock.mock.calls[1];
+
     expect(startCall[1].headers["Authorization"]).toBe("Bearer dbx-tok");
   });
 
   it("commit uses autorename: true", async () => {
     await dropboxTransfer(50, "/uploads", [
-      new Response(JSON.stringify({ id: "dbx-id", name: "report.pdf" }), { status: 200 }),
+      new Response(JSON.stringify({ id: "dbx-id", name: "report.pdf" }), {
+        status: 200,
+      }),
     ]);
 
     const finishCall = fetchMock.mock.calls[2];
     const arg = JSON.parse(finishCall[1].headers["Dropbox-API-Arg"]);
+
     expect(arg.commit.autorename).toBe(true);
     expect(arg.commit.mode).toBe("add");
   });
 
   it("storageUrl is empty string for Dropbox (no public link)", async () => {
     const mock = await dropboxTransfer(50, "/uploads", [
-      new Response(JSON.stringify({ id: "dbx-id", name: "report.pdf" }), { status: 200 }),
+      new Response(JSON.stringify({ id: "dbx-id", name: "report.pdf" }), {
+        status: 200,
+      }),
     ]);
 
     const callbackBody = JSON.parse(mock.mock.calls.at(-1)![1].body);
+
     expect(callbackBody.storageUrl).toBe("");
     expect(callbackBody.storageFileId).toBe("dbx-id");
   });
@@ -1176,34 +1545,51 @@ describe("runTransfer — Dropbox upload edge cases", () => {
     const env = makeEnv({ "staging/abc": fileData });
     const ctx = makeCtx();
     let transferPromise: Promise<void> | undefined;
-    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation((p: Promise<void>) => {
-      transferPromise = p;
-    });
+
+    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: Promise<void>) => {
+        transferPromise = p;
+      },
+    );
 
     const encoded = await makeToken({ stagingKey: "staging/abc", fileSize });
 
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "dropbox", accessToken: "dbx-tok",
-        parentFolderId: "", folderPath: "/uploads", portalName: "P",
-      }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            provider: "dropbox",
+            accessToken: "dbx-tok",
+            parentFolderId: "",
+            folderPath: "/uploads",
+            portalName: "P",
+          }),
+          { status: 200 },
+        ),
+      )
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ session_id: "s" }), { status: 200 }),
       )
       .mockResolvedValueOnce(new Response("", { status: 200 })) // append
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ id: "dbx-id", name: "report.pdf" }), { status: 200 }),
+        new Response(JSON.stringify({ id: "dbx-id", name: "report.pdf" }), {
+          status: 200,
+        }),
       )
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
 
     await worker.fetch(
       req("POST", "/transfer", {
-        uploadToken: encoded, stagingKey: "staging/abc",
-        portalId: "p", fileName: "report.pdf", fileSize,
+        uploadToken: encoded,
+        stagingKey: "staging/abc",
+        portalId: "p",
+        fileName: "report.pdf",
+        fileSize,
         mimeType: "application/pdf",
         callbackUrl: "https://app.example.com/callback",
       }),
-      env, ctx,
+      env,
+      ctx,
     );
 
     await transferPromise!;
@@ -1228,9 +1614,12 @@ describe("runTransfer — callback payload completeness", () => {
     const env = makeEnv({ "staging/abc": fileData });
     const ctx = makeCtx();
     let transferPromise: Promise<void> | undefined;
-    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation((p: Promise<void>) => {
-      transferPromise = p;
-    });
+
+    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: Promise<void>) => {
+        transferPromise = p;
+      },
+    );
 
     const encoded = await makeToken({
       stagingKey: "staging/abc",
@@ -1241,17 +1630,33 @@ describe("runTransfer — callback payload completeness", () => {
     });
 
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "google", accessToken: "tok",
-        parentFolderId: "fid", folderPath: "/up", portalName: "P",
-      }), { status: 200 }))
-      .mockResolvedValueOnce(new Response("", {
-        status: 200, headers: { Location: "https://upload.googleapis.com/r/x" },
-      }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        id: "drive-id",
-        webViewLink: "https://drive.google.com/file/d/drive-id/view",
-      }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            provider: "google",
+            accessToken: "tok",
+            parentFolderId: "fid",
+            folderPath: "/up",
+            portalName: "P",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response("", {
+          status: 200,
+          headers: { Location: "https://upload.googleapis.com/r/x" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: "drive-id",
+            webViewLink: "https://drive.google.com/file/d/drive-id/view",
+          }),
+          { status: 200 },
+        ),
+      )
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
 
     await worker.fetch(
@@ -1269,12 +1674,14 @@ describe("runTransfer — callback payload completeness", () => {
         skipNotification: true,
         callbackUrl: "https://app.example.com/callback",
       }),
-      env, ctx,
+      env,
+      ctx,
     );
 
     await transferPromise!;
 
     const body = JSON.parse(fetchMock.mock.calls.at(-1)![1].body);
+
     expect(body.status).toBe("completed");
     expect(body.workerSecret).toBe("worker-secret-xyz");
     expect(body.stagingKey).toBe("staging/abc");
@@ -1296,37 +1703,61 @@ describe("runTransfer — callback payload completeness", () => {
     const env = makeEnv({ "staging/abc": fileData });
     const ctx = makeCtx();
     let transferPromise: Promise<void> | undefined;
-    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation((p: Promise<void>) => {
-      transferPromise = p;
+
+    (ctx.waitUntil as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: Promise<void>) => {
+        transferPromise = p;
+      },
+    );
+
+    const encoded = await makeToken({
+      stagingKey: "staging/abc",
+      fileSize: 50,
     });
 
-    const encoded = await makeToken({ stagingKey: "staging/abc", fileSize: 50 });
-
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        provider: "google", accessToken: "tok",
-        parentFolderId: "fid", folderPath: "/up", portalName: "P",
-      }), { status: 200 }))
-      .mockResolvedValueOnce(new Response("", {
-        status: 200, headers: { Location: "https://upload.googleapis.com/r/x" },
-      }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "fid" }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            provider: "google",
+            accessToken: "tok",
+            parentFolderId: "fid",
+            folderPath: "/up",
+            portalName: "P",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response("", {
+          status: 200,
+          headers: { Location: "https://upload.googleapis.com/r/x" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: "fid" }), { status: 200 }),
+      )
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
 
     await worker.fetch(
       req("POST", "/transfer", {
-        uploadToken: encoded, stagingKey: "staging/abc",
-        portalId: "p", fileName: "test.pdf", fileSize: 50,
+        uploadToken: encoded,
+        stagingKey: "staging/abc",
+        portalId: "p",
+        fileName: "test.pdf",
+        fileSize: 50,
         mimeType: "application/pdf",
         // skipNotification intentionally omitted
         callbackUrl: "https://app.example.com/callback",
       }),
-      env, ctx,
+      env,
+      ctx,
     );
 
     await transferPromise!;
 
     const body = JSON.parse(fetchMock.mock.calls.at(-1)![1].body);
+
     expect(body.skipNotification).toBe(false);
   });
 });

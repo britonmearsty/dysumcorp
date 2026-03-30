@@ -15,7 +15,6 @@ import {
   ExternalLink,
   Trash2,
   MessageSquare,
-  User,
 } from "lucide-react";
 
 import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
@@ -70,11 +69,16 @@ export default function UploadsPage() {
   const [uploads, setUploads] = useState<UploadGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUpload, setSelectedUpload] = useState<UploadGroup | null>(null);
+  const [selectedUpload, setSelectedUpload] = useState<UploadGroup | null>(
+    null,
+  );
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [fileToDelete, setFileToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [fileToDelete, setFileToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const { showToast } = useToast();
   const { data: session, isPending } = useSession();
   const { behavior: deleteBehavior } = useStorageDeleteBehavior();
@@ -92,14 +96,19 @@ export default function UploadsPage() {
 
         files.forEach((file: FileItem) => {
           // Use uploadSessionId if available, otherwise create a fallback key for legacy files
-          const sessionKey = file.uploadSessionId || `legacy-${file.uploaderEmail || file.uploaderName || 'anonymous'}-${file.uploadedAt}`;
-          
+          const sessionKey =
+            file.uploadSessionId ||
+            `legacy-${file.uploaderEmail || file.uploaderName || "anonymous"}-${file.uploadedAt}`;
+
           if (groupedMap.has(sessionKey)) {
             const group = groupedMap.get(sessionKey)!;
+
             group.files.push(file);
             // Always recalculate counts from actual files
             group.totalFiles = group.files.length;
-            group.totalSize = group.files.reduce((sum, f) => sum + BigInt(f.size), BigInt(0)).toString();
+            group.totalSize = group.files
+              .reduce((sum, f) => sum + BigInt(f.size), BigInt(0))
+              .toString();
           } else {
             // Create new group from upload session data or file data
             if (file.uploadSession) {
@@ -135,12 +144,14 @@ export default function UploadsPage() {
 
         // Convert map to array and sort by date (newest first)
         const groupedArray = Array.from(groupedMap.values()).sort(
-          (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+          (a, b) =>
+            new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
         );
 
         setUploads(groupedArray);
       } else {
         const errorData = await response.json();
+
         console.error("Failed to fetch uploads:", errorData);
         showToast(errorData.error || "Failed to fetch uploads", "error");
       }
@@ -173,12 +184,25 @@ export default function UploadsPage() {
     const date = new Date(dateString);
     const today = new Date();
     const yesterday = new Date(today);
+
     yesterday.setDate(yesterday.getDate() - 1);
 
     // Reset time to midnight for comparison
-    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const dateOnly = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+    const todayOnly = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const yesterdayOnly = new Date(
+      yesterday.getFullYear(),
+      yesterday.getMonth(),
+      yesterday.getDate(),
+    );
 
     const timeString = date.toLocaleString("en-US", {
       hour: "2-digit",
@@ -204,12 +228,25 @@ export default function UploadsPage() {
     const date = new Date(dateString);
     const today = new Date();
     const yesterday = new Date(today);
+
     yesterday.setDate(yesterday.getDate() - 1);
 
     // Reset time to midnight for comparison
-    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const dateOnly = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+    const todayOnly = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const yesterdayOnly = new Date(
+      yesterday.getFullYear(),
+      yesterday.getMonth(),
+      yesterday.getDate(),
+    );
 
     if (dateOnly.getTime() === todayOnly.getTime()) {
       return "Today";
@@ -267,6 +304,7 @@ export default function UploadsPage() {
       } else {
         try {
           const errorData = await response.json();
+
           showToast(errorData.error || "Failed to download file", "error");
         } catch {
           showToast("Failed to download file", "error");
@@ -297,7 +335,10 @@ export default function UploadsPage() {
       if (response.ok) {
         // Remove file from selected upload
         if (selectedUpload) {
-          const updatedFiles = selectedUpload.files.filter((f) => f.id !== fileToDelete.id);
+          const updatedFiles = selectedUpload.files.filter(
+            (f) => f.id !== fileToDelete.id,
+          );
+
           if (updatedFiles.length === 0) {
             // If no files left, close modal and refresh
             setSelectedUpload(null);
@@ -329,18 +370,23 @@ export default function UploadsPage() {
     (u) =>
       u.uploaderName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.uploaderEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.portalName?.toLowerCase().includes(searchQuery.toLowerCase())
+      u.portalName?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   // Group uploads by day
-  const uploadsByDay = filteredUploads.reduce((acc, upload) => {
-    const dayCategory = getDayCategory(upload.uploadedAt);
-    if (!acc[dayCategory]) {
-      acc[dayCategory] = [];
-    }
-    acc[dayCategory].push(upload);
-    return acc;
-  }, {} as Record<string, UploadGroup[]>);
+  const uploadsByDay = filteredUploads.reduce(
+    (acc, upload) => {
+      const dayCategory = getDayCategory(upload.uploadedAt);
+
+      if (!acc[dayCategory]) {
+        acc[dayCategory] = [];
+      }
+      acc[dayCategory].push(upload);
+
+      return acc;
+    },
+    {} as Record<string, UploadGroup[]>,
+  );
 
   // Sort day categories (Today first, then Yesterday, then chronological)
   const sortedDays = Object.keys(uploadsByDay).sort((a, b) => {
@@ -351,6 +397,7 @@ export default function UploadsPage() {
     // For other days, sort by the first upload's date in each category
     const dateA = new Date(uploadsByDay[a][0].uploadedAt);
     const dateB = new Date(uploadsByDay[b][0].uploadedAt);
+
     return dateB.getTime() - dateA.getTime();
   });
 
@@ -392,7 +439,7 @@ export default function UploadsPage() {
                 All Uploads
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-                {uploads.length} upload session{uploads.length !== 1 ? 's' : ''}
+                {uploads.length} upload session{uploads.length !== 1 ? "s" : ""}
               </p>
             </div>
 
@@ -418,7 +465,7 @@ export default function UploadsPage() {
                       {dayCategory}
                     </h3>
                   </div>
-                  
+
                   {/* Uploads for this day */}
                   <div className="divide-y divide-border">
                     {uploadsByDay[dayCategory].map((upload) => (
@@ -443,13 +490,17 @@ export default function UploadsPage() {
                             )}
                           </div>
                           <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                            {upload.uploaderEmail || "No email provided"} • {upload.portalName}
+                            {upload.uploaderEmail || "No email provided"} •{" "}
+                            {upload.portalName}
                           </p>
                         </div>
                         <div className="flex sm:flex-col items-start sm:items-end gap-1 sm:gap-1 sm:px-4">
                           <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                             <FileText className="w-3.5 h-3.5" />
-                            <span>{upload.totalFiles} file{upload.totalFiles !== 1 ? 's' : ''}</span>
+                            <span>
+                              {upload.totalFiles} file
+                              {upload.totalFiles !== 1 ? "s" : ""}
+                            </span>
                           </div>
                           <div className="text-[10px] text-muted-foreground">
                             {formatDate(upload.uploadedAt)}
@@ -521,7 +572,9 @@ export default function UploadsPage() {
                                 : "bg-card text-muted-foreground hover:text-foreground hover:border-border border-border"
                             }`}
                             title="Copy email address"
-                            onClick={() => copyToClipboard(selectedUpload.uploaderEmail!)}
+                            onClick={() =>
+                              copyToClipboard(selectedUpload.uploaderEmail!)
+                            }
                           >
                             {copiedEmail ? (
                               <Check className="w-3 h-3" />
@@ -657,11 +710,14 @@ export default function UploadsPage() {
 
       {/* Delete Confirmation Modal */}
       <DeleteFileModal
-        open={deleteModalOpen && !!fileToDelete}
-        fileName={fileToDelete?.name ?? ""}
         behavior={deleteBehavior}
+        fileName={fileToDelete?.name ?? ""}
+        open={deleteModalOpen && !!fileToDelete}
+        onCancel={() => {
+          setDeleteModalOpen(false);
+          setFileToDelete(null);
+        }}
         onConfirm={confirmDeleteFile}
-        onCancel={() => { setDeleteModalOpen(false); setFileToDelete(null); }}
       />
     </div>
   );

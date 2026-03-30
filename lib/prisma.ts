@@ -28,15 +28,15 @@ if (connectionString) {
   const adapter = new PrismaPg(pool as any);
 
   if (process.env.NODE_ENV === "production") {
-    prisma = new PrismaClient({ 
+    prisma = new PrismaClient({
       adapter,
-      log: process.env.DEBUG_DB ? ['query', 'error', 'warn'] : ['error'],
+      log: process.env.DEBUG_DB ? ["query", "error", "warn"] : ["error"],
     });
   } else {
     if (!globalForPrisma.prisma) {
-      globalForPrisma.prisma = new PrismaClient({ 
+      globalForPrisma.prisma = new PrismaClient({
         adapter,
-        log: ['query', 'error', 'warn'],
+        log: ["query", "error", "warn"],
       });
     }
     prisma = globalForPrisma.prisma;

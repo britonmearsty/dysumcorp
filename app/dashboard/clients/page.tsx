@@ -64,7 +64,10 @@ export default function ClientsPage() {
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [fileToDelete, setFileToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [fileToDelete, setFileToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const { showToast } = useToast();
   const { data: session, isPending } = useSession();
 
@@ -528,7 +531,10 @@ export default function ClientsPage() {
                             <div className="flex sm:flex-col items-start sm:items-end gap-1 sm:px-4">
                               <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                                 <FileText className="w-3.5 h-3.5" />
-                                <span>{client.totalFiles} file{client.totalFiles !== 1 ? "s" : ""}</span>
+                                <span>
+                                  {client.totalFiles} file
+                                  {client.totalFiles !== 1 ? "s" : ""}
+                                </span>
                               </div>
                               <div className="text-[10px] text-muted-foreground">
                                 {formatDate(client.lastUpload)}
@@ -782,18 +788,28 @@ export default function ClientsPage() {
                 <Trash2 className="w-6 h-6 text-red-500" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-foreground">Delete File</h3>
-                <p className="text-sm text-muted-foreground">This action cannot be undone</p>
+                <h3 className="text-lg font-bold text-foreground">
+                  Delete File
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  This action cannot be undone
+                </p>
               </div>
             </div>
             <p className="text-foreground mb-6">
               Are you sure you want to delete{" "}
-              <span className="font-semibold">&quot;{fileToDelete.name}&quot;</span>?
+              <span className="font-semibold">
+                &quot;{fileToDelete.name}&quot;
+              </span>
+              ?
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 className="px-4 py-2 border border-border rounded-xl font-medium hover:bg-muted transition-colors"
-                onClick={() => { setDeleteModalOpen(false); setFileToDelete(null); }}
+                onClick={() => {
+                  setDeleteModalOpen(false);
+                  setFileToDelete(null);
+                }}
               >
                 Cancel
               </button>

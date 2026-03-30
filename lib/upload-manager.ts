@@ -62,11 +62,12 @@ const MULTIPART_THRESHOLD = 10 * 1024 * 1024; // 10 MB
  * which fragments bandwidth badly on any realistic upstream.
  */
 function computePartConcurrency(fileSizeBytes: number): number {
-  if (fileSizeBytes >= 2 * 1024 * 1024 * 1024) return 1;  // ≥ 2 GB → 100 MB parts, 1 at a time
-  if (fileSizeBytes >= 500 * 1024 * 1024) return 2;        // ≥ 500 MB → 50 MB parts, 2 concurrent
-  if (fileSizeBytes >= 200 * 1024 * 1024) return 2;        // ≥ 200 MB → 25 MB parts, 2 concurrent
-  if (fileSizeBytes >= 50 * 1024 * 1024) return 3;         // ≥ 50 MB  → 25 MB parts, 3 concurrent
-  return 4;                                                  // < 50 MB  → 25 MB parts, 4 concurrent
+  if (fileSizeBytes >= 2 * 1024 * 1024 * 1024) return 1; // ≥ 2 GB → 100 MB parts, 1 at a time
+  if (fileSizeBytes >= 500 * 1024 * 1024) return 2; // ≥ 500 MB → 50 MB parts, 2 concurrent
+  if (fileSizeBytes >= 200 * 1024 * 1024) return 2; // ≥ 200 MB → 25 MB parts, 2 concurrent
+  if (fileSizeBytes >= 50 * 1024 * 1024) return 3; // ≥ 50 MB  → 25 MB parts, 3 concurrent
+
+  return 4; // < 50 MB  → 25 MB parts, 4 concurrent
 }
 
 /**
@@ -100,6 +101,7 @@ function computeFileConcurrency(files: File[]): number {
   const xhrsUsedByLarge = Math.min(largeCount, FILE_CONCURRENCY_LARGE) * 3; // assume 3 parts avg
   const remainingXhrs = Math.max(1, MAX_TOTAL_XHRS - xhrsUsedByLarge);
   const smallConcurrency = Math.min(smallCount, remainingXhrs);
+
   return Math.min(largeCount, FILE_CONCURRENCY_LARGE) + smallConcurrency;
 }
 
@@ -121,11 +123,12 @@ const POLL_INTERVAL_MS = 2000;
  *   1 GB   → ~2090 attempts (~70 min)
  */
 function computePollAttempts(fileSizeBytes: number): number {
-  const OVERHEAD_S = 60;                    // worker startup + Drive auth
-  const TRANSFER_MBPS = 2;                  // conservative Drive/Dropbox sustained write
-  const transferSeconds = (fileSizeBytes / (1024 * 1024)) / TRANSFER_MBPS;
+  const OVERHEAD_S = 60; // worker startup + Drive auth
+  const TRANSFER_MBPS = 2; // conservative Drive/Dropbox sustained write
+  const transferSeconds = fileSizeBytes / (1024 * 1024) / TRANSFER_MBPS;
   const totalSeconds = OVERHEAD_S + transferSeconds;
   const attempts = Math.ceil(totalSeconds / (POLL_INTERVAL_MS / 1000));
+
   return Math.max(90, attempts); // floor at 180s for small files
 }
 
@@ -136,13 +139,16 @@ function sleep(ms: number) {
 /** Wall-clock timestamp prefix for logs: HH:MM:SS.mmm */
 function ts(): string {
   const d = new Date();
-  return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}.${String(d.getMilliseconds()).padStart(3,"0")}`;
+
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}.${String(d.getMilliseconds()).padStart(3, "0")}`;
 }
 
 /** Format bytes/s as human-readable speed string */
 function fmtSpeed(bytesPerSec: number): string {
-  if (bytesPerSec >= 1024 * 1024) return `${(bytesPerSec / 1024 / 1024).toFixed(1)} MB/s`;
+  if (bytesPerSec >= 1024 * 1024)
+    return `${(bytesPerSec / 1024 / 1024).toFixed(1)} MB/s`;
   if (bytesPerSec >= 1024) return `${(bytesPerSec / 1024).toFixed(0)} KB/s`;
+
   return `${bytesPerSec.toFixed(0)} B/s`;
 }
 
@@ -166,11 +172,15 @@ function uploadPart(
       // Log speed sample every ~2s
       const now = performance.now();
       const dt = now - lastSampleTime;
+
       if (dt >= 2000) {
         const bytesInWindow = e.loaded - lastLoaded;
         const speed = bytesInWindow / (dt / 1000);
         const pct = Math.floor((e.loaded / e.total) * 100);
-        console.log(`[upload:spd] ${ts()} ${label} ${pct}% — ${fmtSpeed(speed)} (${(e.loaded/1024/1024).toFixed(1)}/${(e.total/1024/1024).toFixed(1)} MB)`);
+
+        console.log(
+          `[upload:spd] ${ts()} ${label} ${pct}% — ${fmtSpeed(speed)} (${(e.loaded / 1024 / 1024).toFixed(1)}/${(e.total / 1024 / 1024).toFixed(1)} MB)`,
+        );
         lastLoaded = e.loaded;
         lastSampleTime = now;
       }
@@ -180,16 +190,27 @@ function uploadPart(
       if (xhr.status >= 200 && xhr.status < 300) {
         const duration = Math.round(performance.now() - partStart);
         const avgSpeed = data.size / (duration / 1000);
-        console.log(`[upload:spd] ${ts()} ${label} DONE — avg ${fmtSpeed(avgSpeed)} in ${duration}ms`);
-        const etag = xhr.getResponseHeader("ETag") ?? xhr.getResponseHeader("etag") ?? "";
+
+        console.log(
+          `[upload:spd] ${ts()} ${label} DONE — avg ${fmtSpeed(avgSpeed)} in ${duration}ms`,
+        );
+        const etag =
+          xhr.getResponseHeader("ETag") ?? xhr.getResponseHeader("etag") ?? "";
+
         resolve(etag);
       } else {
-        reject(new Error(`Part upload failed: ${xhr.status} ${xhr.statusText}`));
+        reject(
+          new Error(`Part upload failed: ${xhr.status} ${xhr.statusText}`),
+        );
       }
     });
 
-    xhr.addEventListener("error", () => reject(new Error("Network error during part upload")));
-    xhr.addEventListener("abort", () => reject(new Error("Part upload aborted")));
+    xhr.addEventListener("error", () =>
+      reject(new Error("Network error during part upload")),
+    );
+    xhr.addEventListener("abort", () =>
+      reject(new Error("Part upload aborted")),
+    );
 
     xhr.open("PUT", url);
     // Do NOT set Content-Type on parts — presigned URL already encodes it
@@ -211,19 +232,27 @@ async function pLimit<T>(
   async function worker() {
     while (nextIndex < tasks.length) {
       const i = nextIndex++;
+
       results[i] = await tasks[i]();
     }
   }
 
-  const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, worker);
+  const workers = Array.from(
+    { length: Math.min(concurrency, tasks.length) },
+    worker,
+  );
+
   await Promise.all(workers);
+
   return results;
 }
 
 // ── Main upload entry points ───────────────────────────────────────────────────
 
 /** Single-file upload — used when calling uploadFile directly (not via batch). */
-export async function uploadFile(options: UploadOptions): Promise<UploadResult> {
+export async function uploadFile(
+  options: UploadOptions,
+): Promise<UploadResult> {
   return new Promise<UploadResult>((resolve) => {
     uploadViaR2WithDetachedPoll({
       ...options,
@@ -241,8 +270,10 @@ async function uploadSingleShot(
   elapsed: () => string,
 ): Promise<{ ok: boolean; error?: string }> {
   const label = `"${file.name}"`;
+
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     const attemptStart = performance.now();
+
     try {
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -253,15 +284,23 @@ async function uploadSingleShot(
         xhr.upload.addEventListener("progress", (e) => {
           if (!e.lengthComputable) return;
           const p = Math.floor((e.loaded / e.total) * 100);
-          if (p !== last) { last = p; if (onProgress) onProgress(p); }
+
+          if (p !== last) {
+            last = p;
+            if (onProgress) onProgress(p);
+          }
 
           // Speed sample every ~2s
           const now = performance.now();
           const dt = now - lastSampleTime;
+
           if (dt >= 2000) {
             const speed = (e.loaded - lastLoaded) / (dt / 1000);
             const pct = Math.floor((e.loaded / e.total) * 100);
-            console.log(`[upload:spd] ${ts()} ${label} single ${pct}% — ${fmtSpeed(speed)} (${(e.loaded/1024/1024).toFixed(1)}/${(e.total/1024/1024).toFixed(1)} MB)`);
+
+            console.log(
+              `[upload:spd] ${ts()} ${label} single ${pct}% — ${fmtSpeed(speed)} (${(e.loaded / 1024 / 1024).toFixed(1)}/${(e.total / 1024 / 1024).toFixed(1)} MB)`,
+            );
             lastLoaded = e.loaded;
             lastSampleTime = now;
           }
@@ -271,27 +310,44 @@ async function uploadSingleShot(
           if (xhr.status >= 200 && xhr.status < 300) resolve();
           else reject(new Error(`R2 PUT failed: ${xhr.status}`));
         });
-        xhr.addEventListener("error", () => reject(new Error("Network error during R2 PUT")));
-        xhr.addEventListener("abort", () => reject(new Error("R2 PUT aborted")));
+        xhr.addEventListener("error", () =>
+          reject(new Error("Network error during R2 PUT")),
+        );
+        xhr.addEventListener("abort", () =>
+          reject(new Error("R2 PUT aborted")),
+        );
 
         xhr.open("PUT", presignedUrl);
-        xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+        xhr.setRequestHeader(
+          "Content-Type",
+          file.type || "application/octet-stream",
+        );
         xhr.send(file);
       });
 
       const duration = Math.round(performance.now() - attemptStart);
       const avgSpeed = file.size / (duration / 1000);
-      console.log(`[upload] ✓ single-shot PUT complete — avg ${fmtSpeed(avgSpeed)} (${elapsed()})`);
+
+      console.log(
+        `[upload] ✓ single-shot PUT complete — avg ${fmtSpeed(avgSpeed)} (${elapsed()})`,
+      );
       if (onProgress) onProgress(100);
+
       return { ok: true };
     } catch (err) {
       if (attempt >= MAX_RETRIES) {
-        return { ok: false, error: err instanceof Error ? err.message : "R2 upload failed" };
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : "R2 upload failed",
+        };
       }
-      console.warn(`[upload] ${ts()} ${label} single-shot attempt ${attempt} failed, retrying...`);
+      console.warn(
+        `[upload] ${ts()} ${label} single-shot attempt ${attempt} failed, retrying...`,
+      );
       await sleep(1000 * Math.pow(2, attempt - 1));
     }
   }
+
   return { ok: false, error: "R2 upload failed" };
 }
 
@@ -310,10 +366,13 @@ async function uploadMultipart(
   onProgress: ((p: number) => void) | undefined,
   elapsed: () => string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const { uploadId, partUrls, partSize, partCount, stagingKey, uploadToken } = presignData;
+  const { uploadId, partUrls, partSize, partCount, stagingKey, uploadToken } =
+    presignData;
   const partConcurrency = computePartConcurrency(file.size);
 
-  console.log(`[upload] ${ts()} multipart START "${file.name}" ${partCount} parts × ${partSize / 1024 / 1024} MB, concurrency=${partConcurrency}`);
+  console.log(
+    `[upload] ${ts()} multipart START "${file.name}" ${partCount} parts × ${partSize / 1024 / 1024} MB, concurrency=${partConcurrency}`,
+  );
 
   // Track bytes uploaded across all parts for aggregate progress (0–78%)
   const partLoaded = new Array(partCount).fill(0);
@@ -322,6 +381,7 @@ async function uploadMultipart(
   function reportProgress() {
     if (!onProgress) return;
     const loaded = partLoaded.reduce((a, b) => a + b, 0);
+
     onProgress(Math.floor((loaded / totalBytes) * 100));
   }
 
@@ -339,11 +399,17 @@ async function uploadMultipart(
           partLoaded[i] = loaded;
           reportProgress();
         });
-        console.log(`[upload] ${ts()} ✓ part ${partNumber}/${partCount} etag=${etag} (${elapsed()})`);
+
+        console.log(
+          `[upload] ${ts()} ✓ part ${partNumber}/${partCount} etag=${etag} (${elapsed()})`,
+        );
+
         return { partNumber, etag };
       } catch (err) {
         if (attempt >= MAX_RETRIES) throw err;
-        console.warn(`[upload] part ${partNumber} attempt ${attempt} failed, retrying...`);
+        console.warn(
+          `[upload] part ${partNumber} attempt ${attempt} failed, retrying...`,
+        );
         await sleep(1000 * Math.pow(2, attempt - 1));
       }
     }
@@ -351,10 +417,14 @@ async function uploadMultipart(
   });
 
   let parts: { partNumber: number; etag: string }[];
+
   try {
     parts = await pLimit(tasks, partConcurrency);
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Multipart upload failed" };
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Multipart upload failed",
+    };
   }
 
   if (onProgress) onProgress(78);
@@ -369,10 +439,17 @@ async function uploadMultipart(
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      return { ok: false, error: (data as any).error ?? "Failed to complete multipart upload" };
+
+      return {
+        ok: false,
+        error: (data as any).error ?? "Failed to complete multipart upload",
+      };
     }
 
-    console.log(`[upload] ${ts()} ✓ multipart complete "${file.name}" (${elapsed()})`);
+    console.log(
+      `[upload] ${ts()} ✓ multipart complete "${file.name}" (${elapsed()})`,
+    );
+
     return { ok: true };
   } catch (err) {
     return { ok: false, error: "Network error during multipart complete" };
@@ -408,15 +485,24 @@ export async function uploadFiles(
         uploaderNotes: options.uploaderNotes,
       }),
     });
+
     if (sessionRes.ok) {
       const sessionData = await sessionRes.json();
+
       sharedSessionId = sessionData.uploadSessionId;
-      console.log(`[uploadFiles] ${ts()} ✓ pre-created session: ${sharedSessionId}`);
+      console.log(
+        `[uploadFiles] ${ts()} ✓ pre-created session: ${sharedSessionId}`,
+      );
     } else {
-      console.warn(`[uploadFiles] ${ts()} ⚠️ session pre-create failed (${sessionRes.status}), will fall back to per-file sessions`);
+      console.warn(
+        `[uploadFiles] ${ts()} ⚠️ session pre-create failed (${sessionRes.status}), will fall back to per-file sessions`,
+      );
     }
   } catch (err) {
-    console.warn(`[uploadFiles] ${ts()} ⚠️ session pre-create error (non-fatal):`, err);
+    console.warn(
+      `[uploadFiles] ${ts()} ⚠️ session pre-create error (non-fatal):`,
+      err,
+    );
   }
 
   // Pre-resolve the destination folder. We presign the first file (in sort order) to get a
@@ -450,8 +536,12 @@ export async function uploadFiles(
 
       if (presignRes.ok) {
         const presignData = await presignRes.json();
+
         // Cache keyed on the original index of the first-sorted file
-        firstFilePresignCache = { fileIndex: firstSorted.originalIndex, data: presignData };
+        firstFilePresignCache = {
+          fileIndex: firstSorted.originalIndex,
+          data: presignData,
+        };
 
         // Use the token to pre-resolve the folder once for all files
         const ctxRes = await fetch("/api/portals/r2-worker-context", {
@@ -462,17 +552,26 @@ export async function uploadFiles(
             uploaderName: options.uploaderName,
           }),
         });
+
         if (ctxRes.ok) {
           const ctx = await ctxRes.json();
+
           sharedParentFolderId = ctx.parentFolderId;
           sharedFolderPath = ctx.folderPath;
-          console.log(`[uploadFiles] ${ts()} ✓ pre-resolved folder: ${sharedParentFolderId} (${sharedFolderPath})`);
+          console.log(
+            `[uploadFiles] ${ts()} ✓ pre-resolved folder: ${sharedParentFolderId} (${sharedFolderPath})`,
+          );
         } else {
-          console.warn(`[uploadFiles] ${ts()} ⚠️ folder pre-resolve failed (${ctxRes.status}), worker will resolve per-file`);
+          console.warn(
+            `[uploadFiles] ${ts()} ⚠️ folder pre-resolve failed (${ctxRes.status}), worker will resolve per-file`,
+          );
         }
       }
     } catch (err) {
-      console.warn(`[uploadFiles] ${ts()} ⚠️ folder pre-resolve error (non-fatal):`, err);
+      console.warn(
+        `[uploadFiles] ${ts()} ⚠️ folder pre-resolve error (non-fatal):`,
+        err,
+      );
     }
   }
 
@@ -483,7 +582,10 @@ export async function uploadFiles(
 
   const sortedFiles = sortedEntries.map((e) => e.file);
   const concurrency = computeFileConcurrency(sortedFiles);
-  console.log(`[uploadFiles] ${ts()} BATCH START: ${files.length} files, concurrency=${concurrency} (sorted small→large)`);
+
+  console.log(
+    `[uploadFiles] ${ts()} BATCH START: ${files.length} files, concurrency=${concurrency} (sorted small→large)`,
+  );
 
   const results: UploadResult[] = new Array(files.length);
   const successfulFiles: Array<{ name: string; size: number }> = [];
@@ -494,7 +596,10 @@ export async function uploadFiles(
 
   const tasks = sortedEntries.map(({ file, originalIndex }) => async () => {
     const i = originalIndex;
-    console.log(`[uploadFiles] ${ts()} starting "${file.name}" ${(file.size/1024/1024).toFixed(2)} MB (original index ${i})`);
+
+    console.log(
+      `[uploadFiles] ${ts()} starting "${file.name}" ${(file.size / 1024 / 1024).toFixed(2)} MB (original index ${i})`,
+    );
 
     const onPollResult = (result: UploadResult) => {
       results[i] = result;
@@ -502,7 +607,9 @@ export async function uploadFiles(
         successfulFiles.push({ name: file.name, size: file.size });
         console.log(`[uploadFiles] ${ts()} ✓ done: "${file.name}"`);
       } else {
-        console.error(`[uploadFiles] ${ts()} ❌ failed: "${file.name}" — ${result.error}`);
+        console.error(
+          `[uploadFiles] ${ts()} ❌ failed: "${file.name}" — ${result.error}`,
+        );
       }
       options.onFileComplete?.(i, result);
     };
@@ -528,17 +635,21 @@ export async function uploadFiles(
 
     if (!r2Result.pollContext) {
       onPollResult({ success: false, error: r2Result.error, method: "r2" });
+
       return;
     }
 
     const pollPromise = runPoll(r2Result.pollContext, onPollResult);
+
     pollPromises.push(pollPromise);
   });
 
   await pLimit(tasks, concurrency);
   await Promise.all(pollPromises);
 
-  console.log(`[uploadFiles] ${ts()} BATCH COMPLETE: ${successfulFiles.length}/${files.length} succeeded`);
+  console.log(
+    `[uploadFiles] ${ts()} BATCH COMPLETE: ${successfulFiles.length}/${files.length} succeeded`,
+  );
 
   return results;
 }
@@ -548,32 +659,49 @@ export async function uploadFiles(
  * Resolves when done (success or failure) — never rejects.
  */
 async function runPoll(
-  pollContext: { stagingKey: string; uploadToken: string; file: File; onProgress: ((p: number) => void) | undefined; t0: number },
+  pollContext: {
+    stagingKey: string;
+    uploadToken: string;
+    file: File;
+    onProgress: ((p: number) => void) | undefined;
+    t0: number;
+  },
   onPollResult: (result: UploadResult) => void,
 ): Promise<void> {
   const { stagingKey, uploadToken, file, onProgress, t0 } = pollContext;
   const pollMaxAttempts = computePollAttempts(file.size);
   const elapsed = () => `${Math.round(performance.now() - t0)}ms`;
 
-  console.log(`[upload] ${ts()} polling "${file.name}" up to ${pollMaxAttempts} attempts (~${Math.round(pollMaxAttempts * POLL_INTERVAL_MS / 1000)}s) for ${(file.size / 1024 / 1024).toFixed(1)} MB`);
+  console.log(
+    `[upload] ${ts()} polling "${file.name}" up to ${pollMaxAttempts} attempts (~${Math.round((pollMaxAttempts * POLL_INTERVAL_MS) / 1000)}s) for ${(file.size / 1024 / 1024).toFixed(1)} MB`,
+  );
 
   for (let attempt = 0; attempt < pollMaxAttempts; attempt++) {
     await sleep(POLL_INTERVAL_MS);
     try {
       const params = new URLSearchParams({ stagingKey, uploadToken });
       const res = await fetch(`/api/portals/r2-status?${params}`);
+
       if (!res.ok) continue;
 
       const data = await res.json();
 
       if (data.status === "completed") {
         if (onProgress) onProgress(100);
-        console.log(`[upload] ${ts()} ✓ DONE "${file.name}" total=${elapsed()}`);
+        console.log(
+          `[upload] ${ts()} ✓ DONE "${file.name}" total=${elapsed()}`,
+        );
         onPollResult({ success: true, file: data.file, method: "r2" });
+
         return;
       }
       if (data.status === "failed") {
-        onPollResult({ success: false, error: "Transfer failed in worker", method: "r2" });
+        onPollResult({
+          success: false,
+          error: "Transfer failed in worker",
+          method: "r2",
+        });
+
         return;
       }
     } catch {
@@ -597,6 +725,7 @@ async function uploadViaR2WithDetachedPoll(
 
   if (!result.pollContext) {
     onPollResult({ success: false, error: result.error, method: "r2" });
+
     return;
   }
 
@@ -605,7 +734,15 @@ async function uploadViaR2WithDetachedPoll(
 
 /** Internal: runs presign + R2 upload + worker trigger. Returns poll context on success. */
 async function uploadViaR2Internal(options: UploadOptions): Promise<
-  | { pollContext: { stagingKey: string; uploadToken: string; file: File; onProgress: ((p: number) => void) | undefined; t0: number } }
+  | {
+      pollContext: {
+        stagingKey: string;
+        uploadToken: string;
+        file: File;
+        onProgress: ((p: number) => void) | undefined;
+        t0: number;
+      };
+    }
   | { pollContext: null; error: string }
 > {
   const {
@@ -625,13 +762,19 @@ async function uploadViaR2Internal(options: UploadOptions): Promise<
 
   const t0 = performance.now();
   const elapsed = () => `${Math.round(performance.now() - t0)}ms`;
-  console.log(`[upload] ${ts()} START "${file.name}" ${(file.size/1024/1024).toFixed(2)} MB type=${file.size >= MULTIPART_THRESHOLD ? "multipart" : "single-shot"}`);
+
+  console.log(
+    `[upload] ${ts()} START "${file.name}" ${(file.size / 1024 / 1024).toFixed(2)} MB type=${file.size >= MULTIPART_THRESHOLD ? "multipart" : "single-shot"}`,
+  );
 
   // Step 1: Presign (use cached result if available — avoids double-presigning the first file)
   let presignData: any;
+
   if (cachedPresignData) {
     presignData = cachedPresignData;
-    console.log(`[upload] ${ts()} ✓ presign (cached) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`);
+    console.log(
+      `[upload] ${ts()} ✓ presign (cached) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`,
+    );
   } else {
     try {
       const res = await fetch("/api/portals/r2-presign", {
@@ -651,11 +794,17 @@ async function uploadViaR2Internal(options: UploadOptions): Promise<
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        return { pollContext: null, error: (data as any).error ?? "Failed to get upload URL" };
+
+        return {
+          pollContext: null,
+          error: (data as any).error ?? "Failed to get upload URL",
+        };
       }
 
       presignData = await res.json();
-      console.log(`[upload] ${ts()} ✓ presign (${elapsed()}) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`);
+      console.log(
+        `[upload] ${ts()} ✓ presign (${elapsed()}) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`,
+      );
     } catch {
       return { pollContext: null, error: "Network error during presign" };
     }
@@ -665,11 +814,47 @@ async function uploadViaR2Internal(options: UploadOptions): Promise<
 
   // Step 2: Upload to R2
   if (presignData.uploadType === "multipart") {
-    const result = await uploadMultipart(file, presignData, onProgress, elapsed);
-    if (!result.ok) return { pollContext: null, error: result.error ?? "Multipart upload failed" };
+    const result = await uploadMultipart(
+      file,
+      presignData,
+      onProgress,
+      elapsed,
+    );
+
+    if (!result.ok)
+      return {
+        pollContext: null,
+        error: result.error ?? "Multipart upload failed",
+      };
   } else {
-    const result = await uploadSingleShot(file, presignData.presignedUrl, onProgress, elapsed);
-    if (!result.ok) return { pollContext: null, error: result.error ?? "Single-shot upload failed" };
+    const result = await uploadSingleShot(
+      file,
+      presignData.presignedUrl,
+      onProgress,
+      elapsed,
+    );
+
+    if (!result.ok)
+      return {
+        pollContext: null,
+        error: result.error ?? "Single-shot upload failed",
+      };
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const completeRes = await fetch(
+      `${origin}/api/portals/r2-single-complete`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uploadToken, stagingKey }),
+      },
+    );
+
+    if (!completeRes.ok) {
+      console.warn(
+        `[upload] ${ts()} ⚠️ r2-single-complete failed (non-fatal), worker will proceed`,
+      );
+    }
   }
 
   // Step 3: Trigger worker
@@ -697,7 +882,11 @@ async function uploadViaR2Internal(options: UploadOptions): Promise<
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      return { pollContext: null, error: (data as any).error ?? "Worker rejected transfer" };
+
+      return {
+        pollContext: null,
+        error: (data as any).error ?? "Worker rejected transfer",
+      };
     }
     console.log(`[upload] ${ts()} ✓ worker accepted (${elapsed()})`);
   } catch {

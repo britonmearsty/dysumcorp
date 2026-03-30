@@ -32,6 +32,7 @@ export async function POST(
     // If trying to activate (turn ON), check subscription
     if (!existingPortal.isActive) {
       const access = await checkAccess(session.user.id);
+
       if (!access.allowed) {
         return NextResponse.json(
           {

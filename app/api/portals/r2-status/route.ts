@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 import { validateUploadToken } from "@/lib/upload-tokens";
 import { applyStatusPollRateLimit } from "@/lib/rate-limit";
@@ -12,9 +13,11 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: NextRequest) {
   const rateLimitResponse = await applyStatusPollRateLimit(request);
+
   if (rateLimitResponse) return rateLimitResponse;
 
   const requestId = Math.random().toString(36).slice(2, 8);
+
   console.log(
     `[r2-status:${requestId}] ═══════════════════════════════════════════════════════`,
   );
@@ -32,6 +35,7 @@ export async function GET(request: NextRequest) {
 
     if (!stagingKey || !uploadToken) {
       console.error(`[r2-status:${requestId}] ❌ Missing required params`);
+
       return NextResponse.json(
         { error: "stagingKey and uploadToken are required" },
         { status: 400 },
@@ -40,8 +44,10 @@ export async function GET(request: NextRequest) {
 
     console.log(`[r2-status:${requestId}] Validating upload token...`);
     const token = validateUploadToken(uploadToken);
+
     if (!token) {
       console.error(`[r2-status:${requestId}] ❌ Token validation failed`);
+
       return NextResponse.json(
         { error: "Invalid or expired upload token" },
         { status: 401 },
@@ -58,6 +64,7 @@ export async function GET(request: NextRequest) {
       console.error(
         `[r2-status:${requestId}] Request stagingKey: ${stagingKey}`,
       );
+
       return NextResponse.json(
         { error: "stagingKey does not match token" },
         { status: 403 },
@@ -72,6 +79,7 @@ export async function GET(request: NextRequest) {
 
     if (!staging) {
       console.error(`[r2-status:${requestId}] ❌ Staging record not found`);
+
       return NextResponse.json(
         { error: "Staging record not found" },
         { status: 404 },
@@ -123,6 +131,7 @@ export async function GET(request: NextRequest) {
       console.log(
         `[r2-status:${requestId}] ═══════════════════════════════════════════════════════`,
       );
+
       return NextResponse.json({
         status: "completed",
         file: file ? { ...file, size: file.size.toString() } : null,
@@ -140,6 +149,7 @@ export async function GET(request: NextRequest) {
     console.log(
       `[r2-status:${requestId}] ═══════════════════════════════════════════════════════`,
     );
+
     return NextResponse.json({ status: staging.status });
   } catch (error) {
     console.error(`[r2-status:${requestId}] ❌❌❌ UNCAUGHT ERROR:`, error);
@@ -150,6 +160,7 @@ export async function GET(request: NextRequest) {
     console.error(
       `[r2-status:${requestId}] ═══════════════════════════════════════════════════════`,
     );
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

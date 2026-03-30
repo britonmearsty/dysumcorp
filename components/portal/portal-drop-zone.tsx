@@ -48,15 +48,15 @@ export function PortalDropZone({
 
   return (
     <div
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onClick={handleClick}
       className="relative rounded-xl border-2 border-dashed flex flex-col items-center justify-center py-14 gap-3 cursor-pointer transition-all"
       style={{
         borderColor: dragging ? primaryColor : `${primaryColor}40`,
         background: dragging ? `${primaryColor}0D` : "#f8faff",
       }}
+      onClick={handleClick}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       <div
         className="flex items-center justify-center w-16 h-16 rounded-full"
@@ -69,16 +69,20 @@ export function PortalDropZone({
           Click to browse or drag & drop files
         </p>
         <p className="text-slate-400 text-sm mt-1">
-          {maxFileSize && `Max ${(maxFileSize / 1024 / 1024).toFixed(0)}MB per file`}
-          {maxFileSize && allowedFileTypes && allowedFileTypes.length > 0 && " · "}
+          {maxFileSize &&
+            `Max ${(maxFileSize / 1024 / 1024).toFixed(0)}MB per file`}
+          {maxFileSize &&
+            allowedFileTypes &&
+            allowedFileTypes.length > 0 &&
+            " · "}
           {allowedFileTypes && allowedFileTypes.length > 0 && "Any file type"}
         </p>
       </div>
       <input
         ref={fileInputRef}
-        type="file"
         multiple
         className="hidden"
+        type="file"
         onChange={handleFileChange}
       />
     </div>

@@ -28,8 +28,10 @@ export async function DELETE(
 
     // Parse optional body
     let deleteFromStorage: boolean | undefined;
+
     try {
       const body = await request.json();
+
       if (typeof body.deleteFromStorage === "boolean") {
         deleteFromStorage = body.deleteFromStorage;
       }
@@ -44,6 +46,7 @@ export async function DELETE(
         select: { storageDeleteBehavior: true },
       });
       const behavior = user?.storageDeleteBehavior ?? "ask";
+
       if (behavior === "always") deleteFromStorage = true;
       else if (behavior === "never") deleteFromStorage = false;
       else deleteFromStorage = false; // "ask" with no explicit value → don't delete
@@ -75,15 +78,18 @@ export async function DELETE(
 
       if (isGoogleDrive) {
         let cloudFileId = file.storageFileId;
+
         if (!cloudFileId) {
           const match =
             file.storageUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
             file.storageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+
           if (match) cloudFileId = match[1];
         }
         if (cloudFileId) {
           try {
             const accessToken = await getValidToken(session.user.id, "google");
+
             if (accessToken) {
               await deleteFromGoogleDrive(accessToken, cloudFileId);
               cloudDeleted = true;
@@ -96,6 +102,7 @@ export async function DELETE(
         // Use storageFileId (id:xxx format) — works regardless of where file was moved
         try {
           const accessToken = await getValidToken(session.user.id, "dropbox");
+
           if (accessToken) {
             await deleteFromDropbox(accessToken, file.storageFileId);
             cloudDeleted = true;
@@ -111,6 +118,10 @@ export async function DELETE(
     return NextResponse.json({ success: true, cloudDeleted });
   } catch (error) {
     console.error("Error deleting file:", error);
-    return NextResponse.json({ error: "Failed to delete file" }, { status: 500 });
+
+    return NextResponse.json(
+      { error: "Failed to delete file" },
+      { status: 500 },
+    );
   }
 }

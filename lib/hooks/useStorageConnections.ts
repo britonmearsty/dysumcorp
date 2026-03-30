@@ -56,7 +56,9 @@ export function useStorageConnections(
     } catch (err) {
       console.error("Failed to check storage connections:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to load storage connections",
+        err instanceof Error
+          ? err.message
+          : "Failed to load storage connections",
       );
     } finally {
       setLoading(false);
@@ -92,6 +94,7 @@ export function useStorageConnections(
   const refresh = useCallback(async () => {
     // Debounce: don't refresh more than once per 10 seconds
     const now = Date.now();
+
     if (now - lastRefreshRef.current < 10000) {
       return;
     }

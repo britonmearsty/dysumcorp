@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { hashPassword, validatePassword } from "@/lib/password-utils";
+import { hashPassword } from "@/lib/password-utils";
 import { checkAccess } from "@/lib/trial";
 import { sendPortalCreatedNotification } from "@/lib/email-service";
 

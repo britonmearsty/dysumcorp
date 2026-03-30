@@ -171,6 +171,7 @@ export default function DashboardPage() {
         }
       } else {
         const errorData = await response.json();
+
         if (
           response.status === 402 ||
           errorData.code === "SUBSCRIPTION_REQUIRED"

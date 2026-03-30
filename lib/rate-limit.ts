@@ -14,8 +14,11 @@ let PASSWORD_ATTEMPT_LIMIT: Ratelimit | null = null;
 
 function initializeRedis() {
   if (redis !== null) return; // Already initialized
-  
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+
+  if (
+    process.env.UPSTASH_REDIS_REST_URL &&
+    process.env.UPSTASH_REDIS_REST_TOKEN
+  ) {
     try {
       redis = new Redis({
         url: process.env.UPSTASH_REDIS_REST_URL,
@@ -73,7 +76,15 @@ function initializeRedis() {
   }
 }
 
-export { UPLOAD_LIMIT, DOWNLOAD_LIMIT, API_LIMIT, AUTH_LIMIT, PUBLIC_PORTAL_LIMIT, STATUS_POLL_LIMIT, PASSWORD_ATTEMPT_LIMIT };
+export {
+  UPLOAD_LIMIT,
+  DOWNLOAD_LIMIT,
+  API_LIMIT,
+  AUTH_LIMIT,
+  PUBLIC_PORTAL_LIMIT,
+  STATUS_POLL_LIMIT,
+  PASSWORD_ATTEMPT_LIMIT,
+};
 
 class InMemoryRateLimit {
   private requests: Map<string, number[]> = new Map();
@@ -127,7 +138,9 @@ export const FALLBACK_PASSWORD_ATTEMPT_LIMIT = new InMemoryRateLimit(10, 300);
  */
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
+
   if (forwarded) return forwarded.split(",")[0].trim();
+
   return request.headers.get("x-real-ip") || "unknown";
 }
 
@@ -143,7 +156,7 @@ export async function getRateLimit(
 }> {
   // Initialize Redis on first use
   initializeRedis();
-  
+
   try {
     if (limiter) {
       const result = await limiter.limit(identifier);
@@ -205,6 +218,7 @@ export async function applyApiRateLimit(
   request: Request,
 ): Promise<NextResponse | null> {
   const ip = getClientIp(request);
+
   return await applyRateLimit(API_LIMIT, FALLBACK_API_LIMIT, `api:${ip}`);
 }
 
@@ -212,6 +226,7 @@ export async function applyAuthRateLimit(
   request: Request,
 ): Promise<NextResponse | null> {
   const ip = getClientIp(request);
+
   return await applyRateLimit(AUTH_LIMIT, FALLBACK_AUTH_LIMIT, `auth:${ip}`);
 }
 
@@ -219,28 +234,48 @@ export async function applyUploadRateLimit(
   request: Request,
 ): Promise<NextResponse | null> {
   const ip = getClientIp(request);
-  return await applyRateLimit(UPLOAD_LIMIT, FALLBACK_UPLOAD_LIMIT, `upload:${ip}`);
+
+  return await applyRateLimit(
+    UPLOAD_LIMIT,
+    FALLBACK_UPLOAD_LIMIT,
+    `upload:${ip}`,
+  );
 }
 
 export async function applyDownloadRateLimit(
   request: Request,
 ): Promise<NextResponse | null> {
   const ip = getClientIp(request);
-  return await applyRateLimit(DOWNLOAD_LIMIT, FALLBACK_DOWNLOAD_LIMIT, `download:${ip}`);
+
+  return await applyRateLimit(
+    DOWNLOAD_LIMIT,
+    FALLBACK_DOWNLOAD_LIMIT,
+    `download:${ip}`,
+  );
 }
 
 export async function applyPublicPortalRateLimit(
   request: Request,
 ): Promise<NextResponse | null> {
   const ip = getClientIp(request);
-  return await applyRateLimit(PUBLIC_PORTAL_LIMIT, FALLBACK_PUBLIC_PORTAL_LIMIT, `portal:${ip}`);
+
+  return await applyRateLimit(
+    PUBLIC_PORTAL_LIMIT,
+    FALLBACK_PUBLIC_PORTAL_LIMIT,
+    `portal:${ip}`,
+  );
 }
 
 export async function applyStatusPollRateLimit(
   request: Request,
 ): Promise<NextResponse | null> {
   const ip = getClientIp(request);
-  return await applyRateLimit(STATUS_POLL_LIMIT, FALLBACK_STATUS_POLL_LIMIT, `status:${ip}`);
+
+  return await applyRateLimit(
+    STATUS_POLL_LIMIT,
+    FALLBACK_STATUS_POLL_LIMIT,
+    `status:${ip}`,
+  );
 }
 
 /**

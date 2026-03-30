@@ -55,6 +55,7 @@ export async function getPresignedPutUrl(
   contentLength?: number,
 ): Promise<string> {
   requireEnv();
+
   return getSignedUrl(
     r2Client,
     new PutObjectCommand({
@@ -80,8 +81,10 @@ export async function createMultipartUpload(
       ContentType: contentType,
     }),
   );
+
   if (!res.UploadId)
     throw new Error("[R2 Client] CreateMultipartUpload returned no UploadId");
+
   return res.UploadId;
 }
 
@@ -96,6 +99,7 @@ export async function getPresignedPartUrl(
   expiresInSeconds: number = 900,
 ): Promise<string> {
   requireEnv();
+
   return getSignedUrl(
     r2Client,
     new UploadPartCommand({
@@ -164,6 +168,7 @@ export async function headR2Object(
     const result = await r2Client.send(
       new HeadObjectCommand({ Bucket: bucketName, Key: key }),
     );
+
     return {
       etag: result.ETag ?? "",
       size: result.ContentLength ?? 0,

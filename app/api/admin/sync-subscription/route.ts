@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin";
 
 const VALID_PLANS = ["trial", "pro", "expired"] as const;
+
 type ValidPlan = (typeof VALID_PLANS)[number];
 
 export async function POST(request: Request) {
@@ -36,9 +37,11 @@ export async function POST(request: Request) {
 
     // Determine subscription status based on plan
     const subscriptionStatus =
-      planId === "pro" ? "active" :
-      planId === "trial" ? "trialing" :
-      "cancelled";
+      planId === "pro"
+        ? "active"
+        : planId === "trial"
+          ? "trialing"
+          : "cancelled";
 
     // Build update data
     const updateData: Record<string, unknown> = {

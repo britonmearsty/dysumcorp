@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 import { sendFileUploadNotification } from "@/lib/email-service";
 
@@ -10,6 +11,7 @@ function formatFileSize(bytes: number): string {
   const k = 1024;
   const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
@@ -20,6 +22,7 @@ function formatFileSize(bytes: number): string {
  */
 export async function POST(request: NextRequest) {
   const requestId = Math.random().toString(36).slice(2, 8);
+
   console.log(
     `[r2-confirm:${requestId}] ═══════════════════════════════════════════════════════`,
   );
@@ -29,6 +32,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
+
     console.log(
       `[r2-confirm:${requestId}] Request body:`,
       JSON.stringify(body, null, 2),
@@ -51,7 +55,18 @@ export async function POST(request: NextRequest) {
       uploadSessionId: clientSessionId,
       skipNotification,
       error: transferError,
+      attempts: clientAttempts,
     } = body;
+
+    // Map worker status to our state machine
+    const statusMap: Record<string, string> = {
+      uploaded_to_r2: "UPLOADED_TO_R2",
+      uploading_to_r2: "UPLOADING_TO_R2",
+      routing: "ROUTING",
+      completed: "DELIVERED",
+      failed: "FAILED",
+    };
+    const mappedStatus = statusMap[status] ?? status;
 
     // Authenticate the Worker
     console.log(`[r2-confirm:${requestId}] Authenticating worker...`);
@@ -66,12 +81,14 @@ export async function POST(request: NextRequest) {
       console.error(
         `[r2-confirm:${requestId}] ❌ Unauthorized: worker secret mismatch`,
       );
+
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     console.log(`[r2-confirm:${requestId}] ✓ Worker authenticated`);
 
     if (!stagingKey || !status) {
       console.error(`[r2-confirm:${requestId}] ❌ Missing required fields`);
+
       return NextResponse.json(
         { error: "stagingKey and status are required" },
         { status: 400 },
@@ -79,13 +96,33 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`[r2-confirm:${requestId}] stagingKey: ${stagingKey}`);
-    console.log(`[r2-confirm:${requestId}] status: ${status}`);
+    console.log(
+      `[r2-confirm:${requestId}] status: ${status} -> mapped: ${mappedStatus}`,
+    );
 
-    if (status === "completed") {
+    // Handle intermediate/progress statuses from worker
+    if (
+      mappedStatus === "UPLOADED_TO_R2" ||
+      mappedStatus === "UPLOADING_TO_R2" ||
+      mappedStatus === "ROUTING"
+    ) {
+      console.log(
+        `[r2-confirm:${requestId}] Updating staging to intermediate status: ${mappedStatus}`,
+      );
+      await prisma.r2StagingUpload.update({
+        where: { stagingKey },
+        data: { status: mappedStatus },
+      });
+
+      return NextResponse.json({ success: true, status: mappedStatus });
+    }
+
+    if (mappedStatus === "DELIVERED" || status === "completed") {
       console.log(`[r2-confirm:${requestId}] Processing COMPLETED status...`);
 
       // ── Resolve or create UploadSession ──────────────────────────────────
       let resolvedSessionId: string | null = clientSessionId ?? null;
+
       console.log(
         `[r2-confirm:${requestId}] clientSessionId: ${clientSessionId}`,
       );
@@ -116,6 +153,7 @@ export async function POST(request: NextRequest) {
             totalSize: BigInt(fileSize),
           },
         });
+
         resolvedSessionId = session.id;
         console.log(
           `[r2-confirm:${requestId}] ✓ UploadSession created: ${resolvedSessionId}`,
@@ -148,6 +186,7 @@ export async function POST(request: NextRequest) {
           uploadSessionId: resolvedSessionId,
         },
       });
+
       console.log(
         `[r2-confirm:${requestId}] ✓ File record created: ${file.id}`,
       );
@@ -157,11 +196,13 @@ export async function POST(request: NextRequest) {
         where: { id: portalId },
         select: { userId: true },
       });
+
       if (portal) {
         const user = await prisma.user.findUnique({
           where: { id: portal.userId },
           select: { subscriptionPlan: true },
         });
+
         if (user && user.subscriptionPlan === "trial") {
           await prisma.user.update({
             where: { id: portal.userId },
@@ -177,6 +218,13 @@ export async function POST(request: NextRequest) {
       console.log(
         `[r2-confirm:${requestId}] Updating R2StagingUpload to DELIVERED...`,
       );
+      // Get current attempts to increment (track total delivery attempts)
+      const staging = await prisma.r2StagingUpload.findUnique({
+        where: { stagingKey },
+        select: { attempts: true },
+      });
+      const currentAttempts = staging?.attempts ?? 0;
+
       await prisma.r2StagingUpload.update({
         where: { stagingKey },
         data: {
@@ -185,6 +233,8 @@ export async function POST(request: NextRequest) {
           targetProvider: provider,
           targetPath: storageUrl ?? null,
           targetFileId: storageFileId ?? null,
+          attempts: currentAttempts + 1,
+          lastError: null, // Clear error on success
         },
       });
       console.log(
@@ -242,6 +292,7 @@ export async function POST(request: NextRequest) {
       console.log(
         `[r2-confirm:${requestId}] ═══════════════════════════════════════════════════════`,
       );
+
       return NextResponse.json({
         success: true,
         fileId: file.id,
@@ -249,19 +300,27 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (status === "failed") {
+    if (mappedStatus === "FAILED" || status === "failed") {
       console.error(
         `[r2-confirm:${requestId}] ❌ Worker reported FAILED status`,
       );
       console.error(`[r2-confirm:${requestId}] Transfer error:`, transferError);
 
+      // Get current staging record to increment attempts
+      const staging = await prisma.r2StagingUpload.findUnique({
+        where: { stagingKey },
+        select: { attempts: true },
+      });
+      const currentAttempts = staging?.attempts ?? 0;
+
       console.log(
-        `[r2-confirm:${requestId}] Updating R2StagingUpload to FAILED...`,
+        `[r2-confirm:${requestId}] Updating R2StagingUpload to FAILED (attempt ${currentAttempts + 1})...`,
       );
       await prisma.r2StagingUpload.update({
         where: { stagingKey },
         data: {
           status: "FAILED",
+          attempts: currentAttempts + 1,
           lastError: transferError ?? "Unknown error",
         },
       });
@@ -276,10 +335,15 @@ export async function POST(request: NextRequest) {
       console.log(
         `[r2-confirm:${requestId}] ═══════════════════════════════════════════════════════`,
       );
-      return NextResponse.json({ success: true });
+
+      return NextResponse.json({
+        success: true,
+        attempts: currentAttempts + 1,
+      });
     }
 
     console.error(`[r2-confirm:${requestId}] ❌ Unknown status: ${status}`);
+
     return NextResponse.json({ error: "Unknown status" }, { status: 400 });
   } catch (error) {
     console.error(`[r2-confirm:${requestId}] ❌❌❌ UNCAUGHT ERROR:`, error);
@@ -290,6 +354,7 @@ export async function POST(request: NextRequest) {
     console.error(
       `[r2-confirm:${requestId}] ═══════════════════════════════════════════════════════`,
     );
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

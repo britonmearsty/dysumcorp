@@ -31,10 +31,13 @@ export default function StoragePage() {
   const { showToast } = useToast();
 
   // Use the custom hook for automatic token refresh
-  const { connections: storageConnections, loading, error } =
-    useStorageConnections({
-      autoRefreshInterval: 4 * 60 * 1000, // Refresh every 4 minutes
-    });
+  const {
+    connections: storageConnections,
+    loading,
+    error,
+  } = useStorageConnections({
+    autoRefreshInterval: 4 * 60 * 1000, // Refresh every 4 minutes
+  });
 
   // Update local state when storage connections change
   useEffect(() => {

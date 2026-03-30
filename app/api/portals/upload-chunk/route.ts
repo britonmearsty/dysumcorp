@@ -296,7 +296,7 @@ export async function POST(request: NextRequest) {
     // First chunk: initialize upload session
     if (chunkIndex === 0) {
       console.log(`[Upload Chunk] Initializing session for ${fileName}`);
-      
+
       if (provider === "google") {
         const response = await fetch(
           "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable",
@@ -317,7 +317,11 @@ export async function POST(request: NextRequest) {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("[Upload Chunk] Google Drive session creation failed:", errorText);
+
+          console.error(
+            "[Upload Chunk] Google Drive session creation failed:",
+            errorText,
+          );
           throw new Error("Failed to create Google Drive upload session");
         }
 
@@ -336,7 +340,7 @@ export async function POST(request: NextRequest) {
           fileName,
           createdAt: Date.now(),
         };
-        
+
         console.log(`[Upload Chunk] Saving Google session ${sessionId}`);
         await saveSession(sessionId, sessionData);
         console.log(`[Upload Chunk] Session saved successfully`);
@@ -351,7 +355,7 @@ export async function POST(request: NextRequest) {
           fileName,
           createdAt: Date.now(),
         };
-        
+
         console.log(`[Upload Chunk] Saving Dropbox session ${sessionId}`);
         await saveSession(sessionId, sessionData);
         console.log(`[Upload Chunk] Session saved successfully`);
@@ -364,17 +368,20 @@ export async function POST(request: NextRequest) {
 
     if (!session) {
       console.error(`[Upload Chunk] Session not found: ${sessionId}`);
-      console.error(`[Upload Chunk] ChunkIndex: ${chunkIndex}, Expected session to exist`);
+      console.error(
+        `[Upload Chunk] ChunkIndex: ${chunkIndex}, Expected session to exist`,
+      );
+
       return NextResponse.json(
         { error: "Upload session not found. Please try uploading again." },
         { status: 404 },
       );
     }
-    
-    console.log(`[Upload Chunk] Session found:`, { 
-      provider: session.provider, 
+
+    console.log(`[Upload Chunk] Session found:`, {
+      provider: session.provider,
       uploadedBytes: session.uploadedBytes,
-      totalBytes: session.totalBytes 
+      totalBytes: session.totalBytes,
     });
 
     // Upload chunk based on provider

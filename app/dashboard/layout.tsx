@@ -1,11 +1,12 @@
 "use client";
 
+import type { AccessResult } from "@/lib/trial";
+
 import { useEffect, useState, useCallback } from "react";
 
 import { useSession } from "@/lib/auth-client";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { TrialBanner } from "@/components/trial-banner";
-import type { AccessResult } from "@/lib/trial";
 
 export default function DashboardRootLayout({
   children,
@@ -19,8 +20,10 @@ export default function DashboardRootLayout({
   const fetchAccess = useCallback(async () => {
     try {
       const res = await fetch("/api/access");
+
       if (res.ok) {
         const data = await res.json();
+
         setAccess(data);
       }
     } catch {

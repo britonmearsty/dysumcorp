@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/portals/[id]/upload-sessions - Get all upload sessions for a portal
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({
@@ -27,7 +28,7 @@ export async function GET(
     if (!portal || portal.userId !== session.user.id) {
       return NextResponse.json(
         { error: "Portal not found or access denied" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -62,9 +63,10 @@ export async function GET(
     return NextResponse.json({ uploadSessions: serializedSessions });
   } catch (error) {
     console.error("[Upload Sessions] Error:", error);
+
     return NextResponse.json(
       { error: "Failed to fetch upload sessions" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

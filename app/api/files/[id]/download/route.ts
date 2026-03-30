@@ -167,6 +167,7 @@ export async function GET(
             // Use storageFileId (Dropbox file ID like "id:abc123") if available,
             // otherwise fall back to storageUrl (legacy path-based storage)
             const dropboxRef = file.storageFileId || file.storageUrl;
+
             buffer = await downloadFromDropbox(dropboxToken, dropboxRef);
           } else if (storageProvider === "dropbox") {
             // Dropbox file but no token available

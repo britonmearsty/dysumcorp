@@ -22,7 +22,6 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +32,6 @@ import {
 } from "@/components/ui/dialog";
 import { usePaywall } from "@/components/paywall-modal";
 import { PlanType } from "@/config/pricing";
-import { siteConfig } from "@/config/site";
 import { useSession } from "@/lib/auth-client";
 import { validateSlug, sanitizeSlug } from "@/lib/slug-validation";
 import { useStorageConnections } from "@/lib/hooks/useStorageConnections";
@@ -321,6 +319,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
 
             if (rootListRes.ok) {
               const rootFolders = await rootListRes.json();
+
               // Find dysumcorp folder (case-insensitive)
               dysumFolder = rootFolders.find(
                 (f: StorageFolder) => f.name.toLowerCase() === "dysumcorp",
@@ -1014,9 +1013,9 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
             {formData.password && (
               <button
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                title={showPassword ? "Hide password" : "Show password"}
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                title={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
                   <svg
@@ -1026,10 +1025,10 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
                     viewBox="0 0 24 24"
                   >
                     <path
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                     />
                   </svg>
                 ) : (
@@ -1040,16 +1039,16 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
                     viewBox="0 0 24 24"
                   >
                     <path
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                     />
                     <path
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                     />
                   </svg>
                 )}
@@ -1724,10 +1723,12 @@ export default function CreatePortalPage() {
             "A subscription is required to create portals.",
           );
           setCurrentStep("identity");
+
           return;
         }
 
         setError(data.error || "Failed to create portal");
+
         return;
       }
 
@@ -2323,9 +2324,9 @@ export default function CreatePortalPage() {
                           <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl border border-border">
                             <label className="flex items-center gap-3 cursor-pointer flex-1">
                               <input
-                                type="checkbox"
-                                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                                 checked={formData.gradientEnabled}
+                                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                                type="checkbox"
                                 onChange={(e) =>
                                   updateFormData(
                                     "gradientEnabled",
@@ -2372,8 +2373,8 @@ export default function CreatePortalPage() {
                     {currentStep === "storage" && (
                       <StorageSection
                         expandedFolders={storageExpandedFolders}
-                        folders={storageFolders}
                         folderPath={storageFolderPath}
+                        folders={storageFolders}
                         formData={formData}
                         hasUserSelectedFolder={storageHasUserSelected}
                         setCurrentStep={setCurrentStep}
@@ -2392,9 +2393,9 @@ export default function CreatePortalPage() {
                         formData={formData}
                         setCurrentStep={setCurrentStep}
                         setError={setError}
-                        updateFormData={updateFormData}
-                        showPassword={showPassword}
                         setShowPassword={setShowPassword}
+                        showPassword={showPassword}
+                        updateFormData={updateFormData}
                       />
                     )}
 
@@ -2407,6 +2408,7 @@ export default function CreatePortalPage() {
                           type="button"
                           onClick={() => {
                             const newState = !expandedSections.welcomeMessage;
+
                             setExpandedSections((prev) => ({
                               ...prev,
                               welcomeMessage: newState,
@@ -2431,9 +2433,9 @@ export default function CreatePortalPage() {
                                   viewBox="0 0 20 20"
                                 >
                                   <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                     clipRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    fillRule="evenodd"
                                   />
                                 </svg>
                               )}
@@ -2459,10 +2461,10 @@ export default function CreatePortalPage() {
                           {expandedSections.welcomeMessage && (
                             <motion.div
                               animate={{ opacity: 1, height: "auto" }}
+                              className="overflow-hidden"
                               exit={{ opacity: 0, height: 0 }}
                               initial={{ opacity: 0, height: 0 }}
                               transition={{ duration: 0.2 }}
-                              className="overflow-hidden"
                             >
                               <div className="p-4 bg-muted/50 border border-border rounded-xl space-y-3">
                                 <textarea
@@ -2491,6 +2493,7 @@ export default function CreatePortalPage() {
                           type="button"
                           onClick={() => {
                             const newState = !expandedSections.welcomeToast;
+
                             setExpandedSections((prev) => ({
                               ...prev,
                               welcomeToast: newState,
@@ -2517,9 +2520,9 @@ export default function CreatePortalPage() {
                                   viewBox="0 0 20 20"
                                 >
                                   <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                     clipRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    fillRule="evenodd"
                                   />
                                 </svg>
                               )}
@@ -2545,10 +2548,10 @@ export default function CreatePortalPage() {
                           {expandedSections.welcomeToast && (
                             <motion.div
                               animate={{ opacity: 1, height: "auto" }}
+                              className="overflow-hidden"
                               exit={{ opacity: 0, height: 0 }}
                               initial={{ opacity: 0, height: 0 }}
                               transition={{ duration: 0.2 }}
-                              className="overflow-hidden"
                             >
                               <div className="p-4 bg-muted/50 border border-border rounded-xl space-y-4">
                                 <div>
@@ -2557,8 +2560,8 @@ export default function CreatePortalPage() {
                                   </label>
                                   <input
                                     className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
-                                    type="text"
                                     placeholder={DEFAULT_WELCOME_TOAST}
+                                    type="text"
                                     value={formData.welcomeToastMessage}
                                     onChange={(e) =>
                                       updateFormData(
@@ -2580,9 +2583,9 @@ export default function CreatePortalPage() {
                                     </label>
                                     <input
                                       className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
-                                      type="number"
                                       min="0"
                                       step="100"
+                                      type="number"
                                       value={formData.welcomeToastDelay}
                                       onChange={(e) =>
                                         updateFormData(
@@ -2603,9 +2606,9 @@ export default function CreatePortalPage() {
                                     </label>
                                     <input
                                       className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
-                                      type="number"
                                       min="1000"
                                       step="100"
+                                      type="number"
                                       value={formData.welcomeToastDuration}
                                       onChange={(e) =>
                                         updateFormData(
@@ -2630,6 +2633,7 @@ export default function CreatePortalPage() {
                             type="button"
                             onClick={() => {
                               const newState = !expandedSections.textboxSection;
+
                               setExpandedSections((prev) => ({
                                 ...prev,
                                 textboxSection: newState,
@@ -2658,9 +2662,9 @@ export default function CreatePortalPage() {
                                     viewBox="0 0 20 20"
                                   >
                                     <path
-                                      fillRule="evenodd"
-                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                       clipRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      fillRule="evenodd"
                                     />
                                   </svg>
                                 )}
@@ -2688,10 +2692,10 @@ export default function CreatePortalPage() {
                             {expandedSections.textboxSection && (
                               <motion.div
                                 animate={{ opacity: 1, height: "auto" }}
+                                className="overflow-hidden"
                                 exit={{ opacity: 0, height: 0 }}
                                 initial={{ opacity: 0, height: 0 }}
                                 transition={{ duration: 0.2 }}
-                                className="overflow-hidden"
                               >
                                 <div className="p-4 bg-muted/50 border border-border rounded-xl space-y-4">
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2701,8 +2705,8 @@ export default function CreatePortalPage() {
                                       </label>
                                       <input
                                         className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none text-muted-foreground"
-                                        type="text"
                                         placeholder="e.g., Enter any notes or comments..."
+                                        type="text"
                                         value={
                                           formData.textboxSectionPlaceholder
                                         }
@@ -2718,11 +2722,11 @@ export default function CreatePortalPage() {
                                     <div className="flex items-end">
                                       <label className="flex items-center gap-3 cursor-pointer">
                                         <input
-                                          type="checkbox"
-                                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                                           checked={
                                             formData.textboxSectionRequired
                                           }
+                                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                                          type="checkbox"
                                           onChange={(e) =>
                                             updateFormData(
                                               "textboxSectionRequired",

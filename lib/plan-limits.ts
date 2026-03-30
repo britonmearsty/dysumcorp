@@ -4,6 +4,7 @@ import { PRICING_PLANS, PlanType, PlanLimits } from "@/config/pricing";
 // trial gets pro limits; expired gets zero limits (no access)
 function getEffectivePlan(planType: PlanType) {
   if (planType === "pro" || planType === "trial") return PRICING_PLANS["pro"];
+
   return {
     ...PRICING_PLANS["pro"],
     limits: {
@@ -174,6 +175,7 @@ export async function getUserPlanType(userId: string): Promise<PlanType> {
     if (plan === "pro" && (status === "active" || status === "trialing")) {
       return "pro";
     }
+
     return "expired";
   }
 

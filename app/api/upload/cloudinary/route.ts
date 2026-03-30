@@ -32,10 +32,18 @@ export async function POST(req: NextRequest) {
       publicId: result.public_id,
     });
   } catch (error) {
-    console.error("Cloudinary upload error:", error instanceof Error ? error.message : error);
+    console.error(
+      "Cloudinary upload error:",
+      error instanceof Error ? error.message : error,
+    );
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to upload to Cloudinary" },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to upload to Cloudinary",
+      },
       { status: 500 },
     );
   }

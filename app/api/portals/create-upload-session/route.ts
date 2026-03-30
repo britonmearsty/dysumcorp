@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -18,10 +19,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!portalId) {
-      return NextResponse.json(
-        { error: "Missing portalId" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing portalId" }, { status: 400 });
     }
 
     // Verify portal exists
@@ -32,6 +30,7 @@ export async function POST(request: NextRequest) {
 
     if (!portal) {
       console.log("[Create Upload Session] Portal not found:", portalId);
+
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
@@ -57,7 +56,9 @@ export async function POST(request: NextRequest) {
     console.error("[Create Upload Session] Error:", error);
 
     const errorMessage =
-      error instanceof Error ? error.message : "Failed to create upload session";
+      error instanceof Error
+        ? error.message
+        : "Failed to create upload session";
 
     return NextResponse.json(
       {

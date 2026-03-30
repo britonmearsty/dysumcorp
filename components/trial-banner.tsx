@@ -31,8 +31,8 @@ export function TrialBanner({
             </span>
           </div>
           <Link
-            href="/dashboard/billing"
             className="shrink-0 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+            href="/dashboard/billing"
           >
             Subscribe now
           </Link>
@@ -60,8 +60,8 @@ export function TrialBanner({
           </span>
         </div>
         <Link
-          href="/dashboard/billing?tab=plans"
           className="shrink-0 flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 transition-colors"
+          href="/dashboard/billing?tab=plans"
         >
           <Zap className="w-3 h-3" />
           View plans

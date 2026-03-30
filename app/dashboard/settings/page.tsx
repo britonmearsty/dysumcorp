@@ -323,6 +323,7 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ storageDeleteBehavior }),
       });
+
       if (!res.ok) throw new Error();
       setStorageDeleteStatus("success");
       resetStatus(setStorageDeleteStatus);
@@ -351,6 +352,7 @@ export default function SettingsPage() {
 
       if (!response.ok) {
         const data = await response.json();
+
         throw new Error(data.error || "Failed to delete account");
       }
 

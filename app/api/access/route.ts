@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { checkAccess } from "@/lib/trial";
 
@@ -15,6 +16,7 @@ export async function GET(request: Request) {
     return NextResponse.json(access);
   } catch (error) {
     console.error("[/api/access] Error:", error);
+
     return NextResponse.json(
       { error: "Failed to check access" },
       { status: 500 },

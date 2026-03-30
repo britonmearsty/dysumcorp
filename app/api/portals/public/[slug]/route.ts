@@ -13,6 +13,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const rateLimitResponse = await applyPublicPortalRateLimit(request);
+
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
@@ -72,6 +73,7 @@ export async function GET(
 
     // Check owner's trial/subscription — return generic unavailable, never expose trial details
     const access = await checkAccess(portal.userId);
+
     if (!access.allowed) {
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }

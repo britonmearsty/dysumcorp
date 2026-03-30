@@ -1,6 +1,7 @@
 "use client";
 
 import { Lock, CheckCircle, Zap } from "lucide-react";
+
 import { PRICING_PLANS } from "@/config/pricing";
 
 export interface PaywallProps {
@@ -21,7 +22,9 @@ export function Paywall({ onCheckout }: PaywallProps) {
           <h1 className="text-2xl font-bold text-foreground mb-2">
             Subscription required
           </h1>
-          <p className="text-muted-foreground text-sm">Start your 7-day free trial to create portals and collect files.</p>
+          <p className="text-muted-foreground text-sm">
+            Start your 7-day free trial to create portals and collect files.
+          </p>
         </div>
 
         {/* Pricing card */}
@@ -35,7 +38,9 @@ export function Paywall({ onCheckout }: PaywallProps) {
               </span>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-bold">${PRICING_PLANS.pro.price}</span>
+              <span className="text-4xl font-bold">
+                ${PRICING_PLANS.pro.price}
+              </span>
               <span className="text-sm opacity-80">/month</span>
             </div>
             <p className="text-xs opacity-75 mt-1">
@@ -47,7 +52,10 @@ export function Paywall({ onCheckout }: PaywallProps) {
           <div className="px-6 py-5">
             <ul className="space-y-2.5 mb-6">
               {PRO_FEATURES.map((feature) => (
-                <li key={feature} className="flex items-center gap-2.5 text-sm text-foreground">
+                <li
+                  key={feature}
+                  className="flex items-center gap-2.5 text-sm text-foreground"
+                >
                   <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
                   {feature}
                 </li>
@@ -72,8 +80,8 @@ export function Paywall({ onCheckout }: PaywallProps) {
         <p className="text-center text-xs text-muted-foreground mt-6">
           Questions?{" "}
           <a
-            href="mailto:support@dysumcorp.com"
             className="text-indigo-500 hover:text-indigo-400 underline"
+            href="mailto:support@dysumcorp.com"
           >
             Contact support
           </a>

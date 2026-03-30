@@ -926,11 +926,14 @@ export default function AssetsPage() {
 
         {/* Delete Confirmation Modal */}
         <DeleteFileModal
-          open={deleteModalOpen && !!fileToDelete}
-          fileName={fileToDelete?.name ?? ""}
           behavior={deleteBehavior}
+          fileName={fileToDelete?.name ?? ""}
+          open={deleteModalOpen && !!fileToDelete}
+          onCancel={() => {
+            setDeleteModalOpen(false);
+            setFileToDelete(null);
+          }}
           onConfirm={confirmDelete}
-          onCancel={() => { setDeleteModalOpen(false); setFileToDelete(null); }}
         />
       </div>
     </div>

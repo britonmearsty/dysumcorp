@@ -40,6 +40,7 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
     if (plan === "pro" && (status === "active" || status === "trialing")) {
       return { allowed: true, reason: "active_subscription" };
     }
+
     return { allowed: false, reason: "no_subscription" };
   }
 

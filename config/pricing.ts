@@ -62,6 +62,7 @@ export function getPlanByCreemProductId(productId: string): PricingPlan | null {
       return plan;
     }
   }
+
   return null;
 }
 
@@ -69,6 +70,7 @@ export function formatStorage(gb: number): string {
   if (gb >= 1000) {
     return `${gb / 1000}TB`;
   }
+
   return `${gb}GB`;
 }
 

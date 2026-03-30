@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 import { deleteR2Object } from "@/lib/r2-client";
 
@@ -28,11 +29,11 @@ export async function GET(request: NextRequest) {
   const orphans = await prisma.r2StagingUpload.findMany({
     where: {
       OR: [
-        { status: "pending",      createdAt: { lt: pendingCutoff } },
+        { status: "pending", createdAt: { lt: pendingCutoff } },
         { status: "transferring", createdAt: { lt: transferringCutoff } },
         // "uploaded" means r2-complete succeeded but worker was never triggered
         // or the worker callback never fired — treat same as pending after 2h
-        { status: "uploaded",     createdAt: { lt: pendingCutoff } },
+        { status: "uploaded", createdAt: { lt: pendingCutoff } },
       ],
     },
     select: { id: true, stagingKey: true, status: true, createdAt: true },
@@ -53,7 +54,10 @@ export async function GET(request: NextRequest) {
       );
       deleted++;
     } catch (err) {
-      console.error(`[r2-cleanup] Failed to delete stagingKey=${record.stagingKey}:`, err);
+      console.error(
+        `[r2-cleanup] Failed to delete stagingKey=${record.stagingKey}:`,
+        err,
+      );
       failed++;
     }
   }

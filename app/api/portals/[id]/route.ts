@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { hashPassword, validatePassword } from "@/lib/password-utils";
+import { hashPassword } from "@/lib/password-utils";
 import {
   getValidToken,
   deleteFromGoogleDrive,
@@ -320,8 +320,10 @@ export async function DELETE(
 
     // Parse optional body
     let deleteFromStorage: boolean | undefined;
+
     try {
       const body = await request.json();
+
       if (typeof body.deleteFromStorage === "boolean") {
         deleteFromStorage = body.deleteFromStorage;
       }
@@ -336,6 +338,7 @@ export async function DELETE(
         select: { storageDeleteBehavior: true },
       });
       const behavior = user?.storageDeleteBehavior ?? "ask";
+
       if (behavior === "always") deleteFromStorage = true;
       else deleteFromStorage = false;
     }
@@ -356,6 +359,7 @@ export async function DELETE(
         select: { id: true, name: true, storageUrl: true, storageFileId: true },
       });
       const provider = existingPortal.storageProvider;
+
       for (const file of portalFiles) {
         try {
           const isGoogleDrive =
@@ -369,18 +373,22 @@ export async function DELETE(
 
           if (isGoogleDrive) {
             let cloudFileId = file.storageFileId;
+
             if (!cloudFileId) {
               const match =
                 file.storageUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
                 file.storageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+
               if (match) cloudFileId = match[1];
             }
             if (cloudFileId) {
               const token = await getValidToken(session.user.id, "google");
+
               if (token) await deleteFromGoogleDrive(token, cloudFileId);
             }
           } else if (isDropbox && file.storageFileId) {
             const token = await getValidToken(session.user.id, "dropbox");
+
             if (token) await deleteFromDropbox(token, file.storageFileId);
           }
         } catch (err) {
@@ -395,6 +403,7 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting portal:", error);
+
     return NextResponse.json(
       { error: "Failed to delete portal" },
       { status: 500 },

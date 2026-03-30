@@ -48,8 +48,15 @@ export function generateUploadToken(data: {
 
   // Stable canonical JSON: fixed key order, no surprises from undefined dropping.
   const canonicalJson = JSON.stringify(tokenData, [
-    "portalId", "fileName", "fileSize", "mimeType",
-    "uploaderEmail", "uploaderName", "uploaderNotes", "stagingKey", "expiresAt",
+    "portalId",
+    "fileName",
+    "fileSize",
+    "mimeType",
+    "uploaderEmail",
+    "uploaderName",
+    "uploaderNotes",
+    "stagingKey",
+    "expiresAt",
   ]);
 
   const signature = crypto
@@ -73,6 +80,7 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
 
     if (Date.now() > token.expiresAt) {
       console.error("[Upload Token] Token expired");
+
       return null;
     }
 
@@ -90,8 +98,15 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
 
     // Same fixed key order as generateUploadToken
     const canonicalJson = JSON.stringify(dataToSign, [
-      "portalId", "fileName", "fileSize", "mimeType",
-      "uploaderEmail", "uploaderName", "uploaderNotes", "stagingKey", "expiresAt",
+      "portalId",
+      "fileName",
+      "fileSize",
+      "mimeType",
+      "uploaderEmail",
+      "uploaderName",
+      "uploaderNotes",
+      "stagingKey",
+      "expiresAt",
     ]);
 
     const expectedSignature = crypto
@@ -103,12 +118,14 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
       console.error("[Upload Token] Invalid signature");
       console.error("[Upload Token] Expected:", expectedSignature);
       console.error("[Upload Token] Received:", token.signature);
+
       return null;
     }
 
     return token;
   } catch (error) {
     console.error("[Upload Token] Failed to validate token:", error);
+
     return null;
   }
 }

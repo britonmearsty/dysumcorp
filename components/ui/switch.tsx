@@ -31,8 +31,8 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
           ref={ref}
           checked={checked}
           className="sr-only peer"
-          type="checkbox"
           disabled={isDisabled}
+          type="checkbox"
           onChange={(e) => onCheckedChange?.(e.target.checked)}
           onClick={(e) => {
             e.stopPropagation();

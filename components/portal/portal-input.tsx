@@ -17,7 +17,10 @@ export function PortalInput({
 }: PortalInputProps) {
   return (
     <div>
-      <label className="block text-sm mb-1.5 font-semibold" style={{ color: textColor }}>
+      <label
+        className="block text-sm mb-1.5 font-semibold"
+        style={{ color: textColor }}
+      >
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
@@ -26,13 +29,13 @@ export function PortalInput({
         style={{
           color: textColor,
         }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = "#e2e8f0";
+          e.currentTarget.style.boxShadow = "none";
+        }}
         onFocus={(e) => {
           e.currentTarget.style.borderColor = `${primaryColor}66`;
           e.currentTarget.style.boxShadow = `0 0 0 3px ${primaryColor}1A`;
-        }}
-        onBlur={(e) => {
-          e.currentTarget.style.borderColor = '#e2e8f0';
-          e.currentTarget.style.boxShadow = 'none';
         }}
         {...props}
       />

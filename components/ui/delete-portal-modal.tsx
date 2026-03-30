@@ -41,7 +41,9 @@ export function DeletePortalModal({
           </div>
           <div>
             <h3 className="text-lg font-bold text-foreground">Delete Portal</h3>
-            <p className="text-sm text-muted-foreground">This action cannot be undone</p>
+            <p className="text-sm text-muted-foreground">
+              This action cannot be undone
+            </p>
           </div>
         </div>
 
@@ -51,7 +53,9 @@ export function DeletePortalModal({
         </p>
 
         <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-xl mb-4">
-          <p className="text-sm text-red-700 dark:text-red-400 font-medium">You will permanently lose:</p>
+          <p className="text-sm text-red-700 dark:text-red-400 font-medium">
+            You will permanently lose:
+          </p>
           <ul className="mt-1.5 space-y-1 text-sm text-red-600 dark:text-red-400 list-disc list-inside">
             <li>All file upload records and metadata</li>
             <li>All upload session history</li>
@@ -65,7 +69,8 @@ export function DeletePortalModal({
           <div className="flex items-start gap-2 p-3 mb-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-xl">
             <ExternalLink className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
             <p className="text-sm text-red-700 dark:text-red-400">
-              All files in this portal will also be permanently deleted from your {storageLabel}.
+              All files in this portal will also be permanently deleted from
+              your {storageLabel}.
             </p>
           </div>
         )}
@@ -74,7 +79,8 @@ export function DeletePortalModal({
           <div className="flex items-start gap-2 p-3 mb-4 bg-muted border border-border rounded-xl">
             <ExternalLink className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
             <p className="text-sm text-muted-foreground">
-              Files in your {storageLabel} will not be affected — only the portal and its records will be removed from the app.
+              Files in your {storageLabel} will not be affected — only the
+              portal and its records will be removed from the app.
             </p>
           </div>
         )}
@@ -118,7 +124,10 @@ export function DeletePortalModal({
         {behavior === "ask" && (
           <p className="text-xs text-muted-foreground mt-3 text-center">
             You can set a default in{" "}
-            <a className="underline hover:text-foreground" href="/dashboard/settings?tab=storage">
+            <a
+              className="underline hover:text-foreground"
+              href="/dashboard/settings?tab=storage"
+            >
               Settings → Storage Deletion
             </a>
           </p>

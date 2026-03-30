@@ -1,4 +1,5 @@
 import { CheckCircle, Upload, Send } from "lucide-react";
+
 import { FileTypeIcon } from "./file-type-icon";
 import { PortalButton } from "./portal-button";
 
@@ -34,6 +35,7 @@ export function PortalSuccessView({
   const formatBytes = (bytes: number) => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+
     return (bytes / 1048576).toFixed(1) + " MB";
   };
 
@@ -52,7 +54,10 @@ export function PortalSuccessView({
           <CheckCircle className="w-9 h-9" style={{ color: primaryColor }} />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2" style={{ color: textColor }}>
+          <h1
+            className="text-3xl font-bold tracking-tight mb-2"
+            style={{ color: textColor }}
+          >
             {successMessage}
           </h1>
           {uploaderName ? (
@@ -65,7 +70,10 @@ export function PortalSuccessView({
               {uploaderEmail && (
                 <>
                   {" at "}
-                  <span className="font-semibold" style={{ color: primaryColor }}>
+                  <span
+                    className="font-semibold"
+                    style={{ color: primaryColor }}
+                  >
                     {uploaderEmail}
                   </span>
                 </>
@@ -73,7 +81,9 @@ export function PortalSuccessView({
               .
             </p>
           ) : (
-            <p className="text-slate-500">Your files have been received and are in safe hands.</p>
+            <p className="text-slate-500">
+              Your files have been received and are in safe hands.
+            </p>
           )}
         </div>
       </div>
@@ -84,10 +94,16 @@ export function PortalSuccessView({
           {/* Card header */}
           <div
             className="px-6 py-4 flex items-center gap-2 border-b"
-            style={{ background: `${primaryColor}0D`, borderColor: `${primaryColor}40` }}
+            style={{
+              background: `${primaryColor}0D`,
+              borderColor: `${primaryColor}40`,
+            }}
           >
             <Send className="w-4 h-4" style={{ color: primaryColor }} />
-            <span className="text-sm font-semibold" style={{ color: textColor }}>
+            <span
+              className="text-sm font-semibold"
+              style={{ color: textColor }}
+            >
               Sent Files
             </span>
             <span
@@ -113,12 +129,20 @@ export function PortalSuccessView({
                   <FileTypeIcon type={f.type} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: textColor }}>
+                  <p
+                    className="text-sm font-medium truncate"
+                    style={{ color: textColor }}
+                  >
                     {f.name}
                   </p>
-                  <p className="text-slate-400 text-xs mt-0.5">{formatBytes(f.size)}</p>
+                  <p className="text-slate-400 text-xs mt-0.5">
+                    {formatBytes(f.size)}
+                  </p>
                 </div>
-                <CheckCircle className="w-4 h-4 shrink-0" style={{ color: primaryColor }} />
+                <CheckCircle
+                  className="w-4 h-4 shrink-0"
+                  style={{ color: primaryColor }}
+                />
               </div>
             ))}
           </div>
@@ -127,17 +151,18 @@ export function PortalSuccessView({
 
       {/* Upload More button */}
       <PortalButton
+        gradientEnabled={gradientEnabled}
+        icon={<Upload className="w-4 h-4" />}
         primaryColor={primaryColor}
         secondaryColor={secondaryColor}
-        gradientEnabled={gradientEnabled}
         onClick={onUploadMore}
-        icon={<Upload className="w-4 h-4" />}
       >
         Upload More Files
       </PortalButton>
 
       <p className="text-center text-slate-400 text-xs">
-        Your name and email will be pre-filled when you return to the upload form.
+        Your name and email will be pre-filled when you return to the upload
+        form.
       </p>
     </div>
   );

@@ -21,18 +21,21 @@ export function PortalButton({
   className = "",
   ...props
 }: PortalButtonProps) {
-  const gradientStyle = gradientEnabled && secondaryColor
-    ? { background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }
-    : { backgroundColor: primaryColor };
+  const gradientStyle =
+    gradientEnabled && secondaryColor
+      ? {
+          background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
+        }
+      : { backgroundColor: primaryColor };
 
   return (
     <button
       className={`w-full rounded-xl py-3.5 text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-base ${className}`}
+      disabled={disabled || loading}
       style={{
         ...gradientStyle,
         boxShadow: `0 2px 12px ${primaryColor}4D`,
       }}
-      disabled={disabled || loading}
       {...props}
     >
       {loading ? (

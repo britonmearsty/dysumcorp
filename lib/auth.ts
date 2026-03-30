@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { creem } from "@creem_io/better-auth";
+
 import { sendWelcomeEmail, sendSignInNotification } from "@/lib/email-service";
 import { prisma } from "@/lib/prisma";
 

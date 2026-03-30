@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
+
 import { prisma } from "@/lib/prisma";
 import { applyUploadRateLimit, applyPasswordRateLimit } from "@/lib/rate-limit";
 import { checkAccess } from "@/lib/trial";
@@ -26,15 +27,18 @@ const MULTIPART_THRESHOLD = 10 * 1024 * 1024; // 10 MB
 function getPartSize(fileSizeBytes: number): number {
   if (fileSizeBytes >= 2 * 1024 * 1024 * 1024) return 100 * 1024 * 1024; // ≥ 2 GB → 100 MB
   if (fileSizeBytes >= 500 * 1024 * 1024) return 50 * 1024 * 1024; // ≥ 500 MB → 50 MB
+
   return 25 * 1024 * 1024; // default → 25 MB
 }
 
 export async function POST(request: NextRequest) {
   const requestId = Math.random().toString(36).slice(2, 8);
+
   console.log(`[r2-presign:${requestId}] POST /api/portals/r2-presign`);
 
   try {
     const rateLimitResult = await applyUploadRateLimit(request);
+
     if (rateLimitResult) return rateLimitResult;
 
     const body = await request.json();
@@ -91,12 +95,14 @@ export async function POST(request: NextRequest) {
       }
       // Rate-limit password attempts per portal — keyed on portalId so IP rotation doesn't help
       const pwRateLimit = await applyPasswordRateLimit(portal.id);
+
       if (pwRateLimit) return pwRateLimit;
 
       const { valid } = await verifyPasswordWithMigration(
         password,
         portal.password,
       );
+
       if (!valid) {
         return NextResponse.json(
           { error: "Incorrect password" },
@@ -141,12 +147,15 @@ export async function POST(request: NextRequest) {
         if (t === `.${ext}` || t === ext) return true;
         if (t.endsWith("/*")) {
           const base = t.replace("/*", "");
+
           if (mime.startsWith(base)) return true;
           if (mime === "application/octet-stream" || !mime)
             return extToCategory[ext] === base;
         }
+
         return false;
       });
+
       if (!typeAllowed) {
         return NextResponse.json(
           { error: `File type not allowed. Allowed: ${allowed.join(", ")}` },
@@ -166,6 +175,7 @@ export async function POST(request: NextRequest) {
     }
 
     const access = await checkAccess(portal.userId);
+
     if (!access.allowed) {
       return NextResponse.json(
         {
@@ -199,6 +209,7 @@ export async function POST(request: NextRequest) {
         status: "PENDING",
         uploaderName: uploaderName ?? null,
         uploaderEmail: uploaderEmail ?? null,
+        attempts: 0,
       },
     });
 
@@ -213,6 +224,7 @@ export async function POST(request: NextRequest) {
         900,
         fileSize,
       );
+
       return NextResponse.json({
         uploadType: "single",
         presignedUrl,
@@ -226,6 +238,7 @@ export async function POST(request: NextRequest) {
     // ── Multipart upload for large files ──────────────────────────────────────
     const PART_SIZE = getPartSize(fileSize);
     const partCount = Math.ceil(fileSize / PART_SIZE);
+
     console.log(
       `[r2-presign:${requestId}] Multipart upload: ${fileSize} bytes → ${partCount} parts × ${PART_SIZE / 1024 / 1024} MB`,
     );
@@ -256,6 +269,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error(`[r2-presign:${requestId}] ❌ UNCAUGHT ERROR:`, error);
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

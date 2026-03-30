@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { 
-  getValidToken, 
+import {
+  getValidToken,
   findOrCreateRootFolder,
   findOrCreatePortalFolder,
-  findOrCreateClientFolder 
+  findOrCreateClientFolder,
 } from "@/lib/storage-api";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 import { generateUploadToken } from "@/lib/upload-tokens";
@@ -106,7 +106,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { fileName, fileSize, mimeType, portalId, clientName, clientEmail, clientNotes } = body;
+    const {
+      fileName,
+      fileSize,
+      mimeType,
+      portalId,
+      clientName,
+      clientEmail,
+      clientNotes,
+    } = body;
 
     console.log("[Portal Direct Upload] Request:", {
       fileName,
@@ -246,9 +254,10 @@ export async function POST(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { 
-          error: "Portal owner's cloud storage is not connected or has expired. Please contact the portal owner to reconnect their storage.",
-          code: "STORAGE_NOT_CONNECTED"
+        {
+          error:
+            "Portal owner's cloud storage is not connected or has expired. Please contact the portal owner to reconnect their storage.",
+          code: "STORAGE_NOT_CONNECTED",
         },
         { status: 503 },
       );
@@ -314,9 +323,9 @@ export async function POST(request: NextRequest) {
         fileSize,
         parentFolderId,
         hasAccessToken: !!accessToken,
-        tokenLength: accessToken?.length
+        tokenLength: accessToken?.length,
       });
-      
+
       const response = await fetch(
         "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable",
         {
@@ -337,15 +346,21 @@ export async function POST(request: NextRequest) {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("[Portal Direct Upload] Google Drive session creation failed:", {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText,
-          fileName,
-          fileSize,
-          parentFolderId
-        });
-        throw new Error(`Failed to create Google Drive upload session: ${response.status} ${errorText}`);
+
+        console.error(
+          "[Portal Direct Upload] Google Drive session creation failed:",
+          {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText,
+            fileName,
+            fileSize,
+            parentFolderId,
+          },
+        );
+        throw new Error(
+          `Failed to create Google Drive upload session: ${response.status} ${errorText}`,
+        );
       }
 
       const uploadUrl = response.headers.get("Location");
@@ -378,9 +393,7 @@ export async function POST(request: NextRequest) {
         uploadToken,
       };
 
-      console.log(
-        "[Portal Direct Upload] Dropbox direct upload configured",
-      );
+      console.log("[Portal Direct Upload] Dropbox direct upload configured");
     }
 
     return NextResponse.json({

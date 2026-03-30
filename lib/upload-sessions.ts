@@ -7,8 +7,11 @@ let redisInitialized = false;
 function initializeRedis() {
   if (redisInitialized) return;
   redisInitialized = true;
-  
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+
+  if (
+    process.env.UPSTASH_REDIS_REST_URL &&
+    process.env.UPSTASH_REDIS_REST_TOKEN
+  ) {
     try {
       redis = new Redis({
         url: process.env.UPSTASH_REDIS_REST_URL,
@@ -38,11 +41,11 @@ export async function getUploadSession(
   sessionId: string,
 ): Promise<UploadSession | null> {
   initializeRedis();
-  
+
   if (!redis) {
     return fallbackSessions.get(sessionId);
   }
-  
+
   try {
     const data = await redis.get(`${SESSION_PREFIX}${sessionId}`);
 
@@ -59,12 +62,13 @@ export async function setUploadSession(
   session: UploadSession,
 ): Promise<boolean> {
   initializeRedis();
-  
+
   if (!redis) {
     fallbackSessions.set(sessionId, session);
+
     return true;
   }
-  
+
   try {
     await redis.setex(
       `${SESSION_PREFIX}${sessionId}`,
@@ -85,12 +89,13 @@ export async function updateUploadSession(
   updates: Partial<UploadSession>,
 ): Promise<boolean> {
   initializeRedis();
-  
+
   if (!redis) {
     const result = fallbackSessions.update(sessionId, updates);
+
     return result !== null;
   }
-  
+
   try {
     const existing = await getUploadSession(sessionId);
 
@@ -114,12 +119,13 @@ export async function updateUploadSession(
 
 export async function deleteUploadSession(sessionId: string): Promise<boolean> {
   initializeRedis();
-  
+
   if (!redis) {
     fallbackSessions.delete(sessionId);
+
     return true;
   }
-  
+
   try {
     await redis.del(`${SESSION_PREFIX}${sessionId}`);
 
@@ -136,11 +142,11 @@ export async function incrementUploadedBytes(
   bytesToAdd: number,
 ): Promise<UploadSession | null> {
   initializeRedis();
-  
+
   if (!redis) {
     return fallbackSessions.incrementBytes(sessionId, bytesToAdd);
   }
-  
+
   try {
     const session = await getUploadSession(sessionId);
 
@@ -211,5 +217,6 @@ export function getFallbackUploadSessions(): InMemoryUploadSessions {
 
 export function hasRedis(): boolean {
   initializeRedis();
+
   return redis !== null;
 }

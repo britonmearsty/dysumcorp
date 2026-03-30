@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 import { validateUploadToken } from "@/lib/upload-tokens";
 import {
@@ -21,9 +22,11 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: NextRequest) {
   const rateLimitResponse = await applyUploadRateLimit(request);
+
   if (rateLimitResponse) return rateLimitResponse;
 
   const requestId = Math.random().toString(36).slice(2, 8);
+
   console.log(`[r2-complete:${requestId}] POST /api/portals/r2-complete`);
 
   try {
@@ -46,6 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     const token = validateUploadToken(uploadToken);
+
     if (!token) {
       return NextResponse.json(
         { error: "Invalid or expired upload token" },
@@ -81,6 +85,7 @@ export async function POST(request: NextRequest) {
         err,
       );
       await abortMultipartUpload(stagingKey, uploadId).catch(() => {});
+
       return NextResponse.json(
         { error: "Failed to complete multipart upload" },
         { status: 500 },
@@ -89,10 +94,11 @@ export async function POST(request: NextRequest) {
 
     // Mark staging record as upload-complete (worker will set it to "DELIVERED" after transfer)
     const r2Head = await headR2Object(stagingKey);
+
     await prisma.r2StagingUpload.update({
       where: { stagingKey },
       data: {
-        status: "UPLOADED",
+        status: "UPLOADED_TO_R2",
         r2Etag: r2Head?.etag ?? null,
         r2Hash: r2Head?.hash ?? null,
       },
@@ -101,9 +107,11 @@ export async function POST(request: NextRequest) {
     console.log(
       `[r2-complete:${requestId}] ✓ Multipart complete, staging status → uploaded`,
     );
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error(`[r2-complete:${requestId}] ❌ UNCAUGHT ERROR:`, error);
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

@@ -23,14 +23,18 @@ export function PortalHeader({
   textColor,
   gradientEnabled = true,
 }: PortalHeaderProps) {
-  const gradientStyle = gradientEnabled && secondaryColor
-    ? { background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }
-    : { backgroundColor: primaryColor };
+  const gradientStyle =
+    gradientEnabled && secondaryColor
+      ? {
+          background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
+        }
+      : { backgroundColor: primaryColor };
 
   // Split welcome message into title and description
-  const messageParts = welcomeMessage?.split('\n').filter(line => line.trim()) || [];
+  const messageParts =
+    welcomeMessage?.split("\n").filter((line) => line.trim()) || [];
   const messageTitle = messageParts[0] || "";
-  const messageDescription = messageParts.slice(1).join(' ') || "";
+  const messageDescription = messageParts.slice(1).join(" ") || "";
 
   return (
     <header className="w-full border-b border-slate-200 bg-white">
@@ -41,9 +45,9 @@ export function PortalHeader({
         >
           {logoUrl ? (
             <img
-              src={logoUrl}
               alt={name}
               className="w-full h-full object-contain"
+              src={logoUrl}
             />
           ) : (
             <Building2 className="w-6 h-6 text-white" />
@@ -57,10 +61,19 @@ export function PortalHeader({
             {name}
           </h2>
           {(companyWebsite || companyEmail) && (
-            <div className="text-sm font-medium mt-0.5 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1" style={{ color: primaryColor }}>
-              {companyWebsite && <span className="break-all">{companyWebsite}</span>}
-              {companyWebsite && companyEmail && <span className="hidden sm:inline">·</span>}
-              {companyEmail && <span className="break-all">{companyEmail}</span>}
+            <div
+              className="text-sm font-medium mt-0.5 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1"
+              style={{ color: primaryColor }}
+            >
+              {companyWebsite && (
+                <span className="break-all">{companyWebsite}</span>
+              )}
+              {companyWebsite && companyEmail && (
+                <span className="hidden sm:inline">·</span>
+              )}
+              {companyEmail && (
+                <span className="break-all">{companyEmail}</span>
+              )}
             </div>
           )}
         </div>
@@ -68,14 +81,15 @@ export function PortalHeader({
       {welcomeMessage && (
         <div className="px-6 pb-5 border-t border-slate-100 bg-slate-50">
           {messageTitle && (
-            <p className="text-base font-medium pt-4" style={{ color: textColor }}>
+            <p
+              className="text-base font-medium pt-4"
+              style={{ color: textColor }}
+            >
               {messageTitle}
             </p>
           )}
           {messageDescription && (
-            <p className="text-slate-500 text-sm mt-1">
-              {messageDescription}
-            </p>
+            <p className="text-slate-500 text-sm mt-1">{messageDescription}</p>
           )}
         </div>
       )}

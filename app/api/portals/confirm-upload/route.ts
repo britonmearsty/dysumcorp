@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
         console.error(
           "[Portal Confirm Upload] Invalid or expired upload token",
         );
+
         return NextResponse.json(
           { error: "Invalid or expired upload token" },
           { status: 401 },
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
         tokenData.fileSize !== fileSize
       ) {
         console.error("[Portal Confirm Upload] Token data mismatch");
+
         return NextResponse.json(
           { error: "Upload token does not match file data" },
           { status: 400 },
@@ -112,6 +114,7 @@ export async function POST(request: NextRequest) {
 
     // Create or get upload session
     let sessionId = uploadSessionId;
+
     if (!sessionId) {
       // Create new upload session
       console.log(
@@ -127,6 +130,7 @@ export async function POST(request: NextRequest) {
           totalSize: BigInt(0),
         },
       });
+
       sessionId = session.id;
       console.log(
         "[Portal Confirm Upload] Created new upload session:",

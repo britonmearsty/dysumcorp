@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
+
       return NextResponse.json(
         { error: "No active subscription found. Please subscribe first." },
         { status: 400 },
@@ -50,6 +52,7 @@ export async function POST(request: Request) {
     }
 
     const creemApiKey = process.env.CREEM_API_KEY;
+
     if (!creemApiKey) {
       return NextResponse.json(
         { error: "Payment service not configured" },
@@ -62,6 +65,7 @@ export async function POST(request: Request) {
 
     // Check if using test API key in production
     const isTestKey = creemApiKey?.startsWith("test_");
+
     if (isTestKey) {
       console.warn("[Portal] WARNING: Using test API key in production!");
     }
@@ -79,6 +83,7 @@ export async function POST(request: Request) {
 
     let data;
     const contentType = response.headers.get("content-type");
+
     if (contentType && contentType.includes("application/json")) {
       data = await response.json();
     } else {
@@ -103,6 +108,7 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       console.error("Creem portal error:", data);
+
       return NextResponse.json(
         {
           error: data.message || `Creem error: ${response.status}`,
@@ -125,6 +131,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: portalUrl });
   } catch (error) {
     console.error("Portal session error:", error);
+
     return NextResponse.json(
       { error: "Failed to create portal session" },
       { status: 500 },

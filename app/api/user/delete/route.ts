@@ -20,6 +20,7 @@ async function cancelCreemSubscription(creemCustomerId: string) {
         "Failed to get Creem subscriptions:",
         await response.text(),
       );
+
       return;
     }
 

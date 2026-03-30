@@ -139,6 +139,7 @@ export default function PublicPortalPage() {
 
     if (!portalPassword.trim()) {
       setPasswordError("Please enter the password");
+
       return;
     }
 
@@ -252,6 +253,7 @@ export default function PublicPortalPage() {
 
       if (allowed.endsWith("/*")) {
         const baseType = allowed.replace("/*", "");
+
         if (baseType === "text") {
           return (
             textExtensions.includes(fileExtension) ||
@@ -260,6 +262,7 @@ export default function PublicPortalPage() {
         }
         // Match by MIME type, or fall back to extension category when file.type is empty
         if (fileType) return fileType.startsWith(baseType);
+
         return extToCategory[fileExtension] === baseType;
       }
 
@@ -330,18 +333,21 @@ export default function PublicPortalPage() {
     if (validFiles.length === 0) {
       setErrorMessage("Please select at least one valid file");
       setUploadStatus("error");
+
       return;
     }
 
     if (!portal) {
       setErrorMessage("Portal information not loaded");
       setUploadStatus("error");
+
       return;
     }
 
     if (portal.requireClientName && !uploaderName.trim()) {
       setErrorMessage("Please enter your name");
       setUploadStatus("error");
+
       return;
     }
 
@@ -349,12 +355,15 @@ export default function PublicPortalPage() {
       if (!uploaderEmail.trim()) {
         setErrorMessage("Please enter your email");
         setUploadStatus("error");
+
         return;
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
       if (!emailRegex.test(uploaderEmail)) {
         setErrorMessage("Please enter a valid email address");
         setUploadStatus("error");
+
         return;
       }
     }
@@ -368,6 +377,7 @@ export default function PublicPortalPage() {
         `Please fill in the ${portal.textboxSectionTitle || "Notes"} field`,
       );
       setUploadStatus("error");
+
       return;
     }
 
@@ -397,6 +407,7 @@ export default function PublicPortalPage() {
           uploaderNotes: textboxValue.trim() || undefined,
           onFileProgress: (fileIndex, progress) => {
             const fileId = validFiles[fileIndex]?.id;
+
             if (!fileId) return;
             setFiles((prev) =>
               prev.map((f) =>
@@ -407,6 +418,7 @@ export default function PublicPortalPage() {
           // Fires immediately when each file finishes — moves it to the drawer right away
           onFileComplete: (fileIndex, result) => {
             const uploadFile = validFiles[fileIndex];
+
             if (!uploadFile) return;
             if (result.success) {
               successful.push({
@@ -425,11 +437,13 @@ export default function PublicPortalPage() {
               setTimeout(() => {
                 setFiles((prev) => {
                   const completed = prev.find((f) => f.id === uploadFile.id);
+
                   if (completed)
                     setCompletedFiles((c) => [
                       ...c,
                       { ...completed, progress: 100, status: "done" as const },
                     ]);
+
                   return prev.filter((f) => f.id !== uploadFile.id);
                 });
               }, 600);
@@ -463,6 +477,7 @@ export default function PublicPortalPage() {
         error instanceof Error
           ? error.message
           : "Upload failed. Please try again.";
+
       setErrorMessage(errorMsg);
       setUploadStatus("error");
     } finally {
@@ -569,10 +584,10 @@ export default function PublicPortalPage() {
               <p className="text-sm font-bold text-red-500">{passwordError}</p>
             )}
             <PortalButton
-              primaryColor={portal.primaryColor}
-              secondaryColor={portal.secondaryColor}
               gradientEnabled={portal.gradientEnabled}
               loading={authenticating}
+              primaryColor={portal.primaryColor}
+              secondaryColor={portal.secondaryColor}
               type="submit"
             >
               Access Portal
@@ -603,15 +618,15 @@ export default function PublicPortalPage() {
 
       {/* Header */}
       <PortalHeader
-        name={portal.name}
-        logoUrl={portal.logoUrl}
-        companyWebsite={portal.companyWebsite}
         companyEmail={portal.companyEmail}
-        welcomeMessage={portal.welcomeMessage}
+        companyWebsite={portal.companyWebsite}
+        gradientEnabled={portal.gradientEnabled}
+        logoUrl={portal.logoUrl}
+        name={portal.name}
         primaryColor={portal.primaryColor}
         secondaryColor={portal.secondaryColor}
         textColor={portal.textColor}
-        gradientEnabled={portal.gradientEnabled}
+        welcomeMessage={portal.welcomeMessage}
       />
 
       {/* Main Content */}
@@ -619,14 +634,14 @@ export default function PublicPortalPage() {
         <div className="w-full max-w-2xl">
           {uploadStatus === "success" ? (
             <PortalSuccessView
-              uploaderName={uploaderName}
-              uploaderEmail={uploaderEmail}
-              sentFiles={sentFiles}
-              successMessage={portal.successMessage}
+              gradientEnabled={portal.gradientEnabled}
               primaryColor={portal.primaryColor}
               secondaryColor={portal.secondaryColor}
+              sentFiles={sentFiles}
+              successMessage={portal.successMessage}
               textColor={portal.textColor}
-              gradientEnabled={portal.gradientEnabled}
+              uploaderEmail={uploaderEmail}
+              uploaderName={uploaderName}
               onUploadMore={handleUploadMore}
             />
           ) : (
@@ -641,28 +656,28 @@ export default function PublicPortalPage() {
                 {/* Name */}
                 {portal.requireClientName && (
                   <PortalInput
+                    required
                     label="Your Name"
-                    type="text"
                     placeholder="Jane Doe"
-                    value={uploaderName}
-                    onChange={(e) => setUploaderName(e.target.value)}
                     primaryColor={portal.primaryColor}
                     textColor={portal.textColor}
-                    required
+                    type="text"
+                    value={uploaderName}
+                    onChange={(e) => setUploaderName(e.target.value)}
                   />
                 )}
 
                 {/* Email */}
                 {portal.requireClientEmail && (
                   <PortalInput
+                    required
                     label="Email Address"
-                    type="email"
                     placeholder="jane@example.com"
-                    value={uploaderEmail}
-                    onChange={(e) => setUploaderEmail(e.target.value)}
                     primaryColor={portal.primaryColor}
                     textColor={portal.textColor}
-                    required
+                    type="email"
+                    value={uploaderEmail}
+                    onChange={(e) => setUploaderEmail(e.target.value)}
                   />
                 )}
 
@@ -674,56 +689,58 @@ export default function PublicPortalPage() {
                       portal.textboxSectionPlaceholder ||
                       "Enter any notes or comments..."
                     }
+                    primaryColor={portal.primaryColor}
+                    required={portal.textboxSectionRequired}
                     rows={4}
+                    textColor={portal.textColor}
                     value={textboxValue}
                     onChange={(e) => setTextboxValue(e.target.value)}
-                    primaryColor={portal.primaryColor}
-                    textColor={portal.textColor}
-                    required={portal.textboxSectionRequired}
                   />
                 )}
 
                 {/* Drop Zone or File List */}
                 {files.length === 0 ? (
                   <PortalDropZone
-                    onFilesSelected={addFiles}
+                    allowedFileTypes={portal.allowedFileTypes || undefined}
+                    maxFileSize={parseInt(portal.maxFileSize)}
                     primaryColor={portal.primaryColor}
                     textColor={portal.textColor}
-                    maxFileSize={parseInt(portal.maxFileSize)}
-                    allowedFileTypes={portal.allowedFileTypes || undefined}
+                    onFilesSelected={addFiles}
                   />
                 ) : (
                   <>
                     <PortalFileList
-                      files={files}
                       completedFiles={completedFiles}
-                      onRemove={removeFile}
+                      files={files}
+                      gradientEnabled={portal.gradientEnabled}
+                      primaryColor={portal.primaryColor}
+                      secondaryColor={portal.secondaryColor}
+                      textColor={portal.textColor}
+                      uploading={uploading}
                       onAddMore={() => {
                         const input = document.createElement("input");
+
                         input.type = "file";
                         input.multiple = true;
                         input.onchange = (e) => {
                           const target = e.target as HTMLInputElement;
+
                           if (target.files) addFiles(target.files);
                         };
                         input.click();
                       }}
-                      primaryColor={portal.primaryColor}
-                      secondaryColor={portal.secondaryColor}
-                      textColor={portal.textColor}
-                      gradientEnabled={portal.gradientEnabled}
-                      uploading={uploading}
+                      onRemove={removeFile}
                     />
 
                     {!uploading &&
                       files.filter((f) => f.status === "pending").length >
                         0 && (
                         <PortalButton
+                          gradientEnabled={portal.gradientEnabled}
+                          icon={<Upload className="w-4 h-4" />}
                           primaryColor={portal.primaryColor}
                           secondaryColor={portal.secondaryColor}
-                          gradientEnabled={portal.gradientEnabled}
                           onClick={handleUpload}
-                          icon={<Upload className="w-4 h-4" />}
                         >
                           {portal.submitButtonText}
                         </PortalButton>

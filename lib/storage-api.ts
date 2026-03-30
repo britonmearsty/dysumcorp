@@ -607,8 +607,10 @@ export async function verifyGoogleDriveFolderExists(
     `https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,trashed`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
+
   if (!res.ok) return false;
   const data = await res.json();
+
   return !data.trashed;
 }
 

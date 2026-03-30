@@ -24,9 +24,7 @@ export function PricingCard({
   const price = billingCycle === "annual" ? plan.priceAnnual / 12 : plan.price;
   const totalPrice = billingCycle === "annual" ? plan.priceAnnual : plan.price;
   const savings =
-    billingCycle === "annual"
-      ? plan.price * 12 - plan.priceAnnual
-      : 0;
+    billingCycle === "annual" ? plan.price * 12 - plan.priceAnnual : 0;
 
   return (
     <div className="relative pt-4">
@@ -53,9 +51,7 @@ export function PricingCard({
               <span className="text-5xl font-bold text-foreground tracking-tight">
                 {formatPrice(price)}
               </span>
-              <span className="text-muted-foreground font-medium">
-                /month
-              </span>
+              <span className="text-muted-foreground font-medium">/month</span>
             </div>
             {billingCycle === "annual" && (
               <div className="mt-2">

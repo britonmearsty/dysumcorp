@@ -346,6 +346,7 @@ export default function PublicPortalPage() {
 
         if (!directUploadResponse.ok) {
           const errorData = await directUploadResponse.json();
+
           throw new Error(errorData.error || "Failed to prepare upload");
         }
 
@@ -362,19 +363,22 @@ export default function PublicPortalPage() {
         if (uploadData.method === "stream") {
           const chunkSize = uploadData.chunkSize || 4 * 1024 * 1024;
           const totalChunks = Math.ceil(file.size / chunkSize);
-          
-          console.log(`[Upload] Streaming ${file.name} in ${totalChunks} chunks`);
+
+          console.log(
+            `[Upload] Streaming ${file.name} in ${totalChunks} chunks`,
+          );
 
           if (uploadData.provider === "google") {
             // Google Drive streaming upload (sequential chunks per file)
             let fileData = null;
-            
+
             for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
               const start = chunkIndex * chunkSize;
               const end = Math.min(start + chunkSize, file.size);
               const chunk = file.slice(start, end);
 
               const formData = new FormData();
+
               formData.append("chunk", chunk);
               formData.append("provider", "google");
               formData.append("uploadUrl", uploadData.uploadUrl);
@@ -390,14 +394,15 @@ export default function PublicPortalPage() {
 
               if (!response.ok) {
                 const error = await response.json();
+
                 throw new Error(error.error || "Upload failed");
               }
 
               const result = await response.json();
-              
-              setFileProgress((prev) => ({ 
-                ...prev, 
-                [i]: Math.round((end / file.size) * 100) 
+
+              setFileProgress((prev) => ({
+                ...prev,
+                [i]: Math.round((end / file.size) * 100),
               }));
 
               if (result.complete && result.fileData) {
@@ -413,24 +418,29 @@ export default function PublicPortalPage() {
             storageFileId = fileData.id;
             storageUrl = `https://drive.google.com/file/d/${fileData.id}/view`;
             console.log(`[Upload] File uploaded to Google Drive: ${file.name}`);
-            
           } else if (uploadData.provider === "dropbox") {
             // Dropbox parallel chunk upload with dynamic concurrency
             // Vercel limit: ~10 concurrent functions, we use 8 for safety
             const MAX_CONCURRENT_CHUNKS = 8;
-            
+
             // Dynamic concurrency: distribute across files
             // 1 file = 8 chunks at once, 2 files = 4 each, 8 files = 1 each
-            const concurrency = Math.max(1, Math.floor(MAX_CONCURRENT_CHUNKS / files.length));
-            
-            console.log(`[Upload] Dropbox parallel upload: ${concurrency} chunks at once for ${file.name}`);
-            
+            const concurrency = Math.max(
+              1,
+              Math.floor(MAX_CONCURRENT_CHUNKS / files.length),
+            );
+
+            console.log(
+              `[Upload] Dropbox parallel upload: ${concurrency} chunks at once for ${file.name}`,
+            );
+
             let sessionId = "";
             let uploadedBytes = 0;
-            
+
             // Phase 1: Start session with first chunk
             const firstChunk = file.slice(0, Math.min(chunkSize, file.size));
             const startFormData = new FormData();
+
             startFormData.append("chunk", firstChunk);
             startFormData.append("provider", "dropbox");
             startFormData.append("accessToken", uploadData.accessToken);
@@ -438,49 +448,65 @@ export default function PublicPortalPage() {
             startFormData.append("uploadToken", uploadData.uploadToken);
             startFormData.append("isLastChunk", (totalChunks === 1).toString());
             startFormData.append("chunkIndex", "0");
-            
+
             const startResponse = await fetch("/api/portals/stream-upload", {
               method: "POST",
               body: startFormData,
             });
-            
+
             if (!startResponse.ok) {
               const error = await startResponse.json();
+
               throw new Error(error.error || "Failed to start Dropbox session");
             }
-            
+
             const startResult = await startResponse.json();
+
             sessionId = startResult.sessionId;
             uploadedBytes = Math.min(chunkSize, file.size);
-            
-            setFileProgress((prev) => ({ 
-              ...prev, 
-              [i]: Math.round((uploadedBytes / file.size) * 100) 
+
+            setFileProgress((prev) => ({
+              ...prev,
+              [i]: Math.round((uploadedBytes / file.size) * 100),
             }));
-            
+
             // If only one chunk, we're done
             if (totalChunks === 1 && startResult.complete) {
               storageFileId = startResult.fileData.id;
               storageUrl = startResult.fileData.id;
-              console.log(`[Upload] Single chunk file uploaded to Dropbox: ${file.name}`);
+              console.log(
+                `[Upload] Single chunk file uploaded to Dropbox: ${file.name}`,
+              );
             } else {
               // Phase 2: Upload remaining chunks in parallel batches
               const remainingChunks = totalChunks - 1; // Already uploaded chunk 0
-              
-              for (let batchStart = 1; batchStart < totalChunks; batchStart += concurrency) {
-                const batchEnd = Math.min(batchStart + concurrency, totalChunks);
+
+              for (
+                let batchStart = 1;
+                batchStart < totalChunks;
+                batchStart += concurrency
+              ) {
+                const batchEnd = Math.min(
+                  batchStart + concurrency,
+                  totalChunks,
+                );
                 const isLastBatch = batchEnd === totalChunks;
-                
+
                 // Create parallel chunk uploads for this batch
                 const chunkPromises = [];
-                
-                for (let chunkIndex = batchStart; chunkIndex < batchEnd; chunkIndex++) {
+
+                for (
+                  let chunkIndex = batchStart;
+                  chunkIndex < batchEnd;
+                  chunkIndex++
+                ) {
                   const start = chunkIndex * chunkSize;
                   const end = Math.min(start + chunkSize, file.size);
                   const chunk = file.slice(start, end);
                   const isLastChunk = chunkIndex === totalChunks - 1;
-                  
+
                   const formData = new FormData();
+
                   formData.append("chunk", chunk);
                   formData.append("provider", "dropbox");
                   formData.append("accessToken", uploadData.accessToken);
@@ -489,41 +515,54 @@ export default function PublicPortalPage() {
                   formData.append("isLastChunk", isLastChunk.toString());
                   formData.append("chunkIndex", chunkIndex.toString());
                   formData.append("sessionId", sessionId);
-                  
+
                   const chunkPromise = fetch("/api/portals/stream-upload", {
                     method: "POST",
                     body: formData,
                   }).then(async (response) => {
                     if (!response.ok) {
                       const error = await response.json();
-                      throw new Error(`Chunk ${chunkIndex} failed: ${error.error}`);
+
+                      throw new Error(
+                        `Chunk ${chunkIndex} failed: ${error.error}`,
+                      );
                     }
-                    return { chunkIndex, result: await response.json(), bytesUploaded: end - start };
+
+                    return {
+                      chunkIndex,
+                      result: await response.json(),
+                      bytesUploaded: end - start,
+                    };
                   });
-                  
+
                   chunkPromises.push(chunkPromise);
                 }
-                
+
                 // Wait for all chunks in this batch to complete
                 const batchResults = await Promise.all(chunkPromises);
-                
+
                 // Update progress
                 for (const { bytesUploaded } of batchResults) {
                   uploadedBytes += bytesUploaded;
                 }
-                
-                setFileProgress((prev) => ({ 
-                  ...prev, 
-                  [i]: Math.round((uploadedBytes / file.size) * 100) 
+
+                setFileProgress((prev) => ({
+                  ...prev,
+                  [i]: Math.round((uploadedBytes / file.size) * 100),
                 }));
-                
+
                 // Check if upload is complete (last chunk in last batch)
                 if (isLastBatch) {
-                  const lastResult = batchResults.find(r => r.result.complete);
+                  const lastResult = batchResults.find(
+                    (r) => r.result.complete,
+                  );
+
                   if (lastResult && lastResult.result.fileData) {
                     storageFileId = lastResult.result.fileData.id;
                     storageUrl = lastResult.result.fileData.id;
-                    console.log(`[Upload] File uploaded to Dropbox: ${file.name} (${concurrency} chunks at once)`);
+                    console.log(
+                      `[Upload] File uploaded to Dropbox: ${file.name} (${concurrency} chunks at once)`,
+                    );
                   }
                 }
               }
@@ -531,7 +570,6 @@ export default function PublicPortalPage() {
           } else {
             throw new Error(`Unsupported provider: ${uploadData.provider}`);
           }
-          
         } else {
           throw new Error(`Unsupported upload method: ${uploadData.method}`);
         }
@@ -555,6 +593,7 @@ export default function PublicPortalPage() {
 
         if (!confirmResponse.ok) {
           const errorData = await confirmResponse.json();
+
           throw new Error(errorData.error || "Failed to confirm upload");
         }
 
@@ -569,6 +608,7 @@ export default function PublicPortalPage() {
 
       // Wait for all files to complete
       const uploadedFiles = await Promise.all(uploadPromises);
+
       successfulFiles.push(...uploadedFiles);
 
       // Send batch notification after all files are uploaded
@@ -872,34 +912,34 @@ export default function PublicPortalPage() {
                           onChange={(e) => setUploaderEmail(e.target.value)}
                         />
                       </div>
-                      )}
-                    </div>
-                  )}
+                    )}
+                  </div>
+                )}
 
-                  {/* Textbox Section */}
-                  {portal.textboxSectionEnabled && (
-                    <div className="mb-10">
-                      <div className="space-y-3">
-                        <label className="block text-xs font-bold uppercase tracking-[0.2em] text-stone-500">
-                          {portal.textboxSectionTitle || "Notes"}
-                          {portal.textboxSectionRequired && " *"}
-                        </label>
-                        <textarea
-                          className="w-full px-4 py-3 rounded-xl border-stone-200 focus:border-[#1c1917] font-medium transition-all bg-white resize-none"
-                          style={{
-                            color: portal.textColor,
-                          }}
-                          placeholder="Enter any notes or comments..."
-                          rows={3}
-                          value={textboxValue}
-                          onChange={(e) => setTextboxValue(e.target.value)}
-                          required={portal.textboxSectionRequired}
-                        />
-                      </div>
+                {/* Textbox Section */}
+                {portal.textboxSectionEnabled && (
+                  <div className="mb-10">
+                    <div className="space-y-3">
+                      <label className="block text-xs font-bold uppercase tracking-[0.2em] text-stone-500">
+                        {portal.textboxSectionTitle || "Notes"}
+                        {portal.textboxSectionRequired && " *"}
+                      </label>
+                      <textarea
+                        className="w-full px-4 py-3 rounded-xl border-stone-200 focus:border-[#1c1917] font-medium transition-all bg-white resize-none"
+                        placeholder="Enter any notes or comments..."
+                        required={portal.textboxSectionRequired}
+                        rows={3}
+                        style={{
+                          color: portal.textColor,
+                        }}
+                        value={textboxValue}
+                        onChange={(e) => setTextboxValue(e.target.value)}
+                      />
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* File Upload Area */}
+                {/* File Upload Area */}
                 <div
                   className="border-2 border-dashed rounded-[2rem] p-12 md:p-20 text-center mb-10 transition-all bg-[#fafaf9] hover:bg-stone-50 group cursor-pointer"
                   style={{

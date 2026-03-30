@@ -46,6 +46,7 @@ export function CustomerPortalButton({
         setError(
           data.error || "Failed to open customer portal. Please try again.",
         );
+
         return;
       }
 

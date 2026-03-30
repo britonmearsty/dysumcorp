@@ -60,6 +60,7 @@ export function PaywallModal({
         }),
       });
       const data = await response.json();
+
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       }

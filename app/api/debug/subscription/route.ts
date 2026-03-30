@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-server";
 import { isAdmin } from "@/lib/admin";
 
-
 export async function GET(request: Request) {
   try {
     const session = await auth.api.getSession({

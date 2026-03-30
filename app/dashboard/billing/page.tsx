@@ -1,5 +1,7 @@
 "use client";
 
+import type { AccessResult } from "@/lib/trial";
+
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, Tab } from "@heroui/tabs";
@@ -20,7 +22,6 @@ import { UsageDashboard } from "@/components/usage-dashboard";
 import { PRICING_PLANS } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
 import { useToast } from "@/lib/toast";
-import type { AccessResult } from "@/lib/trial";
 
 export default function BillingPage() {
   const { data: session, refetch } = useSession();
@@ -79,6 +80,7 @@ export default function BillingPage() {
         setShowSuccess(false);
         router.replace("/dashboard/billing");
       }, 3000);
+
       return () => clearTimeout(timer);
     }
 
@@ -88,6 +90,7 @@ export default function BillingPage() {
         setShowCanceled(false);
         router.replace("/dashboard/billing");
       }, 3000);
+
       return () => clearTimeout(timer);
     }
   }, [searchParams, refetch, router]);
@@ -107,6 +110,7 @@ export default function BillingPage() {
 
       if (!response.ok) {
         showToast(data.error || "Failed to create checkout session", "error");
+
         return;
       }
 
