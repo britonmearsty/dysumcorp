@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateUploadToken } from "@/lib/upload-tokens";
-import { completeMultipartUpload, abortMultipartUpload, type CompletedPart } from "@/lib/r2-client";
+import {
+  completeMultipartUpload,
+  abortMultipartUpload,
+  headR2Object,
+  type CompletedPart,
+} from "@/lib/r2-client";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -25,20 +30,34 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { uploadToken, stagingKey, uploadId, parts } = body;
 
-    if (!uploadToken || !stagingKey || !uploadId || !Array.isArray(parts) || parts.length === 0) {
+    if (
+      !uploadToken ||
+      !stagingKey ||
+      !uploadId ||
+      !Array.isArray(parts) ||
+      parts.length === 0
+    ) {
       return NextResponse.json(
-        { error: "uploadToken, stagingKey, uploadId, and parts[] are required" },
+        {
+          error: "uploadToken, stagingKey, uploadId, and parts[] are required",
+        },
         { status: 400 },
       );
     }
 
     const token = validateUploadToken(uploadToken);
     if (!token) {
-      return NextResponse.json({ error: "Invalid or expired upload token" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid or expired upload token" },
+        { status: 401 },
+      );
     }
 
     if (token.stagingKey !== stagingKey) {
-      return NextResponse.json({ error: "stagingKey does not match token" }, { status: 403 });
+      return NextResponse.json(
+        { error: "stagingKey does not match token" },
+        { status: 403 },
+      );
     }
 
     // Validate parts shape
@@ -50,26 +69,44 @@ export async function POST(request: NextRequest) {
     // Sort by part number — required by S3/R2
     completedParts.sort((a, b) => a.PartNumber - b.PartNumber);
 
-    console.log(`[r2-complete:${requestId}] Completing multipart: key=${stagingKey} uploadId=${uploadId} parts=${completedParts.length}`);
+    console.log(
+      `[r2-complete:${requestId}] Completing multipart: key=${stagingKey} uploadId=${uploadId} parts=${completedParts.length}`,
+    );
 
     try {
       await completeMultipartUpload(stagingKey, uploadId, completedParts);
     } catch (err) {
-      console.error(`[r2-complete:${requestId}] CompleteMultipartUpload failed, aborting:`, err);
+      console.error(
+        `[r2-complete:${requestId}] CompleteMultipartUpload failed, aborting:`,
+        err,
+      );
       await abortMultipartUpload(stagingKey, uploadId).catch(() => {});
-      return NextResponse.json({ error: "Failed to complete multipart upload" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to complete multipart upload" },
+        { status: 500 },
+      );
     }
 
-    // Mark staging record as upload-complete (worker will set it to "completed" after transfer)
+    // Mark staging record as upload-complete (worker will set it to "DELIVERED" after transfer)
+    const r2Head = await headR2Object(stagingKey);
     await prisma.r2StagingUpload.update({
       where: { stagingKey },
-      data: { status: "uploaded" },
+      data: {
+        status: "UPLOADED",
+        r2Etag: r2Head?.etag ?? null,
+        r2Hash: r2Head?.hash ?? null,
+      },
     });
 
-    console.log(`[r2-complete:${requestId}] ✓ Multipart complete, staging status → uploaded`);
+    console.log(
+      `[r2-complete:${requestId}] ✓ Multipart complete, staging status → uploaded`,
+    );
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error(`[r2-complete:${requestId}] ❌ UNCAUGHT ERROR:`, error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

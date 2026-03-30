@@ -25,8 +25,8 @@ const MULTIPART_THRESHOLD = 10 * 1024 * 1024; // 10 MB
  */
 function getPartSize(fileSizeBytes: number): number {
   if (fileSizeBytes >= 2 * 1024 * 1024 * 1024) return 100 * 1024 * 1024; // ≥ 2 GB → 100 MB
-  if (fileSizeBytes >= 500 * 1024 * 1024) return 50 * 1024 * 1024;        // ≥ 500 MB → 50 MB
-  return 25 * 1024 * 1024;                                                  // default → 25 MB
+  if (fileSizeBytes >= 500 * 1024 * 1024) return 50 * 1024 * 1024; // ≥ 500 MB → 50 MB
+  return 25 * 1024 * 1024; // default → 25 MB
 }
 
 export async function POST(request: NextRequest) {
@@ -76,31 +76,65 @@ export async function POST(request: NextRequest) {
     }
 
     if (!portal.isActive) {
-      return NextResponse.json({ error: "This portal is not accepting uploads" }, { status: 403 });
+      return NextResponse.json(
+        { error: "This portal is not accepting uploads" },
+        { status: 403 },
+      );
     }
 
     if (portal.password) {
       if (!password) {
-        return NextResponse.json({ error: "Password required" }, { status: 401 });
+        return NextResponse.json(
+          { error: "Password required" },
+          { status: 401 },
+        );
       }
       // Rate-limit password attempts per portal — keyed on portalId so IP rotation doesn't help
       const pwRateLimit = await applyPasswordRateLimit(portal.id);
       if (pwRateLimit) return pwRateLimit;
 
-      const { valid } = await verifyPasswordWithMigration(password, portal.password);
+      const { valid } = await verifyPasswordWithMigration(
+        password,
+        portal.password,
+      );
       if (!valid) {
-        return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
+        return NextResponse.json(
+          { error: "Incorrect password" },
+          { status: 401 },
+        );
       }
     }
 
     if (portal.allowedFileTypes.length > 0) {
-      const allowed = portal.allowedFileTypes.map((t) => t.toLowerCase().trim());
+      const allowed = portal.allowedFileTypes.map((t) =>
+        t.toLowerCase().trim(),
+      );
       const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
       const mime = mimeType.toLowerCase();
       const extToCategory: Record<string, string> = {
-        mp3: "audio", wav: "audio", ogg: "audio", flac: "audio", aac: "audio", m4a: "audio", wma: "audio", opus: "audio",
-        mp4: "video", mov: "video", avi: "video", mkv: "video", webm: "video", wmv: "video", flv: "video", m4v: "video",
-        jpg: "image", jpeg: "image", png: "image", gif: "image", webp: "image", svg: "image", bmp: "image",
+        mp3: "audio",
+        wav: "audio",
+        ogg: "audio",
+        flac: "audio",
+        aac: "audio",
+        m4a: "audio",
+        wma: "audio",
+        opus: "audio",
+        mp4: "video",
+        mov: "video",
+        avi: "video",
+        mkv: "video",
+        webm: "video",
+        wmv: "video",
+        flv: "video",
+        m4v: "video",
+        jpg: "image",
+        jpeg: "image",
+        png: "image",
+        gif: "image",
+        webp: "image",
+        svg: "image",
+        bmp: "image",
       };
       const typeAllowed = allowed.some((t) => {
         if (t === mime) return true;
@@ -108,7 +142,8 @@ export async function POST(request: NextRequest) {
         if (t.endsWith("/*")) {
           const base = t.replace("/*", "");
           if (mime.startsWith(base)) return true;
-          if (mime === "application/octet-stream" || !mime) return extToCategory[ext] === base;
+          if (mime === "application/octet-stream" || !mime)
+            return extToCategory[ext] === base;
         }
         return false;
       });
@@ -122,7 +157,10 @@ export async function POST(request: NextRequest) {
 
     if (BigInt(fileSize) > portal.maxFileSize) {
       return NextResponse.json(
-        { error: `File too large. Maximum size is ${portal.maxFileSize} bytes`, maxFileSize: portal.maxFileSize.toString() },
+        {
+          error: `File too large. Maximum size is ${portal.maxFileSize} bytes`,
+          maxFileSize: portal.maxFileSize.toString(),
+        },
         { status: 400 },
       );
     }
@@ -130,7 +168,10 @@ export async function POST(request: NextRequest) {
     const access = await checkAccess(portal.userId);
     if (!access.allowed) {
       return NextResponse.json(
-        { error: "This portal is not currently accepting uploads", code: "PORTAL_UNAVAILABLE" },
+        {
+          error: "This portal is not currently accepting uploads",
+          code: "PORTAL_UNAVAILABLE",
+        },
         { status: 402 },
       );
     }
@@ -155,7 +196,7 @@ export async function POST(request: NextRequest) {
         stagingKey,
         portalId,
         fileSize: BigInt(fileSize),
-        status: "pending",
+        status: "PENDING",
         uploaderName: uploaderName ?? null,
         uploaderEmail: uploaderEmail ?? null,
       },
@@ -163,8 +204,15 @@ export async function POST(request: NextRequest) {
 
     // ── Single-shot upload for small files ────────────────────────────────────
     if (fileSize < MULTIPART_THRESHOLD) {
-      console.log(`[r2-presign:${requestId}] Single-shot upload: ${fileSize} bytes`);
-      const presignedUrl = await getPresignedPutUrl(stagingKey, mimeType, 900, fileSize);
+      console.log(
+        `[r2-presign:${requestId}] Single-shot upload: ${fileSize} bytes`,
+      );
+      const presignedUrl = await getPresignedPutUrl(
+        stagingKey,
+        mimeType,
+        900,
+        fileSize,
+      );
       return NextResponse.json({
         uploadType: "single",
         presignedUrl,
@@ -178,7 +226,9 @@ export async function POST(request: NextRequest) {
     // ── Multipart upload for large files ──────────────────────────────────────
     const PART_SIZE = getPartSize(fileSize);
     const partCount = Math.ceil(fileSize / PART_SIZE);
-    console.log(`[r2-presign:${requestId}] Multipart upload: ${fileSize} bytes → ${partCount} parts × ${PART_SIZE / 1024 / 1024} MB`);
+    console.log(
+      `[r2-presign:${requestId}] Multipart upload: ${fileSize} bytes → ${partCount} parts × ${PART_SIZE / 1024 / 1024} MB`,
+    );
 
     const uploadId = await createMultipartUpload(stagingKey, mimeType);
 
@@ -189,12 +239,14 @@ export async function POST(request: NextRequest) {
       ),
     );
 
-    console.log(`[r2-presign:${requestId}] ✓ ${partCount} part URLs generated, uploadId: ${uploadId}`);
+    console.log(
+      `[r2-presign:${requestId}] ✓ ${partCount} part URLs generated, uploadId: ${uploadId}`,
+    );
 
     return NextResponse.json({
       uploadType: "multipart",
       uploadId,
-      partUrls,   // array indexed 0..N-1, partNumber = index + 1
+      partUrls, // array indexed 0..N-1, partNumber = index + 1
       partSize: PART_SIZE,
       partCount,
       uploadToken,
@@ -204,6 +256,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error(`[r2-presign:${requestId}] ❌ UNCAUGHT ERROR:`, error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

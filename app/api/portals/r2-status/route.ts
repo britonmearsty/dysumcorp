@@ -15,7 +15,9 @@ export async function GET(request: NextRequest) {
   if (rateLimitResponse) return rateLimitResponse;
 
   const requestId = Math.random().toString(36).slice(2, 8);
-  console.log(`[r2-status:${requestId}] ═══════════════════════════════════════════════════════`);
+  console.log(
+    `[r2-status:${requestId}] ═══════════════════════════════════════════════════════`,
+  );
   console.log(`[r2-status:${requestId}] GET /api/portals/r2-status`);
 
   try {
@@ -24,7 +26,9 @@ export async function GET(request: NextRequest) {
     const uploadToken = searchParams.get("uploadToken");
 
     console.log(`[r2-status:${requestId}] stagingKey: ${stagingKey}`);
-    console.log(`[r2-status:${requestId}] uploadToken length: ${uploadToken?.length}`);
+    console.log(
+      `[r2-status:${requestId}] uploadToken length: ${uploadToken?.length}`,
+    );
 
     if (!stagingKey || !uploadToken) {
       console.error(`[r2-status:${requestId}] ❌ Missing required params`);
@@ -48,8 +52,12 @@ export async function GET(request: NextRequest) {
     // Ensure the token was issued for this exact staging key
     if (token.stagingKey !== stagingKey) {
       console.error(`[r2-status:${requestId}] ❌ stagingKey mismatch`);
-      console.error(`[r2-status:${requestId}] Token stagingKey: ${token.stagingKey}`);
-      console.error(`[r2-status:${requestId}] Request stagingKey: ${stagingKey}`);
+      console.error(
+        `[r2-status:${requestId}] Token stagingKey: ${token.stagingKey}`,
+      );
+      console.error(
+        `[r2-status:${requestId}] Request stagingKey: ${stagingKey}`,
+      );
       return NextResponse.json(
         { error: "stagingKey does not match token" },
         { status: 403 },
@@ -64,7 +72,10 @@ export async function GET(request: NextRequest) {
 
     if (!staging) {
       console.error(`[r2-status:${requestId}] ❌ Staging record not found`);
-      return NextResponse.json({ error: "Staging record not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Staging record not found" },
+        { status: 404 },
+      );
     }
 
     console.log(`[r2-status:${requestId}] Staging record found:`, {
@@ -75,8 +86,10 @@ export async function GET(request: NextRequest) {
       updatedAt: staging.updatedAt,
     });
 
-    if (staging.status === "completed") {
-      console.log(`[r2-status:${requestId}] Status is COMPLETED, fetching File record...`);
+    if (staging.status === "DELIVERED" || staging.status === "completed") {
+      console.log(
+        `[r2-status:${requestId}] Status is COMPLETED, fetching File record...`,
+      );
       // Use the direct fileId FK set by r2-confirm — no fuzzy matching
       const file = staging.fileId
         ? await prisma.file.findUnique({
@@ -101,24 +114,45 @@ export async function GET(request: NextRequest) {
           uploadSessionId: file.uploadSessionId,
         });
       } else {
-        console.warn(`[r2-status:${requestId}] ⚠️ Status completed but no File record found (fileId: ${staging.fileId})`);
+        console.warn(
+          `[r2-status:${requestId}] ⚠️ Status completed but no File record found (fileId: ${staging.fileId})`,
+        );
       }
 
       console.log(`[r2-status:${requestId}] ✓✓✓ Returning completed status`);
-      console.log(`[r2-status:${requestId}] ═══════════════════════════════════════════════════════`);
+      console.log(
+        `[r2-status:${requestId}] ═══════════════════════════════════════════════════════`,
+      );
       return NextResponse.json({
         status: "completed",
         file: file ? { ...file, size: file.size.toString() } : null,
+        delivery: {
+          provider: staging.targetProvider,
+          path: staging.targetPath,
+          fileId: staging.targetFileId,
+        },
       });
     }
 
-    console.log(`[r2-status:${requestId}] Status: ${staging.status} (still processing)`);
-    console.log(`[r2-status:${requestId}] ═══════════════════════════════════════════════════════`);
+    console.log(
+      `[r2-status:${requestId}] Status: ${staging.status} (still processing)`,
+    );
+    console.log(
+      `[r2-status:${requestId}] ═══════════════════════════════════════════════════════`,
+    );
     return NextResponse.json({ status: staging.status });
   } catch (error) {
     console.error(`[r2-status:${requestId}] ❌❌❌ UNCAUGHT ERROR:`, error);
-    console.error(`[r2-status:${requestId}] Error stack:`, error instanceof Error ? error.stack : "N/A");
-    console.error(`[r2-status:${requestId}] ═══════════════════════════════════════════════════════`);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error(
+      `[r2-status:${requestId}] Error stack:`,
+      error instanceof Error ? error.stack : "N/A",
+    );
+    console.error(
+      `[r2-status:${requestId}] ═══════════════════════════════════════════════════════`,
+    );
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

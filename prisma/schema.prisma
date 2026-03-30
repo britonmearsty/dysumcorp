@@ -213,18 +213,37 @@ model UsageTracking {
 }
 
 model R2StagingUpload {
-  id            String   @id @default(cuid())
-  stagingKey    String   @unique
-  portalId      String
-  fileSize      BigInt
-  status        String   @default("pending") // pending | completed | failed
-  uploaderName  String?
-  uploaderEmail String?
-  fileId        String?  // set after r2-confirm creates the File record
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default(cuid())
+  stagingKey     String   @unique
+  portalId       String
+  fileSize       BigInt
 
-  @@index([status, createdAt])
+  // State Machine: PENDING → UPLOADING → UPLOADED → ROUTING → DELIVERED | FAILED
+  status         String   @default("PENDING")
+
+  // Delivery Tracking
+  targetProvider String?  // "google" | "dropbox"
+  targetPath     String?  // Full path in user's cloud
+  targetFileId   String?  // Provider's returned file ID
+
+  // Retry & Error Tracking
+  attempts       Int      @default(0)
+  lastError      String?
+
+  // Idempotency
+  r2Etag         String?
+  r2Hash         String?
+
+  // Metadata
+  uploaderName   String?
+  uploaderEmail  String?
+  fileId         String?  // Created File record after delivery
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status, portalId])
+  @@index([portalId, status])
   @@map("r2_staging_upload")
 }
 

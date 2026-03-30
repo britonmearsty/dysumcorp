@@ -173,15 +173,23 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // ── Update staging record with fileId ─────────────────────────────────
+      // ── Update staging record with delivery details ─────────────────────────
       console.log(
-        `[r2-confirm:${requestId}] Updating R2StagingUpload to completed...`,
+        `[r2-confirm:${requestId}] Updating R2StagingUpload to DELIVERED...`,
       );
       await prisma.r2StagingUpload.update({
         where: { stagingKey },
-        data: { status: "completed", fileId: file.id },
+        data: {
+          status: "DELIVERED",
+          fileId: file.id,
+          targetProvider: provider,
+          targetPath: storageUrl ?? null,
+          targetFileId: storageFileId ?? null,
+        },
       });
-      console.log(`[r2-confirm:${requestId}] ✓ R2StagingUpload updated`);
+      console.log(
+        `[r2-confirm:${requestId}] ✓ R2StagingUpload updated with delivery details`,
+      );
 
       // ── Email notification (respects skipNotification + user prefs) ───────
       if (!skipNotification) {
@@ -248,14 +256,17 @@ export async function POST(request: NextRequest) {
       console.error(`[r2-confirm:${requestId}] Transfer error:`, transferError);
 
       console.log(
-        `[r2-confirm:${requestId}] Updating R2StagingUpload to failed...`,
+        `[r2-confirm:${requestId}] Updating R2StagingUpload to FAILED...`,
       );
       await prisma.r2StagingUpload.update({
         where: { stagingKey },
-        data: { status: "failed" },
+        data: {
+          status: "FAILED",
+          lastError: transferError ?? "Unknown error",
+        },
       });
       console.log(
-        `[r2-confirm:${requestId}] ✓ R2StagingUpload marked as failed`,
+        `[r2-confirm:${requestId}] ✓ R2StagingUpload marked as FAILED`,
       );
 
       console.error(

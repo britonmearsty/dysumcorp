@@ -6,6 +6,7 @@ import {
   UploadPartCommand,
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -15,7 +16,10 @@ const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
 const bucketName = process.env.R2_BUCKET_NAME;
 
 if (!accountId || !accessKeyId || !secretAccessKey || !bucketName) {
-  if (process.env.NODE_ENV !== "production" || process.env.VERCEL_ENV === "production") {
+  if (
+    process.env.NODE_ENV !== "production" ||
+    process.env.VERCEL_ENV === "production"
+  ) {
     console.warn(
       "[R2 Client] Missing one or more R2 env vars: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME",
     );
@@ -64,12 +68,20 @@ export async function getPresignedPutUrl(
 }
 
 /** Start a multipart upload and return the uploadId. */
-export async function createMultipartUpload(key: string, contentType: string): Promise<string> {
+export async function createMultipartUpload(
+  key: string,
+  contentType: string,
+): Promise<string> {
   requireEnv();
   const res = await r2Client.send(
-    new CreateMultipartUploadCommand({ Bucket: bucketName!, Key: key, ContentType: contentType }),
+    new CreateMultipartUploadCommand({
+      Bucket: bucketName!,
+      Key: key,
+      ContentType: contentType,
+    }),
   );
-  if (!res.UploadId) throw new Error("[R2 Client] CreateMultipartUpload returned no UploadId");
+  if (!res.UploadId)
+    throw new Error("[R2 Client] CreateMultipartUpload returned no UploadId");
   return res.UploadId;
 }
 
@@ -119,15 +131,45 @@ export async function completeMultipartUpload(
 }
 
 /** Abort an in-progress multipart upload (cleanup on failure). */
-export async function abortMultipartUpload(key: string, uploadId: string): Promise<void> {
+export async function abortMultipartUpload(
+  key: string,
+  uploadId: string,
+): Promise<void> {
   requireEnv();
   await r2Client.send(
-    new AbortMultipartUploadCommand({ Bucket: bucketName!, Key: key, UploadId: uploadId }),
+    new AbortMultipartUploadCommand({
+      Bucket: bucketName!,
+      Key: key,
+      UploadId: uploadId,
+    }),
   );
 }
 
 /** Delete an object from R2 (used by the cleanup cron and worker post-transfer). */
 export async function deleteR2Object(key: string): Promise<void> {
-  if (!bucketName) throw new Error("[R2 Client] R2_BUCKET_NAME is not configured.");
-  await r2Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
+  if (!bucketName)
+    throw new Error("[R2 Client] R2_BUCKET_NAME is not configured.");
+  await r2Client.send(
+    new DeleteObjectCommand({ Bucket: bucketName, Key: key }),
+  );
+}
+
+/** Get object metadata including etag and hash. */
+export async function headR2Object(
+  key: string,
+): Promise<{ etag: string; size: number; hash?: string } | null> {
+  if (!bucketName)
+    throw new Error("[R2 Client] R2_BUCKET_NAME is not configured.");
+  try {
+    const result = await r2Client.send(
+      new HeadObjectCommand({ Bucket: bucketName, Key: key }),
+    );
+    return {
+      etag: result.ETag ?? "",
+      size: result.ContentLength ?? 0,
+      hash: result.Metadata?.["r2-hash"] ?? undefined,
+    };
+  } catch (e) {
+    return null;
+  }
 }
