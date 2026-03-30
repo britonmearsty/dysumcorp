@@ -28,6 +28,14 @@ export default function BillingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Sync activeTab with URL params on mount
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["overview", "plans", "usage"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
     "monthly",
   );
@@ -167,7 +175,12 @@ export default function BillingPage() {
                       ? "bg-card border border-border text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    router.replace(`/dashboard/billing?tab=${tab.id}`, {
+                      scroll: false,
+                    });
+                  }}
                 >
                   <Icon className="w-4 sm:w-5 h-4 sm:h-5" />
                   <span className="font-medium text-sm">{tab.name}</span>

@@ -942,9 +942,9 @@ const FILE_TYPE_OPTIONS = [
       "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv",
   },
   {
-    label: "Archives (ZIP, RAR)",
+    label: "Archives (ZIP, RAR, 7Z, TAR, GZ)",
     value:
-      "application/zip,application/x-rar-compressed,application/x-7z-compressed",
+      "application/zip,application/x-rar-compressed,application/x-7z-compressed,application/x-tar,application/gzip,application/x-gzip,application/x-bzip2,application/x-xz,application/force-download,archive/*",
   },
   { label: "Videos (MP4, MOV)", value: "video/*" },
   { label: "Audio (MP3, WAV)", value: "audio/*" },

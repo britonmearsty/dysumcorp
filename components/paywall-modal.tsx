@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {
   Modal,
   ModalContent,
   ModalHeader,
   ModalBody,
   ModalFooter,
-  useDisclosure,
 } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
@@ -40,7 +39,16 @@ export function PaywallModal({
   reason,
   requiredPlan,
 }: PaywallModalProps) {
-  const { onOpenChange } = useDisclosure({ isOpen });
+  const [internalIsOpen, setInternalIsOpen] = useState(isOpen);
+
+  useEffect(() => {
+    setInternalIsOpen(isOpen);
+  }, [isOpen]);
+
+  const handleClose = useCallback(() => {
+    setInternalIsOpen(false);
+    onClose();
+  }, [onClose]);
 
   const minimumPlan: "pro" = "pro";
   const recommendedPlan: "pro" = "pro";
@@ -83,10 +91,10 @@ export function PaywallModal({
         body: "py-6",
       }}
       hideCloseButton={false}
-      isOpen={isOpen}
+      isOpen={internalIsOpen}
       scrollBehavior="inside"
       size="2xl"
-      onOpenChange={onOpenChange}
+      onClose={handleClose}
     >
       <ModalContent>
         {(_onClose) => (

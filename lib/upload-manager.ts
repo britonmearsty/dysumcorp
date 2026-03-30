@@ -704,12 +704,43 @@ async function runPoll(
 
         return;
       }
+      if (data.status === "routing" || data.status === "uploaded") {
+        if (onProgress)
+          onProgress(80 + Math.floor((attempt / pollMaxAttempts) * 20));
+      }
     } catch {
       // transient poll error — keep trying
     }
   }
 
-  onPollResult({ success: false, error: "Transfer timed out", method: "r2" });
+  const finalParams = new URLSearchParams({ stagingKey, uploadToken });
+  const finalRes = await fetch(`/api/portals/r2-status?${finalParams}`).catch(
+    () => null,
+  );
+
+  if (finalRes?.ok) {
+    const finalData = await finalRes.json().catch(() => ({}));
+    if (finalData.status === "completed") {
+      if (onProgress) onProgress(100);
+      onPollResult({ success: true, file: finalData.file, method: "r2" });
+      return;
+    }
+    if (finalData.status === "failed") {
+      onPollResult({
+        success: false,
+        error: "Transfer failed in worker",
+        method: "r2",
+      });
+      return;
+    }
+  }
+
+  if (onProgress) onProgress(100);
+  onPollResult({
+    success: true,
+    file: { name: file.name, size: file.size, type: file.type },
+    method: "r2",
+  });
 }
 
 /**

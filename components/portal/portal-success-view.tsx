@@ -1,4 +1,4 @@
-import { CheckCircle, Upload, Send } from "lucide-react";
+import { CheckCircle, Upload, Send, AlertCircle } from "lucide-react";
 
 import { FileTypeIcon } from "./file-type-icon";
 import { PortalButton } from "./portal-button";
@@ -9,10 +9,18 @@ interface SentFile {
   type: string;
 }
 
+interface FailedFile {
+  name: string;
+  size: number;
+  type: string;
+  error?: string;
+}
+
 interface PortalSuccessViewProps {
   uploaderName?: string;
   uploaderEmail?: string;
   sentFiles: SentFile[];
+  failedFiles?: FailedFile[];
   successMessage: string;
   primaryColor: string;
   secondaryColor?: string;
@@ -25,6 +33,7 @@ export function PortalSuccessView({
   uploaderName,
   uploaderEmail,
   sentFiles,
+  failedFiles = [],
   successMessage,
   primaryColor,
   secondaryColor,
@@ -87,6 +96,45 @@ export function PortalSuccessView({
           )}
         </div>
       </div>
+
+      {/* Failed files card */}
+      {failedFiles.length > 0 && (
+        <div className="rounded-2xl overflow-hidden bg-white border border-red-200 shadow-sm">
+          {/* Card header */}
+          <div className="px-6 py-4 flex items-center gap-2 border-b border-red-200 bg-red-50">
+            <AlertCircle className="w-4 h-4 text-red-500" />
+            <span className="text-sm font-semibold text-red-700">
+              Failed to Upload
+            </span>
+            <span className="ml-auto text-xs px-2.5 py-0.5 rounded-full font-semibold bg-red-100 text-red-600">
+              {failedFiles.length} {failedFiles.length === 1 ? "file" : "files"}
+            </span>
+          </div>
+
+          {/* File rows */}
+          <div className="p-4 space-y-2">
+            {failedFiles.map((f, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 bg-red-50 border border-red-200"
+              >
+                <div className="shrink-0">
+                  <FileTypeIcon type={f.type} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate text-red-800">
+                    {f.name}
+                  </p>
+                  <p className="text-red-500 text-xs mt-0.5">
+                    {f.error || "Upload failed"}
+                  </p>
+                </div>
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Sent files card */}
       {sentFiles.length > 0 && (

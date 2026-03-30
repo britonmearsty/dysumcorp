@@ -88,6 +88,9 @@ export default function PublicPortalPage() {
   const [sentFiles, setSentFiles] = useState<
     Array<{ name: string; size: number; type: string }>
   >([]);
+  const [failedFiles, setFailedFiles] = useState<
+    Array<{ name: string; size: number; type: string; error?: string }>
+  >([]);
 
   useEffect(() => {
     fetchPortal();
@@ -197,6 +200,14 @@ export default function PublicPortalPage() {
       bmp: "image",
       ico: "image",
       tiff: "image",
+      zip: "archive",
+      rar: "archive",
+      "7z": "archive",
+      tar: "archive",
+      gz: "archive",
+      bz2: "archive",
+      xz: "archive",
+      pen: "archive",
     };
 
     const textExtensions = [
@@ -258,6 +269,12 @@ export default function PublicPortalPage() {
           return (
             textExtensions.includes(fileExtension) ||
             fileType.startsWith("text")
+          );
+        }
+        if (baseType === "archive") {
+          return (
+            extToCategory[fileExtension] === "archive" ||
+            fileType.includes("archive")
           );
         }
         // Match by MIME type, or fall back to extension category when file.type is empty
@@ -395,6 +412,12 @@ export default function PublicPortalPage() {
     );
 
     const successful: Array<{ name: string; size: number; type: string }> = [];
+    const failed: Array<{
+      name: string;
+      size: number;
+      type: string;
+      error?: string;
+    }> = [];
 
     try {
       await uploadFiles(
@@ -448,6 +471,12 @@ export default function PublicPortalPage() {
                 });
               }, 600);
             } else {
+              failed.push({
+                name: uploadFile.file.name,
+                size: uploadFile.file.size,
+                type: uploadFile.file.type,
+                error: result.error ?? "Upload failed",
+              });
               setFiles((prev) =>
                 prev.map((f) =>
                   f.id === uploadFile.id
@@ -465,8 +494,9 @@ export default function PublicPortalPage() {
         },
       );
 
-      if (successful.length > 0) {
+      if (successful.length > 0 || failed.length > 0) {
         setSentFiles(successful);
+        setFailedFiles(failed);
         setUploadStatus("success");
       } else {
         setErrorMessage("All uploads failed. Please try again.");
@@ -490,6 +520,7 @@ export default function PublicPortalPage() {
     setFiles([]);
     setCompletedFiles([]);
     setSentFiles([]);
+    setFailedFiles([]);
   };
 
   if (loading) {
@@ -638,6 +669,7 @@ export default function PublicPortalPage() {
               primaryColor={portal.primaryColor}
               secondaryColor={portal.secondaryColor}
               sentFiles={sentFiles}
+              failedFiles={failedFiles}
               successMessage={portal.successMessage}
               textColor={portal.textColor}
               uploaderEmail={uploaderEmail}
