@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { prisma } from "@/lib/prisma";
 import { getUserPlanType } from "@/lib/plan-limits";
 
 export async function GET(request: NextRequest) {
@@ -11,9 +12,22 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Get raw data for debugging
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        subscriptionPlan: true,
+        subscriptionStatus: true,
+        status: true,
+      },
+    });
+
     const planType = await getUserPlanType(userId);
 
-    return NextResponse.json({ planType });
+    return NextResponse.json({
+      planType,
+      raw: user,
+    });
   } catch (error) {
     console.error("Failed to get user plan:", error);
 
