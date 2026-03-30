@@ -6,7 +6,12 @@ function getEffectivePlan(planType: PlanType) {
   if (planType === "pro" || planType === "trial") return PRICING_PLANS["pro"];
   return {
     ...PRICING_PLANS["pro"],
-    limits: { ...PRICING_PLANS["pro"].limits, portals: 0, storage: 0, customDomains: 0 },
+    limits: {
+      ...PRICING_PLANS["pro"].limits,
+      portals: 0,
+      storage: 0,
+      customDomains: 0,
+    },
   };
 }
 
@@ -79,7 +84,10 @@ export async function checkStorageLimit(
     select: { size: true },
   });
 
-  const usedBytes = files.reduce((acc: number, f: { size: bigint | number }) => acc + Number(f.size), 0);
+  const usedBytes = files.reduce(
+    (acc: number, f: { size: bigint | number }) => acc + Number(f.size),
+    0,
+  );
   const totalBytes = usedBytes + additionalBytes;
 
   if (totalBytes > limitBytes) {
@@ -149,6 +157,25 @@ export function checkFeatureAccess(
 }
 
 export async function getUserPlanType(userId: string): Promise<PlanType> {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  return (user?.subscriptionPlan as PlanType) || "trial";
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { subscriptionPlan: true, subscriptionStatus: true },
+  });
+
+  if (!user?.subscriptionPlan) {
+    return "trial";
+  }
+
+  const plan = user.subscriptionPlan;
+  const status = user.subscriptionStatus;
+
+  if (plan === "pro" && (status === "active" || status === "trialing")) {
+    return "pro";
+  }
+
+  if (status === "cancelled" || plan === "expired") {
+    return "expired";
+  }
+
+  return "trial";
 }
