@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
+import { generateBillingPortalLink } from "@creem_io/better-auth/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,66 +61,17 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("[Portal] Creating portal for customer:", user.creemCustomerId);
-    console.log("[Portal] API Key prefix:", creemApiKey?.substring(0, 8));
+    const isTestKey = creemApiKey.startsWith("creem_test_");
 
-    // Check if using test API key in production
-    const isTestKey = creemApiKey?.startsWith("test_");
-
-    if (isTestKey) {
-      console.warn("[Portal] WARNING: Using test API key in production!");
-    }
-
-    const response = await fetch("https://api.creem.io/v1/customers/billing", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": creemApiKey!,
+    const result = await generateBillingPortalLink(
+      {
+        apiKey: creemApiKey,
+        testMode: isTestKey,
       },
-      body: JSON.stringify({
-        customer_id: user.creemCustomerId,
-      }),
-    });
+      { customerId: user.creemCustomerId },
+    );
 
-    let data;
-    const contentType = response.headers.get("content-type");
-
-    if (contentType && contentType.includes("application/json")) {
-      data = await response.json();
-    } else {
-      data = { message: await response.text() };
-    }
-
-    console.log("[Portal] Creem response:", response.status, data);
-
-    // 403 usually means API key issue - provide more context
-    if (response.status === 403) {
-      return NextResponse.json(
-        {
-          error:
-            "Unable to access billing portal. Please verify your API key has the correct permissions in Creem dashboard.",
-          code: "API_KEY_FORBIDDEN",
-          details: data,
-          hint: "Check that your CREEM_API_KEY has 'write' permissions in Creem settings",
-        },
-        { status: 403 },
-      );
-    }
-
-    if (!response.ok) {
-      console.error("Creem portal error:", data);
-
-      return NextResponse.json(
-        {
-          error: data.message || `Creem error: ${response.status}`,
-          details: data,
-          creemStatus: response.status,
-        },
-        { status: response.status },
-      );
-    }
-
-    const portalUrl = data.customer_portal_link;
+    const portalUrl = result.url;
 
     if (!portalUrl) {
       return NextResponse.json(

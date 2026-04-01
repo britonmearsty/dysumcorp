@@ -47,3 +47,5 @@ IMPLEMENTATION_PLAN.md
 /dashboard-pages-reference/
 /design-reference/
 *.md
+
+.opencode/
