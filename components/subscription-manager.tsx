@@ -42,12 +42,7 @@ export function SubscriptionManager({ currentPlan }: SubscriptionManagerProps) {
         <div className="grid gap-3">
           <CustomerPortalButton
             color="secondary"
-            label="Manage Payment Methods"
-            variant="flat"
-          />
-          <CustomerPortalButton
-            color="danger"
-            label="Cancel Subscription"
+            label="Manage Subscription"
             variant="flat"
           />
         </div>

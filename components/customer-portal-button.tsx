@@ -51,7 +51,7 @@ export function CustomerPortalButton({
       }
 
       if (data.url) {
-        window.location.href = data.url;
+        window.open(data.url, "_blank", "noopener,noreferrer");
       } else {
         setError("No portal URL returned. Please contact support.");
       }
