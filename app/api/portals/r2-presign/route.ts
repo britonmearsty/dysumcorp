@@ -146,14 +146,14 @@ export async function POST(request: NextRequest) {
         bmp: "image",
         ico: "image",
         tiff: "image",
-        // Archive
-        zip: "archive",
-        rar: "archive",
-        "7z": "archive",
-        tar: "archive",
-        gz: "archive",
-        bz2: "archive",
-        xz: "archive",
+        // Archive - map to actual MIME types for compatibility with allowed list
+        zip: "application/zip",
+        rar: "application/x-rar-compressed",
+        "7z": "application/x-7z-compressed",
+        tar: "application/x-tar",
+        gz: "application/gzip",
+        bz2: "application/x-bzip2",
+        xz: "application/x-xz",
         // Documents
         pdf: "application/pdf",
         doc: "application/msword",
@@ -182,7 +182,16 @@ export async function POST(request: NextRequest) {
 
         // Check if extension maps to a specific MIME type that matches allowed type
         const mappedMime = extToCategory[ext];
-        if (mappedMime && mappedMime === allowedType) return true;
+        if (mappedMime) {
+          // Check for exact match
+          if (mappedMime === allowedType) return true;
+          // Check if mapped MIME starts with allowed type (e.g., "application/zip" matches "application/*")
+          if (
+            allowedType.includes("/") &&
+            mappedMime.startsWith(allowedType.replace(/\/.*$/, "/"))
+          )
+            return true;
+        }
 
         return false;
       });
