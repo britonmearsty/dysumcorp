@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
       const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
       const mime = mimeType.toLowerCase();
       const extToCategory: Record<string, string> = {
+        // Audio
         mp3: "audio",
         wav: "audio",
         ogg: "audio",
@@ -126,6 +127,7 @@ export async function POST(request: NextRequest) {
         m4a: "audio",
         wma: "audio",
         opus: "audio",
+        // Video
         mp4: "video",
         mov: "video",
         avi: "video",
@@ -134,6 +136,7 @@ export async function POST(request: NextRequest) {
         wmv: "video",
         flv: "video",
         m4v: "video",
+        // Image
         jpg: "image",
         jpeg: "image",
         png: "image",
@@ -141,17 +144,45 @@ export async function POST(request: NextRequest) {
         webp: "image",
         svg: "image",
         bmp: "image",
+        ico: "image",
+        tiff: "image",
+        // Archive
+        zip: "archive",
+        rar: "archive",
+        "7z": "archive",
+        tar: "archive",
+        gz: "archive",
+        bz2: "archive",
+        xz: "archive",
+        // Documents
+        pdf: "application/pdf",
+        doc: "application/msword",
+        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        xls: "application/vnd.ms-excel",
+        xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        csv: "text/csv",
       };
       const typeAllowed = allowed.some((t) => {
-        if (t === mime) return true;
-        if (t === `.${ext}` || t === ext) return true;
-        if (t.endsWith("/*")) {
-          const base = t.replace("/*", "");
+        const allowedType = t.toLowerCase();
+
+        // Exact match with MIME type
+        if (allowedType === mime) return true;
+
+        // Exact match with extension (with or without dot)
+        if (allowedType === `.${ext}` || allowedType === ext) return true;
+
+        // Handle wildcard MIME types (image/*, video/*, audio/*, text/*, archive/*)
+        if (allowedType.endsWith("/*")) {
+          const base = allowedType.replace("/*", "");
 
           if (mime.startsWith(base)) return true;
           if (mime === "application/octet-stream" || !mime)
             return extToCategory[ext] === base;
         }
+
+        // Check if extension maps to a specific MIME type that matches allowed type
+        const mappedMime = extToCategory[ext];
+        if (mappedMime && mappedMime === allowedType) return true;
 
         return false;
       });

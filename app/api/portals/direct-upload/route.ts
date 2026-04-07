@@ -68,6 +68,29 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("text/javascript");
           allowedMimeTypes.add("text/css");
           allowedMimeTypes.add("text/markdown");
+        } else if (prefix === "archive") {
+          allowedMimeTypes.add("application/zip");
+          allowedMimeTypes.add("application/x-zip-compressed");
+          allowedMimeTypes.add("application/x-rar-compressed");
+          allowedMimeTypes.add("application/vnd.rar");
+          allowedMimeTypes.add("application/x-7z-compressed");
+          allowedMimeTypes.add("application/x-tar");
+          allowedMimeTypes.add("application/gzip");
+          allowedMimeTypes.add("application/x-gzip");
+          allowedMimeTypes.add("application/x-bzip2");
+          allowedMimeTypes.add("application/x-xz");
+          allowedMimeTypes.add("application/octet-stream");
+        } else if (prefix === "application") {
+          // Document types
+          allowedMimeTypes.add("application/pdf");
+          allowedMimeTypes.add("application/msword");
+          allowedMimeTypes.add(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          );
+          allowedMimeTypes.add("application/vnd.ms-excel");
+          allowedMimeTypes.add(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          );
         } else {
           allowedMimeTypes.add(mimeType);
         }

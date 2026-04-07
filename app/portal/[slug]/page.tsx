@@ -175,6 +175,7 @@ export default function PublicPortalPage() {
 
     // Extension → MIME category map for browsers that report empty file.type
     const extToCategory: Record<string, string> = {
+      // Audio
       mp3: "audio",
       wav: "audio",
       ogg: "audio",
@@ -183,6 +184,7 @@ export default function PublicPortalPage() {
       m4a: "audio",
       wma: "audio",
       opus: "audio",
+      // Video
       mp4: "video",
       mov: "video",
       avi: "video",
@@ -191,6 +193,7 @@ export default function PublicPortalPage() {
       wmv: "video",
       flv: "video",
       m4v: "video",
+      // Image
       jpg: "image",
       jpeg: "image",
       png: "image",
@@ -200,6 +203,7 @@ export default function PublicPortalPage() {
       bmp: "image",
       ico: "image",
       tiff: "image",
+      // Archive
       zip: "archive",
       rar: "archive",
       "7z": "archive",
@@ -208,6 +212,13 @@ export default function PublicPortalPage() {
       bz2: "archive",
       xz: "archive",
       pen: "archive",
+      // Documents
+      pdf: "application/pdf",
+      doc: "application/msword",
+      docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      xls: "application/vnd.ms-excel",
+      xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      csv: "text/csv",
     };
 
     const textExtensions = [
@@ -283,9 +294,17 @@ export default function PublicPortalPage() {
         return extToCategory[fileExtension] === baseType;
       }
 
+      // Check if allowed type matches the mapped MIME type for the extension
+      const mappedMime = extToCategory[fileExtension];
+      if (mappedMime && mappedMime === allowed) return true;
+
+      // Exact MIME type match
       if (fileType && fileType === allowed) return true;
+      // Extension match (with dot)
       if (allowed.startsWith(".")) return fileName.endsWith(allowed);
+      // Extension match (without dot)
       if (fileExtension === allowed) return true;
+      // Handle comma-separated list of MIME types
       if (allowed.includes(",")) {
         return allowed.split(",").some((type) => type.trim() === fileType);
       }
