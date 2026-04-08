@@ -331,6 +331,7 @@ async function uploadSingleShot(
       console.log(
         `[upload] ✓ single-shot PUT complete — avg ${fmtSpeed(avgSpeed)} (${elapsed()})`,
       );
+      // Report 100% — UI shows "transferring" state separately during worker phase
       if (onProgress) onProgress(100);
 
       return { ok: true };
@@ -374,7 +375,8 @@ async function uploadMultipart(
     `[upload] ${ts()} multipart START "${file.name}" ${partCount} parts × ${partSize / 1024 / 1024} MB, concurrency=${partConcurrency}`,
   );
 
-  // Track bytes uploaded across all parts for aggregate progress (0–78%)
+  // Track bytes uploaded to R2 (0-100% of file). When it hits 100%, UI shows
+  // "Transferring..." while worker handles the remaining transfer phase.
   const partLoaded = new Array(partCount).fill(0);
   const totalBytes = file.size;
 
@@ -427,7 +429,9 @@ async function uploadMultipart(
     };
   }
 
-  if (onProgress) onProgress(78);
+  // Note: we don't call onProgress here — the R2 multipart upload already reports
+  // 0-100% via reportProgress(), and when it hits 100%, UI shows "Transferring..."
+  // while worker handles the remaining transfer via polling.
 
   // Finalize
   try {
@@ -687,7 +691,6 @@ async function runPoll(
       const data = await res.json();
 
       if (data.status === "completed") {
-        if (onProgress) onProgress(100);
         console.log(
           `[upload] ${ts()} ✓ DONE "${file.name}" total=${elapsed()}`,
         );
@@ -704,10 +707,8 @@ async function runPoll(
 
         return;
       }
-      if (data.status === "routing" || data.status === "uploaded") {
-        if (onProgress)
-          onProgress(80 + Math.floor((attempt / pollMaxAttempts) * 20));
-      }
+      // Don't report progress during polling — UI shows "transferring" state separately
+      // when progress reached 100% and worker is still processing
     } catch {
       // transient poll error — keep trying
     }
