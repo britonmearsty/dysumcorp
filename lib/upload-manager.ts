@@ -53,7 +53,7 @@ export interface UploadResult {
 
 // ── Tunable constants ──────────────────────────────────────────────────────────
 /** Threshold that matches r2-presign MULTIPART_THRESHOLD */
-const MULTIPART_THRESHOLD = 10 * 1024 * 1024; // 10 MB
+const MULTIPART_THRESHOLD = 50 * 1024 * 1024; // 50 MB
 
 /**
  * Part concurrency scales with file size.
@@ -62,12 +62,12 @@ const MULTIPART_THRESHOLD = 10 * 1024 * 1024; // 10 MB
  * which fragments bandwidth badly on any realistic upstream.
  */
 function computePartConcurrency(fileSizeBytes: number): number {
-  if (fileSizeBytes >= 2 * 1024 * 1024 * 1024) return 1; // ≥ 2 GB → 100 MB parts, 1 at a time
-  if (fileSizeBytes >= 500 * 1024 * 1024) return 2; // ≥ 500 MB → 50 MB parts, 2 concurrent
-  if (fileSizeBytes >= 200 * 1024 * 1024) return 2; // ≥ 200 MB → 25 MB parts, 2 concurrent
-  if (fileSizeBytes >= 50 * 1024 * 1024) return 3; // ≥ 50 MB  → 25 MB parts, 3 concurrent
+  if (fileSizeBytes >= 2 * 1024 * 1024 * 1024) return 2; // ≥2GB use 2 concurrent parts
+  if (fileSizeBytes >= 500 * 1024 * 1024) return 2;
+  if (fileSizeBytes >= 200 * 1024 * 1024) return 2;
+  if (fileSizeBytes >= 50 * 1024 * 1024) return 3;
 
-  return 4; // < 50 MB  → 25 MB parts, 4 concurrent
+  return 4;
 }
 
 /**

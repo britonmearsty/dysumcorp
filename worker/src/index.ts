@@ -2,18 +2,20 @@
  * Dysumcorp Transfer Worker
  *
  * POST /transfer — accepts a stagingKey, returns 202 immediately,
- * then in ctx.waitUntil transfers the R2 object to Drive/Dropbox
- * using direct range reads (no streaming buffer accumulation).
+ * then either:
+ *   - Small files: transfers directly in waitUntil (fast, single invocation)
+ *   - Large files: queues chunk processing via Cloudflare Queue (resumable)
  *
- * Parallelism: each /transfer call runs independently via ctx.waitUntil,
- * so multiple files transfer concurrently — one chunk at a time per file.
+ * POST /transfer-queue — processes individual chunk jobs from the queue.
+ * Each message uploads one chunk, then queues the next chunk or completes.
  *
- * Chunk size is controlled by CHUNK_SIZE below. Adjust to find the
- * sweet spot before hitting provider rate limits.
+ * This prevents CPU timeout on large files (1GB+) by spreading work across
+ * multiple queue message executions, each well within time limits.
  */
 
 export interface Env {
   R2_BUCKET: R2Bucket;
+  TRANSFER_QUEUE: Queue;
   WORKER_SECRET: string;
   BETTER_AUTH_SECRET: string;
   VERCEL_APP_URL: string;
@@ -26,6 +28,65 @@ export interface Env {
 // Larger chunks = fewer round trips = less wall-clock time under waitUntil.
 // 100 MB: a 400 MB file needs only 4 chunks instead of 16 at 25 MB.
 const CHUNK_SIZE = 100 * 1024 * 1024; // 100 MB
+
+// ── Queue threshold ─────────────────────────────────────────────────────────────
+// Files larger than this use the queue-based chunked processing.
+// Files smaller complete directly in waitUntil (faster, less overhead).
+// 500 MB: 5 chunks × ~30s = 150s, borderline. Queue provides safety margin.
+const QUEUE_THRESHOLD_BYTES = 300 * 1024 * 1024; // 300 MB
+
+// ── Queue message types ───────────────────────────────────────────────────────
+
+interface TransferInitMessage {
+  type: "init";
+  transferId: string;
+  uploadToken: string;
+  stagingKey: string;
+  portalId: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  uploaderName?: string;
+  uploaderEmail?: string;
+  uploaderNotes?: string;
+  uploadSessionId?: string;
+  skipNotification?: boolean;
+  callbackUrl: string;
+  parentFolderId?: string;
+  folderPath?: string;
+  /** Provider context - fetched once and passed to all chunks */
+  provider: "google" | "dropbox";
+  accessToken: string;
+  parentFolderIdResolved: string;
+  folderPathResolved: string;
+}
+
+interface ChunkMessage {
+  type: "chunk";
+  transferId: string;
+  provider: "google" | "dropbox";
+  uploadUrl?: string; // Google Drive resumable URL
+  sessionId?: string; // Dropbox session ID
+  accessToken?: string; // Dropbox needs access token for each request
+  stagingKey: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  offset: number;
+  chunkIndex: number;
+  totalChunks: number;
+  callbackUrl: string;
+  portalId: string;
+  uploadSessionId?: string;
+  skipNotification?: boolean;
+  uploaderName?: string;
+  uploaderEmail?: string;
+  uploaderNotes?: string;
+  storageFileId?: string; // For Google Drive - carries forward
+  workerSecret: string;
+}
+
+type QueueMessage = TransferInitMessage | ChunkMessage;
 
 // ── Token validation ──────────────────────────────────────────────────────────
 
@@ -389,6 +450,7 @@ async function uploadToDropbox(
 }
 
 // ── Main transfer logic ───────────────────────────────────────────────────────
+// Handles both small files (direct) and large files (queue-based).
 
 async function runTransfer(
   env: Env,
@@ -405,40 +467,21 @@ async function runTransfer(
     uploadSessionId?: string;
     skipNotification?: boolean;
     callbackUrl: string;
-    /** Pre-resolved folder ID — skips folder creation race when provided */
     parentFolderId?: string;
-    /** Pre-resolved folder path — passed alongside parentFolderId */
     folderPath?: string;
   },
 ): Promise<void> {
-  const {
-    uploadToken,
-    stagingKey,
-    portalId,
-    fileName,
-    fileSize,
-    mimeType,
-    uploaderName,
-    uploaderEmail,
-    uploaderNotes,
-    uploadSessionId,
-    skipNotification,
-    callbackUrl,
-    parentFolderId: preResolvedFolderId,
-    folderPath: preResolvedFolderPath,
-  } = body;
-
-  const tid = Math.random().toString(36).slice(2, 8);
+  const transferId = Math.random().toString(36).slice(2, 8);
   const t0 = Date.now();
   const ms = () => `${Date.now() - t0}ms`;
 
   console.log(
-    `[transfer:${tid}] START key=${stagingKey} file="${fileName}" size=${fileSize}`,
+    `[transfer:${transferId}] START key=${body.stagingKey} file="${body.fileName}" size=${body.fileSize}`,
   );
 
   async function postCallback(payload: Record<string, unknown>) {
     try {
-      const res = await fetch(callbackUrl, {
+      const res = await fetch(body.callbackUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ workerSecret: env.WORKER_SECRET, ...payload }),
@@ -446,47 +489,47 @@ async function runTransfer(
 
       if (!res.ok) {
         console.error(
-          `[transfer:${tid}] callback ${res.status}:`,
+          `[transfer:${transferId}] callback ${res.status}:`,
           await res.text(),
         );
       } else {
-        console.log(`[transfer:${tid}] callback ✓ ${res.status}`);
+        console.log(`[transfer:${transferId}] callback ✓ ${res.status}`);
       }
     } catch (e) {
-      console.error(`[transfer:${tid}] callback exception:`, e);
+      console.error(`[transfer:${transferId}] callback exception:`, e);
     }
   }
 
   try {
     // 1. Validate token
     const token = await validateUploadToken(
-      uploadToken,
+      body.uploadToken,
       env.BETTER_AUTH_SECRET,
     );
 
     if (!token) {
       await postCallback({
-        stagingKey,
+        stagingKey: body.stagingKey,
         status: "failed",
         error: "Invalid upload token",
       });
 
       return;
     }
-    if (token.stagingKey !== stagingKey) {
+    if (token.stagingKey !== body.stagingKey) {
       await postCallback({
-        stagingKey,
+        stagingKey: body.stagingKey,
         status: "failed",
         error: "stagingKey mismatch",
       });
 
       return;
     }
-    console.log(`[transfer:${tid}] ✓ token valid (${ms()})`);
+    console.log(`[transfer:${transferId}] ✓ token valid (${ms()})`);
 
     // 2. Get storage credentials from Vercel
     console.log(
-      `[transfer:${tid}] → fetching Vercel context, VERCEL_APP_URL=${env.VERCEL_APP_URL}, WORKER_SECRET present=${!!env.WORKER_SECRET}`,
+      `[transfer:${transferId}] → fetching Vercel context, VERCEL_APP_URL=${env.VERCEL_APP_URL}, WORKER_SECRET present=${!!env.WORKER_SECRET}`,
     );
 
     let ctxRes: Response;
@@ -498,19 +541,18 @@ async function runTransfer(
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            uploadToken,
-            uploaderName,
+            uploadToken: body.uploadToken,
+            uploaderName: body.uploaderName,
             workerSecret: env.WORKER_SECRET,
-            // Pass pre-resolved folder so the server skips folder creation
-            parentFolderId: preResolvedFolderId,
-            folderPath: preResolvedFolderPath,
+            parentFolderId: body.parentFolderId,
+            folderPath: body.folderPath,
           }),
         },
       );
     } catch (fetchErr) {
-      console.error(`[transfer:${tid}] ❌ ctx fetch threw:`, fetchErr);
+      console.error(`[transfer:${transferId}] ❌ ctx fetch threw:`, fetchErr);
       await postCallback({
-        stagingKey,
+        stagingKey: body.stagingKey,
         status: "failed",
         error: `Context fetch exception: ${fetchErr}`,
       });
@@ -518,16 +560,18 @@ async function runTransfer(
       return;
     }
 
-    console.log(`[transfer:${tid}] ← ctx response status=${ctxRes.status}`);
+    console.log(
+      `[transfer:${transferId}] ← ctx response status=${ctxRes.status}`,
+    );
 
     if (!ctxRes.ok) {
       const text = await ctxRes.text();
 
       console.error(
-        `[transfer:${tid}] ❌ ctx fetch failed: ${ctxRes.status} ${text}`,
+        `[transfer:${transferId}] ❌ ctx fetch failed: ${ctxRes.status} ${text}`,
       );
       await postCallback({
-        stagingKey,
+        stagingKey: body.stagingKey,
         status: "failed",
         error: `Context fetch failed: ${ctxRes.status} ${text}`,
       });
@@ -546,19 +590,19 @@ async function runTransfer(
     try {
       ctx = await ctxRes.json();
       console.log(
-        `[transfer:${tid}] ✓ context: provider=${ctx.provider} parentFolderId=${ctx.parentFolderId} (${ms()})`,
+        `[transfer:${transferId}] ✓ context: provider=${ctx.provider} parentFolderId=${ctx.parentFolderId} (${ms()})`,
       );
     } catch (jsonErr) {
       const text = await ctxRes.text();
 
       console.error(
-        `[transfer:${tid}] ❌ ctx JSON parse failed:`,
+        `[transfer:${transferId}] ❌ ctx JSON parse failed:`,
         jsonErr,
         "body:",
         text,
       );
       await postCallback({
-        stagingKey,
+        stagingKey: body.stagingKey,
         status: "failed",
         error: `Context JSON parse failed: ${jsonErr}`,
       });
@@ -567,11 +611,11 @@ async function runTransfer(
     }
 
     // 3. Verify R2 object exists
-    const r2Head = await env.R2_BUCKET.head(stagingKey);
+    const r2Head = await env.R2_BUCKET.head(body.stagingKey);
 
     if (!r2Head) {
       await postCallback({
-        stagingKey,
+        stagingKey: body.stagingKey,
         status: "failed",
         error: "R2 object not found",
       });
@@ -579,82 +623,127 @@ async function runTransfer(
       return;
     }
     console.log(
-      `[transfer:${tid}] ✓ R2 object exists size=${r2Head.size} (${ms()})`,
+      `[transfer:${transferId}] ✓ R2 object exists size=${r2Head.size} (${ms()})`,
     );
 
-    // 3b. Report intermediate status: ROUTING (about to start cloud transfer)
-    await postCallback({
-      stagingKey,
-      status: "routing",
-    });
+    const fileSize = r2Head.size;
 
-    // 4. Transfer R2 → cloud storage using range reads + chunked upload
-    let storageFileId: string;
-    let storageUrl: string;
+    // 4. Decide: direct transfer (small files) or queue-based (large files)
+    if (fileSize < QUEUE_THRESHOLD_BYTES) {
+      // Small file: transfer directly in this execution
+      await postCallback({
+        stagingKey: body.stagingKey,
+        status: "routing",
+      });
 
-    if (ctx.provider === "google") {
-      const result = await uploadToGoogleDrive(
-        env.R2_BUCKET,
-        stagingKey,
-        ctx.accessToken,
-        fileName,
-        mimeType,
-        ctx.parentFolderId,
-        r2Head.size,
+      let storageFileId: string;
+      let storageUrl: string;
+
+      if (ctx.provider === "google") {
+        const result = await uploadToGoogleDrive(
+          env.R2_BUCKET,
+          body.stagingKey,
+          ctx.accessToken,
+          body.fileName,
+          body.mimeType,
+          ctx.parentFolderId,
+          fileSize,
+        );
+
+        storageFileId = result.id;
+        storageUrl =
+          result.webViewLink ??
+          `https://drive.google.com/file/d/${result.id}/view`;
+      } else {
+        const result = await uploadToDropbox(
+          env.R2_BUCKET,
+          body.stagingKey,
+          ctx.accessToken,
+          ctx.folderPath,
+          body.fileName,
+          fileSize,
+        );
+
+        storageFileId = result.id;
+        storageUrl = "";
+      }
+      console.log(
+        `[transfer:${transferId}] ✓ cloud upload done storageFileId=${storageFileId} (${ms()})`,
       );
 
-      storageFileId = result.id;
-      storageUrl =
-        result.webViewLink ??
-        `https://drive.google.com/file/d/${result.id}/view`;
+      // 5. Delete from R2
+      try {
+        await env.R2_BUCKET.delete(body.stagingKey);
+        console.log(`[transfer:${transferId}] ✓ R2 deleted`);
+      } catch (e) {
+        console.error(
+          `[transfer:${transferId}] R2 delete failed (non-fatal):`,
+          e,
+        );
+      }
+
+      // 6. Callback to Vercel
+      await postCallback({
+        stagingKey: body.stagingKey,
+        status: "completed",
+        portalId: body.portalId,
+        fileName: body.fileName,
+        fileSize,
+        mimeType: body.mimeType,
+        storageFileId,
+        storageUrl,
+        provider: ctx.provider,
+        uploaderName: body.uploaderName,
+        uploaderEmail: body.uploaderEmail,
+        uploaderNotes: body.uploaderNotes,
+        uploadSessionId: body.uploadSessionId,
+        skipNotification: body.skipNotification ?? false,
+      });
+
+      console.log(`[transfer:${transferId}] ✓ DONE total=${ms()}`);
     } else {
-      const result = await uploadToDropbox(
-        env.R2_BUCKET,
-        stagingKey,
-        ctx.accessToken,
-        ctx.folderPath,
-        fileName,
-        r2Head.size,
+      // Large file: use queue for chunked processing
+      console.log(
+        `[transfer:${transferId}] large file (${fileSize} bytes) → queuing for chunked transfer`,
       );
 
-      storageFileId = result.id;
-      storageUrl = "";
+      await postCallback({
+        stagingKey: body.stagingKey,
+        status: "routing",
+      });
+
+      // Queue the init message to start chunk processing
+      await env.TRANSFER_QUEUE.send({
+        type: "init",
+        transferId,
+        uploadToken: body.uploadToken,
+        stagingKey: body.stagingKey,
+        portalId: body.portalId,
+        fileName: body.fileName,
+        fileSize,
+        mimeType: body.mimeType,
+        uploaderName: body.uploaderName,
+        uploaderEmail: body.uploaderEmail,
+        uploaderNotes: body.uploaderNotes,
+        uploadSessionId: body.uploadSessionId,
+        skipNotification: body.skipNotification,
+        callbackUrl: body.callbackUrl,
+        parentFolderId: body.parentFolderId,
+        folderPath: body.folderPath,
+        provider: ctx.provider,
+        accessToken: ctx.accessToken,
+        parentFolderIdResolved: ctx.parentFolderId,
+        folderPathResolved: ctx.folderPath,
+      });
+
+      console.log(
+        `[transfer:${transferId}] ✓ queued for chunked transfer (${ms()})`,
+      );
     }
-    console.log(
-      `[transfer:${tid}] ✓ cloud upload done storageFileId=${storageFileId} (${ms()})`,
-    );
-
-    // 5. Delete from R2
-    try {
-      await env.R2_BUCKET.delete(stagingKey);
-      console.log(`[transfer:${tid}] ✓ R2 deleted`);
-    } catch (e) {
-      console.error(`[transfer:${tid}] R2 delete failed (non-fatal):`, e);
-    }
-
-    // 6. Callback to Vercel
-    await postCallback({
-      stagingKey,
-      status: "completed",
-      portalId,
-      fileName,
-      fileSize,
-      mimeType,
-      storageFileId,
-      storageUrl,
-      provider: ctx.provider,
-      uploaderName,
-      uploaderEmail,
-      uploaderNotes,
-      uploadSessionId,
-      skipNotification: skipNotification ?? false,
-    });
-
-    console.log(`[transfer:${tid}] ✓ DONE total=${ms()}`);
   } catch (err) {
-    console.error(`[transfer:${tid}] ❌ UNCAUGHT:`, err);
+    console.error(`[transfer:${transferId}] ❌ UNCAUGHT:`, err);
     await postCallback({
-      stagingKey,
+      stagingKey: body.stagingKey,
       status: "failed",
       error: err instanceof Error ? err.message : "Unknown error",
     });
@@ -683,93 +772,523 @@ export function corsHeaders(origin: string | null): Record<string, string> {
   };
 }
 
-// ── Request handler ───────────────────────────────────────────────────────────
+// ── Request handler ──────────────���────────────────────────────────────────────
 
-export default {
-  async fetch(
-    request: Request,
-    env: Env,
-    ctx: ExecutionContext,
-  ): Promise<Response> {
-    const rid = Math.random().toString(36).slice(2, 8);
-    const url = new URL(request.url);
-    const origin = request.headers.get("Origin");
+async function handleRequest(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response> {
+  const rid = Math.random().toString(36).slice(2, 8);
+  const url = new URL(request.url);
+  const origin = request.headers.get("Origin");
 
-    console.log(`[handler:${rid}] ${request.method} ${url.pathname}`);
+  console.log(`[handler:${rid}] ${request.method} ${url.pathname}`);
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders(origin) });
-    }
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders(origin) });
+  }
 
-    if (request.method === "GET" && url.pathname === "/health") {
-      return new Response(
-        JSON.stringify({ ok: true, ts: Date.now(), chunkSize: CHUNK_SIZE }),
-        {
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders(origin),
-          },
+  if (request.method === "GET" && url.pathname === "/health") {
+    return new Response(
+      JSON.stringify({ ok: true, ts: Date.now(), chunkSize: CHUNK_SIZE }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders(origin),
         },
-      );
-    }
-
-    if (request.method !== "POST" || url.pathname !== "/transfer") {
-      return new Response("Not Found", { status: 404 });
-    }
-
-    let body: any;
-
-    try {
-      body = await request.json();
-    } catch {
-      return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
-      });
-    }
-
-    const { uploadToken, stagingKey } = body;
-
-    if (!uploadToken || !stagingKey) {
-      return new Response(
-        JSON.stringify({ error: "uploadToken and stagingKey are required" }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders(origin),
-          },
-        },
-      );
-    }
-
-    // Validate token before accepting — fast fail before queuing background work
-    const token = await validateUploadToken(
-      uploadToken,
-      env.BETTER_AUTH_SECRET,
+      },
     );
+  }
 
-    if (!token) {
-      return new Response(
-        JSON.stringify({ error: "Invalid or expired token" }),
-        {
-          status: 401,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders(origin),
-          },
-        },
-      );
-    }
+  if (request.method !== "POST" || url.pathname !== "/transfer") {
+    return new Response("Not Found", { status: 404 });
+  }
 
-    // Each call to ctx.waitUntil runs independently — multiple files transfer in parallel
-    ctx.waitUntil(runTransfer(env, body));
+  let body: any;
 
-    console.log(`[handler:${rid}] ✓ 202 accepted key=${stagingKey}`);
-
-    return new Response(JSON.stringify({ accepted: true, stagingKey }), {
-      status: 202,
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+      status: 400,
       headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
     });
-  },
+  }
+
+  const { uploadToken, stagingKey } = body;
+
+  if (!uploadToken || !stagingKey) {
+    return new Response(
+      JSON.stringify({ error: "uploadToken and stagingKey are required" }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders(origin),
+        },
+      },
+    );
+  }
+
+  // Validate token before accepting — fast fail before queuing background work
+  const token = await validateUploadToken(uploadToken, env.BETTER_AUTH_SECRET);
+
+  if (!token) {
+    return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+      status: 401,
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders(origin),
+      },
+    });
+  }
+
+  // Each call to ctx.waitUntil runs independently — multiple files transfer in parallel
+  ctx.waitUntil(runTransfer(env, body));
+
+  console.log(`[handler:${rid}] ✓ 202 accepted key=${stagingKey}`);
+
+  return new Response(JSON.stringify({ accepted: true, stagingKey }), {
+    status: 202,
+    headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
+  });
+}
+
+// Handle queue messages for chunked transfer
+async function handleQueue(
+  batch: MessageBatch<QueueMessage>,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<void> {
+  for (const msg of batch.messages) {
+    try {
+      const data = msg.body as QueueMessage;
+
+      if (data.type === "init") {
+        await handleQueueInit(data, env, ctx);
+      } else if (data.type === "chunk") {
+        await handleQueueChunk(data, env, ctx);
+      }
+
+      msg.ack();
+    } catch (err) {
+      console.error(`[queue] message failed:`, err);
+      // Retry on failure (default queue behavior)
+      msg.retry();
+    }
+  }
+}
+
+// Export as Cloudflare Workers module with both fetch and queue handlers
+const worker: ExportedHandler<Env, QueueMessage> = {
+  fetch: handleRequest,
+  queue: handleQueue,
 };
+
+export default worker;
+
+// Handle transfer initialization — start the first chunk
+async function handleQueueInit(
+  msg: TransferInitMessage,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<void> {
+  const { transferId, fileSize, stagingKey, fileName, mimeType, callbackUrl } =
+    msg;
+  const t0 = Date.now();
+  const ms = () => `${Date.now() - t0}ms`;
+
+  console.log(
+    `[queue:init:${transferId}] START file="${fileName}" size=${fileSize} provider=${msg.provider}`,
+  );
+
+  const totalChunks = Math.ceil(fileSize / CHUNK_SIZE);
+
+  if (msg.provider === "google") {
+    // Google Drive: start a resumable session
+    const initRes = await fetch(
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${msg.accessToken}`,
+          "Content-Type": "application/json",
+          "X-Upload-Content-Type": mimeType,
+          "X-Upload-Content-Length": String(fileSize),
+        },
+        body: JSON.stringify({
+          name: fileName,
+          parents: [msg.parentFolderIdResolved],
+        }),
+      },
+    );
+
+    if (!initRes.ok) {
+      const text = await initRes.text();
+      throw new Error(`Drive init failed: ${initRes.status} ${text}`);
+    }
+
+    const uploadUrl = initRes.headers.get("Location");
+    if (!uploadUrl) throw new Error("Drive did not return resumable URL");
+
+    console.log(`[queue:init:${transferId}] ✓ Drive session started (${ms()})`);
+
+    // Queue first chunk
+    await env.TRANSFER_QUEUE.send({
+      type: "chunk",
+      transferId,
+      provider: "google",
+      uploadUrl,
+      accessToken: msg.accessToken,
+      stagingKey,
+      fileName,
+      mimeType,
+      fileSize,
+      offset: 0,
+      chunkIndex: 0,
+      totalChunks,
+      callbackUrl,
+      portalId: msg.portalId,
+      uploadSessionId: msg.uploadSessionId,
+      skipNotification: msg.skipNotification,
+      uploaderName: msg.uploaderName,
+      uploaderEmail: msg.uploaderEmail,
+      uploaderNotes: msg.uploaderNotes,
+      workerSecret: env.WORKER_SECRET,
+    });
+  } else {
+    // Dropbox: start upload session
+    const startRes = await fetch(
+      "https://content.dropboxapi.com/2/files/upload_session/start",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${msg.accessToken}`,
+          "Dropbox-API-Arg": JSON.stringify({ close: false }),
+          "Content-Type": "application/octet-stream",
+        },
+        body: new Uint8Array(0),
+      },
+    );
+
+    if (!startRes.ok) {
+      const text = await startRes.text();
+      throw new Error(
+        `Dropbox session start failed: ${startRes.status} ${text}`,
+      );
+    }
+
+    const { session_id } = (await startRes.json()) as { session_id: string };
+
+    console.log(
+      `[queue:init:${transferId}] ✓ Dropbox session=${session_id} (${ms()})`,
+    );
+
+    // Queue first chunk
+    await env.TRANSFER_QUEUE.send({
+      type: "chunk",
+      transferId,
+      provider: "dropbox",
+      sessionId: session_id,
+      accessToken: msg.accessToken,
+      stagingKey,
+      fileName,
+      mimeType,
+      fileSize,
+      offset: 0,
+      chunkIndex: 0,
+      totalChunks,
+      callbackUrl,
+      portalId: msg.portalId,
+      uploadSessionId: msg.uploadSessionId,
+      skipNotification: msg.skipNotification,
+      uploaderName: msg.uploaderName,
+      uploaderEmail: msg.uploaderEmail,
+      uploaderNotes: msg.uploaderNotes,
+      workerSecret: env.WORKER_SECRET,
+    });
+  }
+
+  console.log(`[queue:init:${transferId}] ✓ chunk 0 queued (${ms()})`);
+}
+
+// Handle individual chunk processing
+async function handleQueueChunk(
+  msg: ChunkMessage,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<void> {
+  const {
+    transferId,
+    stagingKey,
+    fileName,
+    mimeType,
+    fileSize,
+    offset,
+    chunkIndex,
+    totalChunks,
+    callbackUrl,
+  } = msg;
+  const t0 = Date.now();
+  const ms = () => `${Date.now() - t0}ms`;
+
+  console.log(
+    `[queue:chunk:${transferId}] chunk ${chunkIndex + 1}/${totalChunks} offset=${offset} size=${Math.min(CHUNK_SIZE, fileSize - offset)}`,
+  );
+
+  const length = Math.min(CHUNK_SIZE, fileSize - offset);
+  const r2Obj = await getR2RangeStream(
+    env.R2_BUCKET,
+    stagingKey,
+    offset,
+    length,
+  );
+  const rangeEnd = offset + length - 1;
+  const isLast = offset + length >= fileSize;
+
+  if (msg.provider === "google") {
+    // Google Drive chunk upload
+    const res = await fetch(msg.uploadUrl!, {
+      method: "PUT",
+      headers: {
+        "Content-Type": mimeType,
+        "Content-Length": String(length),
+        "Content-Range": `bytes ${offset}-${rangeEnd}/${fileSize}`,
+      },
+      body: r2Obj.body,
+      // @ts-ignore
+      duplex: "half",
+    });
+
+    console.log(
+      `[queue:chunk:${transferId}] chunk ${chunkIndex + 1} → ${res.status} (${ms()})`,
+    );
+
+    if (isLast) {
+      // Final chunk — upload complete
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Drive final chunk failed: ${res.status} ${text}`);
+      }
+
+      const result = (await res.json()) as { id: string; webViewLink?: string };
+      const storageFileId = result.id;
+      const storageUrl =
+        result.webViewLink ??
+        `https://drive.google.com/file/d/${result.id}/view`;
+
+      console.log(
+        `[queue:chunk:${transferId}] ✓ DONE fileId=${storageFileId} total=${ms()} chunks=${totalChunks}`,
+      );
+
+      // Clean up R2
+      try {
+        await env.R2_BUCKET.delete(stagingKey);
+        console.log(`[queue:chunk:${transferId}] ✓ R2 deleted`);
+      } catch (e) {
+        console.error(
+          `[queue:chunk:${transferId}] R2 delete failed (non-fatal):`,
+          e,
+        );
+      }
+
+      // Callback completion
+      await postQueueCallback(callbackUrl, msg, env.WORKER_SECRET, {
+        status: "completed",
+        storageFileId,
+        storageUrl,
+        provider: "google",
+      });
+    } else {
+      // More chunks to go — queue next
+      if (res.status !== 308 && !res.ok) {
+        const text = await res.text();
+        throw new Error(
+          `Drive chunk ${chunkIndex + 1} failed: ${res.status} ${text}`,
+        );
+      }
+
+      // For Google Drive, the upload URL remains the same for subsequent chunks
+      await env.TRANSFER_QUEUE.send({
+        type: "chunk",
+        transferId,
+        provider: "google",
+        uploadUrl: msg.uploadUrl, // Same URL for continuation
+        accessToken: msg.accessToken,
+        stagingKey,
+        fileName,
+        mimeType,
+        fileSize,
+        offset: offset + length,
+        chunkIndex: chunkIndex + 1,
+        totalChunks,
+        callbackUrl,
+        portalId: msg.portalId,
+        uploadSessionId: msg.uploadSessionId,
+        skipNotification: msg.skipNotification,
+        uploaderName: msg.uploaderName,
+        uploaderEmail: msg.uploaderEmail,
+        uploaderNotes: msg.uploaderNotes,
+        workerSecret: env.WORKER_SECRET,
+      });
+
+      console.log(
+        `[queue:chunk:${transferId}] ✓ chunk ${chunkIndex + 1} queued next (${ms()})`,
+      );
+    }
+  } else {
+    // Dropbox chunk upload
+    if (isLast) {
+      const finishRes = await fetch(
+        "https://content.dropboxapi.com/2/files/upload_session/finish",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${msg.accessToken}`,
+            "Dropbox-API-Arg": JSON.stringify({
+              cursor: { session_id: msg.sessionId, offset },
+              commit: { path: `/${fileName}`, mode: "add", autorename: true },
+            }),
+            "Content-Type": "application/octet-stream",
+            "Content-Length": String(length),
+          },
+          body: r2Obj.body,
+          // @ts-ignore
+          duplex: "half",
+        },
+      );
+
+      console.log(
+        `[queue:chunk:${transferId}] finish → ${finishRes.status} (${ms()})`,
+      );
+
+      if (!finishRes.ok) {
+        const text = await finishRes.text();
+        throw new Error(`Dropbox finish failed: ${finishRes.status} ${text}`);
+      }
+
+      const result = (await finishRes.json()) as { id: string; name: string };
+      const storageFileId = result.id;
+
+      console.log(
+        `[queue:chunk:${transferId}] ✓ DONE fileId=${storageFileId} total=${ms()} chunks=${totalChunks}`,
+      );
+
+      // Clean up R2
+      try {
+        await env.R2_BUCKET.delete(stagingKey);
+        console.log(`[queue:chunk:${transferId}] ✓ R2 deleted`);
+      } catch (e) {
+        console.error(
+          `[queue:chunk:${transferId}] R2 delete failed (non-fatal):`,
+          e,
+        );
+      }
+
+      // Callback completion
+      await postQueueCallback(callbackUrl, msg, env.WORKER_SECRET, {
+        status: "completed",
+        storageFileId,
+        storageUrl: "",
+        provider: "dropbox",
+      });
+    } else {
+      // Append next chunk
+      const appendRes = await fetch(
+        "https://content.dropboxapi.com/2/files/upload_session/append_v2",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${msg.accessToken}`,
+            "Dropbox-API-Arg": JSON.stringify({
+              cursor: { session_id: msg.sessionId, offset },
+              close: false,
+            }),
+            "Content-Type": "application/octet-stream",
+            "Content-Length": String(length),
+          },
+          body: r2Obj.body,
+          // @ts-ignore
+          duplex: "half",
+        },
+      );
+
+      console.log(
+        `[queue:chunk:${transferId}] append ${chunkIndex + 1} → ${appendRes.status} (${ms()})`,
+      );
+
+      if (!appendRes.ok) {
+        const text = await appendRes.text();
+        throw new Error(
+          `Dropbox append ${chunkIndex + 1} failed: ${appendRes.status} ${text}`,
+        );
+      }
+
+      // Queue next chunk
+      await env.TRANSFER_QUEUE.send({
+        type: "chunk",
+        transferId,
+        provider: "dropbox",
+        sessionId: msg.sessionId,
+        accessToken: msg.accessToken,
+        stagingKey,
+        fileName,
+        mimeType,
+        fileSize,
+        offset: offset + length,
+        chunkIndex: chunkIndex + 1,
+        totalChunks,
+        callbackUrl,
+        portalId: msg.portalId,
+        uploadSessionId: msg.uploadSessionId,
+        skipNotification: msg.skipNotification,
+        uploaderName: msg.uploaderName,
+        uploaderEmail: msg.uploaderEmail,
+        uploaderNotes: msg.uploaderNotes,
+        workerSecret: env.WORKER_SECRET,
+      });
+
+      console.log(
+        `[queue:chunk:${transferId}] ✓ chunk ${chunkIndex + 1} queued next (${ms()})`,
+      );
+    }
+  }
+}
+
+// Helper to post callback from queue handlers
+async function postQueueCallback(
+  callbackUrl: string,
+  msg: ChunkMessage,
+  workerSecret: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const res = await fetch(callbackUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        workerSecret,
+        stagingKey: msg.stagingKey,
+        portalId: msg.portalId,
+        fileName: msg.fileName,
+        fileSize: msg.fileSize,
+        mimeType: msg.mimeType,
+        uploadSessionId: msg.uploadSessionId,
+        skipNotification: msg.skipNotification ?? false,
+        uploaderName: msg.uploaderName,
+        uploaderEmail: msg.uploaderEmail,
+        uploaderNotes: msg.uploaderNotes,
+        ...payload,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(`[queue] callback ${res.status}:`, await res.text());
+    } else {
+      console.log(`[queue] callback ✓ ${res.status}`);
+    }
+  } catch (e) {
+    console.error(`[queue] callback exception:`, e);
+  }
+}

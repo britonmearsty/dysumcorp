@@ -30,3 +30,9 @@ VERCEL_APP_URL = "https://dysumcorppro.vercel.app"
 #
 # WORKER_SECRET    — shared secret used by Vercel to authenticate Worker callbacks
 # BETTER_AUTH_SECRET — same value as your Vercel BETTER_AUTH_SECRET (for token HMAC)
+
+# Queue for chunked transfer processing - enables resuming large file transfers
+# Each message processes one chunk, preventing CPU timeout on large files
+[[queues]]
+binding = "TRANSFER_QUEUE"
+queue = "dysumcorp-transfer"

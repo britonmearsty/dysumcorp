@@ -16,7 +16,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Files >= this size use multipart upload (must be > 5 MB, R2 minimum part size)
-const MULTIPART_THRESHOLD = 10 * 1024 * 1024; // 10 MB
+// Raised to 50 MB: single-shot is faster for 10-50 MB files (no multipart overhead)
+const MULTIPART_THRESHOLD = 50 * 1024 * 1024; // 50 MB
 
 /** Part size scales with file size to reduce part count and TCP slow-start overhead.
  *  R2 supports up to 5 GB per part; minimum is 5 MB (except last part).
@@ -29,6 +30,19 @@ function getPartSize(fileSizeBytes: number): number {
   if (fileSizeBytes >= 500 * 1024 * 1024) return 50 * 1024 * 1024; // ≥ 500 MB → 50 MB
 
   return 25 * 1024 * 1024; // default → 25 MB
+}
+
+/** Compute presigned URL expiry based on file size.
+ *  Larger files need more time for upload + transfer.
+ *    < 500 MB → 15 minutes (900s)
+ *    ≥ 500 MB → 30 minutes (1800s)
+ *    ≥ 1 GB   → 60 minutes (3600s)
+ */
+function getPresignedUrlExpiry(fileSizeBytes: number): number {
+  if (fileSizeBytes >= 1024 * 1024 * 1024) return 3600; // ≥ 1 GB → 60 min
+  if (fileSizeBytes >= 500 * 1024 * 1024) return 1800; // ≥ 500 MB → 30 min
+
+  return 900; // default → 15 min
 }
 
 export async function POST(request: NextRequest) {
@@ -255,13 +269,14 @@ export async function POST(request: NextRequest) {
 
     // ── Single-shot upload for small files ────────────────────────────────────
     if (fileSize < MULTIPART_THRESHOLD) {
+      const urlExpiry = getPresignedUrlExpiry(fileSize);
       console.log(
-        `[r2-presign:${requestId}] Single-shot upload: ${fileSize} bytes`,
+        `[r2-presign:${requestId}] Single-shot upload: ${fileSize} bytes, urlExpiry=${urlExpiry}s`,
       );
       const presignedUrl = await getPresignedPutUrl(
         stagingKey,
         mimeType,
-        900,
+        urlExpiry,
         fileSize,
       );
 
@@ -278,9 +293,10 @@ export async function POST(request: NextRequest) {
     // ── Multipart upload for large files ──────────────────────────────────────
     const PART_SIZE = getPartSize(fileSize);
     const partCount = Math.ceil(fileSize / PART_SIZE);
+    const urlExpiry = getPresignedUrlExpiry(fileSize);
 
     console.log(
-      `[r2-presign:${requestId}] Multipart upload: ${fileSize} bytes → ${partCount} parts × ${PART_SIZE / 1024 / 1024} MB`,
+      `[r2-presign:${requestId}] Multipart upload: ${fileSize} bytes → ${partCount} parts × ${PART_SIZE / 1024 / 1024} MB, urlExpiry=${urlExpiry}s`,
     );
 
     const uploadId = await createMultipartUpload(stagingKey, mimeType);
@@ -288,7 +304,7 @@ export async function POST(request: NextRequest) {
     // Generate all part URLs in parallel — Vercel handles this fast, it's just signing
     const partUrls = await Promise.all(
       Array.from({ length: partCount }, (_, i) =>
-        getPresignedPartUrl(stagingKey, uploadId, i + 1, 900),
+        getPresignedPartUrl(stagingKey, uploadId, i + 1, urlExpiry),
       ),
     );
 
