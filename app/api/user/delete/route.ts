@@ -1,126 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getSession } from "@/lib/auth-server";
-import { prisma } from "@/lib/prisma";
-
-async function cancelCreemSubscription(creemCustomerId: string) {
-  try {
-    const response = await fetch(
-      `https://api.creem.io/v1/customers/${creemCustomerId}/subscriptions`,
-      {
-        method: "GET",
-        headers: {
-          "x-api-key": process.env.CREEM_API_KEY || "",
-        },
-      },
-    );
-
-    if (!response.ok) {
-      console.error(
-        "Failed to get Creem subscriptions:",
-        await response.text(),
-      );
-
-      return;
-    }
-
-    const subscriptions = await response.json();
-
-    for (const sub of subscriptions.subscriptions || []) {
-      if (sub.status !== "canceled") {
-        await fetch(`https://api.creem.io/v1/subscriptions/${sub.id}/cancel`, {
-          method: "POST",
-          headers: {
-            "x-api-key": process.env.CREEM_API_KEY || "",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            immediate: false,
-          }),
-        });
-      }
-    }
-  } catch (error) {
-    console.error("Error canceling Creem subscription:", error);
-  }
-}
+/**
+ * Account Deletion Endpoint - DISABLED
+ *
+ * Self-service account deletion has been disabled.
+ * Users must contact support@trackage.io to request account deletion.
+ * Admins can delete accounts directly in the database.
+ */
 
 export async function DELETE(req: NextRequest) {
-  try {
-    const session = await getSession();
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const userId = session.user.id;
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        creemCustomerId: true,
-        subscriptionPlan: true,
-        subscriptionStatus: true,
-      },
-    });
-
-    // Cancel subscription in Creem if user has one (they paid for privacy, not services)
-    if (
-      user?.creemCustomerId &&
-      user?.subscriptionPlan === "pro" &&
-      (user?.subscriptionStatus === "active" ||
-        user?.subscriptionStatus === "trialing")
-    ) {
-      await cancelCreemSubscription(user.creemCustomerId);
-    }
-
-    const userPortals = await prisma.portal.findMany({
-      where: { userId },
-      select: { id: true },
-    });
-    const portalIds = userPortals.map((p) => p.id);
-
-    await prisma.$transaction([
-      prisma.session.deleteMany({ where: { userId } }),
-      prisma.account.deleteMany({ where: { userId } }),
-      prisma.uploadSession.deleteMany({
-        where: { portal: { userId } },
-      }),
-      prisma.file.deleteMany({
-        where: { portal: { userId } },
-      }),
-      prisma.portal.deleteMany({ where: { userId } }),
-      prisma.usageTracking.deleteMany({ where: { userId } }),
-      ...(portalIds.length > 0
-        ? [
-            prisma.r2StagingUpload.deleteMany({
-              where: { portalId: { in: portalIds } },
-            }),
-          ]
-        : []),
-    ]);
-
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        status: "deleted",
-        deletedAt: new Date(),
-        name: null,
-        image: null,
-        portalLogo: null,
-        subscriptionPlan:
-          user?.subscriptionPlan === "pro" ? "expired" : "trial",
-        subscriptionStatus: "cancelled",
-      },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting user:", error);
-
-    return NextResponse.json(
-      { error: "Failed to delete account" },
-      { status: 500 },
-    );
-  }
+  // Account deletion is now admin-handled only - users must contact support
+  return NextResponse.json(
+    {
+      error:
+        "Account deletion is no longer available via self-service. Please contact support@trackage.io to request account deletion.",
+    },
+    { status: 403 },
+  );
 }

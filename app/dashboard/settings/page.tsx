@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle,
@@ -16,10 +17,11 @@ import {
   Loader2,
   Palette,
   HardDrive,
+  Mail,
 } from "lucide-react";
 import { Checkbox } from "@heroui/react";
 
-import { useSession, signOut } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,16 +35,12 @@ export default function SettingsPage() {
   // Individual loading states for each section
   const [profileLoading, setProfileLoading] = useState(false);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Success/error states for each section
   const [profileStatus, setProfileStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
   const [notificationsStatus, setNotificationsStatus] = useState<
-    "idle" | "success" | "error"
-  >("idle");
-  const [deleteStatus, setDeleteStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
 
@@ -61,10 +59,6 @@ export default function SettingsPage() {
   const [notifyOnPortalCreate, setNotifyOnPortalCreate] = useState(true);
   const [notifyOnStorageWarning, setNotifyOnStorageWarning] = useState(true);
   const [weeklyReports, setWeeklyReports] = useState(false);
-
-  // Delete account state
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   // Storage delete behavior
   const [storageDeleteBehavior, setStorageDeleteBehavior] = useState<
@@ -332,36 +326,6 @@ export default function SettingsPage() {
       resetStatus(setStorageDeleteStatus);
     } finally {
       setStorageDeleteLoading(false);
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    if (deleteConfirmText !== "DELETE") {
-      setDeleteStatus("error");
-      resetStatus(setDeleteStatus);
-
-      return;
-    }
-
-    setDeleteLoading(true);
-
-    try {
-      const response = await fetch("/api/user/delete", {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-
-        throw new Error(data.error || "Failed to delete account");
-      }
-
-      await signOut();
-      router.push("/");
-    } catch (error) {
-      setDeleteLoading(false);
-      setDeleteStatus("error");
-      resetStatus(setDeleteStatus);
     }
   };
 
@@ -913,112 +877,89 @@ export default function SettingsPage() {
                   {/* Danger Zone */}
                   {activeTab === "danger" && (
                     <div className="space-y-4 sm:space-y-6">
-                      {!showDeleteConfirm ? (
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-xl border-2 border-red-500/50 bg-red-50 dark:bg-red-950/20">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-xl border-2 border-red-500/50 bg-red-50 dark:bg-red-950/20">
+                        <div>
+                          <p className="font-semibold text-sm text-foreground">
+                            Account Deletion
+                          </p>
+                          <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                            For security reasons, account deletion must be
+                            processed manually.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="p-4 sm:p-6 rounded-xl border border-border bg-muted/30">
+                        <div className="flex items-start gap-4">
+                          <div className="p-2.5 bg-red-100 dark:bg-red-900/30 rounded-xl">
+                            <Shield className="w-5 h-5 text-red-600 dark:text-red-400" />
+                          </div>
                           <div>
                             <p className="font-semibold text-sm text-foreground">
-                              Delete my data and deactivate my account
+                              Manual Account Deletion Required
                             </p>
-                            <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                              Your account will be permanently removed
-                              immediately. Your subscription will be canceled
-                              and will not renew. Files in your Dropbox/Google
-                              Drive are not deleted.
+                            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                              To protect your data and ensure proper handling of
+                              your account, account deletion must be processed
+                              manually by our support team. This ensures all
+                              your data, portals, and files are handled properly
+                              before the account is permanently closed.
                             </p>
                           </div>
-                          <Button
-                            className="rounded-xl border-2 border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 w-full sm:w-auto"
-                            type="button"
-                            variant="outline"
-                            onClick={() => setShowDeleteConfirm(true)}
-                          >
-                            Delete Account
-                          </Button>
                         </div>
-                      ) : (
-                        <div className="space-y-4 p-4 sm:p-6 rounded-xl border-2 border-red-500/50 bg-red-50 dark:bg-red-950/20">
-                          <div>
-                            <p className="font-bold text-red-600 dark:text-red-400">
-                              Are you absolutely sure?
-                            </p>
-                            <p className="text-xs sm:text-sm text-red-600 dark:text-red-400 mt-1 sm:mt-2">
-                              Your account will be permanently removed
-                              immediately. Your subscription will be canceled
-                              and will not renew. Files in your Dropbox/Google
-                              Drive are not deleted.
-                            </p>
-                            <p className="text-xs sm:text-sm text-red-600 dark:text-red-400 mt-2">
-                              This action cannot be undone.
-                            </p>
-                          </div>
 
-                          <div>
-                            <Label
-                              className="text-sm font-semibold text-foreground"
-                              htmlFor="deleteConfirm"
-                            >
-                              Type{" "}
-                              <span className="font-bold text-red-600 dark:text-red-400">
-                                DELETE
-                              </span>{" "}
-                              to confirm
-                            </Label>
-                            <Input
-                              className="mt-1.5 sm:mt-2 rounded-xl border-2 border-red-500/50 focus:border-red-500"
-                              id="deleteConfirm"
-                              placeholder="DELETE"
-                              type="text"
-                              value={deleteConfirmText}
-                              onChange={(e) =>
-                                setDeleteConfirmText(e.target.value)
-                              }
-                            />
-                          </div>
-
-                          {deleteStatus !== "idle" && (
-                            <div
-                              className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium ${
-                                deleteStatus === "success"
-                                  ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                                  : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
-                              }`}
-                            >
-                              {deleteStatus === "success"
-                                ? "Account deletion initiated"
-                                : deleteConfirmText !== "DELETE"
-                                  ? 'Please type "DELETE" to confirm'
-                                  : "Failed to delete account"}
+                        <div className="mt-5 pt-5 border-t border-border">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                            How to Request Account Deletion
+                          </p>
+                          <div className="space-y-3">
+                            <div className="flex items-start gap-3 p-3 bg-card rounded-xl border border-border">
+                              <Mail className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-semibold text-foreground">
+                                  Email Support
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  Send your request to{" "}
+                                  <a
+                                    className="text-primary hover:underline font-medium"
+                                    href="mailto:support@trackage.io"
+                                  >
+                                    support@trackage.io
+                                  </a>
+                                </p>
+                              </div>
                             </div>
-                          )}
 
-                          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                            <Button
-                              className="rounded-xl bg-red-600 text-white hover:bg-red-700 w-full sm:w-auto"
-                              disabled={
-                                deleteLoading || deleteConfirmText !== "DELETE"
-                              }
-                              type="button"
-                              variant="default"
-                              onClick={handleDeleteAccount}
-                            >
-                              {deleteLoading ? "Deleting..." : "Confirm Delete"}
-                            </Button>
-                            <Button
-                              className="rounded-xl w-full sm:w-auto"
-                              disabled={deleteLoading}
-                              type="button"
-                              variant="outline"
-                              onClick={() => {
-                                setShowDeleteConfirm(false);
-                                setDeleteConfirmText("");
-                                setDeleteStatus("idle");
-                              }}
-                            >
-                              Cancel
-                            </Button>
+                            <div className="flex items-start gap-3 p-3 bg-card rounded-xl border border-border">
+                              <Globe className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-semibold text-foreground">
+                                  Contact Form
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  Submit a request via our{" "}
+                                  <Link
+                                    className="text-primary hover:underline font-medium"
+                                    href="/contact"
+                                  >
+                                    contact page
+                                  </Link>
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      )}
+
+                        <div className="mt-5 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                          <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                            <strong>Note:</strong> Please include your
+                            registered email address in your request. Our team
+                            will verify your identity before processing the
+                            deletion. This process typically takes 24-48 hours.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
