@@ -57,37 +57,34 @@ const MULTIPART_THRESHOLD = 50 * 1024 * 1024; // 50 MB
 
 /**
  * Part concurrency scales with file size.
- * Larger files use bigger parts (50–100 MB), so fewer concurrent parts are needed
- * to saturate the pipe. More than 2 concurrent 100 MB parts = 200 MB in-flight,
- * which fragments bandwidth badly on any realistic upstream.
+ * Larger files use bigger parts (50–100 MB), so fewer concurrent parts are needed.
+ * For smaller files with 25MB parts, we can push harder.
  */
 function computePartConcurrency(fileSizeBytes: number): number {
-  if (fileSizeBytes >= 2 * 1024 * 1024 * 1024) return 2; // ≥2GB use 2 concurrent parts
-  if (fileSizeBytes >= 500 * 1024 * 1024) return 2;
-  if (fileSizeBytes >= 200 * 1024 * 1024) return 2;
-  if (fileSizeBytes >= 50 * 1024 * 1024) return 3;
+  if (fileSizeBytes >= 2 * 1024 * 1024 * 1024) return 4; // ≥2GB use 4 concurrent parts
+  if (fileSizeBytes >= 500 * 1024 * 1024) return 4;
+  if (fileSizeBytes >= 200 * 1024 * 1024) return 5;
+  if (fileSizeBytes >= 50 * 1024 * 1024) return 6;
 
-  return 4;
+  return 8; // Smaller files - push harder
 }
 
 /**
  * Max simultaneous files for large files (>= 10 MB, multipart).
- * With 2–3 parts each, 2 concurrent large files = 4–6 XHRs — enough to
- * saturate upstream without fragmenting bandwidth across too many streams.
+ * Modern browsers can handle 4-6 concurrent large file uploads.
  */
-const FILE_CONCURRENCY_LARGE = 2;
+const FILE_CONCURRENCY_LARGE = 4;
 /**
  * Max simultaneous files for small files (< 10 MB, single-shot).
- * Each small file is one XHR — 6 concurrent is fine.
+ * Each small file is one XHR — 10 concurrent is fine.
  */
-const FILE_CONCURRENCY_SMALL = 6;
+const FILE_CONCURRENCY_SMALL = 10;
 
 /**
  * Total in-flight XHR budget. Used for mixed-batch concurrency calculation.
- * 2 large files × 3 parts + 2 small = 8 — keeps the pipe full without
- * fragmenting bandwidth across too many simultaneous streams.
+ * With modern networks, we can push to 16.
  */
-const MAX_TOTAL_XHRS = 8;
+const MAX_TOTAL_XHRS = 16;
 
 function computeFileConcurrency(files: File[]): number {
   const largeCount = files.filter((f) => f.size >= MULTIPART_THRESHOLD).length;

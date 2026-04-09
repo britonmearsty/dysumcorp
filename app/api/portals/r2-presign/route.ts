@@ -19,17 +19,19 @@ export const dynamic = "force-dynamic";
 // Raised to 50 MB: single-shot is faster for 10-50 MB files (no multipart overhead)
 const MULTIPART_THRESHOLD = 50 * 1024 * 1024; // 50 MB
 
-/** Part size scales with file size to reduce part count and TCP slow-start overhead.
+/** Part size scales with file size - smaller parts = more parallelism.
  *  R2 supports up to 5 GB per part; minimum is 5 MB (except last part).
+ *    < 200 MB  → 10 MB parts  (up to 20 parts) - faster parallelism
  *    < 500 MB  → 25 MB parts  (up to 20 parts)
  *    ≥ 500 MB  → 50 MB parts  (up to 60 parts for 3 GB)
- *    ≥ 2 GB    → 100 MB parts (up to 30 parts for 3 GB)
+ *    ≥ 2 GB    → 75 MB parts (up to 40 parts for 3 GB)
  */
 function getPartSize(fileSizeBytes: number): number {
-  if (fileSizeBytes >= 2 * 1024 * 1024 * 1024) return 100 * 1024 * 1024; // ≥ 2 GB → 100 MB
+  if (fileSizeBytes >= 2 * 1024 * 1024 * 1024) return 75 * 1024 * 1024; // ≥ 2 GB → 75 MB
   if (fileSizeBytes >= 500 * 1024 * 1024) return 50 * 1024 * 1024; // ≥ 500 MB → 50 MB
+  if (fileSizeBytes >= 200 * 1024 * 1024) return 25 * 1024 * 1024; // ≥ 200 MB → 25 MB
 
-  return 25 * 1024 * 1024; // default → 25 MB
+  return 10 * 1024 * 1024; // default → 10 MB for max parallelism
 }
 
 /** Compute presigned URL expiry based on file size.

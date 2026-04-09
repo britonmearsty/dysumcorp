@@ -5,7 +5,7 @@ compatibility_date = "2025-03-01"
 # Workers Unbound — no CPU/wall-clock time limits (billed per ms of CPU time).
 # Required for large file transfers that exceed the 30s Bundled plan wall-clock limit.
 # https://developers.cloudflare.com/workers/platform/pricing/#workers
-usage_model = "unbound"
+# Note: "unbound" is the default - no need to specify
 
 [observability]
 enabled = true
@@ -33,6 +33,9 @@ VERCEL_APP_URL = "https://dysumcorppro.vercel.app"
 
 # Queue for chunked transfer processing - enables resuming large file transfers
 # Each message processes one chunk, preventing CPU timeout on large files
-[[queues]]
+[[queues.producers]]
 binding = "TRANSFER_QUEUE"
+queue = "dysumcorp-transfer"
+
+[[queues.consumers]]
 queue = "dysumcorp-transfer"
