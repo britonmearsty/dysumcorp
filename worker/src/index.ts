@@ -23,17 +23,14 @@ export interface Env {
 
 // ── Tunable chunk size ────────────────────────────────────────────────────────
 // Single constant used for both Google Drive and Dropbox.
-// Google: must be a multiple of 256 KB. 100 MB = 104,857,600 bytes ✓
-// Dropbox: max 150 MB per chunk. 100 MB is well within limits.
-// Larger chunks = fewer round trips = less wall-clock time under waitUntil.
-// 100 MB: a 400 MB file needs only 4 chunks instead of 16 at 25 MB.
-const CHUNK_SIZE = 100 * 1024 * 1024; // 100 MB
+// Google: must be a multiple of 256 KB. 75 MB = 78,643,200 bytes ✓
+// 75 MB chunks balance parallelism vs overhead for server-to-server transfer
+const CHUNK_SIZE = 75 * 1024 * 1024; // 75 MB
 
 // ── Queue threshold ─────────────────────────────────────────────────────────────
 // Files larger than this use the queue-based chunked processing.
 // Files smaller complete directly in waitUntil (faster, less overhead).
-// 500 MB: 5 chunks × ~30s = 150s, borderline. Queue provides safety margin.
-const QUEUE_THRESHOLD_BYTES = 300 * 1024 * 1024; // 300 MB
+const QUEUE_THRESHOLD_BYTES = 100 * 1024 * 1024; // 100 MB
 
 // ── Queue message types ───────────────────────────────────────────────────────
 
@@ -861,23 +858,25 @@ async function handleQueue(
   env: Env,
   ctx: ExecutionContext,
 ): Promise<void> {
-  for (const msg of batch.messages) {
-    try {
-      const data = msg.body as QueueMessage;
+  // Process all messages in parallel - server-to-server can handle concurrency
+  await Promise.all(
+    batch.messages.map(async (msg) => {
+      try {
+        const data = msg.body as QueueMessage;
 
-      if (data.type === "init") {
-        await handleQueueInit(data, env, ctx);
-      } else if (data.type === "chunk") {
-        await handleQueueChunk(data, env, ctx);
+        if (data.type === "init") {
+          await handleQueueInit(data, env, ctx);
+        } else if (data.type === "chunk") {
+          await handleQueueChunk(data, env, ctx);
+        }
+
+        msg.ack();
+      } catch (err) {
+        console.error(`[queue] message failed:`, err);
+        msg.retry();
       }
-
-      msg.ack();
-    } catch (err) {
-      console.error(`[queue] message failed:`, err);
-      // Retry on failure (default queue behavior)
-      msg.retry();
-    }
-  }
+    }),
+  );
 }
 
 // Export as Cloudflare Workers module with both fetch and queue handlers
@@ -934,7 +933,7 @@ async function handleQueueInit(
 
     console.log(`[queue:init:${transferId}] ✓ Drive session started (${ms()})`);
 
-    // Queue first chunk
+    // Queue first chunk - Google Drive requires sequential uploads (308 responses)
     await env.TRANSFER_QUEUE.send({
       type: "chunk",
       transferId,
@@ -957,6 +956,7 @@ async function handleQueueInit(
       uploaderNotes: msg.uploaderNotes,
       workerSecret: env.WORKER_SECRET,
     });
+    console.log(`[queue:init:${transferId}] ✓ chunk 0 queued (${ms()})`);
   } else {
     // Dropbox: start upload session
     const startRes = await fetch(
@@ -985,7 +985,7 @@ async function handleQueueInit(
       `[queue:init:${transferId}] ✓ Dropbox session=${session_id} (${ms()})`,
     );
 
-    // Queue first chunk
+    // Queue first chunk - Dropbox also requires sequential appends
     await env.TRANSFER_QUEUE.send({
       type: "chunk",
       transferId,
@@ -1008,9 +1008,8 @@ async function handleQueueInit(
       uploaderNotes: msg.uploaderNotes,
       workerSecret: env.WORKER_SECRET,
     });
+    console.log(`[queue:init:${transferId}] ✓ chunk 0 queued (${ms()})`);
   }
-
-  console.log(`[queue:init:${transferId}] ✓ chunk 0 queued (${ms()})`);
 }
 
 // Handle individual chunk processing
