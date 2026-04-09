@@ -210,7 +210,7 @@ export function DashboardSidebar() {
             <div className="relative">
               <Image
                 alt="Dysumcorp Logo"
-                className="transition-transform duration-200 hover:scale-105"
+                className="transition-transform duration-200 hover:scale-105 dark:invert"
                 height={36}
                 src="/logo.svg"
                 style={{ width: "auto", height: "auto" }}
@@ -220,7 +220,8 @@ export function DashboardSidebar() {
             </div>
             <span
               className={cn(
-                "font-mono text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent transition-all duration-300",
+                "font-mono text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent transition-all duration-300",
+                "from-foreground to-foreground/80 dark:from-white dark:to-white/80",
                 isCollapsed
                   ? "opacity-0 w-0 overflow-hidden"
                   : "opacity-100 w-auto",
