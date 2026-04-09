@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin";
+import { applyAdminRateLimit } from "@/lib/rate-limit";
 
 const VALID_PLANS = ["trial", "pro", "expired"] as const;
 
@@ -9,6 +10,10 @@ type ValidPlan = (typeof VALID_PLANS)[number];
 
 export async function POST(request: Request) {
   try {
+    // Rate limit admin endpoints
+    const rateLimitResponse = await applyAdminRateLimit(request);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const adminCheck = await isAdmin(request.headers);
 
     if (!adminCheck.isAdmin) {

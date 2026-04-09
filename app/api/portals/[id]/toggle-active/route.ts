@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { checkAccess } from "@/lib/trial";
+import { isValidUUID } from "@/lib/validation";
 
 // POST /api/portals/[id]/toggle-active - Toggle portal active status
 export async function POST(
@@ -11,6 +12,15 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+
+    // Validate UUID format - prevents IDOR probe attempts
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: "Invalid portal ID format" },
+        { status: 400 },
+      );
+    }
+
     const session = await getSessionFromRequest(request);
 
     if (!session?.user) {

@@ -11,6 +11,7 @@ let AUTH_LIMIT: Ratelimit | null = null;
 let PUBLIC_PORTAL_LIMIT: Ratelimit | null = null;
 let STATUS_POLL_LIMIT: Ratelimit | null = null;
 let PASSWORD_ATTEMPT_LIMIT: Ratelimit | null = null;
+let ADMIN_LIMIT: Ratelimit | null = null;
 
 function initializeRedis() {
   if (redis !== null) return; // Already initialized
@@ -23,6 +24,13 @@ function initializeRedis() {
       redis = new Redis({
         url: process.env.UPSTASH_REDIS_REST_URL,
         token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      });
+
+      // Admin endpoints - stricter limit (10 req/min)
+      ADMIN_LIMIT = new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(10, "60 s"),
+        analytics: true,
       });
 
       UPLOAD_LIMIT = new Ratelimit({
@@ -84,8 +92,10 @@ export {
   PUBLIC_PORTAL_LIMIT,
   STATUS_POLL_LIMIT,
   PASSWORD_ATTEMPT_LIMIT,
+  ADMIN_LIMIT,
 };
 
+// Fallback in-memory rate limiters (used when Redis is unavailable)
 class InMemoryRateLimit {
   private requests: Map<string, number[]> = new Map();
 
@@ -129,8 +139,10 @@ export const FALLBACK_AUTH_LIMIT = new InMemoryRateLimit(5, 60);
 export const FALLBACK_PUBLIC_PORTAL_LIMIT = new InMemoryRateLimit(120, 60);
 export const FALLBACK_STATUS_POLL_LIMIT = new InMemoryRateLimit(300, 60);
 export const FALLBACK_PASSWORD_ATTEMPT_LIMIT = new InMemoryRateLimit(10, 300);
+export const FALLBACK_ADMIN_LIMIT = new InMemoryRateLimit(10, 60);
 
 /**
+ * Extract the real client IP from a request.
  * Extract the real client IP from a request.
  * On Vercel, x-forwarded-for is a comma-separated list; the leftmost entry
  * is the original client. Taking only the first value prevents spoofing by
@@ -290,4 +302,15 @@ export async function applyPasswordRateLimit(
     FALLBACK_PASSWORD_ATTEMPT_LIMIT,
     `pwd:${portalId}`,
   );
+}
+
+/**
+ * Admin endpoints rate limit - 10 requests per minute.
+ * Protects admin API from abuse and DDoS.
+ */
+export async function applyAdminRateLimit(
+  request: Request,
+): Promise<NextResponse | null> {
+  const ip = getClientIp(request);
+  return await applyRateLimit(ADMIN_LIMIT, FALLBACK_ADMIN_LIMIT, `admin:${ip}`);
 }

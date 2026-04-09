@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { hashPassword } from "@/lib/password-utils";
+import { isValidUUID } from "@/lib/validation";
 import {
   getValidToken,
   deleteFromGoogleDrive,
@@ -16,6 +17,15 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+
+    // Validate UUID format - prevents IDOR probe attempts
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: "Invalid portal ID format" },
+        { status: 400 },
+      );
+    }
+
     const session = await getSessionFromRequest(request);
 
     if (!session?.user) {
@@ -88,6 +98,14 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
+
+    // Validate UUID format - prevents IDOR probe attempts
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: "Invalid portal ID format" },
+        { status: 400 },
+      );
+    }
 
     console.log(`[Portal Update] Starting update for portal: ${id}`);
 
@@ -312,6 +330,15 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    // Validate UUID format - prevents IDOR probe attempts
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: "Invalid portal ID format" },
+        { status: 400 },
+      );
+    }
+
     const session = await getSessionFromRequest(request);
 
     if (!session?.user) {

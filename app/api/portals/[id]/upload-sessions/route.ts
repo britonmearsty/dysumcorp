@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isValidUUID } from "@/lib/validation";
 
 // GET /api/portals/[id]/upload-sessions - Get all upload sessions for a portal
 export async function GET(
@@ -18,6 +19,14 @@ export async function GET(
     }
 
     const { id: portalId } = await params;
+
+    // Validate UUID format - prevents IDOR probe attempts
+    if (!isValidUUID(portalId)) {
+      return NextResponse.json(
+        { error: "Invalid portal ID format" },
+        { status: 400 },
+      );
+    }
 
     // Verify portal belongs to user
     const portal = await prisma.portal.findUnique({

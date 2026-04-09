@@ -96,6 +96,19 @@ export default function PublicPortalPage() {
     fetchPortal();
   }, [slug]);
 
+  // Warn user before closing if uploads are in progress
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (uploading) {
+        e.preventDefault();
+        return "Uploads in progress. Closing will cancel your uploads. Are you sure?";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [uploading]);
+
   // Show welcome toast when portal is loaded and authenticated
   useEffect(() => {
     if (portal && authenticated && portal.welcomeToastMessage) {

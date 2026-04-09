@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { verifyPasswordWithMigration } from "@/lib/password-utils";
+import { applyPasswordRateLimit } from "@/lib/rate-limit";
+import { isValidUUID } from "@/lib/validation";
 
 // POST /api/portals/[id]/password - Verify portal password
 export async function POST(
@@ -10,6 +12,19 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+
+    // Validate UUID format
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: "Invalid portal ID format" },
+        { status: 400 },
+      );
+    }
+
+    // Rate limit per portal to prevent brute-force attacks
+    const rateLimitResponse = await applyPasswordRateLimit(id);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { password } = await request.json();
 
     if (!password) {

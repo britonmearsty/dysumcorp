@@ -2,13 +2,28 @@ import { NextResponse } from "next/server";
 
 import { isAdmin } from "@/lib/admin";
 import { getUserUsageStats } from "@/lib/usage-tracking";
+import { applyAdminRateLimit } from "@/lib/rate-limit";
+import { isValidUUID } from "@/lib/validation";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ userId: string }> },
 ) {
   try {
+    // Rate limit admin endpoints
+    const rateLimitResponse = await applyAdminRateLimit(request);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { userId } = await params;
+
+    // Validate UUID format
+    if (!isValidUUID(userId)) {
+      return NextResponse.json(
+        { error: "Invalid user ID format" },
+        { status: 400 },
+      );
+    }
+
     const adminCheck = await isAdmin(request.headers);
 
     if (!adminCheck.isAdmin && adminCheck.userId !== userId) {
