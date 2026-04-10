@@ -16,6 +16,7 @@ import {
 } from "@/lib/rate-limit";
 import { sendFileUploadNotification } from "@/lib/email-service";
 import { hashPassword } from "@/lib/password-utils";
+import { checkAccess } from "@/lib/trial";
 
 // Route segment config for App Router
 export const runtime = "nodejs";
@@ -152,6 +153,20 @@ export async function POST(request: NextRequest) {
     );
     const userId = portal.userId;
 
+    // Check portal owner's trial/subscription access
+    const access = await checkAccess(userId);
+
+    if (!access.allowed) {
+      return NextResponse.json(
+        {
+          error: "Trial expired. Subscribe to continue.",
+          trialExpired: true,
+          code: "TRIAL_EXPIRED",
+        },
+        { status: 402 },
+      );
+    }
+
     // Get cloud storage token based on portal's storageProvider setting
     const portalProvider =
       portal.storageProvider === "dropbox" ? "dropbox" : "google";
@@ -190,11 +205,13 @@ export async function POST(request: NextRequest) {
       const rootFolder = await findOrCreateRootFolder(
         accessToken,
         portal.userId,
+        provider,
       );
       const portalFolder = await findOrCreatePortalFolder(
         accessToken,
         rootFolder.id,
         portal.name,
+        provider,
       );
 
       parentFolderId = portalFolder.id;
@@ -211,6 +228,7 @@ export async function POST(request: NextRequest) {
         accessToken,
         parentFolderId,
         uploaderName.trim(),
+        provider,
       );
 
       parentFolderId = clientFolder.id;

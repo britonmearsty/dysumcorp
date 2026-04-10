@@ -6,11 +6,54 @@ const nextConfig = {
   // Optimize for production
   reactStrictMode: true,
 
+  // Security headers
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          // Prevent clickjacking
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          // Prevent MIME type sniffing
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          // Enable HSTS (force HTTPS) - 1 year, include subdomains
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains",
+          },
+          // Basic CSP - restrict to same origin and Vercel for static assets
+          {
+            key: "Content-Security-Policy",
+            value:
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://cdn.fontshare.com; connect-src 'self' https://*.vercel.app https://*.googleapis.com https://*.dropboxapi.com https://*.r2.cloudflarestream.com https://*.r2.cloudflarestorage.com https://*.cloudflarestorage.com https://*.dysumcorp.workers.dev;",
+          },
+          // Referrer policy - don't leak referrer to external sites
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          // Disable X-Powered-By (already set via poweredByHeader: false)
+        ],
+      },
+    ];
+  },
+
   // Increase body size limit for file uploads (10MB to accommodate 8MB chunks)
   experimental: {
     serverActions: {
-      bodySizeLimit: '10mb',
+      bodySizeLimit: "10mb",
     },
+  },
+
+  // Include Prisma client in serverless functions
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./lib/generated/prisma/**/*"],
   },
 
   // Exclude reference folders and dysum subfolder from build

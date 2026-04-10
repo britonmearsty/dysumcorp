@@ -15,14 +15,16 @@ import {
   ExternalLink,
   Trash2,
   MessageSquare,
-  User,
 } from "lucide-react";
 
 import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
 import { useToast } from "@/lib/toast";
+import { useStorageDeleteBehavior } from "@/lib/use-storage-delete-behavior";
+import { DeleteFileModal } from "@/components/ui/delete-file-modal";
 import { useSession } from "@/lib/auth-client";
 
 interface UploadGroup {
+  id: string; // Upload session ID
   uploaderName: string;
   uploaderEmail: string;
   uploaderNotes: string | null;
@@ -46,23 +48,40 @@ interface FileItem {
   expiresAt?: string | null;
   uploaderEmail?: string | null;
   uploaderName?: string | null;
-  uploaderNotes?: string | null;
+  uploadSessionId?: string | null;
   portal: {
     id: string;
     name: string;
     slug: string;
   };
+  uploadSession?: {
+    id: string;
+    uploaderName: string | null;
+    uploaderEmail: string | null;
+    uploaderNotes: string | null;
+    uploadedAt: string;
+    fileCount: number;
+    totalSize: string;
+  } | null;
 }
 
 export default function UploadsPage() {
   const [uploads, setUploads] = useState<UploadGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUpload, setSelectedUpload] = useState<UploadGroup | null>(null);
+  const [selectedUpload, setSelectedUpload] = useState<UploadGroup | null>(
+    null,
+  );
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const { showToast } = useToast();
   const { data: session, isPending } = useSession();
+  const { behavior: deleteBehavior } = useStorageDeleteBehavior();
 
   const fetchUploads = useCallback(async () => {
     try {
@@ -72,43 +91,67 @@ export default function UploadsPage() {
         const data = await response.json();
         const files = data.files || [];
 
-        // Group files by uploader and upload session (same timestamp + uploader)
+        // Group files by upload session
         const groupedMap = new Map<string, UploadGroup>();
 
         files.forEach((file: FileItem) => {
-          // Create a unique key for each upload session
-          const uploadDate = new Date(file.uploadedAt).toISOString().split('T')[0];
-          const uploadHour = new Date(file.uploadedAt).getHours();
-          const key = `${file.uploaderEmail || file.uploaderName || 'anonymous'}-${uploadDate}-${uploadHour}-${file.portal.id}`;
+          // Use uploadSessionId if available, otherwise create a fallback key for legacy files
+          const sessionKey =
+            file.uploadSessionId ||
+            `legacy-${file.uploaderEmail || file.uploaderName || "anonymous"}-${file.uploadedAt}`;
 
-          if (groupedMap.has(key)) {
-            const group = groupedMap.get(key)!;
+          if (groupedMap.has(sessionKey)) {
+            const group = groupedMap.get(sessionKey)!;
+
             group.files.push(file);
-            group.totalFiles++;
-            group.totalSize = (BigInt(group.totalSize) + BigInt(file.size)).toString();
+            // Always recalculate counts from actual files
+            group.totalFiles = group.files.length;
+            group.totalSize = group.files
+              .reduce((sum, f) => sum + BigInt(f.size), BigInt(0))
+              .toString();
           } else {
-            groupedMap.set(key, {
-              uploaderName: file.uploaderName || "Anonymous",
-              uploaderEmail: file.uploaderEmail || "",
-              uploaderNotes: file.uploaderNotes || null,
-              totalFiles: 1,
-              totalSize: file.size,
-              uploadedAt: file.uploadedAt,
-              portalName: file.portal.name,
-              portalSlug: file.portal.slug,
-              files: [file],
-            });
+            // Create new group from upload session data or file data
+            if (file.uploadSession) {
+              groupedMap.set(sessionKey, {
+                id: file.uploadSession.id,
+                uploaderName: file.uploadSession.uploaderName || "Anonymous",
+                uploaderEmail: file.uploadSession.uploaderEmail || "",
+                uploaderNotes: file.uploadSession.uploaderNotes || null,
+                totalFiles: 1, // Start with 1, will be recalculated as more files are added
+                totalSize: file.size,
+                uploadedAt: file.uploadSession.uploadedAt,
+                portalName: file.portal.name,
+                portalSlug: file.portal.slug,
+                files: [file],
+              });
+            } else {
+              // Legacy file without session
+              groupedMap.set(sessionKey, {
+                id: sessionKey,
+                uploaderName: file.uploaderName || "Anonymous",
+                uploaderEmail: file.uploaderEmail || "",
+                uploaderNotes: null, // Legacy files don't have notes
+                totalFiles: 1,
+                totalSize: file.size,
+                uploadedAt: file.uploadedAt,
+                portalName: file.portal.name,
+                portalSlug: file.portal.slug,
+                files: [file],
+              });
+            }
           }
         });
 
         // Convert map to array and sort by date (newest first)
         const groupedArray = Array.from(groupedMap.values()).sort(
-          (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+          (a, b) =>
+            new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
         );
 
         setUploads(groupedArray);
       } else {
         const errorData = await response.json();
+
         console.error("Failed to fetch uploads:", errorData);
         showToast(errorData.error || "Failed to fetch uploads", "error");
       }
@@ -139,21 +182,84 @@ export default function UploadsPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const today = new Date();
+    const yesterday = new Date(today);
 
-    if (hours < 1) return "Just now";
-    if (hours < 24) return `${hours} hours ago`;
-    if (hours < 48) return "Yesterday";
+    yesterday.setDate(yesterday.getDate() - 1);
 
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+    // Reset time to midnight for comparison
+    const dateOnly = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+    const todayOnly = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const yesterdayOnly = new Date(
+      yesterday.getFullYear(),
+      yesterday.getMonth(),
+      yesterday.getDate(),
+    );
+
+    const timeString = date.toLocaleString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
+
+    if (dateOnly.getTime() === todayOnly.getTime()) {
+      return `Today, ${timeString}`;
+    } else if (dateOnly.getTime() === yesterdayOnly.getTime()) {
+      return `Yesterday, ${timeString}`;
+    } else {
+      return date.toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+  };
+
+  const getDayCategory = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Reset time to midnight for comparison
+    const dateOnly = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+    const todayOnly = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const yesterdayOnly = new Date(
+      yesterday.getFullYear(),
+      yesterday.getMonth(),
+      yesterday.getDate(),
+    );
+
+    if (dateOnly.getTime() === todayOnly.getTime()) {
+      return "Today";
+    } else if (dateOnly.getTime() === yesterdayOnly.getTime()) {
+      return "Yesterday";
+    } else {
+      return date.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    }
   };
 
   const handleUploadClick = (upload: UploadGroup) => {
@@ -198,6 +304,7 @@ export default function UploadsPage() {
       } else {
         try {
           const errorData = await response.json();
+
           showToast(errorData.error || "Failed to download file", "error");
         } catch {
           showToast("Failed to download file", "error");
@@ -209,24 +316,29 @@ export default function UploadsPage() {
     }
   };
 
-  const handleDeleteFile = async (fileId: string, fileName: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${fileName}"? This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
-    setDeletingFile(fileId);
+  const handleDeleteFile = (fileId: string, fileName: string) => {
+    setFileToDelete({ id: fileId, name: fileName });
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDeleteFile = async (deleteFromStorage: boolean) => {
+    if (!fileToDelete) return;
+    setDeleteModalOpen(false);
+    setDeletingFile(fileToDelete.id);
     try {
-      const response = await fetch(`/api/files/${fileId}`, {
+      const response = await fetch(`/api/files/${fileToDelete.id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deleteFromStorage }),
       });
 
       if (response.ok) {
         // Remove file from selected upload
         if (selectedUpload) {
-          const updatedFiles = selectedUpload.files.filter((f) => f.id !== fileId);
+          const updatedFiles = selectedUpload.files.filter(
+            (f) => f.id !== fileToDelete.id,
+          );
+
           if (updatedFiles.length === 0) {
             // If no files left, close modal and refresh
             setSelectedUpload(null);
@@ -250,6 +362,7 @@ export default function UploadsPage() {
       showToast("Failed to delete file", "error");
     } finally {
       setDeletingFile(null);
+      setFileToDelete(null);
     }
   };
 
@@ -257,8 +370,36 @@ export default function UploadsPage() {
     (u) =>
       u.uploaderName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.uploaderEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.portalName?.toLowerCase().includes(searchQuery.toLowerCase())
+      u.portalName?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  // Group uploads by day
+  const uploadsByDay = filteredUploads.reduce(
+    (acc, upload) => {
+      const dayCategory = getDayCategory(upload.uploadedAt);
+
+      if (!acc[dayCategory]) {
+        acc[dayCategory] = [];
+      }
+      acc[dayCategory].push(upload);
+
+      return acc;
+    },
+    {} as Record<string, UploadGroup[]>,
+  );
+
+  // Sort day categories (Today first, then Yesterday, then chronological)
+  const sortedDays = Object.keys(uploadsByDay).sort((a, b) => {
+    if (a === "Today") return -1;
+    if (b === "Today") return 1;
+    if (a === "Yesterday") return -1;
+    if (b === "Yesterday") return 1;
+    // For other days, sort by the first upload's date in each category
+    const dateA = new Date(uploadsByDay[a][0].uploadedAt);
+    const dateB = new Date(uploadsByDay[b][0].uploadedAt);
+
+    return dateB.getTime() - dateA.getTime();
+  });
 
   if (isPending || loading) {
     return (
@@ -298,7 +439,7 @@ export default function UploadsPage() {
                 All Uploads
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-                {uploads.length} upload session{uploads.length !== 1 ? 's' : ''}
+                {uploads.length} upload session{uploads.length !== 1 ? "s" : ""}
               </p>
             </div>
 
@@ -315,60 +456,76 @@ export default function UploadsPage() {
           </div>
 
           <div className="p-0">
-            <div className="divide-y divide-border">
-              {filteredUploads.length > 0 ? (
-                filteredUploads.map((upload, idx) => (
-                  <button
-                    key={idx}
-                    className="w-full flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-5 text-left hover:bg-muted/50 transition-colors group"
-                    onClick={() => handleUploadClick(upload)}
-                  >
-                    <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground group-hover:bg-bg-card transition-colors flex-shrink-0">
-                      <Upload className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-bold text-foreground truncate text-sm sm:text-base">
-                          {upload.uploaderName}
-                        </span>
-                        {upload.uploaderNotes && (
-                          <span className="bg-blue-100 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex items-center gap-1">
-                            <MessageSquare className="w-3 h-3" />
-                            Notes
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                        {upload.uploaderEmail || "No email provided"} • {upload.portalName}
-                      </p>
-                    </div>
-                    <div className="flex sm:flex-col items-start sm:items-end gap-1 sm:gap-1 sm:px-4">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                        <FileText className="w-3.5 h-3.5" />
-                        <span>{upload.totalFiles} file{upload.totalFiles !== 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {formatDate(upload.uploadedAt)}
-                      </div>
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <div className="text-center py-12 sm:py-20 px-4 sm:px-6">
-                  <div className="p-3 sm:p-4 bg-muted rounded-full w-fit mx-auto mb-4">
-                    <Upload className="w-6 sm:w-8 h-6 sm:w-8 text-muted-foreground" />
+            {filteredUploads.length > 0 ? (
+              sortedDays.map((dayCategory) => (
+                <div key={dayCategory}>
+                  {/* Day Category Header */}
+                  <div className="px-4 sm:px-6 py-2 bg-muted/50 border-b border-border">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {dayCategory}
+                    </h3>
                   </div>
-                  <h4 className="text-foreground font-semibold mb-1">
-                    {searchQuery ? "No uploads found" : "No uploads yet"}
-                  </h4>
-                  <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                    {searchQuery
-                      ? "We couldn't find any uploads matching your search."
-                      : "Uploads will appear here when clients upload files to your portals."}
-                  </p>
+
+                  {/* Uploads for this day */}
+                  <div className="divide-y divide-border">
+                    {uploadsByDay[dayCategory].map((upload) => (
+                      <button
+                        key={upload.id}
+                        className="w-full flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-5 text-left hover:bg-muted/50 transition-colors group"
+                        onClick={() => handleUploadClick(upload)}
+                      >
+                        <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-950/50 transition-colors flex-shrink-0">
+                          <Upload className="w-5 h-5 text-blue-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-bold text-foreground truncate text-sm sm:text-base">
+                              {upload.uploaderName}
+                            </span>
+                            {upload.uploaderNotes && (
+                              <span className="bg-blue-100 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex items-center gap-1">
+                                <MessageSquare className="w-3 h-3" />
+                                Notes
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                            {upload.uploaderEmail || "No email provided"} •{" "}
+                            {upload.portalName}
+                          </p>
+                        </div>
+                        <div className="flex sm:flex-col items-start sm:items-end gap-1 sm:gap-1 sm:px-4">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>
+                              {upload.totalFiles} file
+                              {upload.totalFiles !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {formatDate(upload.uploadedAt)}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              )}
-            </div>
+              ))
+            ) : (
+              <div className="text-center py-12 sm:py-20 px-4 sm:px-6">
+                <div className="p-3 sm:p-4 bg-muted rounded-full w-fit mx-auto mb-4">
+                  <Upload className="w-6 sm:w-8 h-6 sm:w-8 text-muted-foreground" />
+                </div>
+                <h4 className="text-foreground font-semibold mb-1">
+                  {searchQuery ? "No uploads found" : "No uploads yet"}
+                </h4>
+                <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+                  {searchQuery
+                    ? "We couldn't find any uploads matching your search."
+                    : "Uploads will appear here when clients upload files to your portals."}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -392,8 +549,8 @@ export default function UploadsPage() {
             >
               <div className="p-4 sm:p-6 lg:p-8 border-b border-border bg-muted/50 flex justify-between items-start gap-4">
                 <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                  <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-card shadow-sm border border-border flex items-center justify-center flex-shrink-0">
-                    <Upload className="w-6 h-6 text-foreground" />
+                  <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-950/30 shadow-sm border border-blue-200 dark:border-blue-900/40 flex items-center justify-center flex-shrink-0">
+                    <Upload className="w-6 h-6 text-blue-500" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="text-lg sm:text-2xl font-bold text-foreground leading-tight truncate">
@@ -415,7 +572,9 @@ export default function UploadsPage() {
                                 : "bg-card text-muted-foreground hover:text-foreground hover:border-border border-border"
                             }`}
                             title="Copy email address"
-                            onClick={() => copyToClipboard(selectedUpload.uploaderEmail!)}
+                            onClick={() =>
+                              copyToClipboard(selectedUpload.uploaderEmail!)
+                            }
                           >
                             {copiedEmail ? (
                               <Check className="w-3 h-3" />
@@ -548,6 +707,18 @@ export default function UploadsPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteFileModal
+        behavior={deleteBehavior}
+        fileName={fileToDelete?.name ?? ""}
+        open={deleteModalOpen && !!fileToDelete}
+        onCancel={() => {
+          setDeleteModalOpen(false);
+          setFileToDelete(null);
+        }}
+        onConfirm={confirmDeleteFile}
+      />
     </div>
   );
 }

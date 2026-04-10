@@ -5,6 +5,28 @@ import { NextResponse } from "next/server";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // CSRF Protection: Verify Origin header matches Host for state-changing methods
+  // Skip for GET requests (safe), same-origin requests, and webhooks
+  const method = request.method;
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    const origin = request.headers.get("origin");
+    const host = request.headers.get("host");
+
+    // Allow if no origin header (same-origin) or origin matches host
+    if (origin && host) {
+      const originHost = new URL(origin).host;
+      // Allow Vercel preview deployments and same host
+      if (
+        originHost !== host &&
+        !host.includes("vercel.app") &&
+        !host.includes("localhost")
+      ) {
+        // Log for debugging but don't block - some CDNs strip headers
+        console.log(`[CSRF] Origin mismatch: ${originHost} vs ${host}`);
+      }
+    }
+  }
+
   const sessionToken =
     request.cookies.get("better-auth.session_token") ||
     request.cookies.get("better-auth.session_token.secure") ||
@@ -21,7 +43,13 @@ export async function middleware(request: NextRequest) {
   const isPublicApi =
     pathname.startsWith("/api/portals/public") ||
     pathname.startsWith("/api/portals/upload") ||
-    pathname.startsWith("/api/portals/confirm-upload");
+    pathname.startsWith("/api/portals/direct-upload") ||
+    pathname.startsWith("/api/portals/stream-upload") ||
+    pathname.startsWith("/api/portals/confirm-upload") ||
+    pathname.startsWith("/api/portals/r2-presign") ||
+    pathname.startsWith("/api/portals/r2-worker-context") ||
+    pathname.startsWith("/api/portals/r2-confirm") ||
+    pathname.startsWith("/api/portals/r2-status");
 
   if (isDashboardRoute && !isAuthenticated) {
     return NextResponse.redirect(new URL("/auth", request.url));

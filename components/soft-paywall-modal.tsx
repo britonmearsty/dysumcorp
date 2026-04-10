@@ -48,9 +48,7 @@ export function SoftPaywallModal({
 }: SoftPaywallModalProps) {
   const { onOpenChange } = useDisclosure({ isOpen });
 
-  const plan = recommendedPlan
-    ? PRICING_PLANS[recommendedPlan]
-    : PRICING_PLANS.pro;
+  const plan = PRICING_PLANS.pro;
 
   const handleUpgrade = () => {
     onClose();
@@ -110,13 +108,13 @@ export function SoftPaywallModal({
                       </p>
                       <div className="flex items-center gap-2 mt-2">
                         <Chip color="default" size="sm" variant="flat">
-                          Current: {PRICING_PLANS[currentPlan].name}
+                          Current: {currentPlan}
                         </Chip>
                         {recommendedPlan && (
                           <>
                             <span>→</span>
                             <Chip color="primary" size="sm" variant="flat">
-                              Recommended: {PRICING_PLANS[recommendedPlan].name}
+                              Recommended: {PRICING_PLANS.pro.name}
                             </Chip>
                           </>
                         )}
@@ -260,7 +258,7 @@ export function useSoftPaywall() {
     onProceed?: () => void;
   }>({
     isOpen: false,
-    currentPlan: "free",
+    currentPlan: "trial" as PlanType,
     feature: "",
     reason: "",
   });

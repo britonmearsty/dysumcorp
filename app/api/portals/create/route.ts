@@ -2,13 +2,8 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { hashPassword, validatePassword } from "@/lib/password-utils";
-import {
-  checkPortalLimit,
-  checkCustomDomainLimit,
-  getUserPlanType,
-  checkFeatureAccess,
-} from "@/lib/plan-limits";
+import { hashPassword } from "@/lib/password-utils";
+import { checkAccess } from "@/lib/trial";
 import { sendPortalCreatedNotification } from "@/lib/email-service";
 
 export async function POST(request: Request) {
@@ -20,18 +15,21 @@ export async function POST(request: Request) {
     }
 
     const userId = session.user.id;
-    const planType = await getUserPlanType(userId);
 
-    const portalCheck = await checkPortalLimit(userId, planType);
+    // Check subscription access
+    const access = await checkAccess(userId);
 
-    if (!portalCheck.allowed) {
+    // Users with active subscription or trial can create unlimited portals
+    if (!access.allowed) {
       return NextResponse.json(
         {
-          error: portalCheck.reason,
-          upgrade: true,
-          currentPlan: planType,
+          error: "A subscription is required to create portals.",
+          code:
+            access.reason === "expired"
+              ? "SUBSCRIPTION_EXPIRED"
+              : "CHECKOUT_REQUIRED",
         },
-        { status: 403 },
+        { status: 402 },
       );
     }
 
@@ -43,10 +41,14 @@ export async function POST(request: Request) {
       whiteLabeled,
       // Branding
       primaryColor,
+      secondaryColor,
       textColor,
       backgroundColor,
       cardBackgroundColor,
+      gradientEnabled,
       logoUrl,
+      companyWebsite,
+      companyEmail,
       // Storage
       storageProvider,
       storageFolderId,
@@ -60,8 +62,14 @@ export async function POST(request: Request) {
       allowedFileTypes,
       // Messaging
       welcomeMessage,
+      welcomeToastMessage,
+      welcomeToastDelay,
+      welcomeToastDuration,
       submitButtonText,
       successMessage,
+      textboxSectionEnabled,
+      textboxSectionTitle,
+      textboxSectionRequired,
     } = body;
 
     // Validate required fields
@@ -99,22 +107,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check custom domain limit if provided
+    // Check if custom domain is already taken
     if (customDomain) {
-      const domainCheck = await checkCustomDomainLimit(userId, planType);
-
-      if (!domainCheck.allowed) {
-        return NextResponse.json(
-          {
-            error: domainCheck.reason,
-            upgrade: true,
-            currentPlan: planType,
-          },
-          { status: 403 },
-        );
-      }
-
-      // Check if custom domain is already taken
       const existingDomain = await prisma.portal.findUnique({
         where: { customDomain },
       });
@@ -127,29 +121,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Check white-labeling feature access
-    if (whiteLabeled && !checkFeatureAccess(planType, "whiteLabeling")) {
-      return NextResponse.json(
-        {
-          error: "White-labeling is not available on your current plan",
-          upgrade: true,
-          currentPlan: planType,
-        },
-        { status: 403 },
-      );
-    }
-
-    // Validate password strength if password provided
-    if (password) {
-      const passwordValidation = validatePassword(password);
-
-      if (!passwordValidation.isValid) {
-        return NextResponse.json(
-          { error: passwordValidation.errors.join(". ") },
-          { status: 400 },
-        );
-      }
-    }
+    // No password validation - allow any password length
 
     // Get user's default branding and notification settings
     const user = await prisma.user.findUnique({
@@ -168,12 +140,17 @@ export async function POST(request: Request) {
         customDomain: customDomain || null,
         whiteLabeled: whiteLabeled || false,
         userId,
+        isActive: true,
         // Branding
-        primaryColor: primaryColor || "#3b82f6",
-        textColor: textColor || "#0f172a",
-        backgroundColor: backgroundColor || "#ffffff",
+        primaryColor: primaryColor || "#6366f1",
+        secondaryColor: secondaryColor || "#8b5cf6",
+        textColor: textColor || "#1e293b",
+        backgroundColor: backgroundColor || "#f1f5f9",
         cardBackgroundColor: cardBackgroundColor || "#ffffff",
+        gradientEnabled: gradientEnabled !== undefined ? gradientEnabled : true,
         logoUrl: logoUrl || user?.portalLogo || null,
+        companyWebsite: companyWebsite || null,
+        companyEmail: companyEmail || null,
         // Storage
         storageProvider: storageProvider || null,
         storageFolderId: storageFolderId || null,
@@ -188,8 +165,16 @@ export async function POST(request: Request) {
         allowedFileTypes: allowedFileTypes || [],
         // Messaging
         welcomeMessage: welcomeMessage || null,
+        welcomeToastMessage: welcomeToastMessage || null,
+        welcomeToastDelay:
+          welcomeToastDelay !== undefined ? welcomeToastDelay : 1000,
+        welcomeToastDuration:
+          welcomeToastDuration !== undefined ? welcomeToastDuration : 3000,
         submitButtonText: submitButtonText || "Initialize Transfer",
         successMessage: successMessage || "Transmission Verified",
+        textboxSectionEnabled: textboxSectionEnabled ?? false,
+        textboxSectionTitle: textboxSectionTitle || null,
+        textboxSectionRequired: textboxSectionRequired ?? false,
       },
     });
 

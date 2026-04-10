@@ -22,9 +22,8 @@ export function UsageDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
-  const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
-  const limits =
-    PRICING_PLANS[currentPlan as keyof typeof PRICING_PLANS]?.limits;
+  const currentPlan = (session?.user as any)?.subscriptionPlan || "trial";
+  const limits = PRICING_PLANS.pro.limits;
 
   useEffect(() => {
     // Fetch usage data from API
@@ -74,12 +73,6 @@ export function UsageDashboard() {
       limit: limits?.storage || 1,
       unit: "GB",
       formatter: formatStorage,
-    },
-    {
-      label: "Custom Domains",
-      used: usage.customDomainsUsed,
-      limit: limits?.customDomains || 0,
-      unit: "",
     },
   ];
 

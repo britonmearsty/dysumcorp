@@ -30,7 +30,7 @@ export function UsageIndicator({
     null,
   );
   const [loading, setLoading] = useState(true);
-  const [currentPlan, setCurrentPlan] = useState<PlanType>("free");
+  const [currentPlan, setCurrentPlan] = useState<PlanType>("trial");
 
   useEffect(() => {
     if (!session?.user?.id) {

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { 
-  getValidToken, 
+import {
+  getValidToken,
   findOrCreateRootFolder,
   findOrCreatePortalFolder,
-  findOrCreateClientFolder 
+  findOrCreateClientFolder,
 } from "@/lib/storage-api";
-import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 import { generateUploadToken } from "@/lib/upload-tokens";
 
@@ -23,13 +22,17 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
 
         if (prefix === "image") {
           allowedMimeTypes.add("image/jpeg");
+          allowedMimeTypes.add("image/jpg");
           allowedMimeTypes.add("image/png");
           allowedMimeTypes.add("image/gif");
           allowedMimeTypes.add("image/webp");
           allowedMimeTypes.add("image/svg+xml");
           allowedMimeTypes.add("image/bmp");
+          allowedMimeTypes.add("image/x-ms-bmp");
           allowedMimeTypes.add("image/tiff");
-          allowedMimeTypes.add("image/webp");
+          allowedMimeTypes.add("image/x-tiff");
+          allowedMimeTypes.add("image/heic");
+          allowedMimeTypes.add("image/heif");
         } else if (prefix === "video") {
           allowedMimeTypes.add("video/mp4");
           allowedMimeTypes.add("video/webm");
@@ -37,14 +40,26 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("video/mpeg");
           allowedMimeTypes.add("video/quicktime");
           allowedMimeTypes.add("video/x-msvideo");
+          allowedMimeTypes.add("video/x-matroska");
+          allowedMimeTypes.add("video/avi");
+          allowedMimeTypes.add("video/x-flv");
+          allowedMimeTypes.add("video/3gpp");
+          allowedMimeTypes.add("video/3gpp2");
         } else if (prefix === "audio") {
           allowedMimeTypes.add("audio/mpeg");
           allowedMimeTypes.add("audio/mp3");
+          allowedMimeTypes.add("audio/mp4");
+          allowedMimeTypes.add("audio/x-m4a");
+          allowedMimeTypes.add("audio/m4a");
           allowedMimeTypes.add("audio/wav");
           allowedMimeTypes.add("audio/ogg");
           allowedMimeTypes.add("audio/webm");
           allowedMimeTypes.add("audio/aac");
+          allowedMimeTypes.add("audio/x-aac");
+          allowedMimeTypes.add("audio/flac");
+          allowedMimeTypes.add("audio/x-flac");
           allowedMimeTypes.add("audio/midi");
+          allowedMimeTypes.add("audio/x-midi");
         } else if (prefix === "text") {
           allowedMimeTypes.add("text/plain");
           allowedMimeTypes.add("text/csv");
@@ -53,6 +68,29 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("text/javascript");
           allowedMimeTypes.add("text/css");
           allowedMimeTypes.add("text/markdown");
+        } else if (prefix === "archive") {
+          allowedMimeTypes.add("application/zip");
+          allowedMimeTypes.add("application/x-zip-compressed");
+          allowedMimeTypes.add("application/x-rar-compressed");
+          allowedMimeTypes.add("application/vnd.rar");
+          allowedMimeTypes.add("application/x-7z-compressed");
+          allowedMimeTypes.add("application/x-tar");
+          allowedMimeTypes.add("application/gzip");
+          allowedMimeTypes.add("application/x-gzip");
+          allowedMimeTypes.add("application/x-bzip2");
+          allowedMimeTypes.add("application/x-xz");
+          allowedMimeTypes.add("application/octet-stream");
+        } else if (prefix === "application") {
+          // Document types
+          allowedMimeTypes.add("application/pdf");
+          allowedMimeTypes.add("application/msword");
+          allowedMimeTypes.add(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          );
+          allowedMimeTypes.add("application/vnd.ms-excel");
+          allowedMimeTypes.add(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          );
         } else {
           allowedMimeTypes.add(mimeType);
         }
@@ -91,7 +129,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { fileName, fileSize, mimeType, portalId, clientName, clientEmail, clientNotes } = body;
+    const {
+      fileName,
+      fileSize,
+      mimeType,
+      portalId,
+      clientName,
+      clientEmail,
+      clientNotes,
+    } = body;
 
     console.log("[Portal Direct Upload] Request:", {
       fileName,
@@ -178,27 +224,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check storage limit before allowing upload
-    const planType = await getUserPlanType(portal.userId);
-    const storageCheck = await checkStorageLimit(
-      portal.userId,
-      planType,
-      Number(fileSize),
-    );
-
-    if (!storageCheck.allowed) {
-      console.log("[Portal Direct Upload] Storage limit exceeded:", {
-        current: storageCheck.current,
-        limit: storageCheck.limit,
-      });
-
-      return NextResponse.json(
-        {
-          error: storageCheck.reason || "Storage limit exceeded",
-          upgrade: true,
-        },
-        { status: 403 },
-      );
-    }
+    // Storage limits removed — all trial/pro users have full access
 
     // Get cloud storage token for portal owner based on portal's storageProvider setting
     console.log(
@@ -251,8 +277,12 @@ export async function POST(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { error: "Portal owner has not connected cloud storage" },
-        { status: 400 },
+        {
+          error:
+            "Portal owner's cloud storage is not connected or has expired. Please contact the portal owner to reconnect their storage.",
+          code: "STORAGE_NOT_CONNECTED",
+        },
+        { status: 503 },
       );
     }
 
@@ -311,6 +341,14 @@ export async function POST(request: NextRequest) {
 
     if (provider === "google") {
       // Create Google Drive resumable upload session
+      console.log("[Portal Direct Upload] Creating Google Drive session:", {
+        fileName,
+        fileSize,
+        parentFolderId,
+        hasAccessToken: !!accessToken,
+        tokenLength: accessToken?.length,
+      });
+
       const response = await fetch(
         "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable",
         {
@@ -331,8 +369,21 @@ export async function POST(request: NextRequest) {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("[Portal Direct Upload] Google Drive session creation failed:", errorText);
-        throw new Error("Failed to create Google Drive upload session");
+
+        console.error(
+          "[Portal Direct Upload] Google Drive session creation failed:",
+          {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText,
+            fileName,
+            fileSize,
+            parentFolderId,
+          },
+        );
+        throw new Error(
+          `Failed to create Google Drive upload session: ${response.status} ${errorText}`,
+        );
       }
 
       const uploadUrl = response.headers.get("Location");
@@ -365,9 +416,7 @@ export async function POST(request: NextRequest) {
         uploadToken,
       };
 
-      console.log(
-        "[Portal Direct Upload] Dropbox direct upload configured",
-      );
+      console.log("[Portal Direct Upload] Dropbox direct upload configured");
     }
 
     return NextResponse.json({

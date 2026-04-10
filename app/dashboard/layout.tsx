@@ -1,10 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import type { AccessResult } from "@/lib/trial";
+
+import { useEffect, useState, useCallback } from "react";
 
 import { useSession } from "@/lib/auth-client";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { TrialBanner } from "@/components/trial-banner";
 
 export default function DashboardRootLayout({
   children,
@@ -12,15 +14,32 @@ export default function DashboardRootLayout({
   children: React.ReactNode;
 }) {
   const { data: session, isPending } = useSession();
-  const router = useRouter();
+  const [access, setAccess] = useState<AccessResult | null>(null);
+  const [accessLoading, setAccessLoading] = useState(true);
+
+  const fetchAccess = useCallback(async () => {
+    try {
+      const res = await fetch("/api/access");
+
+      if (res.ok) {
+        const data = await res.json();
+
+        setAccess(data);
+      }
+    } catch {
+      // On error, allow access
+    } finally {
+      setAccessLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (!isPending && !session) {
-      router.push("/auth");
+    if (session?.user) {
+      fetchAccess();
     }
-  }, [session, isPending, router]);
+  }, [session, fetchAccess]);
 
-  if (isPending) {
+  if (isPending || (session && accessLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-lg font-mono">Loading...</div>
@@ -32,5 +51,13 @@ export default function DashboardRootLayout({
     return null;
   }
 
-  return <DashboardLayout>{children}</DashboardLayout>;
+  return (
+    <div className="flex flex-col min-h-screen">
+      {/* Trial banner shown when user is in their 7-day trial */}
+      {access?.reason === "trialing" && <TrialBanner />}
+      <div className="flex-1">
+        <DashboardLayout>{children}</DashboardLayout>
+      </div>
+    </div>
+  );
 }

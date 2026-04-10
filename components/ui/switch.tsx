@@ -11,7 +11,18 @@ interface SwitchProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
-  ({ className, checked, onCheckedChange, onClick, loading, disabled, ...props }, ref) => {
+  (
+    {
+      className,
+      checked,
+      onCheckedChange,
+      onClick,
+      loading,
+      disabled,
+      ...props
+    },
+    ref,
+  ) => {
     const isDisabled = disabled || loading;
 
     return (
@@ -20,10 +31,11 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
           ref={ref}
           checked={checked}
           className="sr-only peer"
-          type="checkbox"
           disabled={isDisabled}
+          type="checkbox"
           onChange={(e) => onCheckedChange?.(e.target.checked)}
           onClick={(e) => {
+            e.stopPropagation();
             if (onClick) {
               onClick(e);
             }
@@ -32,18 +44,20 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
         />
         <div
           className={cn(
-            "relative w-11 h-6 rounded-full transition-all duration-200",
+            "relative w-12 h-7 rounded-full transition-all duration-300 border-2",
             checked
-              ? "bg-emerald-500"
-              : "bg-gray-200 dark:bg-gray-700",
+              ? "bg-emerald-500/20 border-emerald-500"
+              : "bg-gray-200 border-gray-300 dark:bg-gray-700 dark:border-gray-600",
             isDisabled && "opacity-50 cursor-not-allowed",
             className,
           )}
         >
           <div
             className={cn(
-              "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-200",
-              checked && "translate-x-5",
+              "absolute top-0.5 left-0.5 w-5 h-5 rounded-full shadow-md transition-all duration-300",
+              checked
+                ? "bg-emerald-500 translate-x-5"
+                : "bg-gray-500 dark:bg-gray-400",
             )}
           />
           {loading && (

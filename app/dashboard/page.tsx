@@ -54,6 +54,11 @@ export default function DashboardPage() {
   const [showFilesModal, setShowFilesModal] = useState(false);
   const [portalFiles, setPortalFiles] = useState<any[]>([]);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
+  const [deleteFileModalOpen, setDeleteFileModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [togglingPortal, setTogglingPortal] = useState<string | null>(null);
   const { showToast } = useToast();
 
@@ -131,6 +136,10 @@ export default function DashboardPage() {
     }
   };
 
+  const handleCreatePortal = () => {
+    router.push("/dashboard/portals/create");
+  };
+
   const handlePortalClick = async (portal: Portal) => {
     setSelectedPortal(portal);
     setShowFilesModal(true);
@@ -140,10 +149,7 @@ export default function DashboardPage() {
   const handleToggleActive = async (
     portalId: string,
     currentStatus: boolean,
-    e: React.MouseEvent,
   ) => {
-    e.preventDefault();
-    e.stopPropagation();
     setTogglingPortal(portalId);
     try {
       const response = await fetch(`/api/portals/${portalId}/toggle-active`, {
@@ -164,7 +170,16 @@ export default function DashboardPage() {
           setActivePortalsList(activePortals);
         }
       } else {
-        showToast("Failed to toggle portal status", "error");
+        const errorData = await response.json();
+
+        if (
+          response.status === 402 ||
+          errorData.code === "SUBSCRIPTION_REQUIRED"
+        ) {
+          window.location.href = "/pricing";
+        } else {
+          showToast("Failed to toggle portal status", "error");
+        }
       }
     } catch (error) {
       console.error("Failed to toggle portal status:", error);
@@ -219,22 +234,22 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDeleteFile = async (fileId: string, fileName: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${fileName}"? This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
-    setDeletingFile(fileId);
+  const handleDeleteFile = (fileId: string, fileName: string) => {
+    setFileToDelete({ id: fileId, name: fileName });
+    setDeleteFileModalOpen(true);
+  };
+
+  const confirmDeleteFile = async () => {
+    if (!fileToDelete) return;
+    setDeleteFileModalOpen(false);
+    setDeletingFile(fileToDelete.id);
     try {
-      const response = await fetch(`/api/files/${fileId}`, {
+      const response = await fetch(`/api/files/${fileToDelete.id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
-        setPortalFiles(portalFiles.filter((f) => f.id !== fileId));
+        setPortalFiles(portalFiles.filter((f) => f.id !== fileToDelete.id));
         showToast("File deleted successfully", "success");
       } else {
         showToast("Failed to delete file", "error");
@@ -244,6 +259,7 @@ export default function DashboardPage() {
       showToast("Failed to delete file", "error");
     } finally {
       setDeletingFile(null);
+      setFileToDelete(null);
     }
   };
 
@@ -305,14 +321,14 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <Link
+        <button
           className="flex items-center justify-center gap-1.5 bg-primary text-primary-foreground border-none rounded-[10px] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold cursor-pointer hover:opacity-90 transition-opacity w-full sm:w-auto"
-          href="/dashboard/portals/create"
+          onClick={handleCreatePortal}
         >
           <span className="text-lg font-medium">+</span>{" "}
           <span className="sm:hidden">New</span>
           <span className="hidden sm:inline">Create Portal</span>
-        </Link>
+        </button>
       </header>
 
       {/* Stats Grid - 4 columns */}
@@ -545,18 +561,7 @@ export default function DashboardPage() {
                       checked={portal.isActive}
                       loading={togglingPortal === portal.id}
                       onCheckedChange={(checked) => {
-                        const mockEvent = {
-                          stopPropagation: () => {},
-                        } as unknown as React.MouseEvent;
-
-                        handleToggleActive(
-                          portal.id,
-                          Boolean(checked),
-                          mockEvent,
-                        );
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
+                        handleToggleActive(portal.id, Boolean(checked));
                       }}
                     />
                     <Button
@@ -935,6 +940,51 @@ export default function DashboardPage() {
               </button>
             </div>
           </motion.div>
+        </div>
+      )}
+
+      {/* Delete File Confirmation Modal */}
+      {deleteFileModalOpen && fileToDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 bg-red-500/20 rounded-full">
+                <Trash2 className="w-6 h-6 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">
+                  Delete File
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  This action cannot be undone
+                </p>
+              </div>
+            </div>
+            <p className="text-foreground mb-6">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">
+                &quot;{fileToDelete.name}&quot;
+              </span>
+              ?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                className="px-4 py-2 border border-border rounded-xl font-medium hover:bg-muted transition-colors"
+                onClick={() => {
+                  setDeleteFileModalOpen(false);
+                  setFileToDelete(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors"
+                onClick={confirmDeleteFile}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </main>

@@ -8,7 +8,6 @@ import {
   findOrCreateClientFolder,
 } from "@/lib/storage-api";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
-import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -67,29 +66,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check storage limit before allowing upload
-    const planType = await getUserPlanType(portal.userId);
-    const storageCheck = await checkStorageLimit(
-      portal.userId,
-      planType,
-      Number(fileSize),
-    );
-
-    if (!storageCheck.allowed) {
-      console.log("[Portal Upload URL] Storage limit exceeded:", {
-        current: storageCheck.current,
-        limit: storageCheck.limit,
-      });
-
-      return NextResponse.json(
-        {
-          error: storageCheck.reason || "Storage limit exceeded",
-          upgrade: true,
-        },
-        { status: 403 },
-      );
-    }
-
     // Get the portal owner's storage token
     const storageProvider =
       provider || (portal.storageProvider === "dropbox" ? "dropbox" : "google");
@@ -118,11 +94,13 @@ export async function POST(request: NextRequest) {
       const rootFolder = await findOrCreateRootFolder(
         accessToken,
         portal.userId,
+        storageProvider,
       );
       const portalFolder = await findOrCreatePortalFolder(
         accessToken,
         rootFolder.id,
         portal.name,
+        storageProvider,
       );
 
       parentFolderId = portalFolder.id;
@@ -135,6 +113,7 @@ export async function POST(request: NextRequest) {
         accessToken,
         parentFolderId,
         uploaderName.trim(),
+        storageProvider,
       );
 
       parentFolderId = clientFolder.id;

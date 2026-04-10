@@ -29,23 +29,31 @@ export async function GET(request: Request) {
         subscriptionPlan: true,
         subscriptionStatus: true,
         creemCustomerId: true,
+        trialStartedAt: true,
+        hadTrial: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+
+    // Compute trialExpired — now managed by Creem, not locally
+    const trialExpired = null;
 
     // Get Creem subscriptions from database
     const creemSubscriptions = await prisma.creem_subscription.findMany({
       where: {
         OR: [
           { referenceId: session.user.id },
-          { creemCustomerId: user?.creemCustomerId },
+          { creemCustomerId: user?.creemCustomerId ?? undefined },
         ],
       },
     });
 
     return NextResponse.json({
-      userFromDB: user,
+      userFromDB: {
+        ...user,
+        trialExpired,
+      },
       userFromSession: session.user,
       creemSubscriptions,
       timestamp: new Date().toISOString(),

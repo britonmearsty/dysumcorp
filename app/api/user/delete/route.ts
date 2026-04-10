@@ -1,33 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getSession } from "@/lib/auth-server";
-import { prisma } from "@/lib/auth";
+/**
+ * Account Deletion Endpoint - DISABLED
+ *
+ * Self-service account deletion has been disabled.
+ * Users must contact support@trackage.io to request account deletion.
+ * Admins can delete accounts directly in the database.
+ */
 
 export async function DELETE(req: NextRequest) {
-  try {
-    const session = await getSession();
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const userId = session.user.id;
-
-    await prisma.$transaction([
-      prisma.session.deleteMany({ where: { userId } }),
-      prisma.account.deleteMany({ where: { userId } }),
-      prisma.portal.deleteMany({ where: { userId } }),
-      prisma.usageTracking.deleteMany({ where: { userId } }),
-      prisma.user.delete({ where: { id: userId } }),
-    ]);
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting user:", error);
-
-    return NextResponse.json(
-      { error: "Failed to delete account" },
-      { status: 500 },
-    );
-  }
+  // Account deletion is now admin-handled only - users must contact support
+  return NextResponse.json(
+    {
+      error:
+        "Account deletion is no longer available via self-service. Please contact support@trackage.io to request account deletion.",
+    },
+    { status: 403 },
+  );
 }

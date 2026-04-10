@@ -1,10 +1,19 @@
 "use client";
 
+import type { AccessResult } from "@/lib/trial";
+
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, Tab } from "@heroui/tabs";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CreditCard, BarChart3, Package, ChevronRight } from "lucide-react";
+import {
+  CreditCard,
+  BarChart3,
+  Package,
+  ChevronRight,
+  Clock,
+  CheckCircle,
+} from "lucide-react";
 
 import { SubscriptionStatus } from "@/components/subscription-status";
 import { SubscriptionManager } from "@/components/subscription-manager";
@@ -19,12 +28,21 @@ export default function BillingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Sync activeTab with URL params on mount
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["overview", "plans", "usage"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
     "monthly",
   );
   const [showSuccess, setShowSuccess] = useState(false);
   const [showCanceled, setShowCanceled] = useState(false);
-  const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
+  const [access, setAccess] = useState<AccessResult | null>(null);
+  const currentPlan = (session?.user as any)?.subscriptionPlan || "trial";
   const { showToast } = useToast();
 
   const tabs = [
@@ -48,6 +66,16 @@ export default function BillingPage() {
     },
   ];
 
+  // Fetch access status for trial info
+  useEffect(() => {
+    fetch("/api/access")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setAccess(data);
+      })
+      .catch(() => {});
+  }, [session]);
+
   // Handle successful/canceled checkout returns
   useEffect(() => {
     const success = searchParams.get("success");
@@ -55,10 +83,7 @@ export default function BillingPage() {
 
     if (success) {
       setShowSuccess(true);
-      // Refresh session to get updated subscription data
       refetch();
-
-      // Clean up URL after showing message
       const timer = setTimeout(() => {
         setShowSuccess(false);
         router.replace("/dashboard/billing");
@@ -69,7 +94,6 @@ export default function BillingPage() {
 
     if (canceled) {
       setShowCanceled(true);
-      // Clean up URL after showing message
       const timer = setTimeout(() => {
         setShowCanceled(false);
         router.replace("/dashboard/billing");
@@ -80,10 +104,6 @@ export default function BillingPage() {
   }, [searchParams, refetch, router]);
 
   const handleSubscribe = async (planId: string, isAnnual: boolean) => {
-    if (planId === "free") {
-      return;
-    }
-
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
@@ -102,7 +122,6 @@ export default function BillingPage() {
         return;
       }
 
-      // Redirect to Creem checkout
       window.location.href = data.checkoutUrl;
     } catch (error) {
       console.error("Subscription error:", error);
@@ -156,7 +175,12 @@ export default function BillingPage() {
                       ? "bg-card border border-border text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    router.replace(`/dashboard/billing?tab=${tab.id}`, {
+                      scroll: false,
+                    });
+                  }}
                 >
                   <Icon className="w-4 sm:w-5 h-4 sm:h-5" />
                   <span className="font-medium text-sm">{tab.name}</span>
@@ -202,6 +226,32 @@ export default function BillingPage() {
                   {/* Overview Tab */}
                   {activeTab === "overview" && (
                     <div className="space-y-6">
+                      {/* Trial status banner */}
+                      {access?.reason === "trialing" && (
+                        <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl px-4 py-3">
+                          <Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                          <div>
+                            <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">
+                              7-Day Free Trial Active
+                            </p>
+                            <p className="text-xs text-indigo-600 dark:text-indigo-400">
+                              Your card will be charged at the end of your 7-day
+                              trial. Cancel anytime before then.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Active subscriber status */}
+                      {access?.reason === "active_subscription" && (
+                        <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3">
+                          <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                            Pro plan active
+                          </p>
+                        </div>
+                      )}
+
                       <div className="grid gap-6 md:grid-cols-2">
                         <SubscriptionStatus />
                         <SubscriptionManager
@@ -226,7 +276,7 @@ export default function BillingPage() {
                     </div>
                   )}
 
-                  {/* Plans Tab */}
+                  {/* Plans Tab — only Pro plan shown */}
                   {activeTab === "plans" && (
                     <div id="pricing">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -252,16 +302,13 @@ export default function BillingPage() {
                         </Tabs>
                       </div>
 
-                      <div className="grid gap-6 md:grid-cols-2">
-                        {Object.values(PRICING_PLANS).map((plan) => (
-                          <PricingCard
-                            key={plan.id}
-                            billingCycle={billingCycle}
-                            currentPlan={currentPlan}
-                            plan={plan}
-                            onSubscribe={handleSubscribe}
-                          />
-                        ))}
+                      <div className="max-w-sm">
+                        <PricingCard
+                          billingCycle={billingCycle}
+                          currentPlan={currentPlan}
+                          plan={PRICING_PLANS.pro}
+                          onSubscribe={handleSubscribe}
+                        />
                       </div>
                     </div>
                   )}

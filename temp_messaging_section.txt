@@ -1,0 +1,100 @@
+                    )}
+
+                    {/* Messaging Section */}
+                    {currentStep === "messaging" && (
+                      <div className="space-y-8">
+                        <div>
+                          <label className="block text-sm font-semibold text-foreground mb-2">
+                            Welcome Message
+                          </label>
+                          <textarea
+                            className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
+                            placeholder="Welcome! Please upload your documents for review."
+                            rows={3}
+                            value={formData.welcomeMessage}
+                            onChange={(e) =>
+                              updateFormData("welcomeMessage", e.target.value)
+                            }
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Displayed in the portal header. Use line breaks for title and description.
+                          </p>
+                        </div>
+
+                        <div className="border border-border rounded-xl p-6 bg-muted/30">
+                          <h3 className="text-sm font-semibold text-foreground mb-4">
+                            Welcome Toast Notification
+                          </h3>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-semibold text-foreground mb-2">
+                                Toast Message
+                              </label>
+                              <input
+                                className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                type="text"
+                                placeholder="👋 Welcome! Please fill in your details and upload your files."
+                                value={formData.welcomeToastMessage}
+                                onChange={(e) =>
+                                  updateFormData("welcomeToastMessage", e.target.value)
+                                }
+                              />
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Popup notification shown when visitors enter the portal
+                              </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-semibold text-foreground mb-2">
+                                  Delay (ms)
+                                </label>
+                                <input
+                                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                  type="number"
+                                  min="0"
+                                  step="100"
+                                  value={formData.welcomeToastDelay}
+                                  onChange={(e) =>
+                                    updateFormData("welcomeToastDelay", parseInt(e.target.value) || 0)
+                                  }
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Time before toast appears (1000ms = 1 second)
+                                </p>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-semibold text-foreground mb-2">
+                                  Duration (ms)
+                                </label>
+                                <input
+                                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                  type="number"
+                                  min="1000"
+                                  step="100"
+                                  value={formData.welcomeToastDuration}
+                                  onChange={(e) =>
+                                    updateFormData("welcomeToastDuration", parseInt(e.target.value) || 3000)
+                                  }
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  How long toast stays visible
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-semibold text-foreground mb-2">
+                              Submit Button Label
+                            </label>
+                            <input
+                              className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
+                              type="text"
+                              value={formData.submitButtonText}
+                              onChange={(e) =>
+                                updateFormData(
+                                  "submitButtonText",

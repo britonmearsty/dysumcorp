@@ -17,7 +17,6 @@ import {
   getFallbackUploadSessions,
   UploadSession,
 } from "@/lib/upload-sessions";
-import { checkStorageLimit, getUserPlanType } from "@/lib/plan-limits";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 
 function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
@@ -62,6 +61,29 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("text/javascript");
           allowedMimeTypes.add("text/css");
           allowedMimeTypes.add("text/markdown");
+        } else if (prefix === "archive") {
+          allowedMimeTypes.add("application/zip");
+          allowedMimeTypes.add("application/x-zip-compressed");
+          allowedMimeTypes.add("application/x-rar-compressed");
+          allowedMimeTypes.add("application/vnd.rar");
+          allowedMimeTypes.add("application/x-7z-compressed");
+          allowedMimeTypes.add("application/x-tar");
+          allowedMimeTypes.add("application/gzip");
+          allowedMimeTypes.add("application/x-gzip");
+          allowedMimeTypes.add("application/x-bzip2");
+          allowedMimeTypes.add("application/x-xz");
+          allowedMimeTypes.add("application/octet-stream");
+        } else if (prefix === "application") {
+          // Document types
+          allowedMimeTypes.add("application/pdf");
+          allowedMimeTypes.add("application/msword");
+          allowedMimeTypes.add(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          );
+          allowedMimeTypes.add("application/vnd.ms-excel");
+          allowedMimeTypes.add(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          );
         } else {
           allowedMimeTypes.add(mimeType);
         }
@@ -222,22 +244,7 @@ export async function POST(request: NextRequest) {
 
     // Check storage limit on first chunk
     if (chunkIndex === 0) {
-      const planType = await getUserPlanType(portal.userId);
-      const storageCheck = await checkStorageLimit(
-        portal.userId,
-        planType,
-        fileSize,
-      );
-
-      if (!storageCheck.allowed) {
-        return NextResponse.json(
-          {
-            error: storageCheck.reason || "Storage limit exceeded",
-            upgrade: true,
-          },
-          { status: 403 },
-        );
-      }
+      // Storage limits removed — all trial/pro users have full access
     }
 
     // Validate file size
@@ -312,7 +319,7 @@ export async function POST(request: NextRequest) {
     // First chunk: initialize upload session
     if (chunkIndex === 0) {
       console.log(`[Upload Chunk] Initializing session for ${fileName}`);
-      
+
       if (provider === "google") {
         const response = await fetch(
           "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable",
@@ -333,7 +340,11 @@ export async function POST(request: NextRequest) {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("[Upload Chunk] Google Drive session creation failed:", errorText);
+
+          console.error(
+            "[Upload Chunk] Google Drive session creation failed:",
+            errorText,
+          );
           throw new Error("Failed to create Google Drive upload session");
         }
 
@@ -352,7 +363,7 @@ export async function POST(request: NextRequest) {
           fileName,
           createdAt: Date.now(),
         };
-        
+
         console.log(`[Upload Chunk] Saving Google session ${sessionId}`);
         await saveSession(sessionId, sessionData);
         console.log(`[Upload Chunk] Session saved successfully`);
@@ -367,7 +378,7 @@ export async function POST(request: NextRequest) {
           fileName,
           createdAt: Date.now(),
         };
-        
+
         console.log(`[Upload Chunk] Saving Dropbox session ${sessionId}`);
         await saveSession(sessionId, sessionData);
         console.log(`[Upload Chunk] Session saved successfully`);
@@ -380,17 +391,20 @@ export async function POST(request: NextRequest) {
 
     if (!session) {
       console.error(`[Upload Chunk] Session not found: ${sessionId}`);
-      console.error(`[Upload Chunk] ChunkIndex: ${chunkIndex}, Expected session to exist`);
+      console.error(
+        `[Upload Chunk] ChunkIndex: ${chunkIndex}, Expected session to exist`,
+      );
+
       return NextResponse.json(
         { error: "Upload session not found. Please try uploading again." },
         { status: 404 },
       );
     }
-    
-    console.log(`[Upload Chunk] Session found:`, { 
-      provider: session.provider, 
+
+    console.log(`[Upload Chunk] Session found:`, {
+      provider: session.provider,
       uploadedBytes: session.uploadedBytes,
-      totalBytes: session.totalBytes 
+      totalBytes: session.totalBytes,
     });
 
     // Upload chunk based on provider

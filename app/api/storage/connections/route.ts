@@ -49,18 +49,18 @@ export async function GET() {
         let expiresAt = account.accessTokenExpiresAt;
 
         // Check if token is expired
-        // For Dropbox: if no expiration set, assume expired (need refresh)
-        // For Google: check actual expiration time
-        let isExpired: boolean;
+        // A token is only expired if expiresAt is explicitly set AND in the past.
+        // Dropbox issues long-lived offline tokens with no expiry — a missing
+        // expiresAt does NOT mean the token is invalid.
+        let isExpired = !!(expiresAt && expiresAt <= new Date());
 
-        if (account.providerId === "dropbox") {
-          // Dropbox tokens without expiration are treated as expired
-          isExpired = !expiresAt || expiresAt <= new Date();
-        } else {
-          isExpired = !!(expiresAt && expiresAt <= new Date());
+        // For Dropbox, tokens are long-lived - if there's no expiration set,
+        // we should not treat it as expired even if expiresAt is null
+        if (!expiresAt && account.providerId === "dropbox") {
+          isExpired = false;
         }
 
-        // Auto-refresh if token is expired and refresh token exists
+        // Auto-refresh only when the token is genuinely expired and we have a refresh token
         if (isExpired && account.refreshToken) {
           console.log(
             `[Storage Connections] Token expired for ${account.providerId}, attempting refresh...`,
@@ -92,7 +92,9 @@ export async function GET() {
           }
         }
 
-        const hasValidToken = !!(accessToken && !isExpired);
+        // A connection is valid as long as we have an access token that isn't expired.
+        // No expiresAt = token has no expiry (e.g. Dropbox offline token) = still valid.
+        const hasValidToken = !!accessToken && !isExpired;
 
         console.log(
           `[Storage Connections] ${account.providerId}: hasToken=${!!accessToken}, expiresAt=${expiresAt}, isValid=${hasValidToken}`,
@@ -179,16 +181,14 @@ async function refreshAccessToken(
     const newAccessToken = data.access_token;
 
     // Google returns expires_in, Dropbox doesn't (long-lived tokens)
-    // Default to 4 hours for Dropbox if not returned
+    // For Dropbox, we don't set an expiration since they are long-lived
     let expiresAt: Date | null = null;
 
     if (data.expires_in) {
       expiresAt = new Date(Date.now() + data.expires_in * 1000);
-    } else if (provider === "dropbox") {
-      // Dropbox tokens are long-lived but still expire (~4 hours)
-      // Set default 4 hour expiration if not provided
-      expiresAt = new Date(Date.now() + 4 * 60 * 60 * 1000);
     }
+    // Dropbox tokens are long-lived and don't require refresh
+    // Only Google tokens need expiration tracking
 
     // Update the access token in the database
     await prisma.account.update({

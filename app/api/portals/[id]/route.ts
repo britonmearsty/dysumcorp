@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { hashPassword, validatePassword } from "@/lib/password-utils";
+import { hashPassword } from "@/lib/password-utils";
+import { isValidUUID } from "@/lib/validation";
+import {
+  getValidToken,
+  deleteFromGoogleDrive,
+  deleteFromDropbox,
+} from "@/lib/storage-api";
 
 // GET /api/portals/[id] - Get single portal
 export async function GET(
@@ -11,6 +17,15 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+
+    // Validate UUID format - prevents IDOR probe attempts
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: "Invalid portal ID format" },
+        { status: 400 },
+      );
+    }
+
     const session = await getSessionFromRequest(request);
 
     if (!session?.user) {
@@ -19,7 +34,7 @@ export async function GET(
 
     const portal = await prisma.portal.findFirst({
       where: {
-        id,
+        OR: [{ id: id }, { slug: id }],
         userId: session.user.id,
       },
       include: {
@@ -48,10 +63,17 @@ export async function GET(
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
-    // Serialize BigInt fields
+    // Serialize BigInt fields and apply defaults for messaging
     const serializedPortal = {
       ...portal,
       maxFileSize: portal.maxFileSize.toString(),
+      // Do NOT apply defaults for messaging fields - keep them as-is
+      welcomeMessage: portal.welcomeMessage,
+      welcomeToastMessage: portal.welcomeToastMessage,
+      welcomeToastDelay: portal.welcomeToastDelay ?? 1000,
+      welcomeToastDuration: portal.welcomeToastDuration ?? 3000,
+      submitButtonText: portal.submitButtonText || "Initialize Transfer",
+      successMessage: portal.successMessage || "Transmission Verified",
       files: portal.files.map((file) => ({
         ...file,
         size: file.size.toString(),
@@ -77,6 +99,14 @@ export async function PATCH(
   try {
     const { id } = await params;
 
+    // Validate UUID format - prevents IDOR probe attempts
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: "Invalid portal ID format" },
+        { status: 400 },
+      );
+    }
+
     console.log(`[Portal Update] Starting update for portal: ${id}`);
 
     const session = await getSessionFromRequest(request);
@@ -96,10 +126,14 @@ export async function PATCH(
       customDomain,
       whiteLabeled,
       primaryColor,
+      secondaryColor,
       textColor,
       backgroundColor,
       cardBackgroundColor,
+      gradientEnabled,
       logoUrl,
+      companyWebsite,
+      companyEmail,
       storageProvider,
       storageFolderId,
       storageFolderPath,
@@ -110,27 +144,16 @@ export async function PATCH(
       maxFileSize,
       allowedFileTypes,
       welcomeMessage,
+      welcomeToastMessage,
+      welcomeToastDelay,
+      welcomeToastDuration,
       submitButtonText,
       successMessage,
+      textboxSectionEnabled,
+      textboxSectionTitle,
+      textboxSectionPlaceholder,
+      textboxSectionRequired,
     } = body;
-
-    // Verify ownership
-    const existingPortal = await prisma.portal.findFirst({
-      where: {
-        id,
-        userId: session.user.id,
-      },
-    });
-
-    if (!existingPortal) {
-      console.log("[Portal Update] Portal not found or unauthorized");
-
-      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
-    }
-
-    console.log(
-      "[Portal Update] Existing portal found, building update data...",
-    );
 
     // Build update data object
     const updateData: any = {};
@@ -140,12 +163,20 @@ export async function PATCH(
 
     // Branding
     if (primaryColor !== undefined) updateData.primaryColor = primaryColor;
+    if (secondaryColor !== undefined)
+      updateData.secondaryColor = secondaryColor;
     if (textColor !== undefined) updateData.textColor = textColor;
     if (backgroundColor !== undefined)
       updateData.backgroundColor = backgroundColor;
     if (cardBackgroundColor !== undefined)
       updateData.cardBackgroundColor = cardBackgroundColor;
+    if (gradientEnabled !== undefined)
+      updateData.gradientEnabled = gradientEnabled;
     if (logoUrl !== undefined) updateData.logoUrl = logoUrl || null;
+    if (companyWebsite !== undefined)
+      updateData.companyWebsite = companyWebsite || null;
+    if (companyEmail !== undefined)
+      updateData.companyEmail = companyEmail || null;
     if (customDomain !== undefined)
       updateData.customDomain = customDomain || null;
     if (whiteLabeled !== undefined) updateData.whiteLabeled = whiteLabeled;
@@ -160,17 +191,9 @@ export async function PATCH(
     if (useClientFolders !== undefined)
       updateData.useClientFolders = useClientFolders;
 
-    // Security - handle password with async hashing
+    // Security - handle password with async hashing (no validation - allow any password)
     if (password !== undefined) {
       if (password) {
-        const passwordValidation = validatePassword(password);
-
-        if (!passwordValidation.isValid) {
-          return NextResponse.json(
-            { error: passwordValidation.errors.join(". ") },
-            { status: 400 },
-          );
-        }
         updateData.password = await hashPassword(password);
       } else {
         updateData.password = null;
@@ -219,10 +242,24 @@ export async function PATCH(
     // Messaging
     if (welcomeMessage !== undefined)
       updateData.welcomeMessage = welcomeMessage || null;
+    if (welcomeToastMessage !== undefined)
+      updateData.welcomeToastMessage = welcomeToastMessage || null;
+    if (welcomeToastDelay !== undefined)
+      updateData.welcomeToastDelay = welcomeToastDelay;
+    if (welcomeToastDuration !== undefined)
+      updateData.welcomeToastDuration = welcomeToastDuration;
     if (submitButtonText !== undefined)
       updateData.submitButtonText = submitButtonText;
     if (successMessage !== undefined)
       updateData.successMessage = successMessage;
+    if (textboxSectionEnabled !== undefined)
+      updateData.textboxSectionEnabled = textboxSectionEnabled;
+    if (textboxSectionTitle !== undefined)
+      updateData.textboxSectionTitle = textboxSectionTitle || null;
+    if (textboxSectionPlaceholder !== undefined)
+      updateData.textboxSectionPlaceholder = textboxSectionPlaceholder || null;
+    if (textboxSectionRequired !== undefined)
+      updateData.textboxSectionRequired = textboxSectionRequired;
 
     console.log(
       "[Portal Update] Update data prepared:",
@@ -231,10 +268,25 @@ export async function PATCH(
       ),
     );
 
+    // Find portal first (supports UUID and slug)
+    console.log("[Portal Update] Looking up portal...");
+    const existingPortal = await prisma.portal.findFirst({
+      where: {
+        OR: [{ id }, { slug: id }],
+        userId: session.user.id,
+      },
+      select: { id: true },
+    });
+
+    if (!existingPortal) {
+      console.log("[Portal Update] Portal not found");
+      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
+    }
+
     // Update portal
     console.log("[Portal Update] Executing database update...");
     const portal = await prisma.portal.update({
-      where: { id },
+      where: { id: existingPortal.id },
       data: updateData,
     });
 
@@ -268,22 +320,57 @@ export async function PATCH(
 }
 
 // DELETE /api/portals/[id] - Delete portal
+// Body (optional): { deleteFromStorage?: boolean }
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
+
+    // Validate UUID format - prevents IDOR probe attempts
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: "Invalid portal ID format" },
+        { status: 400 },
+      );
+    }
+
     const session = await getSessionFromRequest(request);
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify ownership
+    // Parse optional body
+    let deleteFromStorage: boolean | undefined;
+
+    try {
+      const body = await request.json();
+
+      if (typeof body.deleteFromStorage === "boolean") {
+        deleteFromStorage = body.deleteFromStorage;
+      }
+    } catch {
+      // no body
+    }
+
+    // Resolve from user preference if not explicitly passed
+    if (deleteFromStorage === undefined) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { storageDeleteBehavior: true },
+      });
+      const behavior = user?.storageDeleteBehavior ?? "ask";
+
+      if (behavior === "always") deleteFromStorage = true;
+      else deleteFromStorage = false;
+    }
+
+    // Verify ownership (supports UUID and slug)
     const existingPortal = await prisma.portal.findFirst({
       where: {
-        id,
+        OR: [{ id }, { slug: id }],
         userId: session.user.id,
       },
     });
@@ -292,10 +379,53 @@ export async function DELETE(
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
-    // Delete portal (cascade will delete files)
-    await prisma.portal.delete({
-      where: { id },
-    });
+    // Delete files from cloud storage if requested
+    if (deleteFromStorage) {
+      const portalFiles = await prisma.file.findMany({
+        where: { portalId: existingPortal.id },
+        select: { id: true, name: true, storageUrl: true, storageFileId: true },
+      });
+      const provider = existingPortal.storageProvider;
+
+      for (const file of portalFiles) {
+        try {
+          const isGoogleDrive =
+            file.storageUrl.includes("drive.google.com") ||
+            file.storageUrl.includes("docs.google.com") ||
+            provider === "google";
+          const isDropbox =
+            file.storageUrl.includes("dropbox.com") ||
+            provider === "dropbox" ||
+            (file.storageFileId?.startsWith("id:") ?? false);
+
+          if (isGoogleDrive) {
+            let cloudFileId = file.storageFileId;
+
+            if (!cloudFileId) {
+              const match =
+                file.storageUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+                file.storageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+
+              if (match) cloudFileId = match[1];
+            }
+            if (cloudFileId) {
+              const token = await getValidToken(session.user.id, "google");
+
+              if (token) await deleteFromGoogleDrive(token, cloudFileId);
+            }
+          } else if (isDropbox && file.storageFileId) {
+            const token = await getValidToken(session.user.id, "dropbox");
+
+            if (token) await deleteFromDropbox(token, file.storageFileId);
+          }
+        } catch (err) {
+          console.error(`Failed to delete file ${file.id} from cloud:`, err);
+        }
+      }
+    }
+
+    // Delete portal (cascade deletes files from DB)
+    await prisma.portal.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -8,6 +8,7 @@ export interface UploadToken {
   uploaderEmail: string;
   uploaderName: string;
   uploaderNotes?: string;
+  stagingKey?: string; // R2 object key — included in HMAC
   expiresAt: number;
   signature: string;
 }
@@ -15,8 +16,9 @@ export interface UploadToken {
 const SECRET = process.env.BETTER_AUTH_SECRET || "fallback-secret-key";
 
 /**
- * Generate a secure upload token that allows the client to confirm an upload
- * Token expires in 1 hour and is signed to prevent tampering
+ * Generate a secure upload token that allows the client to confirm an upload.
+ * Token expires in 1 hour and is HMAC-signed to prevent tampering.
+ * When stagingKey is provided it is included in the signed payload.
  */
 export function generateUploadToken(data: {
   portalId: string;
@@ -26,8 +28,9 @@ export function generateUploadToken(data: {
   uploaderEmail: string;
   uploaderName: string;
   uploaderNotes?: string;
+  stagingKey?: string;
 }): string {
-  const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour from now
+  const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
 
   const tokenData = {
     portalId: data.portalId,
@@ -36,44 +39,51 @@ export function generateUploadToken(data: {
     mimeType: data.mimeType,
     uploaderEmail: data.uploaderEmail,
     uploaderName: data.uploaderName,
-    uploaderNotes: data.uploaderNotes,
+    // Normalise optional fields: always include them, use "" for undefined so the
+    // HMAC payload is identical whether the field was omitted or explicitly empty.
+    uploaderNotes: data.uploaderNotes ?? "",
+    stagingKey: data.stagingKey ?? "",
     expiresAt,
   };
 
-  // Create HMAC signature to prevent tampering
+  // Stable canonical JSON: fixed key order, no surprises from undefined dropping.
+  const canonicalJson = JSON.stringify(tokenData, [
+    "portalId",
+    "fileName",
+    "fileSize",
+    "mimeType",
+    "uploaderEmail",
+    "uploaderName",
+    "uploaderNotes",
+    "stagingKey",
+    "expiresAt",
+  ]);
+
   const signature = crypto
     .createHmac("sha256", SECRET)
-    .update(JSON.stringify(tokenData))
+    .update(canonicalJson)
     .digest("hex");
 
-  const token: UploadToken = {
-    ...tokenData,
-    signature,
-  };
+  const token: UploadToken = { ...tokenData, signature };
 
-  // Encode as base64 for easy transmission
   return Buffer.from(JSON.stringify(token)).toString("base64");
 }
 
 /**
- * Validate and decode an upload token
- * Returns the token data if valid, null if invalid or expired
+ * Validate and decode an upload token.
+ * Returns the token data if valid, null if invalid or expired.
  */
-export function validateUploadToken(
-  encodedToken: string,
-): UploadToken | null {
+export function validateUploadToken(encodedToken: string): UploadToken | null {
   try {
-    // Decode from base64
     const tokenJson = Buffer.from(encodedToken, "base64").toString("utf-8");
     const token: UploadToken = JSON.parse(tokenJson);
 
-    // Check expiration
     if (Date.now() > token.expiresAt) {
       console.error("[Upload Token] Token expired");
+
       return null;
     }
 
-    // Verify signature
     const dataToSign = {
       portalId: token.portalId,
       fileName: token.fileName,
@@ -81,23 +91,41 @@ export function validateUploadToken(
       mimeType: token.mimeType,
       uploaderEmail: token.uploaderEmail,
       uploaderName: token.uploaderName,
-      uploaderNotes: token.uploaderNotes,
+      uploaderNotes: token.uploaderNotes ?? "",
+      stagingKey: token.stagingKey ?? "",
       expiresAt: token.expiresAt,
     };
 
+    // Same fixed key order as generateUploadToken
+    const canonicalJson = JSON.stringify(dataToSign, [
+      "portalId",
+      "fileName",
+      "fileSize",
+      "mimeType",
+      "uploaderEmail",
+      "uploaderName",
+      "uploaderNotes",
+      "stagingKey",
+      "expiresAt",
+    ]);
+
     const expectedSignature = crypto
       .createHmac("sha256", SECRET)
-      .update(JSON.stringify(dataToSign))
+      .update(canonicalJson)
       .digest("hex");
 
     if (token.signature !== expectedSignature) {
       console.error("[Upload Token] Invalid signature");
+      console.error("[Upload Token] Expected:", expectedSignature);
+      console.error("[Upload Token] Received:", token.signature);
+
       return null;
     }
 
     return token;
   } catch (error) {
     console.error("[Upload Token] Failed to validate token:", error);
+
     return null;
   }
 }

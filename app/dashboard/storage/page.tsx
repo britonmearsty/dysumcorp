@@ -5,6 +5,7 @@ import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/lib/toast";
+import { useStorageConnections } from "@/lib/hooks/useStorageConnections";
 
 interface ConnectedAccount {
   provider: "google" | "dropbox";
@@ -26,45 +27,32 @@ export default function StoragePage() {
     google: null,
     dropbox: null,
   });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { showToast } = useToast();
 
+  // Use the custom hook for automatic token refresh
+  const {
+    connections: storageConnections,
+    loading,
+    error,
+  } = useStorageConnections({
+    autoRefreshInterval: 4 * 60 * 1000, // Refresh every 4 minutes
+  });
+
+  // Update local state when storage connections change
   useEffect(() => {
-    checkConnections();
-  }, []);
+    const googleAccount = storageConnections.find(
+      (a) => a.provider === "google",
+    );
+    const dropboxAccount = storageConnections.find(
+      (a) => a.provider === "dropbox",
+    );
 
-  const checkConnections = async () => {
-    setError(null);
-    try {
-      const response = await fetch("/api/storage/connections");
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch connections");
-      }
-
-      const data = await response.json();
-
-      const googleAccount: ConnectedAccount | undefined = data.accounts?.find(
-        (a: ConnectedAccount) => a.provider === "google",
-      );
-      const dropboxAccount: ConnectedAccount | undefined = data.accounts?.find(
-        (a: ConnectedAccount) => a.provider === "dropbox",
-      );
-
-      setConnections({
-        google: googleAccount || null,
-        dropbox: dropboxAccount || null,
-      });
-    } catch (error) {
-      console.error("Failed to check connections:", error);
-      setError("Failed to load storage connections. Please try again.");
-      showToast("Failed to load storage connections", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+    setConnections({
+      google: googleAccount || null,
+      dropbox: dropboxAccount || null,
+    });
+  }, [storageConnections]);
 
   const handleConnect = async (provider: "google" | "dropbox") => {
     setActionLoading(provider);
@@ -137,6 +125,19 @@ export default function StoragePage() {
     } catch (error) {
       console.error("Failed to disconnect:", error);
       showToast("Failed to disconnect. Please try again.", "error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRefresh = async () => {
+    // Manually trigger a refresh of connections
+    // This is useful if user suspects stale data
+    setActionLoading("refresh");
+    try {
+      // The hook will handle the refresh, just wait a moment
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      showToast("Storage connections refreshed", "success");
     } finally {
       setActionLoading(null);
     }

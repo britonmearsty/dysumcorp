@@ -22,7 +22,6 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -33,21 +32,21 @@ import {
 } from "@/components/ui/dialog";
 import { usePaywall } from "@/components/paywall-modal";
 import { PlanType } from "@/config/pricing";
-import { siteConfig } from "@/config/site";
 import { useSession } from "@/lib/auth-client";
 import { validateSlug, sanitizeSlug } from "@/lib/slug-validation";
+import { useStorageConnections } from "@/lib/hooks/useStorageConnections";
 
 type Step = "identity" | "branding" | "storage" | "security" | "messaging";
 
 interface ConnectedAccount {
   provider: "google" | "dropbox";
-  providerAccountId: string;
+  providerAccountId?: string;
   email?: string;
   name?: string;
   isConnected: boolean;
   storageAccountId?: string;
   storageStatus?: "ACTIVE" | "INACTIVE" | "DISCONNECTED" | "ERROR";
-  hasValidOAuth: boolean;
+  hasValidOAuth?: boolean;
 }
 
 interface StorageFolder {
@@ -143,32 +142,48 @@ interface StorageSectionProps {
   formData: any;
   updateFormData: (field: string, value: any) => void;
   setCurrentStep: (step: Step) => void;
+  folderPath: StorageFolder[];
+  setFolderPath: (path: StorageFolder[]) => void;
+  folders: StorageFolder[];
+  setFolders: (folders: StorageFolder[]) => void;
+  hasUserSelectedFolder: boolean;
+  setHasUserSelectedFolder: (val: boolean) => void;
+  expandedFolders: Set<string>;
+  setExpandedFolders: (val: Set<string>) => void;
 }
 
 const StorageSection: React.FC<StorageSectionProps> = ({
   formData,
   updateFormData,
   setCurrentStep,
+  folderPath,
+  setFolderPath,
+  folders,
+  setFolders,
+  hasUserSelectedFolder,
+  setHasUserSelectedFolder,
+  expandedFolders,
+  setExpandedFolders,
 }) => {
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
-  const [loadingAccounts, setLoadingAccounts] = useState(true);
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
-    new Set(),
-  );
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
-  const [folderPath, setFolderPath] = useState<StorageFolder[]>([]);
   const [loadingFolders, setLoadingFolders] = useState(false);
-  const [folders, setFolders] = useState<StorageFolder[]>([]);
   const [isRunningHealthCheck, setIsRunningHealthCheck] = useState(false);
   const [healthCheckResults, setHealthCheckResults] = useState<any>(null);
-  const [hasUserSelectedFolder, setHasUserSelectedFolder] = useState(false);
 
+  // Use the custom hook for automatic token refresh
+  const { connections: storageConnections, loading: loadingAccounts } =
+    useStorageConnections({
+      autoRefreshInterval: 4 * 60 * 1000, // Refresh every 4 minutes
+    });
+
+  // Update local accounts state when storage connections change
   useEffect(() => {
-    fetchAccounts();
-  }, []);
+    setAccounts(storageConnections);
+  }, [storageConnections]);
 
-  // Auto-initialize storage when accounts are loaded
+  // Auto-initialize storage when accounts are loaded - prefer connected accounts
   useEffect(() => {
     if (
       !loadingAccounts &&
@@ -177,13 +192,23 @@ const StorageSection: React.FC<StorageSectionProps> = ({
       (!formData.storageProvider ||
         (!loadingFolders && folders.length === 0 && folderPath.length === 0))
     ) {
-      const firstAccount = accounts[0];
+      // Find first connected account, prefer Google Drive if available
+      const connectedAccounts = accounts.filter(
+        (a) => a.storageStatus === "ACTIVE" && a.isConnected,
+      );
 
-      if (firstAccount) {
-        const storageProvider =
-          firstAccount.provider === "google" ? "google_drive" : "dropbox";
+      if (connectedAccounts.length > 0) {
+        // Prefer Google Drive if available, otherwise use first connected account
+        const preferredAccount =
+          connectedAccounts.find((a) => a.provider === "google") ||
+          connectedAccounts[0];
 
-        selectStorageProvider(storageProvider);
+        if (preferredAccount) {
+          const storageProvider =
+            preferredAccount.provider === "google" ? "google_drive" : "dropbox";
+
+          selectStorageProvider(storageProvider);
+        }
       }
     }
   }, [
@@ -195,31 +220,6 @@ const StorageSection: React.FC<StorageSectionProps> = ({
     hasUserSelectedFolder,
   ]);
 
-  async function fetchAccounts() {
-    try {
-      const res = await fetch("/api/storage/connections");
-
-      if (res.ok) {
-        const data = await res.json();
-        // Show ALL accounts, not just connected ones
-        // This way users can see disconnected accounts and know they need to reconnect
-        const allAccounts = data.accounts || [];
-
-        setAccounts(allAccounts);
-      } else {
-        console.error(
-          "Failed to fetch storage connections:",
-          res.status,
-          await res.text(),
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching accounts:", error);
-    } finally {
-      setLoadingAccounts(false);
-    }
-  }
-
   async function selectStorageProvider(provider: "google_drive" | "dropbox") {
     setHasUserSelectedFolder(true);
     updateFormData("storageProvider", provider);
@@ -230,21 +230,142 @@ const StorageSection: React.FC<StorageSectionProps> = ({
     setLoadingFolders(true);
 
     try {
-      const rootRes = await fetch(
-        `/api/storage/list?provider=${provider}&rootOnly=true`,
-      );
+      if (provider === "google_drive") {
+        // Google Drive: start at Dysumcorp folder
+        const rootRes = await fetch(
+          `/api/storage/list?provider=${provider}&rootOnly=true`,
+        );
 
-      if (rootRes.ok) {
-        const rootFolder = await rootRes.json();
+        if (rootRes.ok) {
+          const rootFolder = await rootRes.json();
 
-        if (rootFolder && rootFolder.id) {
-          setFolderPath([rootFolder]);
-          updateFormData("storageFolderId", rootFolder.id);
-          updateFormData("storageFolderPath", rootFolder.path);
-          await fetchFolders(provider, rootFolder.id);
+          if (rootFolder && rootFolder.id) {
+            // Now fetch Dysumcorp folder from root
+            const dysumRes = await fetch(
+              `/api/storage/list?provider=${provider}&parentFolderId=${rootFolder.id}`,
+            );
+
+            if (dysumRes.ok) {
+              const subfolders = await dysumRes.json();
+              // Find Dysumcorp folder (case-insensitive)
+              let dysumFolder = subfolders.find(
+                (f: StorageFolder) => f.name.toLowerCase() === "dysumcorp",
+              );
+
+              if (!dysumFolder) {
+                // Dysumcorp doesn't exist, create it
+                try {
+                  const createRes = await fetch("/api/storage/upload", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      provider: "google_drive",
+                      parentFolderId: rootFolder.id,
+                      folderName: "Dysumcorp",
+                    }),
+                  });
+
+                  if (createRes.ok) {
+                    dysumFolder = await createRes.json();
+                  }
+                } catch (error) {
+                  console.error("Error creating Dysumcorp folder:", error);
+                }
+              }
+
+              if (dysumFolder) {
+                // Set breadcrumb to show: My Drive > Dysumcorp
+                setFolderPath([rootFolder, dysumFolder]);
+                updateFormData("storageFolderId", dysumFolder.id);
+                updateFormData(
+                  "storageFolderPath",
+                  `${rootFolder.path}/${dysumFolder.name}`,
+                );
+                // Load subfolders of Dysumcorp
+                await fetchFolders(provider, dysumFolder.id);
+              } else {
+                // Fallback to root if creation failed
+                setFolderPath([rootFolder]);
+                updateFormData("storageFolderId", rootFolder.id);
+                updateFormData("storageFolderPath", rootFolder.path);
+                await fetchFolders(provider, rootFolder.id);
+              }
+            } else {
+              // Fallback to root
+              setFolderPath([rootFolder]);
+              updateFormData("storageFolderId", rootFolder.id);
+              updateFormData("storageFolderPath", rootFolder.path);
+              await fetchFolders(provider, rootFolder.id);
+            }
+          }
         }
-      } else if (rootRes.status === 403 || rootRes.status === 401) {
-        await fetchAccounts();
+      } else {
+        // Dropbox: list root folders, find/create dysumcorp
+        const rootRes = await fetch(
+          `/api/storage/list?provider=${provider}&rootOnly=true`,
+        );
+
+        if (rootRes.ok) {
+          const rootFolder = await rootRes.json();
+
+          // Dropbox root has id: "" (empty string) which is falsy, so check for name instead
+          if (rootFolder && rootFolder.name) {
+            // List root-level folders to find dysumcorp
+            const rootListRes = await fetch(
+              `/api/storage/list?provider=${provider}`,
+            );
+
+            let dysumFolder: StorageFolder | undefined;
+
+            if (rootListRes.ok) {
+              const rootFolders = await rootListRes.json();
+
+              // Find dysumcorp folder (case-insensitive)
+              dysumFolder = rootFolders.find(
+                (f: StorageFolder) => f.name.toLowerCase() === "dysumcorp",
+              );
+            }
+
+            if (!dysumFolder) {
+              // dysumcorp doesn't exist, create it at root
+              try {
+                const createRes = await fetch("/api/storage/upload", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    provider: "dropbox",
+                    parentFolderId: "",
+                    folderName: "dysumcorp",
+                  }),
+                });
+
+                if (createRes.ok) {
+                  dysumFolder = await createRes.json();
+                }
+              } catch (error) {
+                console.error("Error creating dysumcorp folder:", error);
+              }
+            }
+
+            if (dysumFolder && dysumFolder.id) {
+              // Set breadcrumb to show: Dropbox > dysumcorp
+              setFolderPath([rootFolder, dysumFolder]);
+              updateFormData("storageFolderId", dysumFolder.id);
+              updateFormData(
+                "storageFolderPath",
+                dysumFolder.path || "/dysumcorp",
+              );
+              // Load subfolders of dysumcorp
+              await fetchFolders(provider, dysumFolder.id);
+            } else {
+              // Fallback to root if creation failed
+              setFolderPath([rootFolder]);
+              updateFormData("storageFolderId", rootFolder.id);
+              updateFormData("storageFolderPath", rootFolder.path);
+              await fetchFolders(provider, rootFolder.id);
+            }
+          }
+        }
       }
     } catch (error) {
       console.error("Error initializing storage:", error);
@@ -312,7 +433,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
           setFolderError(
             "Storage connection expired. Please refresh the page and try again.",
           );
-          await fetchAccounts();
+          // Token will be refreshed automatically by the hook
         } else {
           setFolderError(errorMessage);
         }
@@ -345,14 +466,11 @@ const StorageSection: React.FC<StorageSectionProps> = ({
   }
 
   const toggleFolder = (id: string) => {
-    setExpandedFolders((prev) => {
-      const newSet = new Set(prev);
+    const newSet = new Set(expandedFolders);
 
-      if (newSet.has(id)) newSet.delete(id);
-      else newSet.add(id);
-
-      return newSet;
-    });
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setExpandedFolders(newSet);
   };
 
   async function runStorageHealthCheck() {
@@ -372,7 +490,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
       setHealthCheckResults(data);
 
       if (data.success && data.createdAccounts > 0) {
-        await fetchAccounts();
+        // Accounts will be refreshed automatically by the hook
       }
     } catch (error) {
       setHealthCheckResults({
@@ -731,26 +849,6 @@ const StorageSection: React.FC<StorageSectionProps> = ({
             </div>
           </label>
         </div>
-
-        {/* Folder Path Display */}
-        <div className="mt-4 p-3 bg-muted/50 rounded-xl border border-border">
-          <div className="flex items-center gap-2">
-            <FolderOpen className="w-4 h-4 text-primary" />
-            <span className="text-xs font-semibold text-foreground">
-              Default Upload Path:
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1 font-mono">
-            {formData.storageFolderId && formData.storageFolderPath
-              ? formData.storageFolderPath
-              : formData.portalName
-                ? `${siteConfig.storageRootFolder}/${formData.portalName}`
-                : `${siteConfig.storageRootFolder}/[portal name]`}
-            {formData.useClientFolders && (
-              <span className="text-primary">/[client name]</span>
-            )}
-          </p>
-        </div>
       </div>
 
       <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
@@ -783,6 +881,8 @@ interface SecuritySectionProps {
   setCurrentStep: (step: Step) => void;
   error: string;
   setError: (error: string) => void;
+  showPassword?: boolean;
+  setShowPassword?: (show: boolean) => void;
 }
 
 const FILE_TYPE_OPTIONS = [
@@ -798,9 +898,9 @@ const FILE_TYPE_OPTIONS = [
       "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv",
   },
   {
-    label: "Archives (ZIP, RAR)",
+    label: "Archives (ZIP, RAR, 7Z, TAR, GZ)",
     value:
-      "application/zip,application/x-rar-compressed,application/x-7z-compressed",
+      "application/zip,application/x-rar-compressed,application/x-7z-compressed,application/x-tar,application/gzip,application/x-gzip,application/x-bzip2,application/x-xz,application/force-download,archive/*",
   },
   { label: "Videos (MP4, MOV)", value: "video/*" },
   { label: "Audio (MP3, WAV)", value: "audio/*" },
@@ -813,6 +913,8 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
   setCurrentStep,
   error,
   setError,
+  showPassword = false,
+  setShowPassword = () => {},
 }) => {
   return (
     <div className="space-y-6 lg:space-y-8">
@@ -902,13 +1004,61 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
-              className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
+              className="w-full pl-10 pr-12 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
               placeholder="Set new key..."
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={formData.password}
               onChange={(e) => updateFormData("password", e.target.value)}
             />
+            {formData.password && (
+              <button
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                title={showPassword ? "Hide password" : "Show password"}
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                    />
+                    <path
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                    />
+                  </svg>
+                )}
+              </button>
+            )}
           </div>
+          <p className="text-[10px] text-muted-foreground mt-1.5">
+            Recommendation: Use a strong password with uppercase, numbers, and
+            special characters for better security.
+          </p>
         </div>
       </div>
 
@@ -1041,11 +1191,35 @@ export default function CreatePortalPage() {
   const { data: session } = useSession();
   const { showPaywall, PaywallModal } = usePaywall();
   const [currentStep, setCurrentStep] = useState<Step>("identity");
-  const [userPlan, setUserPlan] = useState<PlanType>("free");
+  const [userPlan, setUserPlan] = useState<PlanType>("trial");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [requiresUpgrade, setRequiresUpgrade] = useState(false);
+
+  // Storage section state lifted here to survive step navigation
+  const [storageFolderPath, setStorageFolderPath] = useState<StorageFolder[]>(
+    [],
+  );
+  const [storageFolders, setStorageFolders] = useState<StorageFolder[]>([]);
+  const [storageHasUserSelected, setStorageHasUserSelected] = useState(false);
+  const [storageExpandedFolders, setStorageExpandedFolders] = useState<
+    Set<string>
+  >(new Set());
+  const [expandedSections, setExpandedSections] = useState<{
+    welcomeMessage: boolean;
+    welcomeToast: boolean;
+    textboxSection: boolean;
+  }>({
+    welcomeMessage: false,
+    welcomeToast: false,
+    textboxSection: false,
+  });
+
+  // Constants for default messages
+  const DEFAULT_WELCOME_MESSAGE =
+    "Send us your files securely — we'll take it from here.\nFill in your details and attach the files you'd like to share with our team. All uploads are encrypted and handled with care.";
+  const DEFAULT_WELCOME_TOAST =
+    "👋 Welcome! Please fill in your details and upload your files.";
 
   // Slug validation state
   const [slugValidation, setSlugValidation] = useState<{
@@ -1066,11 +1240,15 @@ export default function CreatePortalPage() {
     portalUrl: "",
 
     // Branding
-    primaryColor: "#3b82f6",
-    textColor: "#0f172a",
-    backgroundColor: "#ffffff",
+    primaryColor: "#6366f1",
+    secondaryColor: "#8b5cf6",
+    textColor: "#1e293b",
+    backgroundColor: "#f1f5f9",
     cardBackgroundColor: "#ffffff",
+    gradientEnabled: true,
     logo: null as File | null,
+    companyWebsite: "",
+    companyEmail: "",
 
     // Storage
     storageProvider: "google_drive" as "google_drive" | "dropbox",
@@ -1095,10 +1273,14 @@ export default function CreatePortalPage() {
 
     // Messaging
     welcomeMessage: "",
+    welcomeToastMessage: "",
+    welcomeToastDelay: 1000,
+    welcomeToastDuration: 3000,
     submitButtonText: "Initialize Transfer",
     successMessage: "Transmission Verified",
     textboxSectionEnabled: false,
     textboxSectionTitle: "",
+    textboxSectionPlaceholder: "",
     textboxSectionRequired: false,
   });
 
@@ -1485,10 +1667,14 @@ export default function CreatePortalPage() {
 
           // Branding
           primaryColor: formData.primaryColor,
+          secondaryColor: formData.secondaryColor,
           textColor: formData.textColor,
           backgroundColor: formData.backgroundColor,
           cardBackgroundColor: formData.cardBackgroundColor,
+          gradientEnabled: formData.gradientEnabled,
           logoUrl: logoUrl,
+          companyWebsite: formData.companyWebsite || null,
+          companyEmail: formData.companyEmail || null,
 
           // Storage
           storageProvider: formData.storageProvider,
@@ -1504,11 +1690,19 @@ export default function CreatePortalPage() {
           allowedFileTypes: formData.allowedFileTypes,
 
           // Messaging
-          welcomeMessage: formData.welcomeMessage || null,
+          welcomeMessage: expandedSections.welcomeMessage
+            ? formData.welcomeMessage || DEFAULT_WELCOME_MESSAGE
+            : null,
+          welcomeToastMessage: expandedSections.welcomeToast
+            ? formData.welcomeToastMessage || DEFAULT_WELCOME_TOAST
+            : null,
+          welcomeToastDelay: formData.welcomeToastDelay,
+          welcomeToastDuration: formData.welcomeToastDuration,
           submitButtonText: formData.submitButtonText,
           successMessage: formData.successMessage,
           textboxSectionEnabled: formData.textboxSectionEnabled,
           textboxSectionTitle: formData.textboxSectionTitle || null,
+          textboxSectionPlaceholder: formData.textboxSectionPlaceholder || null,
           textboxSectionRequired: formData.textboxSectionRequired,
 
           whiteLabeled: false,
@@ -1518,18 +1712,22 @@ export default function CreatePortalPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        if (data.upgrade) {
-          // Show error message with upgrade option
-          setError(
-            data.error ||
-              "Portal limit reached. Please upgrade your plan to continue.",
+        // No subscription - show upgrade modal
+        if (
+          data.code === "CHECKOUT_REQUIRED" ||
+          data.code === "SUBSCRIPTION_EXPIRED"
+        ) {
+          showPaywall(
+            userPlan,
+            "Create Portal",
+            "A subscription is required to create portals.",
           );
-          setRequiresUpgrade(true);
-          setCurrentStep("identity"); // Go back to first step to show error
-        } else {
-          setError(data.error || "Failed to create portal");
-          setRequiresUpgrade(false);
+          setCurrentStep("identity");
+
+          return;
         }
+
+        setError(data.error || "Failed to create portal");
 
         return;
       }
@@ -1745,6 +1943,54 @@ export default function CreatePortalPage() {
                               slug
                             </p>
                           )}
+                        </div>
+
+                        <div className="space-y-4">
+                          <h3 className="text-sm font-semibold text-foreground">
+                            Company Details
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Company Website */}
+                            <div>
+                              <label className="block text-sm font-semibold text-foreground mb-2">
+                                Website
+                              </label>
+                              <input
+                                className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                placeholder="mycompany.studio"
+                                type="text"
+                                value={formData.companyWebsite}
+                                onChange={(e) =>
+                                  updateFormData(
+                                    "companyWebsite",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Displayed in portal header
+                              </p>
+                            </div>
+
+                            {/* Company Email */}
+                            <div>
+                              <label className="block text-sm font-semibold text-foreground mb-2">
+                                Contact Email
+                              </label>
+                              <input
+                                className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                placeholder="hello@mycompany.studio"
+                                type="email"
+                                value={formData.companyEmail}
+                                onChange={(e) =>
+                                  updateFormData("companyEmail", e.target.value)
+                                }
+                              />
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Displayed in portal header
+                              </p>
+                            </div>
+                          </div>
                         </div>
 
                         <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
@@ -2027,6 +2273,77 @@ export default function CreatePortalPage() {
                                 />
                               </div>
                             </div>
+
+                            {/* Secondary Color */}
+                            <div>
+                              <label className="block text-sm font-semibold text-foreground mb-2">
+                                Secondary Color
+                              </label>
+                              <div className="flex gap-2">
+                                <div className="relative group">
+                                  <div
+                                    className="w-12 h-12 rounded-xl border-2 border-border cursor-pointer transition-all hover:scale-105"
+                                    style={{
+                                      backgroundColor: formData.secondaryColor,
+                                    }}
+                                    onClick={() =>
+                                      document
+                                        .getElementById("secondaryColorInput")
+                                        ?.click()
+                                    }
+                                  />
+                                  <input
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    id="secondaryColorInput"
+                                    type="color"
+                                    value={formData.secondaryColor}
+                                    onChange={(e) =>
+                                      updateFormData(
+                                        "secondaryColor",
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                                <input
+                                  className="flex-1 px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                  type="text"
+                                  value={formData.secondaryColor}
+                                  onChange={(e) =>
+                                    updateFormData(
+                                      "secondaryColor",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Gradient Toggle */}
+                          <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl border border-border">
+                            <label className="flex items-center gap-3 cursor-pointer flex-1">
+                              <input
+                                checked={formData.gradientEnabled}
+                                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                                type="checkbox"
+                                onChange={(e) =>
+                                  updateFormData(
+                                    "gradientEnabled",
+                                    e.target.checked,
+                                  )
+                                }
+                              />
+                              <div>
+                                <span className="block text-sm font-semibold text-foreground">
+                                  Enable Gradient Buttons
+                                </span>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  Use gradient from primary to secondary color
+                                  for buttons
+                                </p>
+                              </div>
+                            </label>
                           </div>
                         </div>
 
@@ -2055,8 +2372,16 @@ export default function CreatePortalPage() {
                     {/* Storage Section */}
                     {currentStep === "storage" && (
                       <StorageSection
+                        expandedFolders={storageExpandedFolders}
+                        folderPath={storageFolderPath}
+                        folders={storageFolders}
                         formData={formData}
+                        hasUserSelectedFolder={storageHasUserSelected}
                         setCurrentStep={setCurrentStep}
+                        setExpandedFolders={setStorageExpandedFolders}
+                        setFolderPath={setStorageFolderPath}
+                        setFolders={setStorageFolders}
+                        setHasUserSelectedFolder={setStorageHasUserSelected}
                         updateFormData={updateFormData}
                       />
                     )}
@@ -2068,26 +2393,357 @@ export default function CreatePortalPage() {
                         formData={formData}
                         setCurrentStep={setCurrentStep}
                         setError={setError}
+                        setShowPassword={setShowPassword}
+                        showPassword={showPassword}
                         updateFormData={updateFormData}
                       />
                     )}
 
                     {/* Messaging Section */}
                     {currentStep === "messaging" && (
-                      <div className="space-y-8">
-                        <div>
-                          <label className="block text-sm font-semibold text-foreground mb-2">
-                            Welcome Message
-                          </label>
-                          <textarea
-                            className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
-                            placeholder="Welcome! Please upload your documents for review."
-                            rows={3}
-                            value={formData.welcomeMessage}
-                            onChange={(e) =>
-                              updateFormData("welcomeMessage", e.target.value)
+                      <div className="space-y-4">
+                        {/* Welcome Message Section */}
+                        <button
+                          className="w-full flex items-center justify-between p-4 bg-card border border-border rounded-xl hover:bg-muted transition-all text-left group"
+                          type="button"
+                          onClick={() => {
+                            const newState = !expandedSections.welcomeMessage;
+
+                            setExpandedSections((prev) => ({
+                              ...prev,
+                              welcomeMessage: newState,
+                            }));
+                            if (!newState) {
+                              updateFormData("welcomeMessage", "");
                             }
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-5 h-5 rounded border-2 border-primary flex items-center justify-center transition-all ${
+                                expandedSections.welcomeMessage
+                                  ? "bg-primary"
+                                  : "bg-transparent"
+                              }`}
+                            >
+                              {expandedSections.welcomeMessage && (
+                                <svg
+                                  className="w-3 h-3 text-primary-foreground"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    clipRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    fillRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-foreground">
+                                Welcome Message
+                              </h3>
+                              <p className="text-xs text-muted-foreground">
+                                Displayed in the portal header
+                              </p>
+                            </div>
+                          </div>
+                          <ChevronRight
+                            className={`w-5 h-5 text-muted-foreground transition-transform ${
+                              expandedSections.welcomeMessage ? "rotate-90" : ""
+                            }`}
                           />
+                        </button>
+
+                        {/* Welcome Message Content */}
+                        <AnimatePresence>
+                          {expandedSections.welcomeMessage && (
+                            <motion.div
+                              animate={{ opacity: 1, height: "auto" }}
+                              className="overflow-hidden"
+                              exit={{ opacity: 0, height: 0 }}
+                              initial={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <div className="p-4 bg-muted/50 border border-border rounded-xl space-y-3">
+                                <textarea
+                                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:bg-card focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground placeholder:text-muted-foreground resize-none"
+                                  placeholder={DEFAULT_WELCOME_MESSAGE}
+                                  rows={3}
+                                  value={formData.welcomeMessage}
+                                  onChange={(e) =>
+                                    updateFormData(
+                                      "welcomeMessage",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                  Use line breaks for title and description.
+                                </p>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Welcome Toast Notification Section */}
+                        <button
+                          className="w-full flex items-center justify-between p-4 bg-card border border-border rounded-xl hover:bg-muted transition-all text-left group"
+                          type="button"
+                          onClick={() => {
+                            const newState = !expandedSections.welcomeToast;
+
+                            setExpandedSections((prev) => ({
+                              ...prev,
+                              welcomeToast: newState,
+                            }));
+                            if (!newState) {
+                              updateFormData("welcomeToastMessage", "");
+                              updateFormData("welcomeToastDelay", 1000);
+                              updateFormData("welcomeToastDuration", 3000);
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-5 h-5 rounded border-2 border-primary flex items-center justify-center transition-all ${
+                                expandedSections.welcomeToast
+                                  ? "bg-primary"
+                                  : "bg-transparent"
+                              }`}
+                            >
+                              {expandedSections.welcomeToast && (
+                                <svg
+                                  className="w-3 h-3 text-primary-foreground"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    clipRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    fillRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-foreground">
+                                Welcome Toast Notification
+                              </h3>
+                              <p className="text-xs text-muted-foreground">
+                                Popup shown when visitors enter
+                              </p>
+                            </div>
+                          </div>
+                          <ChevronRight
+                            className={`w-5 h-5 text-muted-foreground transition-transform ${
+                              expandedSections.welcomeToast ? "rotate-90" : ""
+                            }`}
+                          />
+                        </button>
+
+                        {/* Welcome Toast Content */}
+                        <AnimatePresence>
+                          {expandedSections.welcomeToast && (
+                            <motion.div
+                              animate={{ opacity: 1, height: "auto" }}
+                              className="overflow-hidden"
+                              exit={{ opacity: 0, height: 0 }}
+                              initial={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <div className="p-4 bg-muted/50 border border-border rounded-xl space-y-4">
+                                <div>
+                                  <label className="block text-sm font-semibold text-foreground mb-2">
+                                    Toast Message
+                                  </label>
+                                  <input
+                                    className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                    placeholder={DEFAULT_WELCOME_TOAST}
+                                    type="text"
+                                    value={formData.welcomeToastMessage}
+                                    onChange={(e) =>
+                                      updateFormData(
+                                        "welcomeToastMessage",
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Popup notification shown when visitors enter
+                                    the portal
+                                  </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-semibold text-foreground mb-2">
+                                      Delay (ms)
+                                    </label>
+                                    <input
+                                      className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                      min="0"
+                                      step="100"
+                                      type="number"
+                                      value={formData.welcomeToastDelay}
+                                      onChange={(e) =>
+                                        updateFormData(
+                                          "welcomeToastDelay",
+                                          parseInt(e.target.value) || 0,
+                                        )
+                                      }
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Time before toast appears (1000ms = 1
+                                      second)
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-sm font-semibold text-foreground mb-2">
+                                      Duration (ms)
+                                    </label>
+                                    <input
+                                      className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-medium text-foreground"
+                                      min="1000"
+                                      step="100"
+                                      type="number"
+                                      value={formData.welcomeToastDuration}
+                                      onChange={(e) =>
+                                        updateFormData(
+                                          "welcomeToastDuration",
+                                          parseInt(e.target.value) || 3000,
+                                        )
+                                      }
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      How long toast stays visible
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        <div className="border-t border-border pt-6">
+                          <button
+                            className="w-full flex items-center justify-between p-4 bg-card border border-border rounded-xl hover:bg-muted transition-all text-left group"
+                            type="button"
+                            onClick={() => {
+                              const newState = !expandedSections.textboxSection;
+
+                              setExpandedSections((prev) => ({
+                                ...prev,
+                                textboxSection: newState,
+                              }));
+                              if (!newState) {
+                                updateFormData("textboxSectionEnabled", false);
+                                updateFormData("textboxSectionTitle", "");
+                                updateFormData("textboxSectionRequired", false);
+                              } else {
+                                updateFormData("textboxSectionEnabled", true);
+                              }
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`w-5 h-5 rounded border-2 border-primary flex items-center justify-center transition-all ${
+                                  expandedSections.textboxSection
+                                    ? "bg-primary"
+                                    : "bg-transparent"
+                                }`}
+                              >
+                                {expandedSections.textboxSection && (
+                                  <svg
+                                    className="w-3 h-3 text-primary-foreground"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      clipRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      fillRule="evenodd"
+                                    />
+                                  </svg>
+                                )}
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-foreground">
+                                  Textbox Section
+                                </h3>
+                                <p className="text-xs text-muted-foreground">
+                                  Add a text input field for clients to fill out
+                                </p>
+                              </div>
+                            </div>
+                            <ChevronRight
+                              className={`w-5 h-5 text-muted-foreground transition-transform ${
+                                expandedSections.textboxSection
+                                  ? "rotate-90"
+                                  : ""
+                              }`}
+                            />
+                          </button>
+
+                          {/* Textbox Section Content */}
+                          <AnimatePresence>
+                            {expandedSections.textboxSection && (
+                              <motion.div
+                                animate={{ opacity: 1, height: "auto" }}
+                                className="overflow-hidden"
+                                exit={{ opacity: 0, height: 0 }}
+                                initial={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                              >
+                                <div className="p-4 bg-muted/50 border border-border rounded-xl space-y-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                      <label className="block text-sm font-semibold text-foreground mb-2">
+                                        Textbox Placeholder
+                                      </label>
+                                      <input
+                                        className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none text-muted-foreground"
+                                        placeholder="e.g., Enter any notes or comments..."
+                                        type="text"
+                                        value={
+                                          formData.textboxSectionPlaceholder
+                                        }
+                                        onChange={(e) =>
+                                          updateFormData(
+                                            "textboxSectionPlaceholder",
+                                            e.target.value,
+                                          )
+                                        }
+                                      />
+                                    </div>
+
+                                    <div className="flex items-end">
+                                      <label className="flex items-center gap-3 cursor-pointer">
+                                        <input
+                                          checked={
+                                            formData.textboxSectionRequired
+                                          }
+                                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                                          type="checkbox"
+                                          onChange={(e) =>
+                                            updateFormData(
+                                              "textboxSectionRequired",
+                                              e.target.checked,
+                                            )
+                                          }
+                                        />
+                                        <span className="text-sm font-medium text-foreground">
+                                          Required field
+                                        </span>
+                                      </label>
+                                    </div>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2121,64 +2777,6 @@ export default function CreatePortalPage() {
                               }
                             />
                           </div>
-                        </div>
-
-                        <div className="border-t border-border pt-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <div>
-                              <h3 className="font-semibold text-foreground">
-                                Textbox Section
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                Add a text input field for clients to fill out
-                              </p>
-                            </div>
-                            <Switch
-                              checked={formData.textboxSectionEnabled}
-                              onCheckedChange={(checked) =>
-                                updateFormData("textboxSectionEnabled", checked)
-                              }
-                            />
-                          </div>
-
-                          {formData.textboxSectionEnabled && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-0 md:pl-0">
-                              <div>
-                                <label className="block text-sm font-semibold text-foreground mb-2">
-                                  Textbox Label
-                                </label>
-                                <input
-                                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground"
-                                  type="text"
-                                  placeholder="e.g., Notes or Comments"
-                                  value={formData.textboxSectionTitle}
-                                  onChange={(e) =>
-                                    updateFormData(
-                                      "textboxSectionTitle",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </div>
-
-                              <div className="flex items-end">
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                  <Switch
-                                    checked={formData.textboxSectionRequired}
-                                    onCheckedChange={(checked) =>
-                                      updateFormData(
-                                        "textboxSectionRequired",
-                                        checked,
-                                      )
-                                    }
-                                  />
-                                  <span className="text-sm font-medium text-foreground">
-                                    Required field
-                                  </span>
-                                </label>
-                              </div>
-                            </div>
-                          )}
                         </div>
 
                         <div className="bg-primary rounded-xl p-6 text-primary-foreground shadow-lg">
@@ -2240,7 +2838,7 @@ export default function CreatePortalPage() {
                   <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-destructive font-bold">{error}</p>
-                    {requiresUpgrade && (
+                    {error && (
                       <div className="mt-3 flex items-center gap-3">
                         <Link
                           className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
@@ -2254,7 +2852,6 @@ export default function CreatePortalPage() {
                           type="button"
                           onClick={() => {
                             setError("");
-                            setRequiresUpgrade(false);
                           }}
                         >
                           Dismiss
@@ -2269,7 +2866,7 @@ export default function CreatePortalPage() {
         </main>
       </div>
 
-      {/* Paywall Modal */}
+      {/* Paywall Modal - shown when user needs to subscribe */}
       <PaywallModal />
     </div>
   );

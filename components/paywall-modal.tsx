@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {
   Modal,
   ModalContent,
   ModalHeader,
   ModalBody,
   ModalFooter,
-  useDisclosure,
 } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
@@ -40,30 +39,48 @@ export function PaywallModal({
   reason,
   requiredPlan,
 }: PaywallModalProps) {
-  const { onOpenChange } = useDisclosure({ isOpen });
+  const [internalIsOpen, setInternalIsOpen] = useState(isOpen);
 
-  // Determine the minimum plan needed for this feature
-  const getMinimumPlan = (): PlanType => {
-    if (requiredPlan) return requiredPlan;
+  useEffect(() => {
+    setInternalIsOpen(isOpen);
+  }, [isOpen]);
 
-    // All premium features require Pro plan
-    return "pro";
-  };
+  const handleClose = useCallback(() => {
+    setInternalIsOpen(false);
+    onClose();
+  }, [onClose]);
 
-  const minimumPlan = getMinimumPlan();
-  const recommendedPlan = currentPlan === "free" ? "pro" : "pro";
+  const minimumPlan: "pro" = "pro";
+  const recommendedPlan: "pro" = "pro";
 
   const plan = PRICING_PLANS[recommendedPlan];
   const minimumPlanDetails = PRICING_PLANS[minimumPlan];
 
-  const handleUpgrade = () => {
+  const handleUpgrade = async () => {
     onClose();
-    window.location.href = "/dashboard/billing";
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: "pro",
+          billingCycle: "monthly",
+        }),
+      });
+      const data = await response.json();
+
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      }
+    } catch (err) {
+      console.error("Checkout error:", err);
+      window.location.href = "/dashboard/billing?tab=plans";
+    }
   };
 
-  const handleComparePlans = () => {
+  const handleViewPlans = () => {
     onClose();
-    window.location.href = "/pricing";
+    window.location.href = "/dashboard/billing?tab=plans";
   };
 
   return (
@@ -74,10 +91,10 @@ export function PaywallModal({
         body: "py-6",
       }}
       hideCloseButton={false}
-      isOpen={isOpen}
+      isOpen={internalIsOpen}
       scrollBehavior="inside"
       size="2xl"
-      onOpenChange={onOpenChange}
+      onClose={handleClose}
     >
       <ModalContent>
         {(_onClose) => (
@@ -111,7 +128,7 @@ export function PaywallModal({
                       <p className="text-sm text-default-600 mt-1">{reason}</p>
                       <div className="flex items-center gap-2 mt-2">
                         <Chip color="default" size="sm" variant="flat">
-                          Current: {PRICING_PLANS[currentPlan].name}
+                          Current: {currentPlan}
                         </Chip>
                         <span>→</span>
                         <Chip color="primary" size="sm" variant="flat">
@@ -254,9 +271,9 @@ export function PaywallModal({
               <Button
                 className="font-medium"
                 variant="bordered"
-                onPress={handleComparePlans}
+                onPress={handleViewPlans}
               >
-                Compare All Plans
+                View Plans
               </Button>
               <Button
                 className="font-semibold font-mono"
@@ -283,7 +300,7 @@ export function usePaywall() {
     requiredPlan?: PlanType;
   }>({
     isOpen: false,
-    currentPlan: "free",
+    currentPlan: "trial" as PlanType,
     feature: "",
     reason: "",
   });

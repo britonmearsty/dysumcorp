@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getSession } from "@/lib/auth-server";
+import { getSessionFromRequest } from "@/lib/auth-server";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSessionFromRequest(req);
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -32,10 +32,18 @@ export async function POST(req: NextRequest) {
       publicId: result.public_id,
     });
   } catch (error) {
-    console.error("Cloudinary upload error:", error);
+    console.error(
+      "Cloudinary upload error:",
+      error instanceof Error ? error.message : error,
+    );
 
     return NextResponse.json(
-      { error: "Failed to upload to Cloudinary" },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to upload to Cloudinary",
+      },
       { status: 500 },
     );
   }

@@ -9,15 +9,10 @@ import { PRICING_PLANS } from "@/config/pricing";
 
 const pricingPlans = [
   {
-    ...PRICING_PLANS.free,
-    price: "0",
-    period: "/month",
-    cta: "Get Started",
-    popular: false,
-  },
-  {
     ...PRICING_PLANS.pro,
-    price: "29",
+    name: "Pro",
+    description: "Start with 7-day free trial, then $10/month",
+    price: "10",
     period: "/month",
     cta: "Start Free Trial",
     popular: true,
@@ -47,7 +42,7 @@ export default function PricingSection() {
         </FadeIn>
 
         <Stagger
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 max-w-3xl mx-auto"
+          className="grid grid-cols-1 gap-6 lg:gap-8 max-w-md mx-auto"
           delay={0.15}
         >
           {pricingPlans.map((plan, index) => (

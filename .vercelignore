@@ -10,3 +10,14 @@ coverage
 .vscode
 .idea
 *.tsbuildinfo
+
+# Exclude reference folders to reduce function size
+dashboard-pages-reference
+design-reference
+dysum
+
+# Exclude test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx

@@ -24,7 +24,7 @@ describe("pricing utilities", () => {
   describe("formatPrice", () => {
     it("should format price with dollar sign", () => {
       expect(formatPrice(0)).toBe("$0");
-      expect(formatPrice(29)).toBe("$29");
+      expect(formatPrice(10)).toBe("$10");
       expect(formatPrice(100)).toBe("$100");
     });
 

@@ -1,5 +1,5 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
+import { Pool } from "pg";
 
 import { PrismaClient } from "@/lib/generated/prisma/client";
 
@@ -12,23 +12,32 @@ const connectionString = process.env.DATABASE_URL;
 let prisma: PrismaClient;
 
 if (connectionString) {
-  const pool = new pg.Pool({
+  const pool = new Pool({
     connectionString,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
+    max: 1, // Limit connections in serverless
+    idleTimeoutMillis: 10000, // Shorter idle timeout
+    connectionTimeoutMillis: 5000, // Shorter connection timeout
+    allowExitOnIdle: true, // Allow pool to close when idle
   });
 
   pool.on("error", (err) => {
     console.error("Unexpected pg pool error:", err);
   });
 
-  const adapter = new PrismaPg(pool);
+  // Cast to any to avoid @types/pg version conflict between top-level and @prisma/adapter-pg bundled types
+  const adapter = new PrismaPg(pool as any);
 
   if (process.env.NODE_ENV === "production") {
-    prisma = new PrismaClient({ adapter });
+    prisma = new PrismaClient({
+      adapter,
+      log: process.env.DEBUG_DB ? ["query", "error", "warn"] : ["error"],
+    });
   } else {
     if (!globalForPrisma.prisma) {
-      globalForPrisma.prisma = new PrismaClient({ adapter });
+      globalForPrisma.prisma = new PrismaClient({
+        adapter,
+        log: ["query", "error", "warn"],
+      });
     }
     prisma = globalForPrisma.prisma;
   }

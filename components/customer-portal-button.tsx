@@ -4,8 +4,6 @@ import { useState } from "react";
 import { Button } from "@heroui/button";
 import { Alert } from "@heroui/alert";
 
-import { authClient } from "@/lib/auth-client";
-
 interface CustomerPortalButtonProps {
   label?: string;
   variant?:
@@ -37,21 +35,23 @@ export function CustomerPortalButton({
     setLoading(true);
     setError(null);
     try {
-      const { data, error: portalError } =
-        await authClient.creem.createPortal();
+      const response = await fetch("/api/subscription/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
 
-      if (portalError) {
-        console.error("Portal error:", portalError);
+      const data = await response.json();
+
+      if (!response.ok) {
         setError(
-          (portalError as any)?.message ||
-            "Failed to open customer portal. Please try again.",
+          data.error || "Failed to open customer portal. Please try again.",
         );
 
         return;
       }
 
-      if (data && "url" in data && data.url) {
-        window.location.href = data.url;
+      if (data.url) {
+        window.open(data.url, "_blank", "noopener,noreferrer");
       } else {
         setError("No portal URL returned. Please contact support.");
       }

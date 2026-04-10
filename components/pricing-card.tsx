@@ -21,13 +21,10 @@ export function PricingCard({
   onSubscribe,
 }: PricingCardProps) {
   const isCurrentPlan = currentPlan === plan.id;
-  const isFree = plan.id === "free";
   const price = billingCycle === "annual" ? plan.priceAnnual / 12 : plan.price;
   const totalPrice = billingCycle === "annual" ? plan.priceAnnual : plan.price;
   const savings =
-    billingCycle === "annual" && !isFree
-      ? plan.price * 12 - plan.priceAnnual
-      : 0;
+    billingCycle === "annual" ? plan.price * 12 - plan.priceAnnual : 0;
 
   return (
     <div className="relative pt-4">
@@ -54,13 +51,9 @@ export function PricingCard({
               <span className="text-5xl font-bold text-foreground tracking-tight">
                 {formatPrice(price)}
               </span>
-              {!isFree && (
-                <span className="text-muted-foreground font-medium">
-                  /month
-                </span>
-              )}
+              <span className="text-muted-foreground font-medium">/month</span>
             </div>
-            {billingCycle === "annual" && !isFree && (
+            {billingCycle === "annual" && (
               <div className="mt-2">
                 <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
                   {formatPrice(totalPrice)} billed annually
@@ -97,11 +90,7 @@ export function PricingCard({
             isDisabled={isCurrentPlan}
             onClick={() => onSubscribe?.(plan.id, billingCycle === "annual")}
           >
-            {isCurrentPlan
-              ? "Current Plan"
-              : isFree
-                ? "Get Started"
-                : "Subscribe"}
+            {isCurrentPlan ? "Current Plan" : "Subscribe"}
           </Button>
         </CardBody>
       </Card>

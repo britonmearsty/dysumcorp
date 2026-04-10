@@ -1,6 +1,8 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  previewFeatures = ["tracing"]
 }
 
 datasource db {
@@ -18,8 +20,14 @@ model User {
   updatedAt          DateTime  @updatedAt
   creemCustomerId    String?
   hadTrial           Boolean?  @default(false)
-  subscriptionPlan   String?   @default("free")
-  subscriptionStatus String?   @default("active")
+  trialStartedAt     DateTime?
+  trialUploadCount   Int       @default(0)
+  trialFileLimit     Int       @default(15)
+  trialFileCount     Int       @default(0)
+  subscriptionPlan   String?   @default("trial")
+  subscriptionStatus String?   @default("trialing")
+  status             String    @default("active") // active, deleted, suspended
+  deletedAt          DateTime?
   accounts           Account[]
   portals            Portal[]
   sessions           Session[]
@@ -30,6 +38,9 @@ model User {
   notifyOnPortalCreate Boolean @default(true)
   notifyOnStorageWarning Boolean @default(true)
   weeklyReports      Boolean   @default(false)
+
+  // "ask" = show checkbox in delete modal, "always" = always delete from storage, "never" = never delete from storage
+  storageDeleteBehavior String @default("ask")
 
   @@map("user")
 }
@@ -106,11 +117,15 @@ model Portal {
   whiteLabeled        Boolean  @default(false)
   isActive            Boolean  @default(true)
   userId              String
-  primaryColor        String   @default("#3b82f6")
-  textColor           String   @default("#0f172a")
-  backgroundColor     String   @default("#ffffff")
+  primaryColor        String   @default("#6366f1")
+  secondaryColor      String   @default("#8b5cf6")
+  textColor           String   @default("#1e293b")
+  backgroundColor     String   @default("#f1f5f9")
   cardBackgroundColor String   @default("#ffffff")
+  gradientEnabled     Boolean  @default(true)
   logoUrl             String?
+  companyWebsite      String?
+  companyEmail        String?
   storageProvider     String?
   storageFolderId     String?
   storageFolderPath   String?
@@ -121,39 +136,64 @@ model Portal {
   maxFileSize         BigInt   @default(52428800)
   allowedFileTypes    String[] @default([])
   welcomeMessage      String?
+  welcomeToastMessage String?
+  welcomeToastDelay   Int      @default(1000)
+  welcomeToastDuration Int     @default(3000)
   submitButtonText    String   @default("Initialize Transfer")
   successMessage      String   @default("Transmission Verified")
   textboxSectionEnabled Boolean @default(false)
   textboxSectionTitle  String?
+  textboxSectionPlaceholder String?
   textboxSectionRequired Boolean @default(false)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   files               File[]
+  uploadSessions      UploadSession[]
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("portal")
 }
 
-model File {
-  id            String    @id @default(cuid())
-  name          String
-  size          BigInt
-  mimeType      String
-  storageUrl    String
-  storageFileId String?
+model UploadSession {
+  id            String   @id @default(cuid())
   portalId      String
-  uploadedAt    DateTime  @default(now())
-  expiresAt     DateTime?
-  passwordHash  String?
-  downloads     Int       @default(0)
   uploaderName  String?
   uploaderEmail String?
   uploaderNotes String?
-  portal        Portal    @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  uploadedAt    DateTime @default(now())
+  fileCount     Int      @default(0)
+  totalSize     BigInt   @default(0)
+  portal        Portal   @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  files         File[]
 
   @@index([portalId])
   @@index([uploaderEmail])
+  @@index([uploadedAt])
+  @@map("upload_session")
+}
+
+model File {
+  id              String         @id @default(cuid())
+  name            String
+  size            BigInt
+  mimeType        String
+  storageUrl      String
+  storageFileId   String?
+  portalId        String
+  uploadSessionId String?
+  uploadedAt      DateTime       @default(now())
+  expiresAt       DateTime?
+  passwordHash    String?
+  downloads       Int            @default(0)
+  uploaderName    String?
+  uploaderEmail   String?
+  portal          Portal         @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  uploadSession   UploadSession? @relation(fields: [uploadSessionId], references: [id], onDelete: SetNull)
+
+  @@index([portalId])
+  @@index([uploaderEmail])
+  @@index([uploadSessionId])
   @@map("file")
 }
 
@@ -172,15 +212,39 @@ model UsageTracking {
   @@map("usage_tracking")
 }
 
-model GraceUsage {
-  id           String   @id @default(cuid())
-  userId       String
-  resourceType String   // 'portal', 'storage', etc.
-  usedAt       DateTime @default(now())
-  amount       Int      @default(1)
-  notes        String?
+model R2StagingUpload {
+  id             String   @id @default(cuid())
+  stagingKey     String   @unique
+  portalId       String
+  fileSize       BigInt
 
-  @@index([userId, resourceType])
-  @@index([usedAt])
-  @@map("grace_usage")
+  // State Machine: PENDING → UPLOADING → UPLOADED → ROUTING → DELIVERED | FAILED
+  status         String   @default("PENDING")
+
+  // Delivery Tracking
+  targetProvider String?  // "google" | "dropbox"
+  targetPath     String?  // Full path in user's cloud
+  targetFileId   String?  // Provider's returned file ID
+
+  // Retry & Error Tracking
+  attempts       Int      @default(0)
+  lastError      String?
+
+  // Idempotency
+  r2Etag         String?
+  r2Hash         String?
+
+  // Metadata
+  uploaderName   String?
+  uploaderEmail  String?
+  fileId         String?  // Created File record after delivery
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status, portalId])
+  @@index([portalId, status])
+  @@map("r2_staging_upload")
 }
+
+

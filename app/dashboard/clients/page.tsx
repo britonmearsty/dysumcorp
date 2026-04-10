@@ -63,6 +63,11 @@ export default function ClientsPage() {
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const { showToast } = useToast();
   const { data: session, isPending } = useSession();
 
@@ -240,22 +245,22 @@ export default function ClientsPage() {
     }
   };
 
-  const handleDeleteFile = async (fileId: string, fileName: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${fileName}"? This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
-    setDeletingFile(fileId);
+  const handleDeleteFile = (fileId: string, fileName: string) => {
+    setFileToDelete({ id: fileId, name: fileName });
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDeleteFile = async () => {
+    if (!fileToDelete) return;
+    setDeleteModalOpen(false);
+    setDeletingFile(fileToDelete.id);
     try {
-      const response = await fetch(`/api/files/${fileId}`, {
+      const response = await fetch(`/api/files/${fileToDelete.id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
-        setClientFiles(clientFiles.filter((f) => f.id !== fileId));
+        setClientFiles(clientFiles.filter((f) => f.id !== fileToDelete.id));
         showToast("File deleted successfully", "success");
       } else {
         showToast("Failed to delete file", "error");
@@ -265,6 +270,7 @@ export default function ClientsPage() {
       showToast("Failed to delete file", "error");
     } finally {
       setDeletingFile(null);
+      setFileToDelete(null);
     }
   };
 
@@ -434,7 +440,7 @@ export default function ClientsPage() {
                             className="w-full flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-5 text-left hover:bg-muted/50 transition-colors group"
                             onClick={() => handleClientClick(client)}
                           >
-                            <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground font-bold group-hover:bg-bg-card transition-colors flex-shrink-0">
+                            <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold group-hover:bg-emerald-100 dark:group-hover:bg-emerald-950/50 transition-colors flex-shrink-0">
                               {client.name?.charAt(0) ||
                                 client.email?.charAt(0).toUpperCase() ||
                                 "?"}
@@ -502,33 +508,42 @@ export default function ClientsPage() {
                             new Date(a.lastUpload).getTime(),
                         )
                         .map((client, idx) => (
-                          <div
+                          <button
                             key={idx}
-                            className="p-3 sm:p-5 flex gap-3 sm:gap-4 transition-colors hover:bg-muted/30"
+                            className="w-full flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-5 text-left hover:bg-muted/50 transition-colors group"
+                            onClick={() => handleClientClick(client)}
                           >
-                            <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-muted flex items-center justify-center shrink-0 text-base sm:text-xl">
-                              📄
+                            <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold group-hover:bg-emerald-100 dark:group-hover:bg-emerald-950/50 transition-colors flex-shrink-0">
+                              {client.name?.charAt(0) ||
+                                client.email?.charAt(0).toUpperCase() ||
+                                "?"}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs sm:text-sm text-foreground">
-                                <span className="font-bold">
-                                  {client.name || client.email}
-                                </span>{" "}
-                                uploaded files
-                              </p>
-                              <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 flex items-center gap-2">
-                                {formatDate(client.lastUpload)} ·{" "}
-                                {client.totalFiles} files
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-bold text-foreground truncate text-sm sm:text-base">
+                                  {client.name || "Unknown Client"}
+                                </span>
+                              </div>
+                              <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                                {client.email || "No email provided"}
                               </p>
                             </div>
-                            <button
-                              className="text-xs font-bold text-muted-foreground hover:text-foreground underline underline-offset-4"
-                              type="button"
-                              onClick={() => handleClientClick(client)}
-                            >
-                              View
-                            </button>
-                          </div>
+                            <div className="flex sm:flex-col items-start sm:items-end gap-1 sm:px-4">
+                              <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                                <FileText className="w-3.5 h-3.5" />
+                                <span>
+                                  {client.totalFiles} file
+                                  {client.totalFiles !== 1 ? "s" : ""}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-muted-foreground">
+                                {formatDate(client.lastUpload)}
+                              </div>
+                            </div>
+                            <div className="hidden sm:block p-2 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0">
+                              <ChevronRight className="w-5 h-5" />
+                            </div>
+                          </button>
                         ))}
                     </div>
                   )}
@@ -592,7 +607,7 @@ export default function ClientsPage() {
             >
               <div className="p-4 sm:p-6 lg:p-8 border-b border-border bg-muted/50 flex justify-between items-start gap-4">
                 <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-card shadow-sm border border-border flex items-center justify-center text-lg sm:text-xl font-bold text-foreground">
+                  <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 shadow-sm border border-emerald-200 dark:border-emerald-900/40 flex items-center justify-center text-lg sm:text-xl font-bold text-emerald-600 dark:text-emerald-400">
                     {selectedClient.name?.charAt(0) ||
                       selectedClient.email?.charAt(0).toUpperCase()}
                   </div>
@@ -763,6 +778,51 @@ export default function ClientsPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && fileToDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 bg-red-500/20 rounded-full">
+                <Trash2 className="w-6 h-6 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">
+                  Delete File
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  This action cannot be undone
+                </p>
+              </div>
+            </div>
+            <p className="text-foreground mb-6">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">
+                &quot;{fileToDelete.name}&quot;
+              </span>
+              ?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                className="px-4 py-2 border border-border rounded-xl font-medium hover:bg-muted transition-colors"
+                onClick={() => {
+                  setDeleteModalOpen(false);
+                  setFileToDelete(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors"
+                onClick={confirmDeleteFile}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

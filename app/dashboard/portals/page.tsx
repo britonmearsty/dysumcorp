@@ -21,6 +21,9 @@ import { Switch } from "@/components/ui/switch";
 import { useSession } from "@/lib/auth-client";
 import { uploadFile } from "@/lib/upload-manager";
 import { useToast } from "@/lib/toast";
+import { useStorageDeleteBehavior } from "@/lib/use-storage-delete-behavior";
+import { DeleteFileModal } from "@/components/ui/delete-file-modal";
+import { DeletePortalModal } from "@/components/ui/delete-portal-modal";
 
 interface Portal {
   id: string;
@@ -58,6 +61,11 @@ export default function PortalsPage() {
   const [showFilesModal, setShowFilesModal] = useState(false);
   const [portalFiles, setPortalFiles] = useState<any[]>([]);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
+  const [deleteFileModalOpen, setDeleteFileModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [portalToDelete, setPortalToDelete] = useState<{
     id: string;
@@ -65,6 +73,7 @@ export default function PortalsPage() {
   } | null>(null);
   const [togglingPortal, setTogglingPortal] = useState<string | null>(null);
   const { showToast } = useToast();
+  const { behavior: deleteBehavior } = useStorageDeleteBehavior();
 
   useEffect(() => {
     fetchPortals();
@@ -77,10 +86,17 @@ export default function PortalsPage() {
       if (response.ok) {
         const data = await response.json();
 
-        setPortals(data.portals);
+        setPortals(data.portals || []);
+      } else {
+        console.error("Failed to fetch portals - Status:", response.status);
+        const errorText = await response.text();
+
+        console.error("Error response:", errorText);
+        showToast("Failed to load portals", "error");
       }
     } catch (error) {
       console.error("Failed to fetch portals:", error);
+      showToast("Failed to load portals", "error");
     } finally {
       setLoading(false);
     }
@@ -91,13 +107,15 @@ export default function PortalsPage() {
     setDeleteModalOpen(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = async (deleteFromStorage: boolean) => {
     if (!portalToDelete) return;
     setDeleteModalOpen(false);
     setDeleting(portalToDelete.id);
     try {
       const response = await fetch(`/api/portals/${portalToDelete.id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deleteFromStorage }),
       });
 
       if (response.ok) {
@@ -258,7 +276,16 @@ export default function PortalsPage() {
       if (response.ok) {
         await fetchPortals();
       } else {
-        showToast("Failed to toggle portal status", "error");
+        const errorData = await response.json();
+
+        if (
+          response.status === 402 ||
+          errorData.code === "SUBSCRIPTION_REQUIRED"
+        ) {
+          window.location.href = "/pricing";
+        } else {
+          showToast("Failed to toggle portal status", "error");
+        }
       }
     } catch (error) {
       console.error("Failed to toggle portal status:", error);
@@ -313,22 +340,24 @@ export default function PortalsPage() {
     }
   };
 
-  const handleDeleteFile = async (fileId: string, fileName: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${fileName}"? This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
-    setDeletingFile(fileId);
+  const handleDeleteFile = (fileId: string, fileName: string) => {
+    setFileToDelete({ id: fileId, name: fileName });
+    setDeleteFileModalOpen(true);
+  };
+
+  const confirmDeleteFile = async (deleteFromStorage: boolean) => {
+    if (!fileToDelete) return;
+    setDeleteFileModalOpen(false);
+    setDeletingFile(fileToDelete.id);
     try {
-      const response = await fetch(`/api/files/${fileId}`, {
+      const response = await fetch(`/api/files/${fileToDelete.id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deleteFromStorage }),
       });
 
       if (response.ok) {
-        setPortalFiles(portalFiles.filter((f) => f.id !== fileId));
+        setPortalFiles(portalFiles.filter((f) => f.id !== fileToDelete.id));
         showToast("File deleted successfully", "success");
       } else {
         showToast("Failed to delete file", "error");
@@ -338,6 +367,7 @@ export default function PortalsPage() {
       showToast("Failed to delete file", "error");
     } finally {
       setDeletingFile(null);
+      setFileToDelete(null);
     }
   };
 
@@ -831,49 +861,29 @@ export default function PortalsPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteModalOpen && portalToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 bg-red-500/20 rounded-full">
-                <Trash2 className="w-6 h-6 text-red-500" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">
-                  Delete Portal
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  This action cannot be undone
-                </p>
-              </div>
-            </div>
-            <p className="text-foreground mb-6">
-              Are you sure you want to delete{" "}
-              <span className="font-semibold">"{portalToDelete.name}"</span>?
-              All files and data associated with this portal will be permanently
-              removed.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                className="px-4 py-2 border border-border rounded-xl font-medium hover:bg-muted transition-colors"
-                onClick={() => {
-                  setDeleteModalOpen(false);
-                  setPortalToDelete(null);
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors"
-                onClick={confirmDelete}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Portal Confirmation Modal */}
+      <DeletePortalModal
+        behavior={deleteBehavior}
+        open={deleteModalOpen && !!portalToDelete}
+        portalName={portalToDelete?.name ?? ""}
+        onCancel={() => {
+          setDeleteModalOpen(false);
+          setPortalToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+      />
+
+      {/* Delete File Confirmation Modal */}
+      <DeleteFileModal
+        behavior={deleteBehavior}
+        fileName={fileToDelete?.name ?? ""}
+        open={deleteFileModalOpen && !!fileToDelete}
+        onCancel={() => {
+          setDeleteFileModalOpen(false);
+          setFileToDelete(null);
+        }}
+        onConfirm={confirmDeleteFile}
+      />
     </div>
   );
 }
