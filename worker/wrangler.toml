@@ -12,6 +12,7 @@ enabled = true
 
 [observability.logs]
 enabled = true
+invocation_logs = true
 
 # R2 bucket binding — Worker accesses the bucket via env.R2_BUCKET
 [[r2_buckets]]

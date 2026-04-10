@@ -30,8 +30,8 @@ export const PRICING_PLANS: Record<"pro", PricingPlan> = {
     description: "For professionals and power users",
     price: 10,
     priceAnnual: 96, // 20% discount (10 * 12 * 0.8 = 96)
-    creemProductId: "prod_1Rz5XOjKFlcgahDws69WiH",
-    creemProductIdAnnual: "prod_4TLbnNWJvTQcOReecnTIa0",
+    creemProductId: "prod_75qoqwUpyQHTUOIqd5EkTw",
+    creemProductIdAnnual: "prod_4DfGPhCcp1oJs7N3zxvaOk",
     limits: {
       portals: 999999, // Unlimited
       storage: 999999, // Unlimited
