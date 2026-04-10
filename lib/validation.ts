@@ -6,12 +6,14 @@ import { NextResponse } from "next/server";
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const SLUG_REGEX = /^[a-z0-9]{20,}$/;
+
 /**
  * Validate UUID format
  * Prevents IDOR and malformed ID attacks
  */
 export function isValidUUID(id: string): boolean {
-  return UUID_REGEX.test(id);
+  return UUID_REGEX.test(id) || SLUG_REGEX.test(id);
 }
 
 /**

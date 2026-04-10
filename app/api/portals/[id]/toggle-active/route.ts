@@ -30,7 +30,7 @@ export async function POST(
     // Verify ownership
     const existingPortal = await prisma.portal.findFirst({
       where: {
-        id,
+        OR: [{ id }, { slug: id }],
         userId: session.user.id,
       },
     });
@@ -56,7 +56,7 @@ export async function POST(
 
     // Toggle active status
     const portal = await prisma.portal.update({
-      where: { id },
+      where: { id: existingPortal.id },
       data: {
         isActive: !existingPortal.isActive,
       },

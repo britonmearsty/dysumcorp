@@ -34,9 +34,11 @@ export async function POST(
       );
     }
 
-    // Get portal
-    const portal = await prisma.portal.findUnique({
-      where: { id },
+    // Get portal (by UUID or slug)
+    const portal = await prisma.portal.findFirst({
+      where: {
+        OR: [{ id: id }, { slug: id }],
+      },
       select: {
         id: true,
         password: true,

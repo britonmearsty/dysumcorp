@@ -34,7 +34,7 @@ export async function GET(
 
     const portal = await prisma.portal.findFirst({
       where: {
-        id,
+        OR: [{ id: id }, { slug: id }],
         userId: session.user.id,
       },
       include: {
@@ -155,24 +155,6 @@ export async function PATCH(
       textboxSectionRequired,
     } = body;
 
-    // Verify ownership
-    const existingPortal = await prisma.portal.findFirst({
-      where: {
-        id,
-        userId: session.user.id,
-      },
-    });
-
-    if (!existingPortal) {
-      console.log("[Portal Update] Portal not found or unauthorized");
-
-      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
-    }
-
-    console.log(
-      "[Portal Update] Existing portal found, building update data...",
-    );
-
     // Build update data object
     const updateData: any = {};
 
@@ -286,10 +268,25 @@ export async function PATCH(
       ),
     );
 
+    // Find portal first (supports UUID and slug)
+    console.log("[Portal Update] Looking up portal...");
+    const existingPortal = await prisma.portal.findFirst({
+      where: {
+        OR: [{ id }, { slug: id }],
+        userId: session.user.id,
+      },
+      select: { id: true },
+    });
+
+    if (!existingPortal) {
+      console.log("[Portal Update] Portal not found");
+      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
+    }
+
     // Update portal
     console.log("[Portal Update] Executing database update...");
     const portal = await prisma.portal.update({
-      where: { id },
+      where: { id: existingPortal.id },
       data: updateData,
     });
 
@@ -370,9 +367,12 @@ export async function DELETE(
       else deleteFromStorage = false;
     }
 
-    // Verify ownership
+    // Verify ownership (supports UUID and slug)
     const existingPortal = await prisma.portal.findFirst({
-      where: { id, userId: session.user.id },
+      where: {
+        OR: [{ id }, { slug: id }],
+        userId: session.user.id,
+      },
     });
 
     if (!existingPortal) {
@@ -382,7 +382,7 @@ export async function DELETE(
     // Delete files from cloud storage if requested
     if (deleteFromStorage) {
       const portalFiles = await prisma.file.findMany({
-        where: { portalId: id },
+        where: { portalId: existingPortal.id },
         select: { id: true, name: true, storageUrl: true, storageFileId: true },
       });
       const provider = existingPortal.storageProvider;

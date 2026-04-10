@@ -28,10 +28,12 @@ export async function GET(
       );
     }
 
-    // Verify portal belongs to user
-    const portal = await prisma.portal.findUnique({
-      where: { id: portalId },
-      select: { userId: true },
+    // Verify portal belongs to user (supports UUID and slug)
+    const portal = await prisma.portal.findFirst({
+      where: {
+        OR: [{ id: portalId }, { slug: portalId }],
+      },
+      select: { id: true, userId: true },
     });
 
     if (!portal || portal.userId !== session.user.id) {
@@ -43,7 +45,7 @@ export async function GET(
 
     // Fetch all upload sessions with file count and total size
     const uploadSessions = await prisma.uploadSession.findMany({
-      where: { portalId },
+      where: { portalId: portal.id },
       include: {
         files: {
           select: {
