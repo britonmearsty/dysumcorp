@@ -31,7 +31,7 @@ const nextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.vercel.app https://*.googleapis.com https://*.dropboxapi.com;",
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://cdn.fontshare.com; connect-src 'self' https://*.vercel.app https://*.googleapis.com https://*.dropboxapi.com;",
           },
           // Referrer policy - don't leak referrer to external sites
           {
