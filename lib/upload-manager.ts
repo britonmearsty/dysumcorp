@@ -592,28 +592,13 @@ export async function uploadFiles(
   const successfulFiles: Array<{ name: string; size: number }> = [];
 
   // Collect poll promises so we can await them all at the end without
-  // holding a concurrency slot during the worker-transfer phase.
-  const pollPromises: Promise<void>[] = [];
-
+  // don't block UI waiting for worker
   const tasks = sortedEntries.map(({ file, originalIndex }) => async () => {
     const i = originalIndex;
 
     console.log(
       `[uploadFiles] ${ts()} starting "${file.name}" ${(file.size / 1024 / 1024).toFixed(2)} MB (original index ${i})`,
     );
-
-    const onPollResult = (result: UploadResult) => {
-      results[i] = result;
-      if (result.success) {
-        successfulFiles.push({ name: file.name, size: file.size });
-        console.log(`[uploadFiles] ${ts()} ✓ done: "${file.name}"`);
-      } else {
-        console.error(
-          `[uploadFiles] ${ts()} ❌ failed: "${file.name}" — ${result.error}`,
-        );
-      }
-      options.onFileComplete?.(i, result);
-    };
 
     // Pass cached presign data for the first file (originalIndex 0) to avoid re-presigning
     const cachedPresignData =
@@ -634,19 +619,39 @@ export async function uploadFiles(
         : options.onProgress,
     });
 
-    if (!r2Result.pollContext) {
-      onPollResult({ success: false, error: r2Result.error, method: "r2" });
+    // Complete immediately after R2 upload hits 100% - don't wait for worker transfer
+    if (r2Result.pollContext) {
+      results[i] = { success: true, method: "r2" };
+      successfulFiles.push({ name: file.name, size: file.size });
+      console.log(
+        `[uploadFiles] ${ts()} ✓ R2 done: "${file.name}" (worker runs async)`,
+      );
 
+      // Fire worker transfer in background - don't block UI
+      runPoll(r2Result.pollContext, (pollResult) => {
+        console.log(
+          `[uploadFiles] ${ts()} worker transfer: "${file.name}" → ${pollResult.success ? "ok" : pollResult.error}`,
+        );
+      }).catch(() => {});
+
+      // Trigger file complete callback immediately
+      options.onFileComplete?.(i, { success: true, method: "r2" });
       return;
     }
 
-    const pollPromise = runPoll(r2Result.pollContext, onPollResult);
-
-    pollPromises.push(pollPromise);
+    // Only reaches here if R2 upload actually failed
+    results[i] = { success: false, error: r2Result.error, method: "r2" };
+    console.error(
+      `[uploadFiles] ${ts()} ❌ R2 failed: "${file.name}" — ${r2Result.error}`,
+    );
+    options.onFileComplete?.(i, {
+      success: false,
+      error: r2Result.error,
+      method: "r2",
+    });
   });
 
   await pLimit(tasks, concurrency);
-  await Promise.all(pollPromises);
 
   console.log(
     `[uploadFiles] ${ts()} BATCH COMPLETE: ${successfulFiles.length}/${files.length} succeeded`,
