@@ -54,14 +54,24 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
     return { allowed: true, reason: "trialing" };
   }
 
-  // Expired subscription - no access
+  // Expired subscription - check if it's a trial that hasn't ended yet
   if (plan === "expired" || status === "expired") {
-    return { allowed: false, reason: "expired" };
-  }
+    // Check user's trial period - if within 7 days, allow access
+    const expiredUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { trialStartedAt: true },
+    });
 
-  // Cancelled but still has access until period end
-  if (status === "cancelled") {
-    // Check if still within the billing period by checking creem_subscription
+    if (expiredUser?.trialStartedAt) {
+      const trialEnd = new Date(expiredUser.trialStartedAt);
+      trialEnd.setDate(trialEnd.getDate() + 7); // 7-day trial
+
+      if (trialEnd > new Date()) {
+        return { allowed: true, reason: "trialing" };
+      }
+    }
+
+    // Also check creem_subscription periodEnd
     const subscription = await prisma.creem_subscription.findFirst({
       where: { referenceId: userId },
       select: { periodEnd: true },
@@ -71,10 +81,15 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
       subscription?.periodEnd &&
       new Date(subscription.periodEnd) > new Date()
     ) {
-      // Still within period - allow access
       return { allowed: true, reason: "active_subscription" };
     }
 
+    // Truly expired - no access
+    return { allowed: false, reason: "expired" };
+  }
+
+  // Cancelled - always block immediately (don't wait for trial period to end)
+  if (status === "cancelled") {
     // Period has passed - no access
     return { allowed: false, reason: "expired" };
   }
