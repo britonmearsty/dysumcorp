@@ -54,8 +54,28 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
     return { allowed: true, reason: "trialing" };
   }
 
-  // Expired subscription
-  if (status === "cancelled" || plan === "expired") {
+  // Expired subscription - no access
+  if (plan === "expired" || status === "expired") {
+    return { allowed: false, reason: "expired" };
+  }
+
+  // Cancelled but still has access until period end
+  if (status === "cancelled") {
+    // Check if still within the billing period by checking creem_subscription
+    const subscription = await prisma.creem_subscription.findFirst({
+      where: { referenceId: userId },
+      select: { periodEnd: true },
+    });
+
+    if (
+      subscription?.periodEnd &&
+      new Date(subscription.periodEnd) > new Date()
+    ) {
+      // Still within period - allow access
+      return { allowed: true, reason: "active_subscription" };
+    }
+
+    // Period has passed - no access
     return { allowed: false, reason: "expired" };
   }
 
