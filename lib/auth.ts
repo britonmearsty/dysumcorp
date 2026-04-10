@@ -291,6 +291,64 @@ export const auth = betterAuth({
           console.error("Error in onRevokeAccess:", error);
         }
       },
+      onSubscriptionCanceled: async (data: any) => {
+        console.log("[Creem] Subscription canceled:", data);
+        try {
+          const customer = data.customer;
+          if (customer?.email) {
+            const user = await prisma.user.findFirst({
+              where: { email: customer.email },
+              select: { id: true },
+            });
+
+            if (user) {
+              await prisma.portal.updateMany({
+                where: { userId: user.id },
+                data: { isActive: false },
+              });
+            }
+
+            await prisma.user.updateMany({
+              where: { email: customer.email },
+              data: {
+                subscriptionPlan: "expired",
+                subscriptionStatus: "cancelled",
+              },
+            });
+          }
+        } catch (error) {
+          console.error("Error in onSubscriptionCanceled:", error);
+        }
+      },
+      onSubscriptionExpired: async (data: any) => {
+        console.log("[Creem] Subscription expired:", data);
+        try {
+          const customer = data.customer;
+          if (customer?.email) {
+            const user = await prisma.user.findFirst({
+              where: { email: customer.email },
+              select: { id: true },
+            });
+
+            if (user) {
+              await prisma.portal.updateMany({
+                where: { userId: user.id },
+                data: { isActive: false },
+              });
+            }
+
+            await prisma.user.updateMany({
+              where: { email: customer.email },
+              data: {
+                subscriptionPlan: "expired",
+                subscriptionStatus: "expired",
+              },
+            });
+          }
+        } catch (error) {
+          console.error("Error in onSubscriptionExpired:", error);
+        }
+      },
     }),
   ].filter(Boolean),
 });
