@@ -25,7 +25,7 @@ export interface Env {
 // Single constant used for both Google Drive and Dropbox.
 // Google: must be a multiple of 256 KB. 150 MB = 157,286,400 bytes ✓
 // Larger chunks = fewer round trips = faster for server-to-server transfer
-const CHUNK_SIZE = 150 * 1024 * 1024; // 150 MB
+const CHUNK_SIZE = 130 * 1024 * 1024; // 130 MB
 
 // ── Queue threshold ─────────────────────────────────────────────────────────────
 // Files larger than this use the queue-based chunked processing.
