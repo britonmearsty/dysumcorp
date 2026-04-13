@@ -44,7 +44,7 @@ export default function BlogPostPage() {
             process for new clients.
           </p>
 
-          <div className="prose prose-lg prose-stone max-w-none">
+          <div className="prose prose-lg prose-stone max-w-none text-stone-800">
             <h2 className="serif-font">The Onboarding Bottleneck</h2>
             <p>
               Client onboarding is often the most time-consuming part of your
