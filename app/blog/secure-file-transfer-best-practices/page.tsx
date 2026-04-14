@@ -44,7 +44,7 @@ export default function BlogPostPage() {
             transfer protocols and encryption standards.
           </p>
 
-          <div className="prose prose-lg prose-stone max-w-none">
+          <div className="prose prose-lg prose-stone max-w-none text-stone-800">
             <h2 className="serif-font">Why Secure File Transfer Matters</h2>
             <p>
               In an era where data breaches make headlines almost daily, the way

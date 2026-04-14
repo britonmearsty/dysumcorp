@@ -923,9 +923,9 @@ export default function SettingsPage() {
                                   Send your request to{" "}
                                   <a
                                     className="text-primary hover:underline font-medium"
-                                    href="mailto:support@trackage.io"
+                                    href="mailto:support@dysumcorp.pro"
                                   >
-                                    support@trackage.io
+                                    support@dysumcorp.pro
                                   </a>
                                 </p>
                               </div>

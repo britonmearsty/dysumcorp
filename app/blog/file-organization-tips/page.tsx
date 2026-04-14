@@ -44,7 +44,7 @@ export default function BlogPostPage() {
             naming and folder structure strategies.
           </p>
 
-          <div className="prose prose-lg prose-stone max-w-none">
+          <div className="prose prose-lg prose-stone max-w-none text-stone-800">
             <h2 className="serif-font">Why Organization Matters</h2>
             <p>
               Every minute spent searching for a file is a minute not spent on

@@ -21,7 +21,7 @@ bucket_name = "dysumcorp-uploads"
 
 # Public vars (non-secret)
 [vars]
-VERCEL_APP_URL = "https://dysumcorppro.vercel.app"
+VERCEL_APP_URL = "https://dysumcorp.pro"
 
 # ── Secrets (never put real values here) ──────────────────────────────────────
 # Set each secret once via CLI:

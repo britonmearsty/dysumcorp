@@ -44,7 +44,7 @@ export default function BlogPostPage() {
             how to set up a simple system that makes file collection effortless.
           </p>
 
-          <div className="prose prose-lg prose-stone max-w-none">
+          <div className="prose prose-lg prose-stone max-w-none text-stone-800">
             <h2 className="serif-font">
               The Problem with Email File Collection
             </h2>

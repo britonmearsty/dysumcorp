@@ -44,7 +44,7 @@ export default function BlogPostPage() {
             for your file collection workflow.
           </p>
 
-          <div className="prose prose-lg prose-stone max-w-none">
+          <div className="prose prose-lg prose-stone max-w-none text-stone-800">
             <h2 className="serif-font">The Cloud Storage Dilemma</h2>
             <p>
               When setting up your file collection system, one of the most

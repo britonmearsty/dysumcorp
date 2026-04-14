@@ -40,11 +40,7 @@ export function SubscriptionManager({ currentPlan }: SubscriptionManagerProps) {
           billing period.
         </p>
         <div className="grid gap-3">
-          <CustomerPortalButton
-            color="secondary"
-            label="Manage Subscription"
-            variant="flat"
-          />
+          <CustomerPortalButton label="Manage Subscription" variant="ghost" />
         </div>
       </CardBody>
     </Card>
