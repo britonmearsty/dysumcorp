@@ -84,12 +84,43 @@ export default function BillingPage() {
 
     if (success) {
       setShowSuccess(true);
-      refetch();
-      const timer = setTimeout(() => {
-        setShowSuccess(false);
-        router.replace("/dashboard/billing");
-      }, 3000);
 
+      // Poll until the webhook has updated the DB and session reflects the new state.
+      // Creem webhooks typically arrive within 1-3 seconds of redirect.
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      const poll = async () => {
+        attempts++;
+        await refetch();
+
+        // Also refresh access state
+        try {
+          const res = await fetch("/api/access");
+          if (res.ok) {
+            const data = await res.json();
+            setAccess(data);
+
+            // If access is now granted (trialing or active), we're done
+            if (data.allowed) {
+              router.replace("/dashboard/billing");
+              return;
+            }
+          }
+        } catch {}
+
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 1500);
+        } else {
+          // Webhook took too long — just clear the param and show whatever state we have
+          router.replace("/dashboard/billing");
+        }
+      };
+
+      // Start polling after a short initial delay to give the webhook time to arrive
+      setTimeout(poll, 1500);
+
+      const timer = setTimeout(() => setShowSuccess(false), 18000);
       return () => clearTimeout(timer);
     }
 
@@ -147,7 +178,7 @@ export default function BillingPage() {
         <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-4 sm:px-6 py-3 sm:py-4 rounded-xl mb-4 sm:mb-6">
           <p className="font-bold text-sm sm:text-base">Payment successful!</p>
           <p className="text-xs sm:text-sm mt-0.5 sm:mt-1">
-            Your subscription has been activated.
+            Activating your subscription — this may take a few seconds.
           </p>
         </div>
       )}
