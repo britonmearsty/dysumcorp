@@ -2,7 +2,7 @@
 
 import { ArrowRight, RefreshCw } from "lucide-react";
 
-import { FadeIn, Stagger, StaggerItem } from "./animations";
+import { FadeIn } from "./animations";
 
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
@@ -50,58 +50,20 @@ export default function HeroSection() {
           </div>
         </FadeIn>
 
-        {/* Stats Card */}
+        {/* Cloud Storage indicator */}
         <FadeIn delay={0.55}>
-          <div className="max-w-5xl mx-auto glass-surface rounded-2xl sm:rounded-3xl p-6 sm:p-10 premium-shadow">
-            <Stagger
-              className="flex flex-col sm:flex-row flex-wrap items-center justify-center lg:justify-between gap-6 sm:gap-8 lg:gap-10"
-              delay={0.1}
-            >
-              <StaggerItem>
-                <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
-                  <span className="text-xs text-stone-500 font-bold uppercase tracking-[0.2em] mb-2">
-                    Active portals
-                  </span>
-                  <span className="text-4xl sm:text-5xl font-bold serif-font text-[#1c1917]">
-                    12
-                  </span>
-                </div>
-              </StaggerItem>
-              <StaggerItem direction="none">
-                <div className="h-px w-16 sm:h-16 sm:w-px bg-stone-200" />
-              </StaggerItem>
-              <StaggerItem>
-                <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
-                  <span className="text-xs text-stone-500 font-bold uppercase tracking-[0.2em] mb-2">
-                    Documents received
-                  </span>
-                  <span className="text-4xl sm:text-5xl font-bold serif-font text-[#1c1917]">
-                    247{" "}
-                    <span className="text-lg sm:text-xl font-normal text-stone-500">
-                      files
-                    </span>
-                  </span>
-                </div>
-              </StaggerItem>
-              <StaggerItem direction="none">
-                <div className="h-px w-16 sm:h-16 sm:w-px bg-stone-200" />
-              </StaggerItem>
-              <StaggerItem>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-stone-100 text-stone-900 rounded-full flex items-center justify-center">
-                    <RefreshCw className="text-xl sm:text-2xl" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-bold tracking-tight text-[#1c1917]">
-                      Cloud Storage
-                    </p>
-                    <p className="text-[10px] text-stone-500 font-bold uppercase tracking-widest">
-                      Auto-sync Enabled
-                    </p>
-                  </div>
-                </div>
-              </StaggerItem>
-            </Stagger>
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-10 h-10 bg-stone-100 text-stone-900 rounded-full flex items-center justify-center">
+              <RefreshCw className="w-4 h-4" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-bold tracking-tight text-[#1c1917]">
+                Cloud Storage
+              </p>
+              <p className="text-[10px] text-stone-500 font-bold uppercase tracking-widest">
+                Auto-sync Enabled
+              </p>
+            </div>
           </div>
         </FadeIn>
       </div>
