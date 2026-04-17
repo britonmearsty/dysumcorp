@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { Button } from "@heroui/button";
 
-import { authClient } from "@/lib/auth-client";
+import { useToast } from "@/lib/toast";
 
 interface BillingButtonProps {
-  productId: string;
+  planId?: string;
+  billingCycle?: "monthly" | "annual";
   label?: string;
   variant?:
     | "solid"
@@ -23,41 +24,41 @@ interface BillingButtonProps {
     | "success"
     | "warning"
     | "danger";
-  discountCode?: string;
-  metadata?: Record<string, any>;
 }
 
 export function BillingButton({
-  productId,
+  planId = "pro",
+  billingCycle = "monthly",
   label = "Subscribe Now",
   variant = "solid",
   color = "primary",
-  discountCode,
-  metadata,
 }: BillingButtonProps) {
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
   const handleCheckout = async () => {
     setLoading(true);
     try {
-      const { data, error } = await authClient.creem.createCheckout({
-        productId,
-        successUrl: "/dashboard",
-        discountCode,
-        metadata,
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId, billingCycle }),
       });
 
-      if (error) {
-        console.error("Checkout error:", error);
+      const data = await response.json();
+
+      if (!response.ok) {
+        showToast(data.error || "Failed to start checkout", "error");
 
         return;
       }
 
-      if (data && "url" in data && data.url) {
-        window.location.href = data.url;
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
       }
     } catch (err) {
       console.error("Failed to create checkout:", err);
+      showToast("Failed to start checkout process", "error");
     } finally {
       setLoading(false);
     }

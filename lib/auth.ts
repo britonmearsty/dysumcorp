@@ -186,62 +186,78 @@ export const auth = betterAuth({
     creem({
       apiKey: process.env.CREEM_API_KEY || "",
       webhookSecret: process.env.CREEM_WEBHOOK_SECRET,
-      testMode: process.env.NODE_ENV === "development",
+      testMode: process.env.NODE_ENV === "development" || process.env.CREEM_API_KEY?.startsWith("creem_test_"),
       defaultSuccessUrl: "/dashboard/billing?success=true",
       persistSubscriptions: true,
-      onGrantAccess: async ({ customer, metadata, reason }) => {
+      onGrantAccess: async ({ customer, metadata, reason, id, current_period_end_date, product }) => {
         try {
-          const planId = metadata?.planId as string | undefined;
-          const billingCycle = metadata?.billingCycle as string | undefined;
-          const userId = metadata?.userId as string | undefined;
-          const productId = metadata?.productId as string | undefined;
+          // Creem auto-sets metadata.referenceId to the authenticated user's ID
+          const userId = (metadata?.referenceId ?? metadata?.userId) as string | undefined;
+          const productId = (metadata?.productId ?? (typeof product === "object" ? product?.id : undefined)) as string | undefined;
 
           if (!customer?.email) {
             return;
           }
 
-          // trialing = card on file, within trial period
-          // active / paid = fully charged subscriber
           const newStatus =
             reason === "subscription_trialing" ? "trialing" : "active";
 
-          await prisma.user.updateMany({
-            where: { email: customer.email },
-            data: {
-              subscriptionPlan: "pro",
-              subscriptionStatus: newStatus,
-              creemCustomerId: customer.id,
-              // Record when trial started (first time only)
-              ...(newStatus === "trialing"
-                ? { trialStartedAt: new Date() }
-                : {}),
-            },
-          });
-
+          // Use userId from referenceId for precise update; fall back to email
           if (userId) {
-            const periodEnd =
-              billingCycle === "annual"
-                ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            await prisma.user.update({
+              where: { id: userId },
+              data: {
+                subscriptionPlan: "pro",
+                subscriptionStatus: newStatus,
+                creemCustomerId: customer.id,
+                // Mark trial as used when trialing starts
+                ...(newStatus === "trialing" ? { hadTrial: true, trialStartedAt: new Date() } : {}),
+              },
+            });
+          } else {
+            await prisma.user.updateMany({
+              where: { email: customer.email },
+              data: {
+                subscriptionPlan: "pro",
+                subscriptionStatus: newStatus,
+                creemCustomerId: customer.id,
+                ...(newStatus === "trialing" ? { hadTrial: true, trialStartedAt: new Date() } : {}),
+              },
+            });
+          }
+
+          // Use the actual subscription ID (id) and Creem's real period end date
+          const resolvedUserId = userId ?? (await prisma.user.findFirst({
+            where: { email: customer.email },
+            select: { id: true },
+          }))?.id;
+
+          if (resolvedUserId) {
+            // Use Creem's actual period end date — never calculate it ourselves
+            const periodEnd = current_period_end_date
+              ? new Date(current_period_end_date)
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // fallback only
 
             await prisma.creem_subscription.upsert({
-              where: { id: customer.id },
+              where: { id: id ?? customer.id },
               create: {
-                id: customer.id,
+                id: id ?? customer.id,
                 productId: productId || "",
-                referenceId: userId,
+                referenceId: resolvedUserId,
                 creemCustomerId: customer.id,
-                creemSubscriptionId: customer.id,
+                creemSubscriptionId: id ?? customer.id,
                 status: newStatus,
                 periodStart: new Date(),
-                periodEnd: periodEnd,
+                periodEnd,
                 cancelAtPeriodEnd: false,
               },
               update: {
                 status: newStatus,
                 periodStart: new Date(),
-                periodEnd: periodEnd,
+                periodEnd,
                 cancelAtPeriodEnd: false,
+                referenceId: resolvedUserId,
+                creemCustomerId: customer.id,
               },
             });
           }
