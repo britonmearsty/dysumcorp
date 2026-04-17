@@ -24,16 +24,7 @@ export async function POST(request: Request) {
     });
 
     if (!user?.creemCustomerId) {
-      if (user?.subscriptionStatus === "trialing") {
-        return NextResponse.json(
-          {
-            error:
-              "You're currently on your 7-day free trial. Your billing portal will be available after the trial ends. Contact support if you need assistance.",
-            code: "TRIALING",
-          },
-          { status: 400 },
-        );
-      }
+      // New user with no subscription at all
       if (user?.subscriptionPlan === "trial") {
         return NextResponse.json(
           {

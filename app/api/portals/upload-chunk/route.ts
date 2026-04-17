@@ -18,6 +18,7 @@ import {
   UploadSession,
 } from "@/lib/upload-sessions";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
+import { checkAccess } from "@/lib/trial";
 
 function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
   const allowedMimeTypes = new Set<string>();
@@ -222,7 +223,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
-    // Parse portal's allowed file types
+    // Check portal owner's subscription access on first chunk
+    if (chunkIndex === 0) {
+      const access = await checkAccess(portal.userId);
+
+      if (!access.allowed) {
+        return NextResponse.json(
+          {
+            error: "This portal is not currently accepting uploads",
+            code: "PORTAL_UNAVAILABLE",
+          },
+          { status: 402 },
+        );
+      }
+    }
     const allowedMimeTypes = parseAllowedFileTypes(
       portal.allowedFileTypes || [],
     );

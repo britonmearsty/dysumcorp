@@ -43,6 +43,7 @@ export default function BillingPage() {
   const [showCanceled, setShowCanceled] = useState(false);
   const [access, setAccess] = useState<AccessResult | null>(null);
   const currentPlan = (session?.user as any)?.subscriptionPlan || "trial";
+  const currentStatus = (session?.user as any)?.subscriptionStatus || "trialing";
   const { showToast } = useToast();
 
   const tabs = [
@@ -226,7 +227,7 @@ export default function BillingPage() {
                   {/* Overview Tab */}
                   {activeTab === "overview" && (
                     <div className="space-y-6">
-                      {/* Trial status banner */}
+                      {/* Trialing — card on file, within 7-day trial */}
                       {access?.reason === "trialing" && (
                         <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl px-4 py-3">
                           <Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
@@ -235,20 +236,38 @@ export default function BillingPage() {
                               7-Day Free Trial Active
                             </p>
                             <p className="text-xs text-indigo-600 dark:text-indigo-400">
-                              Your card will be charged at the end of your 7-day
-                              trial. Cancel anytime before then.
+                              Your card will be charged at the end of your
+                              7-day trial. Cancel anytime before then.
                             </p>
                           </div>
                         </div>
                       )}
 
-                      {/* Active subscriber status */}
-                      {access?.reason === "active_subscription" && (
-                        <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3">
-                          <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                          <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
-                            Pro plan active
-                          </p>
+                      {/* Active paid subscriber */}
+                      {access?.reason === "active_subscription" &&
+                        currentStatus !== "scheduled_cancel" && (
+                          <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3">
+                            <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                              Pro plan active
+                            </p>
+                          </div>
+                        )}
+
+                      {/* Scheduled cancel — still has access until period end */}
+                      {currentStatus === "scheduled_cancel" && (
+                        <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3">
+                          <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                          <div>
+                            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                              Subscription cancelling
+                            </p>
+                            <p className="text-xs text-amber-600 dark:text-amber-400">
+                              You have full access until your billing period
+                              ends. You can resume your subscription anytime
+                              before then.
+                            </p>
+                          </div>
                         </div>
                       )}
 
@@ -256,6 +275,7 @@ export default function BillingPage() {
                         <SubscriptionStatus />
                         <SubscriptionManager
                           currentPlan={currentPlan}
+                          currentStatus={currentStatus}
                           onSubscriptionChanged={() => refetch()}
                         />
                       </div>
@@ -306,6 +326,7 @@ export default function BillingPage() {
                         <PricingCard
                           billingCycle={billingCycle}
                           currentPlan={currentPlan}
+                          currentStatus={currentStatus}
                           plan={PRICING_PLANS.pro}
                           onSubscribe={handleSubscribe}
                         />

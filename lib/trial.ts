@@ -13,10 +13,15 @@ export interface AccessResult {
  * that Creem webhooks write into our DB via onGrantAccess / onRevokeAccess.
  *
  * Allowed states:
- *   - pro + active    → paid subscriber
- *   - pro + trialing  → card on file, within 7-day trial (Creem will charge on day 7)
- *   - deleted + pro + active/trialing → allow access (subscription still valid in Creem)
- *   - anything else   → no access, need to subscribe
+ *   - pro + active              → paid subscriber, full access
+ *   - pro + trialing            → card on file, within 7-day trial (Creem will charge on day 7)
+ *   - pro + scheduled_cancel    → paid subscriber who cancelled at period end; access until periodEnd
+ *   - deleted + pro + active/trialing/scheduled_cancel → subscription still valid in Creem
+ *
+ * Blocked states:
+ *   - trial + trialing (new user, no card) → no subscription yet
+ *   - expired + cancelled       → trial was cancelled, or subscription fully ended
+ *   - expired + expired         → subscription period ended without renewal
  */
 export async function checkAccess(userId: string): Promise<AccessResult> {
   const user = await prisma.user.findUnique({
@@ -37,10 +42,12 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
 
   // Deleted users with active subscription can still access (subscription valid in Creem)
   if (user.status === "deleted") {
-    if (plan === "pro" && (status === "active" || status === "trialing")) {
+    if (
+      plan === "pro" &&
+      (status === "active" || status === "trialing" || status === "scheduled_cancel")
+    ) {
       return { allowed: true, reason: "active_subscription" };
     }
-
     return { allowed: false, reason: "no_subscription" };
   }
 
@@ -49,29 +56,13 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
     return { allowed: true, reason: "active_subscription" };
   }
 
-  // Pro trial - 7-day free trial before billing
+  // Pro trial - card on file, within 7-day trial (Creem will charge on day 7)
   if (plan === "pro" && status === "trialing") {
     return { allowed: true, reason: "trialing" };
   }
 
-  // Expired subscription - check if it's a trial that hasn't ended yet
-  if (plan === "expired" || status === "expired") {
-    // Check user's trial period - if within 7 days, allow access
-    const expiredUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { trialStartedAt: true },
-    });
-
-    if (expiredUser?.trialStartedAt) {
-      const trialEnd = new Date(expiredUser.trialStartedAt);
-      trialEnd.setDate(trialEnd.getDate() + 7); // 7-day trial
-
-      if (trialEnd > new Date()) {
-        return { allowed: true, reason: "trialing" };
-      }
-    }
-
-    // Also check creem_subscription periodEnd
+  // Scheduled cancel - paid subscriber cancelled at period end; access continues until periodEnd
+  if (plan === "pro" && status === "scheduled_cancel") {
     const subscription = await prisma.creem_subscription.findFirst({
       where: { referenceId: userId },
       select: { periodEnd: true },
@@ -84,16 +75,20 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
       return { allowed: true, reason: "active_subscription" };
     }
 
-    // Truly expired - no access
+    // Period has ended — treat as expired
     return { allowed: false, reason: "expired" };
   }
 
-  // Cancelled - always block immediately (don't wait for trial period to end)
+  // Cancelled (trial cancelled or immediate cancel) — block immediately
   if (status === "cancelled") {
-    // Period has passed - no access
     return { allowed: false, reason: "expired" };
   }
 
-  // No subscription - need to subscribe
+  // Expired subscription period ended without renewal
+  if (plan === "expired" || status === "expired") {
+    return { allowed: false, reason: "expired" };
+  }
+
+  // New user with no subscription (plan="trial", status="trialing")
   return { allowed: false, reason: "no_subscription" };
 }

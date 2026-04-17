@@ -172,14 +172,13 @@ export async function getUserPlanType(userId: string): Promise<PlanType> {
 
   // If user is deleted but has active subscription, show as pro
   if (user.status === "deleted") {
-    if (plan === "pro" && (status === "active" || status === "trialing")) {
+    if (plan === "pro" && (status === "active" || status === "trialing" || status === "scheduled_cancel")) {
       return "pro";
     }
-
     return "expired";
   }
 
-  if (plan === "pro" && (status === "active" || status === "trialing")) {
+  if (plan === "pro" && (status === "active" || status === "trialing" || status === "scheduled_cancel")) {
     return "pro";
   }
 

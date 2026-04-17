@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { checkAccess } from "@/lib/trial";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,16 +23,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing portalId" }, { status: 400 });
     }
 
-    // Verify portal exists
+    // Verify portal exists and is active
     const portal = await prisma.portal.findUnique({
       where: { id: portalId },
-      select: { id: true },
+      select: { id: true, isActive: true, userId: true },
     });
 
     if (!portal) {
       console.log("[Create Upload Session] Portal not found:", portalId);
 
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
+    }
+
+    if (!portal.isActive) {
+      return NextResponse.json(
+        { error: "This portal is not accepting uploads" },
+        { status: 403 },
+      );
+    }
+
+    // Check portal owner's subscription access
+    const access = await checkAccess(portal.userId);
+
+    if (!access.allowed) {
+      return NextResponse.json(
+        {
+          error: "This portal is not currently accepting uploads",
+          code: "PORTAL_UNAVAILABLE",
+        },
+        { status: 402 },
+      );
     }
 
     // Create new upload session
