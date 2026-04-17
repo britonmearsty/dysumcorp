@@ -62,14 +62,35 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fetch the user's existing Creem customer ID and trial history
+    // Fetch the user's existing Creem customer ID and subscription history
     const dbUser = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { creemCustomerId: true, hadTrial: true },
+      select: {
+        creemCustomerId: true,
+        hadTrial: true,
+        subscriptionPlan: true,
+        subscriptionStatus: true,
+        trialStartedAt: true,
+      },
     });
 
     const isTestKey = process.env.CREEM_API_KEY?.startsWith("creem_test_");
     const useTestMode = process.env.NODE_ENV === "development" || !!isTestKey;
+
+    // Skip trial if any of these are true:
+    // - hadTrial flag is set (set going forward by onGrantAccess)
+    // - user previously had a pro subscription (expired/cancelled = they already subscribed)
+    // - user has a trialStartedAt date (they already used a trial)
+    const hadPreviousSubscription =
+      dbUser?.subscriptionPlan === "expired" ||
+      dbUser?.subscriptionStatus === "cancelled" ||
+      dbUser?.subscriptionStatus === "expired" ||
+      dbUser?.subscriptionStatus === "scheduled_cancel";
+
+    const shouldSkipTrial =
+      !!dbUser?.hadTrial ||
+      !!dbUser?.trialStartedAt ||
+      hadPreviousSubscription;
 
     const result = await createCheckout(
       { apiKey: process.env.CREEM_API_KEY!, testMode: useTestMode },
@@ -82,8 +103,8 @@ export async function POST(request: Request) {
         customer: dbUser?.creemCustomerId
           ? { id: dbUser.creemCustomerId }
           : { email: session.user.email! },
-        // Tell Creem to skip the trial if this user has already had one
-        skipTrial: !!dbUser?.hadTrial,
+        // Skip trial for any user who has previously subscribed or used a trial
+        skipTrial: shouldSkipTrial,
         metadata: {
           planId,
           billingCycle,
