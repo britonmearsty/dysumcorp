@@ -40,18 +40,12 @@ export default function HeroSection() {
         </FadeIn>
 
         <FadeIn delay={0.4}>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-12 sm:mb-24">
+          <div className="flex items-center justify-center mb-12 sm:mb-24">
             <Button
               className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-[#1c1917] text-stone-50 rounded-xl font-bold text-base sm:text-lg hover:bg-stone-800 transition-all flex items-center justify-center gap-3 premium-shadow"
               onClick={handleGetStarted}
             >
               Start collecting <ArrowRight className="w-5 h-5" />
-            </Button>
-            <Button
-              className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-white border border-stone-200 text-stone-900 rounded-xl font-bold text-base sm:text-lg hover:bg-stone-50 transition-colors"
-              variant="outline"
-            >
-              View live demo
             </Button>
           </div>
         </FadeIn>

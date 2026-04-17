@@ -8,6 +8,7 @@ import {
   findOrCreateClientFolder,
 } from "@/lib/storage-api";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
+import { checkAccess } from "@/lib/trial";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -66,7 +67,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the portal owner's storage token
+    // Check portal owner's subscription access
+    const access = await checkAccess(portal.userId);
+
+    if (!access.allowed) {
+      return NextResponse.json(
+        {
+          error: "This portal is not currently accepting uploads",
+          code: "PORTAL_UNAVAILABLE",
+        },
+        { status: 402 },
+      );
+    }
     const storageProvider =
       provider || (portal.storageProvider === "dropbox" ? "dropbox" : "google");
     const accessToken = await getValidToken(portal.userId, storageProvider);

@@ -186,74 +186,78 @@ export const auth = betterAuth({
     creem({
       apiKey: process.env.CREEM_API_KEY || "",
       webhookSecret: process.env.CREEM_WEBHOOK_SECRET,
-      testMode: process.env.NODE_ENV === "development",
+      testMode: process.env.NODE_ENV === "development" || process.env.CREEM_API_KEY?.startsWith("creem_test_"),
       defaultSuccessUrl: "/dashboard/billing?success=true",
       persistSubscriptions: true,
-      onCheckoutCompleted: async ({ customer }) => {
+      onGrantAccess: async ({ customer, metadata, reason, id, current_period_end_date, product }) => {
         try {
-          if (customer?.email) {
-            await prisma.user.updateMany({
-              where: { email: customer.email },
-              data: { subscriptionStatus: "active" },
-            });
-          }
-        } catch (error) {
-          console.error("Error in onCheckoutCompleted:", error);
-        }
-      },
-      onGrantAccess: async ({ customer, metadata, reason }) => {
-        try {
-          const planId = metadata?.planId as string | undefined;
-          const billingCycle = metadata?.billingCycle as string | undefined;
-          const userId = metadata?.userId as string | undefined;
-          const productId = metadata?.productId as string | undefined;
+          // Creem auto-sets metadata.referenceId to the authenticated user's ID
+          const userId = (metadata?.referenceId ?? metadata?.userId) as string | undefined;
+          const productId = (metadata?.productId ?? (typeof product === "object" ? product?.id : undefined)) as string | undefined;
 
           if (!customer?.email) {
             return;
           }
 
-          // trialing = card on file, within trial period
-          // active / paid = fully charged subscriber
           const newStatus =
             reason === "subscription_trialing" ? "trialing" : "active";
 
-          await prisma.user.updateMany({
-            where: { email: customer.email },
-            data: {
-              subscriptionPlan: "pro",
-              subscriptionStatus: newStatus,
-              creemCustomerId: customer.id,
-              // Record when trial started (first time only)
-              ...(newStatus === "trialing"
-                ? { trialStartedAt: new Date() }
-                : {}),
-            },
-          });
-
+          // Use userId from referenceId for precise update; fall back to email
           if (userId) {
-            const periodEnd =
-              billingCycle === "annual"
-                ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            await prisma.user.update({
+              where: { id: userId },
+              data: {
+                subscriptionPlan: "pro",
+                subscriptionStatus: newStatus,
+                creemCustomerId: customer.id,
+                // Mark trial as used when trialing starts
+                ...(newStatus === "trialing" ? { hadTrial: true, trialStartedAt: new Date() } : {}),
+              },
+            });
+          } else {
+            await prisma.user.updateMany({
+              where: { email: customer.email },
+              data: {
+                subscriptionPlan: "pro",
+                subscriptionStatus: newStatus,
+                creemCustomerId: customer.id,
+                ...(newStatus === "trialing" ? { hadTrial: true, trialStartedAt: new Date() } : {}),
+              },
+            });
+          }
+
+          // Use the actual subscription ID (id) and Creem's real period end date
+          const resolvedUserId = userId ?? (await prisma.user.findFirst({
+            where: { email: customer.email },
+            select: { id: true },
+          }))?.id;
+
+          if (resolvedUserId) {
+            // Use Creem's actual period end date — never calculate it ourselves
+            const periodEnd = current_period_end_date
+              ? new Date(current_period_end_date)
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // fallback only
 
             await prisma.creem_subscription.upsert({
-              where: { id: customer.id },
+              where: { id: id ?? customer.id },
               create: {
-                id: customer.id,
+                id: id ?? customer.id,
                 productId: productId || "",
-                referenceId: userId,
+                referenceId: resolvedUserId,
                 creemCustomerId: customer.id,
-                creemSubscriptionId: customer.id,
+                creemSubscriptionId: id ?? customer.id,
                 status: newStatus,
                 periodStart: new Date(),
-                periodEnd: periodEnd,
+                periodEnd,
                 cancelAtPeriodEnd: false,
               },
               update: {
                 status: newStatus,
                 periodStart: new Date(),
-                periodEnd: periodEnd,
+                periodEnd,
                 cancelAtPeriodEnd: false,
+                referenceId: resolvedUserId,
+                creemCustomerId: customer.id,
               },
             });
           }
@@ -262,23 +266,24 @@ export const auth = betterAuth({
         }
       },
       onRevokeAccess: async ({ customer }) => {
+        // Fired when access is fully revoked:
+        //   - trial cancelled (immediate revoke)
+        //   - subscription expired without renewal
+        //   - payment failed after all retries
         try {
           if (customer?.email) {
-            // Find the user first
             const user = await prisma.user.findFirst({
               where: { email: customer.email },
               select: { id: true },
             });
 
             if (user) {
-              // Deactivate all their portals
               await prisma.portal.updateMany({
                 where: { userId: user.id },
                 data: { isActive: false },
               });
             }
 
-            // Set to expired rather than reverting to free
             await prisma.user.updateMany({
               where: { email: customer.email },
               data: {
@@ -292,35 +297,73 @@ export const auth = betterAuth({
         }
       },
       onSubscriptionCanceled: async (data: any) => {
-        console.log("[Creem] Subscription canceled:", data);
+        // Fired for two scenarios:
+        //   1. subscription.scheduled_cancel — paid subscriber cancelled at period end,
+        //      still has access until current_period_end_date. Do NOT deactivate portals.
+        //   2. subscription.canceled — subscription fully ended (trial cancel or period ended).
+        //      Revoke access immediately.
+        console.log("[Creem] Subscription canceled event:", data?.webhookEventType, data);
         try {
           const customer = data.customer;
-          if (customer?.email) {
-            const user = await prisma.user.findFirst({
+          const subscription = data.subscription;
+          const eventType = data.webhookEventType as string | undefined;
+
+          if (!customer?.email) return;
+
+          // subscription.scheduled_cancel: cancel at period end — keep access
+          if (eventType === "subscription.scheduled_cancel") {
+            await prisma.user.updateMany({
               where: { email: customer.email },
-              select: { id: true },
+              data: { subscriptionStatus: "scheduled_cancel" },
             });
 
-            if (user) {
+            // Store the period end so checkAccess knows when access expires
+            if (subscription?.id && subscription?.current_period_end_date) {
+              await prisma.creem_subscription.updateMany({
+                where: { creemSubscriptionId: subscription.id },
+                data: {
+                  cancelAtPeriodEnd: true,
+                  periodEnd: new Date(subscription.current_period_end_date),
+                },
+              });
+            }
+
+            console.log("[Creem] Scheduled cancel — access retained until period end");
+            return;
+          }
+
+          // subscription.canceled: fully cancelled — revoke access
+          // Only act if onRevokeAccess hasn't already handled it
+          const user = await prisma.user.findFirst({
+            where: { email: customer.email },
+            select: { id: true, subscriptionStatus: true },
+          });
+
+          if (user) {
+            if (
+              user.subscriptionStatus !== "cancelled" &&
+              user.subscriptionStatus !== "expired"
+            ) {
               await prisma.portal.updateMany({
                 where: { userId: user.id },
                 data: { isActive: false },
               });
-            }
 
-            await prisma.user.updateMany({
-              where: { email: customer.email },
-              data: {
-                subscriptionPlan: "expired",
-                subscriptionStatus: "cancelled",
-              },
-            });
+              await prisma.user.updateMany({
+                where: { email: customer.email },
+                data: {
+                  subscriptionPlan: "expired",
+                  subscriptionStatus: "cancelled",
+                },
+              });
+            }
           }
         } catch (error) {
           console.error("Error in onSubscriptionCanceled:", error);
         }
       },
       onSubscriptionExpired: async (data: any) => {
+        // Fired when the subscription period ends without renewal.
         console.log("[Creem] Subscription expired:", data);
         try {
           const customer = data.customer;

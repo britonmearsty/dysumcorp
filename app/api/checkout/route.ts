@@ -2,16 +2,12 @@ import { NextResponse } from "next/server";
 import { createCheckout } from "@creem_io/better-auth/server";
 
 import { auth } from "@/lib/auth-server";
+import { prisma } from "@/lib/prisma";
 import { PRICING_PLANS } from "@/config/pricing";
 
 export async function POST(request: Request) {
   try {
-    console.log("🔍 Checkout API called");
-
-    // Validate environment variables
     if (!process.env.CREEM_API_KEY) {
-      console.error("❌ CREEM_API_KEY is not configured");
-
       return NextResponse.json(
         { error: "Payment system not configured. Please contact support." },
         { status: 500 },
@@ -19,29 +15,19 @@ export async function POST(request: Request) {
     }
 
     if (!process.env.NEXT_PUBLIC_BETTER_AUTH_URL) {
-      console.error("❌ NEXT_PUBLIC_BETTER_AUTH_URL is not configured");
-
       return NextResponse.json(
         { error: "Application URL not configured. Please contact support." },
         { status: 500 },
       );
     }
 
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    console.log("🔍 Session:", session?.user?.id);
+    const session = await auth.api.getSession({ headers: request.headers });
 
     if (!session?.user) {
-      console.log("❌ No session found");
-
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     if (!session.user.email) {
-      console.error("❌ User has no email address");
-
       return NextResponse.json(
         { error: "User email is required for checkout" },
         { status: 400 },
@@ -50,8 +36,6 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const { planId, billingCycle = "monthly" } = body;
-
-    console.log("🔍 Request body:", { planId, billingCycle });
 
     if (!planId || planId === "free") {
       return NextResponse.json(
@@ -66,53 +50,61 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Plan not found" }, { status: 404 });
     }
 
-    // Get the appropriate product ID based on billing cycle
     const productId =
       billingCycle === "annual"
         ? plan.creemProductIdAnnual
         : plan.creemProductId;
 
     if (!productId) {
-      console.error("❌ Product ID not configured:", { planId, billingCycle });
-
       return NextResponse.json(
         { error: "Product ID not configured for this plan" },
         { status: 500 },
       );
     }
 
-    console.log("🔍 Creating checkout:", {
-      productId,
-      planId,
-      billingCycle,
-      userId: session.user.id,
-      email: session.user.email,
-      testMode: process.env.NODE_ENV === "development",
+    // Fetch the user's existing Creem customer ID and subscription history
+    const dbUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        creemCustomerId: true,
+        hadTrial: true,
+        subscriptionPlan: true,
+        subscriptionStatus: true,
+        trialStartedAt: true,
+      },
     });
 
-    // Use Creem server-side SDK to create checkout
-    // Use test mode if using a test API key or in development
     const isTestKey = process.env.CREEM_API_KEY?.startsWith("creem_test_");
-    const useTestMode = process.env.NODE_ENV === "development" || isTestKey;
+    const useTestMode = process.env.NODE_ENV === "development" || !!isTestKey;
 
-    console.log("🔍 Creem mode:", {
-      isTestKey,
-      useTestMode,
-      nodeEnv: process.env.NODE_ENV,
-    });
+    // Skip trial if any of these are true:
+    // - hadTrial flag is set (set going forward by onGrantAccess)
+    // - user previously had a pro subscription (expired/cancelled = they already subscribed)
+    // - user has a trialStartedAt date (they already used a trial)
+    const hadPreviousSubscription =
+      dbUser?.subscriptionPlan === "expired" ||
+      dbUser?.subscriptionStatus === "cancelled" ||
+      dbUser?.subscriptionStatus === "expired" ||
+      dbUser?.subscriptionStatus === "scheduled_cancel";
+
+    const shouldSkipTrial =
+      !!dbUser?.hadTrial ||
+      !!dbUser?.trialStartedAt ||
+      hadPreviousSubscription;
 
     const result = await createCheckout(
-      {
-        apiKey: process.env.CREEM_API_KEY!,
-        testMode: useTestMode,
-      },
+      { apiKey: process.env.CREEM_API_KEY!, testMode: useTestMode },
       {
         productId,
         successUrl: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/dashboard/billing?success=true`,
-        // Pass email only - Creem will create/link customer by email
-        customer: {
-          email: session.user.email!,
-        },
+        // Pass existing customer ID if available so Creem links to the same customer,
+        // preserving trial history and preventing duplicate customer records.
+        // Fall back to email for first-time customers.
+        customer: dbUser?.creemCustomerId
+          ? { id: dbUser.creemCustomerId }
+          : { email: session.user.email! },
+        // Skip trial for any user who has previously subscribed or used a trial
+        skipTrial: shouldSkipTrial,
         metadata: {
           planId,
           billingCycle,
@@ -122,11 +114,7 @@ export async function POST(request: Request) {
       },
     );
 
-    console.log("🔍 Creem result:", result);
-
-    if (!result || !result.url) {
-      console.error("❌ No URL returned from Creem:", result);
-
+    if (!result?.url) {
       return NextResponse.json(
         { error: "Failed to create checkout - no URL returned" },
         { status: 500 },
@@ -141,36 +129,22 @@ export async function POST(request: Request) {
       billingCycle,
     });
   } catch (error: any) {
-    console.error("❌ Checkout error:", error);
-    console.error("❌ Error message:", error?.message);
-    console.error("❌ Error stack:", error?.stack);
-    console.error("❌ Error details:", JSON.stringify(error, null, 2));
+    console.error("Checkout error:", error);
 
-    // Provide more detailed error message
     let errorMessage = "Failed to create checkout session";
 
-    if (error?.message) {
-      errorMessage = error.message;
-    }
-
-    // Check for common error patterns
     if (error?.message?.includes("API key")) {
-      errorMessage =
-        "Payment system configuration error. Please contact support.";
-    } else if (error?.message?.includes("product")) {
-      errorMessage = "Invalid product configuration. Please contact support.";
-    } else if (
-      error?.message?.includes("network") ||
-      error?.message?.includes("fetch")
-    ) {
+      errorMessage = "Payment system configuration error. Please contact support.";
+    } else if (error?.message?.includes("network") || error?.message?.includes("fetch")) {
       errorMessage = "Unable to connect to payment service. Please try again.";
+    } else if (error?.message) {
+      errorMessage = error.message;
     }
 
     return NextResponse.json(
       {
         error: errorMessage,
-        details:
-          process.env.NODE_ENV === "development" ? error?.message : undefined,
+        details: process.env.NODE_ENV === "development" ? error?.message : undefined,
       },
       { status: 500 },
     );

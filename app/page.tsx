@@ -11,9 +11,6 @@ const SecuritySection = dynamic(() => import("@/components/security-section"));
 const IntegrationsSection = dynamic(
   () => import("@/components/integrations-section"),
 );
-const TestimonialsSection = dynamic(
-  () => import("@/components/testimonials-section"),
-);
 const CTASection = dynamic(() => import("@/components/cta-section"));
 
 export default function Home() {
@@ -26,7 +23,6 @@ export default function Home() {
       <PricingSection />
       <SecuritySection />
       <IntegrationsSection />
-      <TestimonialsSection />
       <CTASection />
     </main>
   );

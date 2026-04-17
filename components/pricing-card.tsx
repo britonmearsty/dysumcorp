@@ -11,6 +11,7 @@ interface PricingCardProps {
   plan: PricingPlan;
   billingCycle: "monthly" | "annual";
   currentPlan?: string;
+  currentStatus?: string;
   onSubscribe?: (planId: string, isAnnual: boolean) => void;
 }
 
@@ -18,9 +19,12 @@ export function PricingCard({
   plan,
   billingCycle,
   currentPlan,
+  currentStatus,
   onSubscribe,
 }: PricingCardProps) {
   const isCurrentPlan = currentPlan === plan.id;
+  const isTrialing = isCurrentPlan && currentStatus === "trialing";
+  const isScheduledCancel = isCurrentPlan && currentStatus === "scheduled_cancel";
   const price = billingCycle === "annual" ? plan.priceAnnual / 12 : plan.price;
   const totalPrice = billingCycle === "annual" ? plan.priceAnnual : plan.price;
   const savings =
@@ -90,7 +94,13 @@ export function PricingCard({
             isDisabled={isCurrentPlan}
             onClick={() => onSubscribe?.(plan.id, billingCycle === "annual")}
           >
-            {isCurrentPlan ? "Current Plan" : "Subscribe"}
+            {isTrialing
+              ? "Trial Active"
+              : isScheduledCancel
+                ? "Cancelling at Period End"
+                : isCurrentPlan
+                  ? "Current Plan"
+                  : "Subscribe"}
           </Button>
         </CardBody>
       </Card>
