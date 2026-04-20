@@ -70,7 +70,7 @@ export default function SecuritySection() {
           <FadeIn className="flex-1 w-full" delay={0.2} direction="right">
             <div className="bg-white rounded-[2.5rem] p-12 premium-shadow">
               <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500 mb-10">
-                Compliance Certifications
+                Compliance
               </h4>
               <Stagger className="space-y-10" delay={0.15}>
                 {certifications.map((cert, index) => (
