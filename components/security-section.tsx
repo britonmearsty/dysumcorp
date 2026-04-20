@@ -1,24 +1,24 @@
 "use client";
 
-import { ShieldCheck, Lock, Server, Building } from "lucide-react";
+import { Shield, Lock, FileCheck, Scale } from "lucide-react";
 
 import { FadeIn, Stagger, StaggerItem } from "./animations";
 
 const certifications = [
   {
-    icon: Server,
-    title: "SOC2 Type II",
-    desc: "Audited and verified enterprise security standards.",
+    icon: FileCheck,
+    title: "SOC 2 Type II",
+    desc: "Enterprise-grade security controls and monitoring.",
   },
   {
-    icon: ShieldCheck,
+    icon: Shield,
     title: "GDPR Compliant",
-    desc: "Full adherence to European data privacy regulations.",
+    desc: "Full data privacy protection for global operations.",
   },
   {
-    icon: Building,
-    title: "HIPAA Ready",
-    desc: "Secure handling for sensitive healthcare documentation.",
+    icon: Scale,
+    title: "Industry Ready",
+    desc: "Built for regulated sectors including legal, financial, and healthcare.",
   },
 ];
 
@@ -29,16 +29,15 @@ export default function SecuritySection() {
         <div className="flex flex-col lg:flex-row gap-16 items-center">
           <FadeIn className="flex-1" direction="left">
             <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs">
-              Security First
+              Security Architecture
             </span>
             <h2 className="text-4xl md:text-5xl font-bold mt-4 serif-font leading-tight text-[#1c1917]">
-              Bank-grade protection for your sensitive data
+              Your data fortress
             </h2>
             <p className="text-stone-700 mt-8 text-lg leading-relaxed">
-              Security isn&apos;t an afterthought—it&apos;s the core of
-              everything we build. Your documents are encrypted from the moment
-              they leave your client&apos;s device until they reach your
-              storage.
+              Every file is protected by enterprise-grade encryption from upload
+              to destination. We built Dysumcorp with security as the foundation,
+              not an afterthought.
             </p>
 
             <div className="mt-12 grid grid-cols-2 gap-8">
@@ -46,22 +45,22 @@ export default function SecuritySection() {
                 <div className="flex items-center gap-3">
                   <Lock className="text-2xl text-stone-900" />
                   <span className="font-bold text-sm text-[#1c1917]">
-                    256-bit AES Encryption
+                    End-to-End Encryption
                   </span>
                 </div>
                 <p className="text-xs text-stone-600 leading-relaxed">
-                  Military-grade encryption for all data at rest and in transit.
+                  AES-256 encryption protects your data at every stage of the journey.
                 </p>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <ShieldCheck className="text-2xl text-stone-900" />
+                  <Shield className="text-2xl text-stone-900" />
                   <span className="font-bold text-sm text-[#1c1917]">
-                    Zero-Knowledge
+                    Private by Design
                   </span>
                 </div>
                 <p className="text-xs text-stone-600 leading-relaxed">
-                  We never store your documents; they sync directly to you.
+                  Your documents remain accessible only to you and your clients.
                 </p>
               </div>
             </div>

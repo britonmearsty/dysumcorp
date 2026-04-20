@@ -22,38 +22,38 @@ import { FadeIn, Stagger, StaggerItem } from "@/components/animations";
 const securityPillars = [
   {
     icon: Lock,
-    title: "256-bit AES Encryption",
-    desc: "Every file is encrypted with military-grade AES-256 encryption both at rest and in transit. Your documents are unreadable to anyone who intercepts them — full stop.",
+    title: "Enterprise Encryption",
+    desc: "Every file is protected by military-grade encryption from upload to delivery. Your documents remain unreadable to unauthorized parties at every stage.",
     detail:
-      "We use TLS 1.3 for data in transit and AES-256 at rest, the same standard used by financial institutions worldwide.",
+      "AES-256 encryption safeguards data in transit and at rest, meeting the standards trusted by financial institutions worldwide.",
   },
   {
     icon: Eye,
-    title: "Zero-Knowledge Architecture",
-    desc: "Dysumcorp is a conduit, not a vault. Files flow directly from your client's browser to your cloud storage. We never store your documents on our servers permanently.",
+    title: "Privacy-First Design",
+    desc: "Your documents are accessible only to you and your clients. Our architecture ensures data remains within your control throughout the entire process.",
     detail:
-      "Files exist on our infrastructure only for the milliseconds it takes to relay them to your connected cloud storage. We can't read them.",
+      "Files are processed securely with minimal retention, ensuring your data remains confidential and protected.",
   },
   {
     icon: FileKey,
     title: "Access Control",
     desc: "Every portal can be protected with a unique password. Combine optional password protection with expiring links to create time-limited, credential-gated upload windows.",
     detail:
-      "Passwords are hashed using bcrypt before storage. Link expiry is enforced at the server level with no client-side bypass.",
+      "Passwords are hashed using industry-standard algorithms. Link expiry is enforced at the server level with no client-side bypass.",
   },
   {
     icon: AlertTriangle,
-    title: "Malware Scanning",
-    desc: "All uploaded files are scanned for malware before being relayed to your cloud storage. Infected files are quarantined immediately and you are notified.",
+    title: "Threat Protection",
+    desc: "All uploaded files are scanned for security threats before delivery. Suspicious files are quarantined immediately and you are notified.",
     detail:
-      "Integrated with industry-leading threat intelligence feeds, updated continuously to catch emerging threats.",
+      "Integrated with industry-leading threat intelligence, continuously updated to identify emerging risks.",
   },
   {
     icon: RefreshCw,
     title: "Audit Trails",
     desc: "Every file upload, portal access, and configuration change is logged with a full audit trail. Know exactly who accessed what and when.",
     detail:
-      "Audit logs are tamper-proof, retained for 12 months, and exportable for compliance reporting.",
+      "Audit logs are tamper-proof, retained for compliance periods, and exportable for reporting.",
   },
   {
     icon: Users,
@@ -93,28 +93,28 @@ const certifications = [
   },
   {
     icon: Building,
-    title: "HIPAA Ready",
+    title: "Industry Ready",
     badge: "Healthcare",
     badgeColor: "bg-purple-50 text-purple-700 border-purple-100",
-    desc: "Infrastructure and processes designed for handling Protected Health Information (PHI) for healthcare providers and their business associates.",
+    desc: "Built to meet the stringent requirements of regulated industries including healthcare, legal, and financial services.",
     items: [
-      "BAA (Business Associate Agreement) available",
-      "PHI access logging",
-      "Minimum necessary enforcement",
-      "Breach notification protocols",
+      "Business Associate Agreements available",
+      "Sensitive data handling protocols",
+      "Access logging and monitoring",
+      "Breach notification procedures",
     ],
   },
   {
     icon: Globe,
-    title: "Infrastructure",
+    title: "Enterprise Infrastructure",
     badge: "Enterprise",
     badgeColor: "bg-amber-50 text-amber-700 border-amber-100",
-    desc: "Hosted on enterprise-grade cloud infrastructure with 99.9% uptime SLA, geo-redundant backups, and DDoS mitigation built in.",
+    desc: "Built on reliable cloud infrastructure with high availability, automated backups, and built-in threat mitigation.",
     items: [
-      "99.9% uptime SLA",
-      "Geo-redundant backups",
-      "DDoS protection",
-      "SOC-compliant data centers",
+      "High availability architecture",
+      "Automated backup systems",
+      "Advanced threat protection",
+      "Compliance-certified facilities",
     ],
   },
 ];
@@ -145,10 +145,9 @@ export function SecurityClient() {
                 </span>
               </h1>
               <p className="text-lg sm:text-xl text-stone-700 font-medium mb-10 max-w-2xl mx-auto leading-relaxed">
-                Security isn&apos;t an afterthought at Dysumcorp — it&apos;s the
-                core of everything we build. Your documents are encrypted from
-                the moment they leave your client&apos;s device until they reach
-                your cloud storage.
+                Security is the foundation of everything we build. Your documents
+                are protected by enterprise-grade encryption from upload through
+                delivery, ensuring they remain confidential and secure.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button
@@ -176,8 +175,8 @@ export function SecurityClient() {
               delay={0.08}
             >
               {[
-                { num: "256-bit", label: "AES Encryption" },
-                { num: "Zero", label: "Knowledge Architecture" },
+                { num: "AES-256", label: "Encryption" },
+                { num: "Private", label: "By Design" },
                 { num: "SOC 2", label: "Type II Certified" },
                 { num: "99.9%", label: "Uptime SLA" },
               ].map((stat, i) => (
