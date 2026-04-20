@@ -173,33 +173,17 @@ export default function CTASection() {
                   <li>
                     <Link
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
-                      href="/features"
+                      href="/terms"
                     >
-                      Features
+                      Terms
                     </Link>
                   </li>
                   <li>
                     <Link
                       className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
-                      href="/pricing"
+                      href="/privacy"
                     >
-                      Pricing
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
-                      href="/blog"
-                    >
-                      Blog
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
-                      href="/security"
-                    >
-                      Security
+                      Privacy
                     </Link>
                   </li>
                 </ul>
