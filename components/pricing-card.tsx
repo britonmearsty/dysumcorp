@@ -7,6 +7,20 @@ import { Check } from "lucide-react";
 import { PricingPlan } from "@/config/pricing";
 import { formatPrice } from "@/config/pricing";
 
+// Custom styles to match landing page theme - overriding HeroUI dark defaults
+const cardStyles = {
+  background: "bg-white",
+  border: "border-stone-200",
+  borderPopular: "border-[#1c1917]",
+  textTitle: "text-[#1c1917]",
+  textDescription: "text-stone-600",
+  textMuted: "text-stone-500",
+  buttonPopular: "bg-[#1c1917] text-stone-50 hover:bg-stone-800",
+  buttonDefault: "bg-stone-100 text-[#1c1917] hover:bg-stone-200",
+  checkIcon: "text-[#1c1917]",
+  popularBadge: "bg-[#1c1917] text-stone-50",
+};
+
 interface PricingCardProps {
   plan: PricingPlan;
   billingCycle: "monthly" | "annual";
@@ -33,37 +47,37 @@ export function PricingCard({
   return (
     <div className="relative pt-4">
       {plan.popular && (
-        <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold z-10">
+        <div className={`absolute -top-0 left-1/2 -translate-x-1/2 ${cardStyles.popularBadge} px-4 py-1 rounded-full text-sm font-semibold z-10`}>
           Most Popular
         </div>
       )}
 
       <Card
-        className={`bg-card border rounded-xl ${
-          plan.popular ? "border-primary" : "border-border"
+        className={`${cardStyles.background} border-2 rounded-xl ${
+          plan.popular ? cardStyles.borderPopular : cardStyles.border
         }`}
         shadow="none"
       >
-        <CardHeader className="flex flex-col items-start gap-2 pb-6 border-b border-border bg-transparent">
-          <h3 className="text-2xl font-bold text-foreground">{plan.name}</h3>
-          <p className="text-sm text-muted-foreground font-medium">
+        <CardHeader className="flex flex-col items-start gap-2 pb-6 border-b border-stone-200 bg-transparent">
+          <h3 className={`text-2xl font-bold ${cardStyles.textTitle}`}>{plan.name}</h3>
+          <p className={`text-sm ${cardStyles.textDescription} font-medium`}>
             {plan.description}
           </p>
 
           <div className="mt-6">
             <div className="flex items-baseline gap-1">
-              <span className="text-5xl font-bold text-foreground tracking-tight">
+              <span className={`text-5xl font-bold ${cardStyles.textTitle} tracking-tight`}>
                 {formatPrice(price)}
               </span>
-              <span className="text-muted-foreground font-medium">/month</span>
+              <span className={`${cardStyles.textMuted} font-medium`}>/month</span>
             </div>
             {billingCycle === "annual" && (
               <div className="mt-2">
-                <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
+                <p className={`text-xs ${cardStyles.textMuted} font-bold uppercase tracking-wider`}>
                   {formatPrice(totalPrice)} billed annually
                 </p>
                 {savings > 0 && (
-                  <p className="text-xs text-primary font-bold mt-1 bg-primary/10 inline-block px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  <p className="text-xs font-bold mt-1 bg-stone-100 text-[#1c1917] inline-block px-2 py-0.5 rounded-full uppercase tracking-wider">
                     Save {formatPrice(savings)}/year
                   </p>
                 )}
@@ -76,8 +90,8 @@ export function PricingCard({
           <ul className="space-y-4 mb-10">
             {plan.features.map((feature, index) => (
               <li key={index} className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-sm font-medium text-foreground/80">
+                <Check className={`w-5 h-5 ${cardStyles.checkIcon} flex-shrink-0 mt-0.5`} />
+                <span className={`text-sm font-medium ${cardStyles.textDescription}`}>
                   {feature}
                 </span>
               </li>
@@ -87,10 +101,9 @@ export function PricingCard({
           <Button
             className={`w-full py-6 rounded-xl font-bold text-sm transition-all ${
               plan.popular
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                ? cardStyles.buttonPopular
+                : cardStyles.buttonDefault
             }`}
-            color={plan.popular ? "primary" : "secondary"}
             isDisabled={isCurrentPlan}
             onClick={() => onSubscribe?.(plan.id, billingCycle === "annual")}
           >
