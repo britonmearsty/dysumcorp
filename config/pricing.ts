@@ -2,7 +2,7 @@ export type PlanType = "free" | "pro";
 
 export interface PlanLimits {
   portals: number;
-  storage: number; // in GB
+  storage?: number; // in GB - not enforced, files go to user's cloud
   customDomains: number;
   whiteLabeling: boolean;
   passwordProtection: boolean;
@@ -34,21 +34,20 @@ export const PRICING_PLANS: Record<"pro", PricingPlan> = {
     polarProductId: process.env.POLAR_PRODUCT_ID_MONTHLY || "",
     polarProductIdAnnual: process.env.POLAR_PRODUCT_ID_ANNUAL || "",
     limits: {
-      portals: 999999, // Unlimited
-      storage: 999999, // Unlimited
-      customDomains: 0, // Not implemented
+      portals: 100, // Generous limits for professionals
+      customDomains: 0, // Coming soon
       whiteLabeling: true,
       passwordProtection: true,
       expiringLinks: true,
       customBranding: true,
     },
     features: [
-      "Unlimited Portals",
-      "Unlimited Storage",
+      "Up to 100 Portals",
       "Full white-labeling",
+      "Custom branding & themes",
       "Password protection",
       "Expiring links",
-      "Custom branding & themes",
+      "Priority support",
     ],
     popular: true,
   },

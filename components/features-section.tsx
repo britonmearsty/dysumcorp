@@ -48,8 +48,8 @@ const useCases = [
 
 const features = [
   {
-    stat: "100%",
-    statLabel: "cloud synced",
+    stat: "Seamless",
+    statLabel: "cloud sync",
     title: "Cloud Gravity",
     desc: "Collect files directly to Google Drive, Dropbox, or OneDrive. No manual downloads ever.",
     visual: (
@@ -69,12 +69,11 @@ const features = [
     ),
   },
   {
-    stat: "Level 4",
-    statLabel: "security",
+    stat: "Secure",
+    statLabel: "branding",
     title: "Professional Branding",
     desc: "Maintain your firm's professional image with custom domains and white-labeling.",
     icon: Zap,
-    comingSoon: true,
     visual: (
       <div className="bg-stone-100 border border-stone-200 rounded-2xl p-6">
         <div className="flex items-center justify-between text-[11px] mb-3">
@@ -91,8 +90,8 @@ const features = [
     ),
   },
   {
-    stat: "80%",
-    statLabel: "faster uploads",
+    stat: "Fast",
+    statLabel: "workflows",
     title: "Smart Checklists",
     desc: "Firms reduce manual follow-ups by providing clients with clear, structured requirements.",
     dark: true,

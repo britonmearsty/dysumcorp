@@ -7,7 +7,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 export const metadata: Metadata = {
   title: "Simple, Transparent Pricing | Dysumcorp",
   description:
-    "Choose the perfect plan for collecting files from clients. Unlimited portals, secure storage, and branded portals. Start for free.",
+    "Pro plan for collecting files from clients. Up to 100 portals, custom branding, and priority support. 14-day money-back guarantee.",
   alternates: {
     canonical: "https://dysumcorp.pro/pricing",
   },
@@ -19,18 +19,18 @@ const faqData = {
   mainEntity: [
     {
       "@type": "Question",
-      name: "Can I upgrade or downgrade later?",
+      question: "How do I subscribe to Pro?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes! You can upgrade from Free to Pro or cancel your Pro subscription at any time. Changes take effect immediately, and we'll prorate any charges.",
+        text: "Click the \"Upgrade to Pro\" button in your dashboard, choose your billing cycle (monthly or annual), and complete the secure checkout. Your Pro features are activated immediately.",
       },
     },
     {
       "@type": "Question",
-      name: "What happens if I exceed my limits on the Free plan?",
+      question: "What happens when I sign up?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "You'll be notified when you reach your portal or storage limit. To continue creating portals or uploading files, you'll need to upgrade to Pro or remove some content.",
+        text: "You can create an account and explore the dashboard, but portal creation and file collection require an active Pro subscription.",
       },
     },
     {
@@ -46,7 +46,7 @@ const faqData = {
       name: "Is there a free trial for Pro?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Our Free plan is available forever with no credit card required. You can try the platform and upgrade to Pro anytime to unlock unlimited portals, unlimited storage, and all premium features.",
+        text: "We offer a 14-day money-back guarantee on the Pro plan. Create an account to explore, and subscribe when you're ready to start collecting files.",
       },
     },
   ],

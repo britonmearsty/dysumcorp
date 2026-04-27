@@ -61,8 +61,7 @@ export default async function PremiumPage() {
           <div className="border-t pt-4">
             <h3 className="font-semibold mb-2">Premium Features:</h3>
             <ul className="space-y-2 text-sm">
-              <li>✓ Unlimited portals</li>
-              <li>✓ Unlimited storage</li>
+              <li>✓ Up to 100 portals</li>
               <li>✓ Full white-labeling</li>
               <li>✓ Password protection</li>
               <li>✓ Expiring links</li>

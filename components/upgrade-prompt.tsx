@@ -109,23 +109,17 @@ export function UpgradePrompt({
               <div>
                 <p className="text-default-500">Portals</p>
                 <p className="font-semibold">
-                  {plan.limits.portals >= 999999
-                    ? "Unlimited"
-                    : plan.limits.portals}
+                  {plan.limits.portals}
                 </p>
               </div>
               <div>
-                <p className="text-default-500">Storage</p>
-                <p className="font-semibold">
-                  {formatStorage(plan.limits.storage)}
-                </p>
+                <p className="text-default-500">Cloud</p>
+                <p className="font-semibold text-xs">Your Drive/Dropbox</p>
               </div>
               <div>
                 <p className="text-default-500">Custom Domains</p>
                 <p className="font-semibold">
-                  {plan.limits.customDomains >= 999999
-                    ? "Unlimited"
-                    : plan.limits.customDomains}
+                  Coming soon
                 </p>
               </div>
             </div>

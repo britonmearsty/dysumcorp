@@ -121,9 +121,9 @@ export function PricingClient() {
                   Can I upgrade or downgrade later?
                 </h3>
                 <p className="text-stone-600 leading-relaxed font-medium">
-                  Yes! You can upgrade from Free to Pro or cancel your Pro
-                  subscription at any time. Changes take effect immediately, and
-                  we&apos;ll prorate any charges.
+                  Yes! You can cancel your Pro subscription at any time.
+                  Changes take effect at the end of your billing period, and
+                  you&apos;ll retain access until then.
                 </p>
               </div>
               <div>
@@ -156,12 +156,12 @@ export function PricingClient() {
               </div>
               <div>
                 <h3 className="font-bold text-lg mb-3 text-[#1c1917] serif-font">
-                  Is there a free trial for Pro?
+                  Can I try before I buy?
                 </h3>
                 <p className="text-stone-600 leading-relaxed font-medium">
-                  Our Free plan is available forever with no credit card
-                  required. You can try the platform and upgrade to Pro anytime
-                  to unlock unlimited portals and all premium features.
+                  You can create an account to explore the dashboard, but portal
+                  creation and file collection require an active Pro subscription.
+                  We offer a 14-day money-back guarantee if you&apos;re not satisfied.
                 </p>
               </div>
               <div>

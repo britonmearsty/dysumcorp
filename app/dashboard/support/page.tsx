@@ -77,7 +77,7 @@ export default function SupportPage() {
     {
       question: "What are the plan limits?",
       answer:
-        "Free plan allows 5 portals. Premium plans offer unlimited portals, custom branding, and advanced features. Check the Billing page for detailed plan information.",
+        "Portal creation requires an active Pro subscription. Pro plans offer up to 100 portals, custom branding, and advanced features. Check the Billing page for detailed plan information.",
     },
     {
       question: "How do I deactivate a portal?",

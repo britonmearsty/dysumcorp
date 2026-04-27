@@ -174,18 +174,12 @@ export function SoftPaywallModal({
                         <div className="flex justify-between">
                           <span>Portals:</span>
                           <span className="font-semibold">
-                            {plan.limits.portals >= 999999
-                              ? "Unlimited"
-                              : plan.limits.portals}
+                            {plan.limits.portals}
                           </span>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Storage:</span>
-                          <span className="font-semibold">
-                            {plan.limits.storage >= 999999
-                              ? "Unlimited"
-                              : `${plan.limits.storage}GB`}
-                          </span>
+                        <div className="flex justify-between py-1">
+                          <span>Cloud Storage:</span>
+                          <span className="font-semibold">Your own Google Drive/Dropbox</span>
                         </div>
                       </div>
                     </CardBody>

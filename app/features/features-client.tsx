@@ -286,9 +286,9 @@ export function FeaturesClient() {
                 Which features do you get?
               </h2>
               <p className="text-stone-400 font-medium mb-10 text-lg max-w-xl mx-auto leading-relaxed">
-                Core features are free. Unlock the full power of Dysumcorp —
-                unlimited portals, white-labeling, analytics, and more — with
-                Pro.
+                Portal creation and file collection require Pro. Unlock up to
+                100 portals, white-labeling, analytics, and more with a
+                subscription.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button
