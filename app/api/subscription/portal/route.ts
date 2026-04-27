@@ -10,7 +10,9 @@ export const dynamic = "force-dynamic";
 const polar = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN!,
   server:
-    process.env.NODE_ENV === "production" ? "production" : "sandbox",
+    process.env.POLAR_FORCE_SANDBOX === "true" || process.env.NODE_ENV !== "production"
+      ? "sandbox"
+      : "production",
 });
 
 export async function POST(request: Request) {
