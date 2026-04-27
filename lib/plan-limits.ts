@@ -55,7 +55,9 @@ export async function checkStorageLimit(
   additionalBytes: number = 0,
 ): Promise<PlanLimitCheck> {
   const limits = getEffectivePlan(planType).limits;
-  const limitBytes = limits.storage * 1024 * 1024 * 1024;
+  // Storage is not enforced - files go to user's cloud (Google Drive/Dropbox)
+  const storageLimit = limits.storage ?? Number.MAX_SAFE_INTEGER;
+  const limitBytes = storageLimit * 1024 * 1024 * 1024;
 
   const files = await prisma.file.findMany({
     where: { portal: { userId } },
@@ -71,16 +73,16 @@ export async function checkStorageLimit(
   if (totalBytes > limitBytes) {
     return {
       allowed: false,
-      reason: `Storage limit exceeded. Your ${planType} plan allows ${limits.storage}GB.`,
+      reason: `Storage limit exceeded. Your ${planType} plan allows ${storageLimit}GB.`,
       current: Math.round((usedBytes / (1024 * 1024 * 1024)) * 100) / 100,
-      limit: limits.storage,
+      limit: storageLimit,
     };
   }
 
   return {
     allowed: true,
     current: Math.round((usedBytes / (1024 * 1024 * 1024)) * 100) / 100,
-    limit: limits.storage,
+    limit: storageLimit,
   };
 }
 

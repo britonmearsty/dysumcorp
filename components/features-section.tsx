@@ -187,11 +187,6 @@ export default function FeaturesSection() {
                     feature.dark ? "bg-[#1c1917] text-stone-50" : "bg-white"
                   }`}
                 >
-                  {feature.comingSoon && (
-                    <div className="absolute top-5 right-5 bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-full border border-amber-200">
-                      Coming Soon
-                    </div>
-                  )}
                   <div>
                     <div
                       className={`inline-flex items-center gap-2 ${
