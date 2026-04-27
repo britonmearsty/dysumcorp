@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { applyPublicPortalRateLimit } from "@/lib/rate-limit";
-import { checkAccess } from "@/lib/trial";
+import { checkAccess } from "@/lib/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

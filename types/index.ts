@@ -4,19 +4,15 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
 };
 
-export type PlanType = "trial" | "pro" | "expired";
+export type PlanType = "free" | "pro";
 
-export type SubscriptionStatus =
-  | "active"
-  | "cancelled"
-  | "past_due"
-  | "trialing";
+export type SubscriptionStatus = "active" | "cancelled" | "past_due";
 
 export interface UserSubscription {
   plan: PlanType;
   status: SubscriptionStatus;
-  creemCustomerId?: string;
-  subscriptionId?: string;
+  polarCustomerId?: string;
+  polarSubscriptionId?: string;
   currentPeriodEnd?: Date;
 }
 
@@ -31,5 +27,7 @@ export interface UserProfile {
   updatedAt: Date;
   subscriptionPlan?: PlanType;
   subscriptionStatus?: SubscriptionStatus;
-  creemCustomerId?: string | null;
+  polarCustomerId?: string | null;
+  polarSubscriptionId?: string | null;
+  polarCurrentPeriodEnd?: string | null;
 }

@@ -20,7 +20,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get user from database
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
@@ -28,34 +27,17 @@ export async function GET(request: Request) {
         email: true,
         subscriptionPlan: true,
         subscriptionStatus: true,
-        creemCustomerId: true,
-        trialStartedAt: true,
-        hadTrial: true,
+        polarCustomerId: true,
+        polarSubscriptionId: true,
+        polarCurrentPeriodEnd: true,
         createdAt: true,
         updatedAt: true,
       },
     });
 
-    // Compute trialExpired — now managed by Creem, not locally
-    const trialExpired = null;
-
-    // Get Creem subscriptions from database
-    const creemSubscriptions = await prisma.creem_subscription.findMany({
-      where: {
-        OR: [
-          { referenceId: session.user.id },
-          { creemCustomerId: user?.creemCustomerId ?? undefined },
-        ],
-      },
-    });
-
     return NextResponse.json({
-      userFromDB: {
-        ...user,
-        trialExpired,
-      },
+      userFromDB: user,
       userFromSession: session.user,
-      creemSubscriptions,
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {

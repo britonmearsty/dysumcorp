@@ -1,12 +1,13 @@
 "use client";
 
-import type { AccessResult } from "@/lib/trial";
+import type { AccessResult } from "@/lib/access";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
+import { Zap } from "lucide-react";
 
 import { useSession } from "@/lib/auth-client";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { TrialBanner } from "@/components/trial-banner";
 
 export default function DashboardRootLayout({
   children,
@@ -23,7 +24,6 @@ export default function DashboardRootLayout({
 
       if (res.ok) {
         const data = await res.json();
-
         setAccess(data);
       }
     } catch {
@@ -51,26 +51,27 @@ export default function DashboardRootLayout({
     return null;
   }
 
-  // Calculate days remaining in trial from trialStartedAt (stored in session)
-  const trialStartedAt = (session.user as any)?.trialStartedAt;
-  let daysRemaining: number | undefined;
-
-  if (access?.reason === "trialing" && trialStartedAt) {
-    const trialEnd = new Date(trialStartedAt);
-
-    trialEnd.setDate(trialEnd.getDate() + 7);
-    const msRemaining = trialEnd.getTime() - Date.now();
-
-    daysRemaining = Math.max(0, Math.ceil(msRemaining / (1000 * 60 * 60 * 24)));
-  }
-
-  // Only show trial banner for pro+trialing users (card on file, within trial)
-  // Not for new users with no subscription
-  const showTrialBanner = access?.reason === "trialing";
+  // Show a subscribe banner for free users (no active subscription)
+  const showFreeBanner = access?.reason === "free";
 
   return (
     <div className="flex flex-col min-h-screen">
-      {showTrialBanner && <TrialBanner daysRemaining={daysRemaining} />}
+      {showFreeBanner && (
+        <div className="w-full bg-indigo-50 dark:bg-indigo-950/30 border-b border-indigo-100 dark:border-indigo-900">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1800px] py-2 flex items-center justify-between gap-4">
+            <p className="text-sm text-indigo-700 dark:text-indigo-300">
+              Subscribe to Pro to create portals and start collecting files.
+            </p>
+            <Link
+              className="shrink-0 flex items-center gap-1 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+              href="/dashboard/billing?tab=plans"
+            >
+              <Zap className="w-3 h-3" />
+              Subscribe
+            </Link>
+          </div>
+        </div>
+      )}
       <div className="flex-1">
         <DashboardLayout>{children}</DashboardLayout>
       </div>

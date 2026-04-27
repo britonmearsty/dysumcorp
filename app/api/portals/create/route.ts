@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { hashPassword } from "@/lib/password-utils";
-import { checkAccess } from "@/lib/trial";
+import { checkAccess } from "@/lib/access";
 import { sendPortalCreatedNotification } from "@/lib/email-service";
 
 export async function POST(request: Request) {
@@ -19,15 +19,12 @@ export async function POST(request: Request) {
     // Check subscription access
     const access = await checkAccess(userId);
 
-    // Users with active subscription or trial can create unlimited portals
+    // Only Pro subscribers (active or in cancelled grace period) can create portals
     if (!access.allowed) {
       return NextResponse.json(
         {
-          error: "A subscription is required to create portals.",
-          code:
-            access.reason === "expired"
-              ? "SUBSCRIPTION_EXPIRED"
-              : "CHECKOUT_REQUIRED",
+          error: "A Pro subscription is required to create portals.",
+          code: "CHECKOUT_REQUIRED",
         },
         { status: 402 },
       );

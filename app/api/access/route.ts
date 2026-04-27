@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { checkAccess } from "@/lib/trial";
+import { checkAccess } from "@/lib/access";
 
 export async function GET(request: Request) {
   try {

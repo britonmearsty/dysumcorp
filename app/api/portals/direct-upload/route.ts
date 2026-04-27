@@ -9,7 +9,7 @@ import {
 } from "@/lib/storage-api";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 import { generateUploadToken } from "@/lib/upload-tokens";
-import { checkAccess } from "@/lib/trial";
+import { checkAccess } from "@/lib/access";
 
 function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
   const allowedMimeTypes = new Set<string>();

@@ -18,26 +18,26 @@ model User {
   portalLogo         String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
-  creemCustomerId    String?
-  hadTrial           Boolean?  @default(false)
-  trialStartedAt     DateTime?
-  trialUploadCount   Int       @default(0)
-  trialFileLimit     Int       @default(15)
-  trialFileCount     Int       @default(0)
-  subscriptionPlan   String?   @default("trial")
-  subscriptionStatus String?   @default("trialing")
+  // Polar billing
+  polarCustomerId        String?
+  polarSubscriptionId    String?
+  polarCurrentPeriodEnd  DateTime?
+  // Subscription state: "free" | "pro"
+  subscriptionPlan   String?   @default("free")
+  // Status: "active" | "cancelled" | "past_due"
+  subscriptionStatus String?   @default("active")
   status             String    @default("active") // active, deleted, suspended
   deletedAt          DateTime?
   accounts           Account[]
   portals            Portal[]
   sessions           Session[]
 
-  notifyOnUpload     Boolean   @default(true)
-  notifyOnDownload  Boolean   @default(true)
-  notifyOnSignIn     Boolean   @default(true)
-  notifyOnPortalCreate Boolean @default(true)
-  notifyOnStorageWarning Boolean @default(true)
-  weeklyReports      Boolean   @default(false)
+  notifyOnUpload          Boolean @default(true)
+  notifyOnDownload        Boolean @default(true)
+  notifyOnSignIn          Boolean @default(true)
+  notifyOnPortalCreate    Boolean @default(true)
+  notifyOnStorageWarning  Boolean @default(true)
+  weeklyReports           Boolean @default(false)
 
   // "ask" = show checkbox in delete modal, "always" = always delete from storage, "never" = never delete from storage
   storageDeleteBehavior String @default("ask")
@@ -92,21 +92,6 @@ model Verification {
   @@unique([identifier, value])
   @@index([identifier])
   @@map("verification")
-}
-
-model Creem_subscription {
-  id                  String    @id
-  productId           String
-  referenceId         String
-  creemCustomerId     String?
-  creemSubscriptionId String?
-  creemOrderId        String?
-  status              String?   @default("pending")
-  periodStart         DateTime?
-  periodEnd           DateTime?
-  cancelAtPeriodEnd   Boolean?  @default(false)
-
-  @@map("creem_subscription")
 }
 
 model Portal {
@@ -246,5 +231,3 @@ model R2StagingUpload {
   @@index([portalId, status])
   @@map("r2_staging_upload")
 }
-
-

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 import { validateUploadToken } from "@/lib/upload-tokens";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/trial";
+import { checkAccess } from "@/lib/access";
 
 // Increase function timeout for large uploads
 export const maxDuration = 60;

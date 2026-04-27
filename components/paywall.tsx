@@ -23,7 +23,7 @@ export function Paywall({ onCheckout }: PaywallProps) {
             Subscription required
           </h1>
           <p className="text-muted-foreground text-sm">
-            Start your 7-day free trial to create portals and collect files.
+            Subscribe to Pro to create portals and collect files from clients.
           </p>
         </div>
 

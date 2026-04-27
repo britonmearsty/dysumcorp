@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
-import { createCheckout } from "@creem_io/better-auth/server";
+import { Polar } from "@polar-sh/sdk";
 
 import { auth } from "@/lib/auth-server";
-import { prisma } from "@/lib/prisma";
 import { PRICING_PLANS } from "@/config/pricing";
+
+const polar = new Polar({
+  accessToken: process.env.POLAR_ACCESS_TOKEN!,
+  server:
+    process.env.NODE_ENV === "production" ? "production" : "sandbox",
+});
 
 export async function POST(request: Request) {
   try {
-    if (!process.env.CREEM_API_KEY) {
+    if (!process.env.POLAR_ACCESS_TOKEN) {
       return NextResponse.json(
         { error: "Payment system not configured. Please contact support." },
         { status: 500 },
@@ -52,78 +57,40 @@ export async function POST(request: Request) {
 
     const productId =
       billingCycle === "annual"
-        ? plan.creemProductIdAnnual
-        : plan.creemProductId;
+        ? plan.polarProductIdAnnual
+        : plan.polarProductId;
 
     if (!productId) {
       return NextResponse.json(
-        { error: "Product ID not configured for this plan" },
+        {
+          error:
+            "Product ID not configured. Please set POLAR_PRODUCT_ID_MONTHLY and POLAR_PRODUCT_ID_ANNUAL in your environment.",
+        },
         { status: 500 },
       );
     }
 
-    // Fetch the user's existing Creem customer ID and subscription history
-    const dbUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        creemCustomerId: true,
-        hadTrial: true,
-        subscriptionPlan: true,
-        subscriptionStatus: true,
-        trialStartedAt: true,
-      },
+    const checkout = await polar.checkouts.create({
+      products: [productId],
+      successUrl: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/dashboard/billing?success=true`,
+      // externalCustomerId links the Polar customer to our user ID —
+      // echoed back in every webhook so we never need a separate lookup.
+      externalCustomerId: session.user.id,
+      // Pre-fill email so the user doesn't have to type it at checkout.
+      // Polar validates MX records in sandbox but real user emails pass fine.
+      customerEmail: session.user.email,
     });
 
-    const isTestKey = process.env.CREEM_API_KEY?.startsWith("creem_test_");
-    const useTestMode = process.env.NODE_ENV === "development" || !!isTestKey;
-
-    // Skip trial if any of these are true:
-    // - hadTrial flag is set (set going forward by onGrantAccess)
-    // - user previously had a pro subscription (expired/cancelled = they already subscribed)
-    // - user has a trialStartedAt date (they already used a trial)
-    const hadPreviousSubscription =
-      dbUser?.subscriptionPlan === "expired" ||
-      dbUser?.subscriptionStatus === "cancelled" ||
-      dbUser?.subscriptionStatus === "expired" ||
-      dbUser?.subscriptionStatus === "scheduled_cancel";
-
-    const shouldSkipTrial =
-      !!dbUser?.hadTrial ||
-      !!dbUser?.trialStartedAt ||
-      hadPreviousSubscription;
-
-    const result = await createCheckout(
-      { apiKey: process.env.CREEM_API_KEY!, testMode: useTestMode },
-      {
-        productId,
-        successUrl: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/dashboard/billing?success=true`,
-        // Pass existing customer ID if available so Creem links to the same customer,
-        // preserving trial history and preventing duplicate customer records.
-        // Fall back to email for first-time customers.
-        customer: dbUser?.creemCustomerId
-          ? { id: dbUser.creemCustomerId }
-          : { email: session.user.email! },
-        // Skip trial for any user who has previously subscribed or used a trial
-        skipTrial: shouldSkipTrial,
-        metadata: {
-          planId,
-          billingCycle,
-          userId: session.user.id,
-          productId,
-        },
-      },
-    );
-
-    if (!result?.url) {
+    if (!checkout.url) {
       return NextResponse.json(
-        { error: "Failed to create checkout - no URL returned" },
+        { error: "Failed to create checkout — no URL returned" },
         { status: 500 },
       );
     }
 
     return NextResponse.json({
       success: true,
-      checkoutUrl: result.url,
+      checkoutUrl: checkout.url,
       productId,
       planId,
       billingCycle,
@@ -133,10 +100,15 @@ export async function POST(request: Request) {
 
     let errorMessage = "Failed to create checkout session";
 
-    if (error?.message?.includes("API key")) {
-      errorMessage = "Payment system configuration error. Please contact support.";
-    } else if (error?.message?.includes("network") || error?.message?.includes("fetch")) {
-      errorMessage = "Unable to connect to payment service. Please try again.";
+    if (error?.message?.includes("access token")) {
+      errorMessage =
+        "Payment system configuration error. Please contact support.";
+    } else if (
+      error?.message?.includes("network") ||
+      error?.message?.includes("fetch")
+    ) {
+      errorMessage =
+        "Unable to connect to payment service. Please try again.";
     } else if (error?.message) {
       errorMessage = error.message;
     }
@@ -144,7 +116,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: errorMessage,
-        details: process.env.NODE_ENV === "development" ? error?.message : undefined,
+        details:
+          process.env.NODE_ENV === "development" ? error?.message : undefined,
       },
       { status: 500 },
     );

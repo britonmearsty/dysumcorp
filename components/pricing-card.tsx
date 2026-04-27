@@ -37,8 +37,7 @@ export function PricingCard({
   onSubscribe,
 }: PricingCardProps) {
   const isCurrentPlan = currentPlan === plan.id;
-  const isTrialing = isCurrentPlan && currentStatus === "trialing";
-  const isScheduledCancel = isCurrentPlan && currentStatus === "scheduled_cancel";
+  const isCancelledGrace = isCurrentPlan && currentStatus === "cancelled";
   const price = billingCycle === "annual" ? plan.priceAnnual / 12 : plan.price;
   const totalPrice = billingCycle === "annual" ? plan.priceAnnual : plan.price;
   const savings =
@@ -107,13 +106,11 @@ export function PricingCard({
             isDisabled={isCurrentPlan}
             onClick={() => onSubscribe?.(plan.id, billingCycle === "annual")}
           >
-            {isTrialing
-              ? "Trial Active"
-              : isScheduledCancel
-                ? "Cancelling at Period End"
-                : isCurrentPlan
-                  ? "Current Plan"
-                  : "Subscribe"}
+            {isCancelledGrace
+              ? "Cancelling at Period End"
+              : isCurrentPlan
+                ? "Current Plan"
+                : "Subscribe"}
           </Button>
         </CardBody>
       </Card>

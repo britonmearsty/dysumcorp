@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin";
 import { applyAdminRateLimit } from "@/lib/rate-limit";
 
-const VALID_PLANS = ["trial", "pro", "expired"] as const;
+const VALID_PLANS = ["free", "pro"] as const;
 
 type ValidPlan = (typeof VALID_PLANS)[number];
 
@@ -35,48 +35,27 @@ export async function POST(request: Request) {
 
     if (!VALID_PLANS.includes(planId as ValidPlan)) {
       return NextResponse.json(
-        { error: "Invalid planId. Must be 'trial', 'pro', or 'expired'" },
+        { error: "Invalid planId. Must be 'free' or 'pro'" },
         { status: 400 },
       );
     }
 
     // Determine subscription status based on plan
-    const subscriptionStatus =
-      planId === "pro"
-        ? "active"
-        : planId === "trial"
-          ? "trialing"
-          : "cancelled";
+    const subscriptionStatus = planId === "pro" ? "active" : "active";
 
-    // Build update data
-    const updateData: Record<string, unknown> = {
-      subscriptionPlan: planId,
-      subscriptionStatus,
-    };
-
-    // When setting to trial, set trialStartedAt only if not already set
-    if (planId === "trial") {
-      // Use raw query to check since generated client may not have trialStartedAt yet
-      const rows = await prisma.$queryRaw<{ trialStartedAt: Date | null }[]>`
-        SELECT "trialStartedAt" FROM "user" WHERE id = ${userId} LIMIT 1
-      `;
-      const existingTrialStart = rows[0]?.trialStartedAt;
-
-      if (!existingTrialStart) {
-        updateData.trialStartedAt = new Date();
-        updateData.hadTrial = true;
-      }
-    }
-
-    const updatedUser = await (prisma.user.update as any)({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: updateData,
+      data: {
+        subscriptionPlan: planId,
+        subscriptionStatus,
+        // Clear Polar period end when manually setting to free
+        ...(planId === "free" ? { polarCurrentPeriodEnd: null } : {}),
+      },
       select: {
         id: true,
         email: true,
         subscriptionPlan: true,
         subscriptionStatus: true,
-        trialStartedAt: true,
       },
     });
 

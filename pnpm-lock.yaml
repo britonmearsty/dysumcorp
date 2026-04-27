@@ -152,6 +152,12 @@ importers:
       '@heroui/user':
         specifier: 2.2.25
         version: 2.2.25(@heroui/system@2.4.26(@heroui/theme@2.4.26(tailwindcss@4.1.11))(framer-motion@11.18.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@heroui/theme@2.4.26(tailwindcss@4.1.11))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@polar-sh/nextjs':
+        specifier: ^0.9.5
+        version: 0.9.5(next@15.5.9(@babel/core@7.29.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+      '@polar-sh/sdk':
+        specifier: ^0.47.0
+        version: 0.47.0
       '@prisma/adapter-pg':
         specifier: ^7.3.0
         version: 7.4.2
@@ -2248,6 +2254,21 @@ packages:
   '@pkgr/core@0.1.2':
     resolution: {integrity: sha512-fdDH1LSGfZdTH2sxdpVMw31BanV28K/Gry0cVFxaNP77neJSkd82mM8ErPNYs9e+0O7SdHBLTDzDgwUuy18RnQ==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
+
+  '@polar-sh/adapter-utils@0.4.5':
+    resolution: {integrity: sha512-ar9u2BMmF/6h0KQ2gRQBLPF/fKMcFyicZo1EpJU6awx84cmytVepw1LX5xQa7kMBxPgo8AIxUIXG5OPGeefnWQ==}
+
+  '@polar-sh/nextjs@0.9.5':
+    resolution: {integrity: sha512-T0mnFswqCWCpB1UAF1b3rD4HajX3gwR7rCjBMx86J/xUNvp0TKjdBHubAThQZaMlToNuAzYFr5KOTb5oWRVqPA==}
+    engines: {node: '>=16'}
+    peerDependencies:
+      next: ^15.0.0 || ^16.0.0
+
+  '@polar-sh/sdk@0.46.7':
+    resolution: {integrity: sha512-g8/goRQFfnik9Ood2Ej5AsbEXv2rohzhVlmW7wjkCuwdc8i59FWhdBjolX2tUwcXXjugziXrhCZJLivY3W6ytQ==}
+
+  '@polar-sh/sdk@0.47.0':
+    resolution: {integrity: sha512-tZEt8eLWsQVhmyfUQzXhnN84e5Cnu/JsYFnCci1ranWkIGveQc+wTiyzDCG9Tl1xiz1Y/ztPsAJ1fevj6ExdAA==}
 
   '@prisma/adapter-pg@7.4.2':
     resolution: {integrity: sha512-oUo2Zhe9Tf6YwVL8kLPuOLTK1Z2pwi/Ua77t2PuGyBan2w7shRKqHvYK+3XXmRH9RWhPJ4SMtHZKpNo6Ax/4bQ==}
@@ -10038,6 +10059,26 @@ snapshots:
   '@nolyfill/is-core-module@1.0.39': {}
 
   '@pkgr/core@0.1.2': {}
+
+  '@polar-sh/adapter-utils@0.4.5':
+    dependencies:
+      '@polar-sh/sdk': 0.46.7
+
+  '@polar-sh/nextjs@0.9.5(next@15.5.9(@babel/core@7.29.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
+    dependencies:
+      '@polar-sh/adapter-utils': 0.4.5
+      '@polar-sh/sdk': 0.46.7
+      next: 15.5.9(@babel/core@7.29.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+
+  '@polar-sh/sdk@0.46.7':
+    dependencies:
+      standardwebhooks: 1.0.0
+      zod: 4.3.6
+
+  '@polar-sh/sdk@0.47.0':
+    dependencies:
+      standardwebhooks: 1.0.0
+      zod: 4.3.6
 
   '@prisma/adapter-pg@7.4.2':
     dependencies:

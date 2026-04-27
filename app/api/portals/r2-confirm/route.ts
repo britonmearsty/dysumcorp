@@ -203,15 +203,7 @@ export async function POST(request: NextRequest) {
           select: { subscriptionPlan: true },
         });
 
-        if (user && user.subscriptionPlan === "trial") {
-          await prisma.user.update({
-            where: { id: portal.userId },
-            data: { trialFileCount: { increment: 1 } },
-          });
-          console.log(
-            `[r2-confirm:${requestId}] ✓ Trial file count incremented`,
-          );
-        }
+        // No trial tracking needed — users are either free or pro
       }
 
       // ── Update staging record with delivery details ─────────────────────────

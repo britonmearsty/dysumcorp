@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { checkAccess } from "@/lib/trial";
+import { checkAccess } from "@/lib/access";
 import { isValidUUID } from "@/lib/validation";
 
 // POST /api/portals/[id]/toggle-active - Toggle portal active status

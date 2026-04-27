@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { PRICING_PLANS, PlanType, PlanLimits } from "@/config/pricing";
 
-// trial gets pro limits; expired gets zero limits (no access)
 function getEffectivePlan(planType: PlanType) {
-  if (planType === "pro" || planType === "trial") return PRICING_PLANS["pro"];
+  if (planType === "pro") return PRICING_PLANS["pro"];
 
+  // Free users get zero limits — portal creation is blocked at the access layer
   return {
     ...PRICING_PLANS["pro"],
     limits: {
@@ -33,43 +33,20 @@ export interface FeatureAccessCheck {
 export async function checkPortalLimit(
   userId: string,
   planType: PlanType,
-  softMode: boolean = false,
 ): Promise<PlanLimitCheck> {
   const limits = getEffectivePlan(planType).limits;
-  const currentCount = await prisma.portal.count({ where: { userId } });
 
-  const effectiveLimit = softMode
-    ? limits.portals + Math.max(Math.ceil(limits.portals * 0.1), 1)
-    : limits.portals;
-
-  if (currentCount >= effectiveLimit) {
+  if (limits.portals === 0) {
     return {
       allowed: false,
-      reason: `Portal limit exceeded. Your ${planType} plan allows ${limits.portals} portal(s) and grace period is exhausted.`,
-      current: currentCount,
-      limit: limits.portals,
+      reason: "A Pro subscription is required to create portals.",
+      current: 0,
+      limit: 0,
     };
   }
 
-  if (currentCount >= limits.portals) {
-    if (softMode) {
-      return {
-        allowed: true,
-        reason: `Portal limit reached. Your ${planType} plan allows ${limits.portals} portal(s). You have ${effectiveLimit - currentCount} grace uses remaining.`,
-        current: currentCount,
-        limit: limits.portals,
-      };
-    } else {
-      return {
-        allowed: false,
-        reason: `Portal limit reached. Your ${planType} plan allows ${limits.portals} portal(s).`,
-        current: currentCount,
-        limit: limits.portals,
-      };
-    }
-  }
-
-  return { allowed: true, current: currentCount, limit: limits.portals };
+  // Pro has unlimited portals (999999) — always allowed
+  return { allowed: true, current: 0, limit: limits.portals };
 }
 
 export async function checkStorageLimit(
@@ -160,31 +137,27 @@ export function checkFeatureAccess(
 export async function getUserPlanType(userId: string): Promise<PlanType> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { subscriptionPlan: true, subscriptionStatus: true, status: true },
+    select: {
+      subscriptionPlan: true,
+      subscriptionStatus: true,
+      polarCurrentPeriodEnd: true,
+      status: true,
+    },
   });
 
-  if (!user?.subscriptionPlan) {
-    return "trial";
-  }
+  if (!user) return "free";
 
   const plan = user.subscriptionPlan;
   const status = user.subscriptionStatus;
 
-  // If user is deleted but has active subscription, show as pro
-  if (user.status === "deleted") {
-    if (plan === "pro" && (status === "active" || status === "trialing" || status === "scheduled_cancel")) {
-      return "pro";
+  if (plan === "pro") {
+    if (status === "active") return "pro";
+
+    // Cancelled but still within the paid period
+    if (status === "cancelled" && user.polarCurrentPeriodEnd) {
+      if (new Date(user.polarCurrentPeriodEnd) > new Date()) return "pro";
     }
-    return "expired";
   }
 
-  if (plan === "pro" && (status === "active" || status === "trialing" || status === "scheduled_cancel")) {
-    return "pro";
-  }
-
-  if (status === "cancelled" || plan === "expired") {
-    return "expired";
-  }
-
-  return "trial";
+  return "free";
 }

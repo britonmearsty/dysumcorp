@@ -48,4 +48,4 @@ IMPLEMENTATION_PLAN.md
 /design-reference/
 *.md
 
-.opencode/
+.opencode/.env.local

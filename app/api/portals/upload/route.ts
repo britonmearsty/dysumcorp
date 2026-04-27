@@ -16,7 +16,7 @@ import {
 } from "@/lib/rate-limit";
 import { sendFileUploadNotification } from "@/lib/email-service";
 import { hashPassword } from "@/lib/password-utils";
-import { checkAccess } from "@/lib/trial";
+import { checkAccess } from "@/lib/access";
 
 // Route segment config for App Router
 export const runtime = "nodejs";

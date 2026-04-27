@@ -22,7 +22,7 @@ export function UsageDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
-  const currentPlan = (session?.user as any)?.subscriptionPlan || "trial";
+  const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
   const limits = PRICING_PLANS.pro.limits;
 
   useEffect(() => {

@@ -18,7 +18,7 @@ import {
   UploadSession,
 } from "@/lib/upload-sessions";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
-import { checkAccess } from "@/lib/trial";
+import { checkAccess } from "@/lib/access";
 
 function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
   const allowedMimeTypes = new Set<string>();

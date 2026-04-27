@@ -1191,7 +1191,7 @@ export default function CreatePortalPage() {
   const { data: session } = useSession();
   const { showPaywall, PaywallModal } = usePaywall();
   const [currentStep, setCurrentStep] = useState<Step>("identity");
-  const [userPlan, setUserPlan] = useState<PlanType>("trial");
+  const [userPlan, setUserPlan] = useState<PlanType>("free");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -1714,8 +1714,7 @@ export default function CreatePortalPage() {
       if (!response.ok) {
         // No subscription - show upgrade modal
         if (
-          data.code === "CHECKOUT_REQUIRED" ||
-          data.code === "SUBSCRIPTION_EXPIRED"
+          data.code === "CHECKOUT_REQUIRED"
         ) {
           showPaywall(
             userPlan,

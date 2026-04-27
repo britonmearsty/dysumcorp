@@ -182,15 +182,9 @@ export function SoftPaywallModal({
                         <div className="flex justify-between">
                           <span>Storage:</span>
                           <span className="font-semibold">
-                            {plan.limits.storage}GB
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Custom Domains:</span>
-                          <span className="font-semibold">
-                            {plan.limits.customDomains >= 999999
+                            {plan.limits.storage >= 999999
                               ? "Unlimited"
-                              : plan.limits.customDomains}
+                              : `${plan.limits.storage}GB`}
                           </span>
                         </div>
                       </div>
@@ -258,7 +252,7 @@ export function useSoftPaywall() {
     onProceed?: () => void;
   }>({
     isOpen: false,
-    currentPlan: "trial" as PlanType,
+    currentPlan: "free" as PlanType,
     feature: "",
     reason: "",
   });

@@ -8,7 +8,7 @@ import {
   findOrCreateClientFolder,
 } from "@/lib/storage-api";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
-import { checkAccess } from "@/lib/trial";
+import { checkAccess } from "@/lib/access";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;

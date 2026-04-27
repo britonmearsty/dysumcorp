@@ -17,7 +17,7 @@ export function PricingClient() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
     "monthly",
   );
-  const currentPlan = (session?.user as any)?.subscriptionPlan || "trial";
+  const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
   const { showToast } = useToast();
 
   const handleSubscribe = async (planId: string, isAnnual: boolean) => {

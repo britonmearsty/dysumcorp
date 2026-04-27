@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Card, CardBody } from "@heroui/card";
 
 import { auth } from "@/lib/auth";
-import { checkUserSubscription } from "@/lib/auth-server";
+import { checkAccess } from "@/lib/access";
 
 export default async function PremiumPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -12,9 +12,9 @@ export default async function PremiumPage() {
     redirect("/auth");
   }
 
-  const status = await checkUserSubscription(session.user.id);
+  const access = await checkAccess(session.user.id);
 
-  if (!status.hasAccess) {
+  if (!access.allowed) {
     redirect("/dashboard/billing?error=subscription_required");
   }
 
@@ -44,14 +44,14 @@ export default async function PremiumPage() {
               <li>
                 Status:{" "}
                 <span className="font-mono text-green-600">
-                  {status.status}
+                  {access.reason}
                 </span>
               </li>
-              {status.expiresAt && (
+              {access.periodEnd && (
                 <li>
-                  Expires:{" "}
+                  Access until:{" "}
                   <span className="font-mono">
-                    {new Date(status.expiresAt).toLocaleDateString()}
+                    {new Date(access.periodEnd).toLocaleDateString()}
                   </span>
                 </li>
               )}

@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import { prisma } from "@/lib/prisma";
 import { applyUploadRateLimit, applyPasswordRateLimit } from "@/lib/rate-limit";
-import { checkAccess } from "@/lib/trial";
+import { checkAccess } from "@/lib/access";
 import { verifyPasswordWithMigration } from "@/lib/password-utils";
 import { generateUploadToken } from "@/lib/upload-tokens";
 import {

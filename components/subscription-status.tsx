@@ -4,26 +4,26 @@ import { useEffect, useState } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 
-import { authClient, useSession } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
+import type { AccessResult } from "@/lib/access";
 
 export function SubscriptionStatus() {
   const { data: session, isPending } = useSession();
-  const [creemStatus, setCreemStatus] = useState<{
-    hasAccessGranted?: boolean;
-    hasAccess?: boolean;
-    expiresAt?: string;
-  } | null>(null);
+  const [access, setAccess] = useState<AccessResult | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const userPlan = (session?.user as any)?.subscriptionPlan || "trial";
-  const userStatus = (session?.user as any)?.subscriptionStatus || "trialing";
+  const userPlan = (session?.user as any)?.subscriptionPlan || "free";
+  const userStatus = (session?.user as any)?.subscriptionStatus || "active";
+  const polarCurrentPeriodEnd = (session?.user as any)?.polarCurrentPeriodEnd;
 
   useEffect(() => {
-    const fetchStatus = async () => {
+    const fetchAccess = async () => {
       try {
-        const { data } = await authClient.creem.hasAccessGranted();
-
-        setCreemStatus(data || null);
+        const res = await fetch("/api/access");
+        if (res.ok) {
+          const data = await res.json();
+          setAccess(data);
+        }
       } catch {
         // ignore
       } finally {
@@ -32,7 +32,7 @@ export function SubscriptionStatus() {
     };
 
     if (!isPending) {
-      fetchStatus();
+      fetchAccess();
     }
   }, [session, isPending]);
 
@@ -48,24 +48,13 @@ export function SubscriptionStatus() {
     );
   }
 
-  // Derive display values from DB state (source of truth)
   const isPro = userPlan === "pro";
   const isActive = isPro && userStatus === "active";
-  const isTrialing = isPro && userStatus === "trialing";
-  const isScheduledCancel = isPro && userStatus === "scheduled_cancel";
-  const isExpired = userPlan === "expired";
-  const isNewUser = userPlan === "trial"; // no card, no subscription
+  const isCancelledGrace = isPro && userStatus === "cancelled";
+  const isFree = userPlan === "free";
 
   // Plan label
-  let planLabel: string;
-
-  if (isPro) {
-    planLabel = "Pro";
-  } else if (isExpired) {
-    planLabel = "Expired";
-  } else {
-    planLabel = "No plan";
-  }
+  const planLabel = isPro ? "Pro" : "Free";
 
   // Status chip
   let chipLabel: string;
@@ -74,17 +63,10 @@ export function SubscriptionStatus() {
   if (isActive) {
     chipLabel = "Active";
     chipColor = "success";
-  } else if (isTrialing) {
-    chipLabel = "Trialing";
-    chipColor = "warning";
-  } else if (isScheduledCancel) {
+  } else if (isCancelledGrace) {
     chipLabel = "Cancelling";
     chipColor = "warning";
-  } else if (isExpired) {
-    chipLabel = "Expired";
-    chipColor = "danger";
   } else {
-    // new user
     chipLabel = "No subscription";
     chipColor = "default";
   }
@@ -104,22 +86,16 @@ export function SubscriptionStatus() {
           </Chip>
         </div>
 
-        {isScheduledCancel && creemStatus?.expiresAt && (
+        {isCancelledGrace && polarCurrentPeriodEnd && (
           <p className="text-xs text-muted-foreground">
             Access until:{" "}
-            {new Date(creemStatus.expiresAt).toLocaleDateString()}
+            {new Date(polarCurrentPeriodEnd).toLocaleDateString()}
           </p>
         )}
 
-        {isTrialing && (
+        {isFree && (
           <p className="text-xs text-muted-foreground">
-            Your card will be charged at the end of your 7-day trial.
-          </p>
-        )}
-
-        {isNewUser && (
-          <p className="text-xs text-muted-foreground">
-            Subscribe to create portals and start collecting files.
+            Subscribe to Pro to create portals and start collecting files.
           </p>
         )}
       </CardBody>

@@ -1,6 +1,6 @@
 "use client";
 
-import type { AccessResult } from "@/lib/trial";
+import type { AccessResult } from "@/lib/access";
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,14 +36,15 @@ export default function BillingPage() {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
+
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
     "monthly",
   );
   const [showSuccess, setShowSuccess] = useState(false);
   const [showCanceled, setShowCanceled] = useState(false);
   const [access, setAccess] = useState<AccessResult | null>(null);
-  const currentPlan = (session?.user as any)?.subscriptionPlan || "trial";
-  const currentStatus = (session?.user as any)?.subscriptionStatus || "trialing";
+  const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
+  const currentStatus = (session?.user as any)?.subscriptionStatus || "active";
   const { showToast } = useToast();
 
   const tabs = [
@@ -67,7 +68,7 @@ export default function BillingPage() {
     },
   ];
 
-  // Fetch access status for trial info
+  // Fetch access status
   useEffect(() => {
     fetch("/api/access")
       .then((r) => (r.ok ? r.json() : null))
@@ -86,7 +87,7 @@ export default function BillingPage() {
       setShowSuccess(true);
 
       // Poll until the webhook has updated the DB and session reflects the new state.
-      // Creem webhooks typically arrive within 1-3 seconds of redirect.
+      // Polar webhooks typically arrive within 1-3 seconds of redirect.
       let attempts = 0;
       const maxAttempts = 10;
 
@@ -94,14 +95,12 @@ export default function BillingPage() {
         attempts++;
         await refetch();
 
-        // Also refresh access state
         try {
           const res = await fetch("/api/access");
           if (res.ok) {
             const data = await res.json();
             setAccess(data);
 
-            // If access is now granted (trialing or active), we're done
             if (data.allowed) {
               router.replace("/dashboard/billing");
               return;
@@ -112,12 +111,10 @@ export default function BillingPage() {
         if (attempts < maxAttempts) {
           setTimeout(poll, 1500);
         } else {
-          // Webhook took too long — just clear the param and show whatever state we have
           router.replace("/dashboard/billing");
         }
       };
 
-      // Start polling after a short initial delay to give the webhook time to arrive
       setTimeout(poll, 1500);
 
       const timer = setTimeout(() => setShowSuccess(false), 18000);
@@ -150,7 +147,6 @@ export default function BillingPage() {
 
       if (!response.ok) {
         showToast(data.error || "Failed to create checkout session", "error");
-
         return;
       }
 
@@ -258,35 +254,18 @@ export default function BillingPage() {
                   {/* Overview Tab */}
                   {activeTab === "overview" && (
                     <div className="space-y-6">
-                      {/* Trialing — card on file, within 7-day trial */}
-                      {access?.reason === "trialing" && (
-                        <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl px-4 py-3">
-                          <Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                          <div>
-                            <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">
-                              7-Day Free Trial Active
-                            </p>
-                            <p className="text-xs text-indigo-600 dark:text-indigo-400">
-                              Your card will be charged at the end of your
-                              7-day trial. Cancel anytime before then.
-                            </p>
-                          </div>
+                      {/* Active paid subscriber */}
+                      {access?.reason === "pro_active" && (
+                        <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3">
+                          <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                            Pro plan active
+                          </p>
                         </div>
                       )}
 
-                      {/* Active paid subscriber */}
-                      {access?.reason === "active_subscription" &&
-                        currentStatus !== "scheduled_cancel" && (
-                          <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3">
-                            <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
-                              Pro plan active
-                            </p>
-                          </div>
-                        )}
-
-                      {/* Scheduled cancel — still has access until period end */}
-                      {currentStatus === "scheduled_cancel" && (
+                      {/* Cancelled — still in grace period */}
+                      {access?.reason === "pro_cancelled_grace" && (
                         <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3">
                           <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
                           <div>
@@ -295,8 +274,12 @@ export default function BillingPage() {
                             </p>
                             <p className="text-xs text-amber-600 dark:text-amber-400">
                               You have full access until your billing period
-                              ends. You can resume your subscription anytime
-                              before then.
+                              ends
+                              {access.periodEnd
+                                ? ` on ${new Date(access.periodEnd).toLocaleDateString()}`
+                                : ""}
+                              . You can resume your subscription anytime before
+                              then.
                             </p>
                           </div>
                         </div>
@@ -327,7 +310,7 @@ export default function BillingPage() {
                     </div>
                   )}
 
-                  {/* Plans Tab — only Pro plan shown */}
+                  {/* Plans Tab */}
                   {activeTab === "plans" && (
                     <div id="pricing">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">

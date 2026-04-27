@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { getUserPlanType } from "@/lib/plan-limits";
-import { checkAccess } from "@/lib/trial";
+import { checkAccess } from "@/lib/access";
 import { isAdmin } from "@/lib/admin";
 
 export async function GET(request: Request) {

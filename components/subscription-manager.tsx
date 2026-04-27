@@ -23,9 +23,7 @@ export function SubscriptionManager({
   const { showToast } = useToast();
 
   const isPro = currentPlan === "pro";
-  const isExpired = currentPlan === "expired";
-  const isScheduledCancel = currentStatus === "scheduled_cancel";
-  const isTrialing = currentStatus === "trialing";
+  const isCancelledGrace = isPro && currentStatus === "cancelled";
 
   const handleSubscribe = async () => {
     setLoading(true);
@@ -39,7 +37,6 @@ export function SubscriptionManager({
 
       if (!response.ok) {
         showToast(data.error || "Failed to start checkout", "error");
-
         return;
       }
       window.location.href = data.checkoutUrl;
@@ -50,7 +47,7 @@ export function SubscriptionManager({
     }
   };
 
-  // Active pro subscriber (including scheduled cancel — still has access)
+  // Active pro subscriber
   if (isPro) {
     return (
       <Card className="bg-card border border-border rounded-xl" shadow="none">
@@ -61,17 +58,11 @@ export function SubscriptionManager({
           </p>
         </CardHeader>
         <CardBody className="gap-4">
-          {isScheduledCancel ? (
+          {isCancelledGrace ? (
             <p className="text-sm text-muted-foreground">
               Your subscription is set to cancel at the end of the current
               billing period. You retain full access until then. You can resume
               your subscription from the portal below.
-            </p>
-          ) : isTrialing ? (
-            <p className="text-sm text-muted-foreground">
-              You&apos;re in your 7-day free trial. Your card will be charged
-              when the trial ends. Cancel anytime before then from the portal
-              below.
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
@@ -86,24 +77,17 @@ export function SubscriptionManager({
     );
   }
 
-  // Expired or new user — show subscribe CTA
+  // Free user — show subscribe CTA
   return (
     <Card className="bg-card border border-border rounded-xl" shadow="none">
       <CardHeader className="flex flex-col items-start gap-1 bg-muted/30">
-        <h3 className="text-lg font-semibold">
-          {isExpired ? "Resubscribe" : "Get Started"}
-        </h3>
-        <p className="text-small text-muted-foreground">
-          {isExpired
-            ? "Your subscription has ended"
-            : "No active subscription"}
-        </p>
+        <h3 className="text-lg font-semibold">Get Started</h3>
+        <p className="text-small text-muted-foreground">No active subscription</p>
       </CardHeader>
       <CardBody className="gap-4">
         <p className="text-sm text-muted-foreground">
-          {isExpired
-            ? "Subscribe to Pro to reactivate your portals and continue collecting files."
-            : "Subscribe to Pro to create portals and start routing files to your cloud storage."}
+          Subscribe to Pro to create portals and start routing files to your
+          cloud storage.
         </p>
         <Button
           className="w-full font-semibold"
@@ -114,7 +98,7 @@ export function SubscriptionManager({
           Subscribe to Pro — ${PRICING_PLANS.pro.price}/mo
         </Button>
         <p className="text-xs text-muted-foreground text-center">
-          7-day free trial · Cancel anytime
+          Cancel anytime. No hidden fees.
         </p>
       </CardBody>
     </Card>

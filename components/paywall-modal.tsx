@@ -11,7 +11,7 @@ import {
 import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
-import { Lock, Check, X } from "lucide-react";
+import { Lock, Check } from "lucide-react";
 
 import {
   PRICING_PLANS,
@@ -19,8 +19,6 @@ import {
   formatPrice,
   formatStorage,
 } from "@/config/pricing";
-
-// Import static icons for paywall modal
 
 interface PaywallModalProps {
   isOpen: boolean;
@@ -37,7 +35,6 @@ export function PaywallModal({
   currentPlan,
   feature,
   reason,
-  requiredPlan,
 }: PaywallModalProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(isOpen);
 
@@ -50,11 +47,7 @@ export function PaywallModal({
     onClose();
   }, [onClose]);
 
-  const minimumPlan: "pro" = "pro";
-  const recommendedPlan: "pro" = "pro";
-
-  const plan = PRICING_PLANS[recommendedPlan];
-  const minimumPlanDetails = PRICING_PLANS[minimumPlan];
+  const plan = PRICING_PLANS["pro"];
 
   const handleUpgrade = async () => {
     onClose();
@@ -106,10 +99,10 @@ export function PaywallModal({
                 </div>
                 <div>
                   <h2 className="text-xl font-bold font-mono">
-                    Feature Available on Higher Plans
+                    Pro Subscription Required
                   </h2>
                   <p className="text-sm text-default-500">
-                    {feature} requires an upgrade to access
+                    {feature} requires a Pro subscription
                   </p>
                 </div>
               </div>
@@ -132,7 +125,7 @@ export function PaywallModal({
                         </Chip>
                         <span>→</span>
                         <Chip color="primary" size="sm" variant="flat">
-                          Required: {minimumPlanDetails.name}
+                          Required: Pro
                         </Chip>
                       </div>
                     </div>
@@ -142,9 +135,7 @@ export function PaywallModal({
 
               {/* Recommended Plan */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-lg">
-                  Recommended: {plan.name}
-                </h3>
+                <h3 className="font-semibold text-lg">Pro Plan</h3>
 
                 <Card className="border-primary">
                   <CardBody className="space-y-4">
@@ -187,14 +178,6 @@ export function PaywallModal({
                           {formatStorage(plan.limits.storage)}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-default-500">Custom Domains</p>
-                        <p className="font-semibold">
-                          {plan.limits.customDomains >= 999999
-                            ? "Unlimited"
-                            : plan.limits.customDomains}
-                        </p>
-                      </div>
                     </div>
 
                     {/* Key Features */}
@@ -217,54 +200,6 @@ export function PaywallModal({
                   </CardBody>
                 </Card>
               </div>
-
-              {/* Feature Availability */}
-              <div className="bg-default-50 rounded-lg p-4">
-                <p className="text-sm font-semibold mb-2">
-                  Feature Availability:
-                </p>
-                <div className="space-y-2 text-sm">
-                  {Object.entries(PRICING_PLANS).map(
-                    ([planType, planDetails]) => {
-                      const featureValue =
-                        planDetails.limits[
-                          feature as keyof typeof planDetails.limits
-                        ];
-                      const hasAccess =
-                        featureValue === true ||
-                        (typeof featureValue === "number" && featureValue > 0);
-
-                      return (
-                        <div
-                          key={planType}
-                          className="flex items-center justify-between"
-                        >
-                          <span className="font-medium">
-                            {planDetails.name}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            {hasAccess ? (
-                              <>
-                                <Check className="w-4 h-4 text-success" />
-                                <Chip color="success" size="sm" variant="flat">
-                                  Available
-                                </Chip>
-                              </>
-                            ) : (
-                              <>
-                                <X className="w-4 h-4 text-default-400" />
-                                <Chip color="default" size="sm" variant="flat">
-                                  Not Available
-                                </Chip>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    },
-                  )}
-                </div>
-              </div>
             </ModalBody>
 
             <ModalFooter className="gap-3">
@@ -280,7 +215,7 @@ export function PaywallModal({
                 color="primary"
                 onPress={handleUpgrade}
               >
-                Upgrade to {plan.name}
+                Subscribe to Pro
               </Button>
             </ModalFooter>
           </>
@@ -300,7 +235,7 @@ export function usePaywall() {
     requiredPlan?: PlanType;
   }>({
     isOpen: false,
-    currentPlan: "trial" as PlanType,
+    currentPlan: "free" as PlanType,
     feature: "",
     reason: "",
   });
