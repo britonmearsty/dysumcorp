@@ -115,8 +115,10 @@ export async function updateUsageTracking() {
 
         if (user.subscriptionPlan) {
           const planLimits = getPlanLimits(user.subscriptionPlan as PlanType);
-          const storageLimitBytes = planLimits.storage * 1024 * 1024 * 1024;
-          const storagePercentage = (storageUsed / storageLimitBytes) * 100;
+
+          if (planLimits.storage !== undefined) {
+            const storageLimitBytes = planLimits.storage * 1024 * 1024 * 1024;
+            const storagePercentage = (storageUsed / storageLimitBytes) * 100;
 
           if (storagePercentage >= 90 && user.notifyOnStorageWarning) {
             await sendStorageWarning({
@@ -126,6 +128,7 @@ export async function updateUsageTracking() {
               totalStorage: formatBytes(storageLimitBytes),
               percentage: Math.round(storagePercentage),
             });
+          }
           }
         }
       } catch (userError) {
@@ -167,7 +170,6 @@ export async function sendWeeklyReports() {
         const planLimits = getPlanLimits(
           (user.subscriptionPlan as PlanType) || "pro",
         );
-        const storageLimitBytes = planLimits.storage * 1024 * 1024 * 1024;
 
         const storageUsed = user.portals.reduce(
           (total: number, portal: Record<string, unknown>) => {
@@ -251,6 +253,11 @@ export async function sendWeeklyReports() {
           .sort((a, b) => b.downloads - a.downloads)
           .slice(0, 5);
 
+        // Storage is optional - if not set, files go to user's cloud
+        const storageLimitBytes = planLimits.storage !== undefined
+          ? planLimits.storage * 1024 * 1024 * 1024
+          : Number.MAX_SAFE_INTEGER;
+
         await sendWeeklyReport({
           to: user.email,
           userName: user.name || user.email.split("@")[0],
@@ -263,9 +270,9 @@ export async function sendWeeklyReports() {
           totalDownloads,
           storageUsed: formatBytes(storageUsed),
           storageLimit: formatBytes(storageLimitBytes),
-          storagePercentage: Math.round(
-            (storageUsed / storageLimitBytes) * 100,
-          ),
+          storagePercentage: planLimits.storage !== undefined
+            ? Math.round((storageUsed / storageLimitBytes) * 100)
+            : 0,
           topPortals,
         });
       } catch (userError) {
@@ -357,7 +364,6 @@ export async function getUserUsageStats(userId: string) {
   const planLimits = getPlanLimits(
     (user.subscriptionPlan as PlanType) || "pro",
   );
-  const storageLimitBytes = planLimits.storage * 1024 * 1024 * 1024;
 
   const currentStorageUsed = user.portals.reduce(
     (total: number, portal: Record<string, unknown>) => {
@@ -381,7 +387,9 @@ export async function getUserUsageStats(userId: string) {
       portals: planLimits.portals,
     },
     currentStorageUsed,
-    storagePercentage: (currentStorageUsed / storageLimitBytes) * 100,
+    storagePercentage: planLimits.storage !== undefined
+      ? (currentStorageUsed / (planLimits.storage * 1024 * 1024 * 1024)) * 100
+      : 0,
     portalsUsed: user.portals.length,
     portalsPercentage: (user.portals.length / planLimits.portals) * 100,
   };
