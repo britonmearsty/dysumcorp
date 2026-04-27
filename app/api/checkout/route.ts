@@ -7,7 +7,9 @@ import { PRICING_PLANS } from "@/config/pricing";
 const polar = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN!,
   server:
-    process.env.NODE_ENV === "production" ? "production" : "sandbox",
+    process.env.POLAR_FORCE_SANDBOX === "true" || process.env.NODE_ENV !== "production"
+      ? "sandbox"
+      : "production",
 });
 
 export async function POST(request: Request) {
@@ -60,7 +62,8 @@ export async function POST(request: Request) {
         ? plan.polarProductIdAnnual
         : plan.polarProductId;
 
-    if (!productId) {
+    if (!productId || productId.trim() === "") {
+      console.error(`Missing POLAR_PRODUCT_ID_${billingCycle === "annual" ? "ANNUAL" : "MONTHLY"} environment variable`);
       return NextResponse.json(
         {
           error:
@@ -103,6 +106,9 @@ export async function POST(request: Request) {
     if (error?.message?.includes("access token")) {
       errorMessage =
         "Payment system configuration error. Please contact support.";
+    } else if (error?.message?.includes("non-null body")) {
+      errorMessage =
+        "Payment product not configured. Please contact support.";
     } else if (
       error?.message?.includes("network") ||
       error?.message?.includes("fetch")
