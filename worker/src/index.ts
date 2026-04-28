@@ -751,6 +751,7 @@ async function runTransfer(
 
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
+  "https://dysumcorp.pro",
   "https://dysumcorppro.vercel.app",
   "https://app.dysumcorp.com",
 ];
