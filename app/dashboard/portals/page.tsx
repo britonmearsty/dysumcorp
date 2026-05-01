@@ -24,6 +24,8 @@ import { useToast } from "@/lib/toast";
 import { useStorageDeleteBehavior } from "@/lib/use-storage-delete-behavior";
 import { DeleteFileModal } from "@/components/ui/delete-file-modal";
 import { DeletePortalModal } from "@/components/ui/delete-portal-modal";
+import { usePaywall } from "@/components/paywall-modal";
+import { PlanType } from "@/config/pricing";
 
 interface Portal {
   id: string;
@@ -78,6 +80,11 @@ export default function PortalsPage() {
   const [togglingPortal, setTogglingPortal] = useState<string | null>(null);
   const { showToast } = useToast();
   const { behavior: deleteBehavior } = useStorageDeleteBehavior();
+  const { showPaywall, PaywallModal } = usePaywall();
+
+  // REVERSIBILITY: Remove these state variables to revert trial feature
+  const [userPlan, setUserPlan] = useState<PlanType>("free");
+  const [hasCreatedTrialPortal, setHasCreatedTrialPortal] = useState(false);
 
   // REVERSIBILITY: Remove this helper function to revert trial feature
   const getTrialStatus = (portal: Portal) => {
@@ -101,7 +108,27 @@ export default function PortalsPage() {
 
   useEffect(() => {
     fetchPortals();
+    fetchUserPlan();
   }, []);
+
+  // REVERSIBILITY: Remove this function to revert trial feature
+  const fetchUserPlan = async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      const response = await fetch(`/api/plan-limits?userId=${session.user.id}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setUserPlan(data.planType);
+        if (data.planType === "free" && data.hasCreatedTrialPortal) {
+          setHasCreatedTrialPortal(true);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch user plan:", error);
+    }
+  };
 
   const fetchPortals = async () => {
     try {
@@ -157,7 +184,19 @@ export default function PortalsPage() {
     }
   };
 
-  const handleCreatePortal = () => {
+  const handleCreatePortal = async () => {
+    // REVERSIBILITY: Remove this check to revert trial feature
+    // Check if free user has already used their trial portal before navigating
+    if (userPlan === "free" && hasCreatedTrialPortal) {
+      showPaywall(
+        userPlan,
+        "Create Portal",
+        "You've already created your free trial portal. Upgrade to Pro to create unlimited portals.",
+      );
+      return;
+    }
+
+    // If pro user or free user hasn't used trial, navigate to create page
     router.push("/dashboard/portals/create");
   };
 
@@ -941,6 +980,9 @@ export default function PortalsPage() {
         }}
         onConfirm={confirmDeleteFile}
       />
+
+      {/* Paywall Modal - shown when trial user tries to create second portal */}
+      <PaywallModal />
     </div>
   );
 }
