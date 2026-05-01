@@ -22,6 +22,12 @@ export async function GET(request: Request) {
         _count: {
           select: { files: true },
         },
+        // REVERSIBILITY: Remove user include to revert trial feature
+        user: {
+          select: {
+            subscriptionPlan: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       take,

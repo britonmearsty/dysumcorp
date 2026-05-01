@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
 import { hashPassword } from "@/lib/password-utils";
 import { checkAccess } from "@/lib/access";
+import { checkPortalLimit, getUserPlanType } from "@/lib/plan-limits";
 import { sendPortalCreatedNotification } from "@/lib/email-service";
 
 export async function POST(request: Request) {
@@ -16,15 +17,16 @@ export async function POST(request: Request) {
 
     const userId = session.user.id;
 
-    // Check subscription access
-    const access = await checkAccess(userId);
+    // REVERSIBILITY: Replace with original checkAccess call to revert trial feature
+    // Check portal limit (allows 1 trial portal for free users)
+    const planType = await getUserPlanType(userId);
+    const portalLimitCheck = await checkPortalLimit(userId, planType);
 
-    // Only Pro subscribers (active or in cancelled grace period) can create portals
-    if (!access.allowed) {
+    if (!portalLimitCheck.allowed) {
       return NextResponse.json(
         {
-          error: "A Pro subscription is required to create portals.",
-          code: "CHECKOUT_REQUIRED",
+          error: portalLimitCheck.reason,
+          code: "SUBSCRIPTION_REQUIRED",
         },
         { status: 402 },
       );
@@ -174,6 +176,15 @@ export async function POST(request: Request) {
         textboxSectionRequired: textboxSectionRequired ?? false,
       },
     });
+
+    // REVERSIBILITY: Remove this block to revert trial feature
+    // Mark free users as having used their trial portal
+    if (planType === "free") {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { hasCreatedTrialPortal: true },
+      });
+    }
 
     // Send portal creation notification email
     if (user?.email) {

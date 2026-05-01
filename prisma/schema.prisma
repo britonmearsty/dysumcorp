@@ -42,6 +42,10 @@ model User {
   // "ask" = show checkbox in delete modal, "always" = always delete from storage, "never" = never delete from storage
   storageDeleteBehavior String @default("ask")
 
+  // Trial portal tracking: true if user has created their free trial portal
+  // REVERSIBILITY: Can be safely removed if trial feature is discontinued
+  hasCreatedTrialPortal Boolean @default(false)
+
   @@map("user")
 }
 

@@ -37,6 +37,10 @@ interface Portal {
   _count: {
     files: number;
   };
+  // REVERSIBILITY: Remove these fields to revert trial feature
+  user?: {
+    subscriptionPlan: string;
+  };
 }
 
 interface FileUploadProgress {
@@ -74,6 +78,26 @@ export default function PortalsPage() {
   const [togglingPortal, setTogglingPortal] = useState<string | null>(null);
   const { showToast } = useToast();
   const { behavior: deleteBehavior } = useStorageDeleteBehavior();
+
+  // REVERSIBILITY: Remove this helper function to revert trial feature
+  const getTrialStatus = (portal: Portal) => {
+    if (portal.user?.subscriptionPlan === "free") {
+      const createdAt = new Date(portal.createdAt);
+      const expiresAt = new Date(createdAt);
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      const daysRemaining = Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      const fileCount = portal._count.files;
+      
+      return {
+        isTrial: true,
+        daysRemaining: Math.max(0, daysRemaining),
+        fileCount,
+        fileLimit: 10,
+        isExpired: daysRemaining <= 0,
+      };
+    }
+    return { isTrial: false };
+  };
 
   useEffect(() => {
     fetchPortals();
@@ -495,6 +519,28 @@ export default function PortalsPage() {
                         Premium
                       </span>
                     )}
+                    {(() => {
+                      const trial = getTrialStatus(portal);
+                      if (trial.isTrial) {
+                        return (
+                          <>
+                            <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-950/50">
+                              Trial
+                            </span>
+                            {trial.isExpired ? (
+                              <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-red-50 text-red-600 dark:bg-red-950/50">
+                                Expired
+                              </span>
+                            ) : (
+                              <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-amber-50 text-amber-600 dark:bg-amber-950/50">
+                                {trial.daysRemaining}d left
+                              </span>
+                            )}
+                          </>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               </div>
@@ -505,7 +551,13 @@ export default function PortalsPage() {
                   <span className="text-muted-foreground">Files</span>
                   <span className="font-medium flex items-center gap-1">
                     <FileText className="w-3.5 h-3.5" />
-                    {portal._count.files}
+                    {(() => {
+                      const trial = getTrialStatus(portal);
+                      if (trial.isTrial) {
+                        return `${trial.fileCount}/${trial.fileLimit}`;
+                      }
+                      return portal._count.files;
+                    })()}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">

@@ -16,6 +16,7 @@ import {
   FolderOpen,
   Hash,
   XIcon,
+  Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -1750,6 +1751,55 @@ export default function CreatePortalPage() {
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
         Back to Portals
       </Link>
+
+      {/* REVERSIBILITY: Remove this block to revert trial feature */}
+      {/* Show trial limitations for free users */}
+      {userPlan === "free" && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex-shrink-0">
+              <Zap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-bold text-sm text-blue-900 dark:text-blue-100">
+                  Free Trial Portal
+                </h3>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-2 py-0.5 rounded-full">
+                  Trial
+                </span>
+              </div>
+              <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed mb-2">
+                You're creating your free trial portal with these limitations:
+              </p>
+              <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1 mb-3">
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 bg-blue-600 dark:bg-blue-400 rounded-full flex-shrink-0" />
+                  <span>1 trial portal allowed</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 bg-blue-600 dark:bg-blue-400 rounded-full flex-shrink-0" />
+                  <span>10 file uploads maximum</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 bg-blue-600 dark:bg-blue-400 rounded-full flex-shrink-0" />
+                  <span>Expires after 7 days</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 bg-blue-600 dark:bg-blue-400 rounded-full flex-shrink-0" />
+                  <span>No white-labeling or custom branding</span>
+                </li>
+              </ul>
+              <Link
+                className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                href="/pricing"
+              >
+                Upgrade to Pro for unlimited portals →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Navigation Sidebar */}

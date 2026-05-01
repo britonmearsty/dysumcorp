@@ -7,6 +7,8 @@ export interface AccessResult {
   reason: AccessReason;
   /** Only set when cancelled but still within the paid period */
   periodEnd?: Date;
+  /** Trial portal expiration date (only for free users with trial portal) */
+  trialExpiresAt?: Date;
 }
 
 /**
@@ -20,6 +22,40 @@ export interface AccessResult {
  *   - free + active (default)   → no subscription, portal creation blocked
  *   - pro + cancelled + expired → period has ended, portals deactivated by webhook
  */
+
+// REVERSIBILITY: Remove this function to revert trial expiration feature
+export async function checkPortalTrialExpiration(
+  portalId: string,
+): Promise<{ isExpired: boolean; expiresAt?: Date }> {
+  const portal = await prisma.portal.findUnique({
+    where: { id: portalId },
+    select: { createdAt: true, userId: true },
+  });
+
+  if (!portal) {
+    return { isExpired: true };
+  }
+
+  // Get user's subscription status
+  const user = await prisma.user.findUnique({
+    where: { id: portal.userId },
+    select: { subscriptionPlan: true, subscriptionStatus: true },
+  });
+
+  // Pro users don't have trial expiration
+  if (user?.subscriptionPlan === "pro") {
+    return { isExpired: false };
+  }
+
+  // Free users: trial expires 7 days after portal creation
+  const expiresAt = new Date(portal.createdAt);
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  const isExpired = new Date() > expiresAt;
+
+  return { isExpired, expiresAt };
+}
+
 export async function checkAccess(userId: string): Promise<AccessResult> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
