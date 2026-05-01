@@ -1296,13 +1296,17 @@ export default function CreatePortalPage() {
   const currentStepIndex = steps.findIndex((s) => s.id === currentStep);
 
   const [hasCreatedTrialPortal, setHasCreatedTrialPortal] = useState(false);
+  const [isLoadingPlan, setIsLoadingPlan] = useState(true);
 
   useEffect(() => {
     fetchUserPlan();
   }, []);
 
   const fetchUserPlan = async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) {
+      setIsLoadingPlan(false);
+      return;
+    }
 
     try {
       const response = await fetch(
@@ -1321,6 +1325,8 @@ export default function CreatePortalPage() {
       }
     } catch (error) {
       console.error("Failed to fetch user plan:", error);
+    } finally {
+      setIsLoadingPlan(false);
     }
   };
 
@@ -1758,9 +1764,16 @@ export default function CreatePortalPage() {
         Back to Portals
       </Link>
 
+      {/* Show loading state while fetching plan */}
+      {isLoadingPlan && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
       {/* REVERSIBILITY: Remove this block to revert trial feature */}
       {/* Show blocking message if user has already used their trial */}
-      {userPlan === "free" && hasCreatedTrialPortal && (
+      {!isLoadingPlan && userPlan === "free" && hasCreatedTrialPortal && (
         <div className="max-w-2xl">
           <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6">
             <div className="flex items-start gap-4">
@@ -1799,7 +1812,7 @@ export default function CreatePortalPage() {
                 </div>
                 <Link
                   className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-bold text-sm hover:bg-primary/90 transition-colors"
-                  href="/pricing"
+                  href="/dashboard"
                 >
                   Upgrade to Pro
                   <ChevronRight className="w-4 h-4" />
@@ -1850,7 +1863,7 @@ export default function CreatePortalPage() {
               </ul>
               <Link
                 className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                href="/pricing"
+                href="/dashboard"
               >
                 Upgrade to Pro for unlimited portals →
               </Link>
