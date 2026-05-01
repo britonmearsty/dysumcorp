@@ -302,11 +302,16 @@ export default function PortalsPage() {
       } else {
         const errorData = await response.json();
 
-        if (
+        // REVERSIBILITY: Remove this trial error handling to revert
+        if (errorData.code === "TRIAL_EXPIRED") {
+          showToast(errorData.error || "Trial expired. Upgrade to Pro to reactivate.", "error");
+        } else if (errorData.code === "TRIAL_FILE_LIMIT_REACHED") {
+          showToast(errorData.error || "File limit reached (10/10). Upgrade to Pro for unlimited uploads.", "error");
+        } else if (
           response.status === 402 ||
           errorData.code === "SUBSCRIPTION_REQUIRED"
         ) {
-          window.location.href = "/pricing";
+          showToast("Upgrade to Pro to activate portals", "error");
         } else {
           showToast("Failed to toggle portal status", "error");
         }
