@@ -1784,8 +1784,8 @@ export default function CreatePortalPage() {
       )}
 
       {/* REVERSIBILITY: Remove this block to revert trial feature */}
-      {/* Show trial limitations for free users creating their first portal */}
-      {userPlan === "free" && !hasCreatedTrialPortal && (
+      {/* Show trial limitations for free users creating their first portal - only after loading completes */}
+      {!isLoadingPlan && userPlan === "free" && !hasCreatedTrialPortal && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
           <div className="flex items-start gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex-shrink-0">
@@ -1832,7 +1832,9 @@ export default function CreatePortalPage() {
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+      {/* Only show form after plan check completes - prevents UI flash */}
+      {!isLoadingPlan && (
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Navigation Sidebar */}
         <aside className="lg:w-64 flex-shrink-0 order-2 lg:order-1">
           <div className="mb-4 lg:mb-6 px-1 lg:px-2">
@@ -2945,6 +2947,7 @@ export default function CreatePortalPage() {
           </form>
         </main>
       </div>
+      )}
 
       {/* Paywall Modal - shown when user needs to subscribe */}
       <PaywallModal />
