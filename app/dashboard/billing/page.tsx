@@ -337,11 +337,13 @@ export default function BillingPage() {
                       </div>
 
                       <div className="max-w-sm">
+                        {/* REVERSIBILITY: Remove variant prop to revert */}
                         <PricingCard
                           billingCycle={billingCycle}
                           currentPlan={currentPlan}
                           currentStatus={currentStatus}
                           plan={PRICING_PLANS.pro}
+                          variant="dashboard"
                           onSubscribe={handleSubscribe}
                         />
                       </div>

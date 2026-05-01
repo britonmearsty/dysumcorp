@@ -1812,7 +1812,7 @@ export default function CreatePortalPage() {
                 </div>
                 <Link
                   className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-bold text-sm hover:bg-primary/90 transition-colors"
-                  href="/dashboard"
+                  href="/dashboard/billing"
                 >
                   Upgrade to Pro
                   <ChevronRight className="w-4 h-4" />
@@ -1863,7 +1863,7 @@ export default function CreatePortalPage() {
               </ul>
               <Link
                 className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                href="/dashboard"
+                href="/dashboard/billing"
               >
                 Upgrade to Pro for unlimited portals →
               </Link>

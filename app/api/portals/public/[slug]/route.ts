@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { applyPublicPortalRateLimit } from "@/lib/rate-limit";
-import { checkAccess } from "@/lib/access";
+import { checkAccess, checkPortalTrialExpiration } from "@/lib/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -74,8 +74,36 @@ export async function GET(
     // Check owner's trial/subscription — return generic unavailable, never expose trial details
     const access = await checkAccess(portal.userId);
 
+    // REVERSIBILITY: Remove this trial check to revert trial feature
+    // Check if this is a free user's trial portal
+    let isTrialPortal = false;
+    let trialExpired = false;
+    
     if (!access.allowed) {
-      return NextResponse.json({ error: "Portal not found" }, { status: 404 });
+      // User might be on free trial - check if this is their trial portal
+      const user = await prisma.user.findUnique({
+        where: { id: portal.userId },
+        select: {
+          subscriptionPlan: true,
+          subscriptionStatus: true,
+          hasCreatedTrialPortal: true,
+        },
+      });
+
+      // If user is free and has created a trial portal, allow access if not expired
+      if (user?.subscriptionPlan === "free" && user?.hasCreatedTrialPortal) {
+        const trialCheck = await checkPortalTrialExpiration(portal.id);
+        isTrialPortal = true;
+        trialExpired = trialCheck.isExpired;
+        
+        if (trialExpired) {
+          return NextResponse.json({ error: "Portal not found" }, { status: 404 });
+        }
+        // Trial portal is active, allow access
+      } else {
+        // Not a trial portal, block access
+        return NextResponse.json({ error: "Portal not found" }, { status: 404 });
+      }
     }
 
     // Check trial file limit for free users (trial plan with no subscription)
@@ -84,12 +112,21 @@ export async function GET(
       select: {
         subscriptionPlan: true,
         subscriptionStatus: true,
+        hasCreatedTrialPortal: true,
       },
     });
 
     // Determine if owner is a subscriber (pro plan with active or trialing subscription)
     const isSubscriber =
       user?.subscriptionPlan === "pro" && user?.subscriptionStatus === "active";
+    
+    // REVERSIBILITY: Remove this line to revert trial feature
+    // Check if this is an active trial portal
+    if (user?.subscriptionPlan === "free" && user?.hasCreatedTrialPortal) {
+      const trialCheck = await checkPortalTrialExpiration(portal.id);
+      isTrialPortal = true;
+      trialExpired = trialCheck.isExpired;
+    }
 
     // Serialize BigInt — strip userId before returning
     const { userId: _userId, ...portalData } = portal;
@@ -103,6 +140,9 @@ export async function GET(
       submitButtonText: portal.submitButtonText || "Initialize Transfer",
       successMessage: portal.successMessage || "Transmission Verified",
       isOwnerSubscriber: isSubscriber,
+      // REVERSIBILITY: Remove this line to revert trial feature
+      isTrialPortal,
+      trialExpired,
     };
 
     return NextResponse.json({ portal: serializedPortal });
