@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import { prisma } from "@/lib/prisma";
 import { applyUploadRateLimit, applyPasswordRateLimit } from "@/lib/rate-limit";
-import { checkAccess } from "@/lib/access";
+import { checkAccess, checkPortalTrialExpiration } from "@/lib/access";
 import { verifyPasswordWithMigration } from "@/lib/password-utils";
 import { generateUploadToken } from "@/lib/upload-tokens";
 import {
@@ -230,16 +230,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // REVERSIBILITY: Remove this trial check to revert
+    // Check access - allow trial users if valid
     const access = await checkAccess(portal.userId);
 
     if (!access.allowed) {
-      return NextResponse.json(
-        {
-          error: "This portal is not currently accepting uploads",
-          code: "PORTAL_UNAVAILABLE",
+      // Check if user is on free trial
+      const user = await prisma.user.findUnique({
+        where: { id: portal.userId },
+        select: {
+          subscriptionPlan: true,
+          hasCreatedTrialPortal: true,
         },
-        { status: 402 },
-      );
+      });
+
+      if (user?.subscriptionPlan === "free" && user?.hasCreatedTrialPortal) {
+        // Check trial expiration
+        const trialCheck = await checkPortalTrialExpiration(portal.id);
+
+        if (trialCheck.isExpired) {
+          return NextResponse.json(
+            {
+              error: "Trial expired. Upgrade to Pro to receive more files.",
+              code: "TRIAL_EXPIRED",
+            },
+            { status: 403 },
+          );
+        }
+
+        // Check file count (max 10 for trial)
+        const fileCount = await prisma.file.count({
+          where: { portalId: portal.id },
+        });
+
+        if (fileCount >= 10) {
+          return NextResponse.json(
+            {
+              error: "File limit reached (10/10). Upgrade to Pro for unlimited uploads.",
+              code: "TRIAL_FILE_LIMIT_REACHED",
+            },
+            { status: 403 },
+          );
+        }
+        // Trial is valid, allow upload
+      } else {
+        // Not a trial user, block upload
+        return NextResponse.json(
+          {
+            error: "This portal is not currently accepting uploads",
+            code: "PORTAL_UNAVAILABLE",
+          },
+          { status: 402 },
+        );
+      }
     }
 
     const stagingKey = `staging/${portalId}/${uuidv4()}/${fileName}`;
