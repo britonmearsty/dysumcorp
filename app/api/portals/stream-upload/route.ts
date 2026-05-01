@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 import { validateUploadToken } from "@/lib/upload-tokens";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/access";
+import { checkAccess, checkPortalTrialExpiration } from "@/lib/access";
 
 // Increase function timeout for large uploads
 export const maxDuration = 60;
@@ -56,21 +56,66 @@ export async function POST(request: NextRequest) {
       if (chunkStart === "0") {
         const portal = await prisma.portal.findUnique({
           where: { id: tokenData.portalId },
-          select: { userId: true },
+          select: {
+            id: true,
+            userId: true,
+            isActive: true,
+            user: {
+              select: {
+                subscriptionPlan: true,
+                hasCreatedTrialPortal: true,
+              },
+            },
+          },
         });
 
         if (portal) {
           const access = await checkAccess(portal.userId);
 
           if (!access.allowed) {
-            return NextResponse.json(
-              {
-                error: "Trial expired. Subscribe to continue.",
-                trialExpired: true,
-                code: "TRIAL_EXPIRED",
-              },
-              { status: 402 },
-            );
+            // Check if user is on free trial
+            if (
+              portal.user?.subscriptionPlan === "free" &&
+              portal.user?.hasCreatedTrialPortal
+            ) {
+              // Check trial expiration
+              const trialCheck = await checkPortalTrialExpiration(portal.id);
+
+              if (trialCheck.isExpired) {
+                return NextResponse.json(
+                  {
+                    error: "Trial expired. Upgrade to Pro to receive more files.",
+                    code: "TRIAL_EXPIRED",
+                  },
+                  { status: 403 },
+                );
+              }
+
+              // Check file count (max 10 for trial)
+              const fileCount = await prisma.file.count({
+                where: { portalId: portal.id },
+              });
+
+              if (fileCount >= 10) {
+                return NextResponse.json(
+                  {
+                    error: "File limit reached (10/10). Upgrade to Pro for unlimited uploads.",
+                    code: "TRIAL_FILE_LIMIT_REACHED",
+                  },
+                  { status: 403 },
+                );
+              }
+              // Trial is valid, allow upload
+            } else {
+              // Not a trial user, block upload
+              return NextResponse.json(
+                {
+                  error: "This portal is not currently accepting uploads",
+                  code: "PORTAL_UNAVAILABLE",
+                },
+                { status: 402 },
+              );
+            }
           }
         }
       }
@@ -123,7 +168,7 @@ export async function POST(request: NextRequest) {
           "Content-Length": chunkBuffer.length.toString(),
           "Content-Range": `bytes ${chunkStart}-${chunkEnd - 1}/${totalSize}`,
         },
-        body: chunkBuffer,
+        body: chunkBuffer as any,
       });
 
       if (!uploadResponse.ok && uploadResponse.status !== 308) {
@@ -196,7 +241,7 @@ export async function POST(request: NextRequest) {
                 mute: false,
               }),
             },
-            body: chunkBuffer,
+            body: chunkBuffer as any,
           },
         );
 
@@ -236,7 +281,7 @@ export async function POST(request: NextRequest) {
               Authorization: `Bearer ${accessToken}`,
               "Content-Type": "application/octet-stream",
             },
-            body: chunkBuffer,
+            body: chunkBuffer as any,
           },
         );
 
@@ -291,7 +336,7 @@ export async function POST(request: NextRequest) {
                 },
               }),
             },
-            body: chunkBuffer,
+            body: chunkBuffer as any,
           },
         );
 
@@ -350,7 +395,7 @@ export async function POST(request: NextRequest) {
                 },
               }),
             },
-            body: chunkBuffer,
+            body: chunkBuffer as any,
           },
         );
 

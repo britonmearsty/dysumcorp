@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { sendFileUploadNotification } from "@/lib/email-service";
+import { checkPortalTrialExpiration } from "@/lib/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -191,19 +192,43 @@ export async function POST(request: NextRequest) {
         `[r2-confirm:${requestId}] ✓ File record created: ${file.id}`,
       );
 
-      // Increment trial file count for trial users
+      // Check if trial portal has reached file limit and deactivate if so
       const portal = await prisma.portal.findUnique({
         where: { id: portalId },
-        select: { userId: true },
+        select: {
+          id: true,
+          userId: true,
+          isActive: true,
+          user: {
+            select: {
+              subscriptionPlan: true,
+              hasCreatedTrialPortal: true,
+            },
+          },
+        },
       });
 
-      if (portal) {
-        const user = await prisma.user.findUnique({
-          where: { id: portal.userId },
-          select: { subscriptionPlan: true },
-        });
-
-        // No trial tracking needed — users are either free or pro
+      if (portal?.isActive && portal.user) {
+        if (
+          portal.user.subscriptionPlan === "free" &&
+          portal.user.hasCreatedTrialPortal
+        ) {
+          const trialCheck = await checkPortalTrialExpiration(portal.id);
+          if (!trialCheck.isExpired) {
+            const fileCount = await prisma.file.count({
+              where: { portalId: portal.id },
+            });
+            if (fileCount >= 10) {
+              await prisma.portal.update({
+                where: { id: portal.id },
+                data: { isActive: false },
+              });
+              console.log(
+                `[r2-confirm:${requestId}] 🚫 Trial portal ${portal.id} deactivated: file limit reached (${fileCount}/10)`,
+              );
+            }
+          }
+        }
       }
 
       // ── Update staging record with delivery details ─────────────────────────

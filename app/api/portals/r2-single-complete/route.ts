@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { validateUploadToken } from "@/lib/upload-tokens";
 import { headR2Object } from "@/lib/r2-client";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
+import { checkPortalTrialExpiration } from "@/lib/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -82,6 +83,47 @@ export async function POST(request: NextRequest) {
     console.log(
       `[r2-single-complete:${requestId}] ✓ r2Etag captured: ${r2Head.etag}`,
     );
+
+    // Check if trial portal has reached file limit and deactivate if so
+    const portalId = token.portalId;
+    if (portalId) {
+      const portal = await prisma.portal.findUnique({
+        where: { id: portalId },
+        select: {
+          id: true,
+          userId: true,
+          isActive: true,
+          user: {
+            select: {
+              subscriptionPlan: true,
+              hasCreatedTrialPortal: true,
+            },
+          },
+        },
+      });
+
+      if (
+        portal?.isActive &&
+        portal.user?.subscriptionPlan === "free" &&
+        portal.user?.hasCreatedTrialPortal
+      ) {
+        const trialCheck = await checkPortalTrialExpiration(portal.id);
+        if (!trialCheck.isExpired) {
+          const fileCount = await prisma.file.count({
+            where: { portalId: portal.id },
+          });
+          if (fileCount >= 10) {
+            await prisma.portal.update({
+              where: { id: portal.id },
+              data: { isActive: false },
+            });
+            console.log(
+              `[r2-single-complete:${requestId}] 🚫 Trial portal ${portal.id} deactivated: file limit reached (${fileCount}/10)`,
+            );
+          }
+        }
+      }
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

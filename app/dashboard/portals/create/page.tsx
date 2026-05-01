@@ -1611,6 +1611,18 @@ export default function CreatePortalPage() {
   const handleSubmit = async () => {
     setError("");
 
+    // REVERSIBILITY: Remove this check to revert trial feature
+    // Check if free user has already used their trial portal
+    if (userPlan === "free" && hasCreatedTrialPortal) {
+      showPaywall(
+        userPlan,
+        "Create Portal",
+        "You've already created your free trial portal. Upgrade to Pro to create unlimited portals.",
+      );
+
+      return;
+    }
+
     // Validate required fields
     if (!formData.portalName.trim()) {
       setError("Portal name is required");
@@ -1772,58 +1784,6 @@ export default function CreatePortalPage() {
       )}
 
       {/* REVERSIBILITY: Remove this block to revert trial feature */}
-      {/* Show blocking message if user has already used their trial */}
-      {!isLoadingPlan && userPlan === "free" && hasCreatedTrialPortal && (
-        <div className="max-w-2xl">
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex-shrink-0">
-                <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-              </div>
-              <div className="flex-1">
-                <h2 className="font-bold text-lg text-amber-900 dark:text-amber-100 mb-2">
-                  Trial Portal Already Used
-                </h2>
-                <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed mb-4">
-                  You've already created your free trial portal. Free users are limited to 1 trial portal.
-                </p>
-                <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3 mb-4">
-                  <p className="text-xs text-amber-800 dark:text-amber-200 mb-2">
-                    <strong>Benefits of upgrading to Pro:</strong>
-                  </p>
-                  <ul className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Unlimited portals</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Unlimited file uploads</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>No expiration</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>White-labeling & custom branding</span>
-                    </li>
-                  </ul>
-                </div>
-                <Link
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-bold text-sm hover:bg-primary/90 transition-colors"
-                  href="/dashboard/billing"
-                >
-                  Upgrade to Pro
-                  <ChevronRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* REVERSIBILITY: Remove this block to revert trial feature */}
       {/* Show trial limitations for free users creating their first portal */}
       {userPlan === "free" && !hasCreatedTrialPortal && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
@@ -1872,10 +1832,7 @@ export default function CreatePortalPage() {
         </div>
       )}
 
-      {/* REVERSIBILITY: Remove this condition to revert trial feature */}
-      {/* Only show form if user hasn't used trial or is a Pro user */}
-      {(!hasCreatedTrialPortal || userPlan !== "free") && (
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Navigation Sidebar */}
         <aside className="lg:w-64 flex-shrink-0 order-2 lg:order-1">
           <div className="mb-4 lg:mb-6 px-1 lg:px-2">
@@ -2988,7 +2945,6 @@ export default function CreatePortalPage() {
           </form>
         </main>
       </div>
-      )}
 
       {/* Paywall Modal - shown when user needs to subscribe */}
       <PaywallModal />

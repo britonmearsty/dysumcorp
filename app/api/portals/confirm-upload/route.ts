@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password-utils";
 import { validateUploadToken } from "@/lib/upload-tokens";
+import { checkPortalTrialExpiration } from "@/lib/access";
 
 // Helper function to format file size
 function formatFileSize(bytes: number): string {
@@ -170,6 +171,35 @@ export async function POST(request: NextRequest) {
     });
 
     console.log("[Portal Confirm Upload] File metadata saved:", file.id);
+
+    // Check if trial portal has reached file limit and deactivate if so
+    if (portal?.isActive && portal.user) {
+      const user = await prisma.user.findUnique({
+        where: { id: portal.userId },
+        select: {
+          subscriptionPlan: true,
+          hasCreatedTrialPortal: true,
+        },
+      });
+
+      if (user?.subscriptionPlan === "free" && user?.hasCreatedTrialPortal) {
+        const trialCheck = await checkPortalTrialExpiration(portal.id);
+        if (!trialCheck.isExpired) {
+          const fileCount = await prisma.file.count({
+            where: { portalId: portal.id },
+          });
+          if (fileCount >= 10) {
+            await prisma.portal.update({
+              where: { id: portal.id },
+              data: { isActive: false },
+            });
+            console.log(
+              `[Portal Confirm Upload] 🚫 Trial portal ${portal.id} deactivated: file limit reached (${fileCount}/10)`,
+            );
+          }
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,
