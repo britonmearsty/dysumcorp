@@ -10,6 +10,7 @@ import {
 } from "@/lib/r2-client";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 import { checkPortalTrialExpiration } from "@/lib/access";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
 
   const requestId = Math.random().toString(36).slice(2, 8);
 
-  console.log(`[r2-complete:${requestId}] POST /api/portals/r2-complete`);
+  logger.log(`[r2-complete:${requestId}] POST /api/portals/r2-complete`);
 
   try {
     const body = await request.json();
@@ -74,14 +75,14 @@ export async function POST(request: NextRequest) {
     // Sort by part number — required by S3/R2
     completedParts.sort((a, b) => a.PartNumber - b.PartNumber);
 
-    console.log(
+    logger.log(
       `[r2-complete:${requestId}] Completing multipart: key=${stagingKey} uploadId=${uploadId} parts=${completedParts.length}`,
     );
 
     try {
       await completeMultipartUpload(stagingKey, uploadId, completedParts);
     } catch (err) {
-      console.error(
+      logger.error(
         `[r2-complete:${requestId}] CompleteMultipartUpload failed, aborting:`,
         err,
       );
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log(
+    logger.log(
       `[r2-complete:${requestId}] ✓ Multipart complete, staging status → uploaded`,
     );
 
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
               where: { id: portal.id },
               data: { isActive: false },
             });
-            console.log(
+            logger.log(
               `[r2-complete:${requestId}] 🚫 Trial portal ${portal.id} deactivated: file limit reached (${fileCount}/10)`,
             );
           }
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error(`[r2-complete:${requestId}] ❌ UNCAUGHT ERROR:`, error);
+    logger.error(`[r2-complete:${requestId}] ❌ UNCAUGHT ERROR:`, error);
 
     return NextResponse.json(
       { error: "Internal server error" },

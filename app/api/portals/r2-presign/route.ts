@@ -11,6 +11,7 @@ import {
   createMultipartUpload,
   getPresignedPartUrl,
 } from "@/lib/r2-client";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,7 +51,7 @@ function getPresignedUrlExpiry(fileSizeBytes: number): number {
 export async function POST(request: NextRequest) {
   const requestId = Math.random().toString(36).slice(2, 8);
 
-  console.log(`[r2-presign:${requestId}] POST /api/portals/r2-presign`);
+  logger.log(`[r2-presign:${requestId}] POST /api/portals/r2-presign`);
 
   try {
     const rateLimitResult = await applyUploadRateLimit(request);
@@ -315,7 +316,7 @@ export async function POST(request: NextRequest) {
     // ── Single-shot upload for small files ────────────────────────────────────
     if (fileSize < MULTIPART_THRESHOLD) {
       const urlExpiry = getPresignedUrlExpiry(fileSize);
-      console.log(
+      logger.log(
         `[r2-presign:${requestId}] Single-shot upload: ${fileSize} bytes, urlExpiry=${urlExpiry}s`,
       );
       const presignedUrl = await getPresignedPutUrl(
@@ -340,7 +341,7 @@ export async function POST(request: NextRequest) {
     const partCount = Math.ceil(fileSize / PART_SIZE);
     const urlExpiry = getPresignedUrlExpiry(fileSize);
 
-    console.log(
+    logger.log(
       `[r2-presign:${requestId}] Multipart upload: ${fileSize} bytes → ${partCount} parts × ${PART_SIZE / 1024 / 1024} MB, urlExpiry=${urlExpiry}s`,
     );
 
@@ -353,7 +354,7 @@ export async function POST(request: NextRequest) {
       ),
     );
 
-    console.log(
+    logger.log(
       `[r2-presign:${requestId}] ✓ ${partCount} part URLs generated, uploadId: ${uploadId}`,
     );
 
@@ -369,7 +370,7 @@ export async function POST(request: NextRequest) {
       expiresAt,
     });
   } catch (error) {
-    console.error(`[r2-presign:${requestId}] ❌ UNCAUGHT ERROR:`, error);
+    logger.error(`[r2-presign:${requestId}] ❌ UNCAUGHT ERROR:`, error);
 
     return NextResponse.json(
       { error: "Internal server error" },

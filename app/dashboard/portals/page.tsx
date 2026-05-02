@@ -26,6 +26,7 @@ import { DeleteFileModal } from "@/components/ui/delete-file-modal";
 import { DeletePortalModal } from "@/components/ui/delete-portal-modal";
 import { usePaywall } from "@/components/paywall-modal";
 import { PlanType } from "@/config/pricing";
+import { logger } from "@/lib/logger";
 
 interface Portal {
   id: string;
@@ -126,7 +127,7 @@ export default function PortalsPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to fetch user plan:", error);
+      logger.error("Failed to fetch user plan:", error);
     }
   };
 
@@ -139,14 +140,14 @@ export default function PortalsPage() {
 
         setPortals(data.portals || []);
       } else {
-        console.error("Failed to fetch portals - Status:", response.status);
+        logger.error("Failed to fetch portals - Status:", response.status);
         const errorText = await response.text();
 
-        console.error("Error response:", errorText);
+        logger.error("Error response:", errorText);
         showToast("Failed to load portals", "error");
       }
     } catch (error) {
-      console.error("Failed to fetch portals:", error);
+      logger.error("Failed to fetch portals:", error);
       showToast("Failed to load portals", "error");
     } finally {
       setLoading(false);
@@ -176,7 +177,7 @@ export default function PortalsPage() {
         showToast("Failed to delete portal", "error");
       }
     } catch (error) {
-      console.error("Failed to delete portal:", error);
+      logger.error("Failed to delete portal:", error);
       showToast("Failed to delete portal", "error");
     } finally {
       setDeleting(null);
@@ -281,7 +282,7 @@ export default function PortalsPage() {
           );
         }
       } catch (error) {
-        console.error("Upload error:", error);
+        logger.error("Upload error:", error);
         setUploadingFiles((prev) =>
           prev.map((item, idx) =>
             idx === i
@@ -316,7 +317,7 @@ export default function PortalsPage() {
         setPortalFiles(data.portal?.files || []);
       }
     } catch (error) {
-      console.error("Failed to fetch portal files:", error);
+      logger.error("Failed to fetch portal files:", error);
     }
   };
 
@@ -356,7 +357,7 @@ export default function PortalsPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to toggle portal status:", error);
+      logger.error("Failed to toggle portal status:", error);
       showToast("Failed to toggle portal status", "error");
     } finally {
       setTogglingPortal(null);
@@ -403,7 +404,7 @@ export default function PortalsPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to download file:", error);
+      logger.error("Failed to download file:", error);
       showToast("Failed to download file", "error");
     }
   };
@@ -431,7 +432,7 @@ export default function PortalsPage() {
         showToast("Failed to delete file", "error");
       }
     } catch (error) {
-      console.error("Failed to delete file:", error);
+      logger.error("Failed to delete file:", error);
       showToast("Failed to delete file", "error");
     } finally {
       setDeletingFile(null);

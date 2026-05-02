@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password-utils";
 import { validateUploadToken } from "@/lib/upload-tokens";
 import { checkPortalTrialExpiration } from "@/lib/access";
+import { logger } from "@/lib/logger";
 
 // Helper function to format file size
 function formatFileSize(bytes: number): string {
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
       uploadSessionId, // New: to group files from same upload
     } = body;
 
-    console.log("[Portal Confirm Upload] Request:", {
+    logger.log("[Portal Confirm Upload] Request:", {
       portalId,
       fileName,
       fileSize,
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
       const tokenData = validateUploadToken(uploadToken);
 
       if (!tokenData) {
-        console.error(
+        logger.error(
           "[Portal Confirm Upload] Invalid or expired upload token",
         );
 
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
         tokenData.fileName !== fileName ||
         tokenData.fileSize !== fileSize
       ) {
-        console.error("[Portal Confirm Upload] Token data mismatch");
+        logger.error("[Portal Confirm Upload] Token data mismatch");
 
         return NextResponse.json(
           { error: "Upload token does not match file data" },
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log(
+      logger.log(
         "[Portal Confirm Upload] Upload token validated successfully",
       );
     }
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!portal) {
-      console.log("[Portal Confirm Upload] Portal not found:", portalId);
+      logger.log("[Portal Confirm Upload] Portal not found:", portalId);
 
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     if (!sessionId) {
       // Create new upload session
-      console.log(
+      logger.log(
         "[Portal Confirm Upload] No sessionId provided, creating new session",
       );
       const session = await prisma.uploadSession.create({
@@ -133,19 +134,19 @@ export async function POST(request: NextRequest) {
       });
 
       sessionId = session.id;
-      console.log(
+      logger.log(
         "[Portal Confirm Upload] Created new upload session:",
         sessionId,
       );
     } else {
-      console.log(
+      logger.log(
         "[Portal Confirm Upload] Using provided sessionId:",
         sessionId,
       );
     }
 
     // Save file metadata to database
-    console.log("[Portal Confirm Upload] Saving file metadata to database...");
+    logger.log("[Portal Confirm Upload] Saving file metadata to database...");
     const file = await prisma.file.create({
       data: {
         name: fileName,
@@ -170,7 +171,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log("[Portal Confirm Upload] File metadata saved:", file.id);
+    logger.log("[Portal Confirm Upload] File metadata saved:", file.id);
 
     // Check if trial portal has reached file limit and deactivate if so
     if (portal?.isActive && portal.user) {
@@ -193,7 +194,7 @@ export async function POST(request: NextRequest) {
               where: { id: portal.id },
               data: { isActive: false },
             });
-            console.log(
+            logger.log(
               `[Portal Confirm Upload] 🚫 Trial portal ${portal.id} deactivated: file limit reached (${fileCount}/10)`,
             );
           }
@@ -211,7 +212,7 @@ export async function POST(request: NextRequest) {
       provider,
     });
   } catch (error) {
-    console.error("[Portal Confirm Upload] Error:", error);
+    logger.error("[Portal Confirm Upload] Error:", error);
 
     const errorMessage =
       error instanceof Error ? error.message : "Failed to confirm upload";

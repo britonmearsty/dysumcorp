@@ -4,6 +4,7 @@ import { applyUploadRateLimit } from "@/lib/rate-limit";
 import { validateUploadToken } from "@/lib/upload-tokens";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, checkPortalTrialExpiration } from "@/lib/access";
+import { logger } from "@/lib/logger";
 
 // Increase function timeout for large uploads
 export const maxDuration = 60;
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log(
+      logger.log(
         `[Stream Upload] Google Drive chunk ${chunkStart}-${chunkEnd}/${totalSize}`,
       );
 
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
       if (!uploadResponse.ok && uploadResponse.status !== 308) {
         const errorText = await uploadResponse.text();
 
-        console.error(
+        logger.error(
           `[Stream Upload] Google Drive failed:`,
           uploadResponse.status,
           errorText,
@@ -193,7 +194,7 @@ export async function POST(request: NextRequest) {
 
       if (isComplete) {
         fileData = await uploadResponse.json();
-        console.log(
+        logger.log(
           `[Stream Upload] Google Drive complete, file ID: ${fileData.id}`,
         );
       }
@@ -219,7 +220,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log(
+      logger.log(
         `[Stream Upload] Dropbox chunk ${chunkIndex}, last: ${isLastChunk}, session: ${sessionId || "new"}`,
       );
 
@@ -248,7 +249,7 @@ export async function POST(request: NextRequest) {
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
 
-          console.error(
+          logger.error(
             `[Stream Upload] Dropbox single chunk upload failed:`,
             uploadResponse.status,
             errorText,
@@ -262,7 +263,7 @@ export async function POST(request: NextRequest) {
 
         const fileData = await uploadResponse.json();
 
-        console.log(
+        logger.log(
           `[Stream Upload] Dropbox single chunk complete, file ID: ${fileData.id}`,
         );
 
@@ -288,7 +289,7 @@ export async function POST(request: NextRequest) {
         if (!startResponse.ok) {
           const errorText = await startResponse.text();
 
-          console.error(
+          logger.error(
             `[Stream Upload] Dropbox session start failed:`,
             startResponse.status,
             errorText,
@@ -302,7 +303,7 @@ export async function POST(request: NextRequest) {
 
         const sessionData = await startResponse.json();
 
-        console.log(
+        logger.log(
           `[Stream Upload] Dropbox session started: ${sessionData.session_id}`,
         );
 
@@ -343,7 +344,7 @@ export async function POST(request: NextRequest) {
         if (!appendResponse.ok) {
           const errorText = await appendResponse.text();
 
-          console.error(
+          logger.error(
             `[Stream Upload] Dropbox append failed:`,
             appendResponse.status,
             errorText,
@@ -355,7 +356,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        console.log(
+        logger.log(
           `[Stream Upload] Dropbox chunk ${chunkIndex} appended at offset ${offset}`,
         );
 
@@ -402,7 +403,7 @@ export async function POST(request: NextRequest) {
         if (!finishResponse.ok) {
           const errorText = await finishResponse.text();
 
-          console.error(
+          logger.error(
             `[Stream Upload] Dropbox finish failed:`,
             finishResponse.status,
             errorText,
@@ -416,7 +417,7 @@ export async function POST(request: NextRequest) {
 
         const fileData = await finishResponse.json();
 
-        console.log(
+        logger.log(
           `[Stream Upload] Dropbox complete, file ID: ${fileData.id}`,
         );
 
@@ -438,7 +439,7 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error("[Stream Upload] Error:", error);
+    logger.error("[Stream Upload] Error:", error);
 
     return NextResponse.json(
       { error: "Failed to stream upload" },

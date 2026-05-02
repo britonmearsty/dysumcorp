@@ -5,6 +5,7 @@ import { validateUploadToken } from "@/lib/upload-tokens";
 import { headR2Object } from "@/lib/r2-client";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 import { checkPortalTrialExpiration } from "@/lib/access";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   const requestId = Math.random().toString(36).slice(2, 8);
 
-  console.log(
+  logger.log(
     `[r2-single-complete:${requestId}] POST /api/portals/r2-single-complete`,
   );
 
@@ -54,14 +55,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(
+    logger.log(
       `[r2-single-complete:${requestId}] Capturing r2Etag for: ${stagingKey}`,
     );
 
     const r2Head = await headR2Object(stagingKey);
 
     if (!r2Head) {
-      console.error(
+      logger.error(
         `[r2-single-complete:${requestId}] R2 object not found: ${stagingKey}`,
       );
 
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log(
+    logger.log(
       `[r2-single-complete:${requestId}] ✓ r2Etag captured: ${r2Head.etag}`,
     );
 
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
               where: { id: portal.id },
               data: { isActive: false },
             });
-            console.log(
+            logger.log(
               `[r2-single-complete:${requestId}] 🚫 Trial portal ${portal.id} deactivated: file limit reached (${fileCount}/10)`,
             );
           }
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error(
+    logger.error(
       `[r2-single-complete:${requestId}] ❌ UNCAUGHT ERROR:`,
       error,
     );

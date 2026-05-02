@@ -10,6 +10,7 @@ import {
 import { applyUploadRateLimit } from "@/lib/rate-limit";
 import { generateUploadToken } from "@/lib/upload-tokens";
 import { checkAccess, checkPortalTrialExpiration } from "@/lib/access";
+import { logger } from "@/lib/logger";
 
 function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
   const allowedMimeTypes = new Set<string>();
@@ -140,10 +141,11 @@ export async function POST(request: NextRequest) {
       clientNotes,
     } = body;
 
-    console.log("[Portal Direct Upload] Request:", {
+    logger.log("[Portal Direct Upload] Request:", {
       fileName,
       fileSize,
       portalId,
+      provider: null,
     });
 
     if (!fileName || !fileSize || !portalId) {
@@ -181,7 +183,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!portal) {
-      console.log("[Portal Direct Upload] Portal not found:", portalId);
+      logger.log("[Portal Direct Upload] Portal not found:", portalId);
 
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
@@ -261,11 +263,11 @@ export async function POST(request: NextRequest) {
 
     // Validate file size against portal limit
     if (BigInt(fileSize) > portal.maxFileSize) {
-      console.log(
+      logger.log(
         "[Portal Direct Upload] File too large:",
         fileSize,
         "Max:",
-        portal.maxFileSize.toString(),
+        portal.maxFileSize,
       );
 
       return NextResponse.json(
@@ -281,7 +283,7 @@ export async function POST(request: NextRequest) {
     // Storage limits removed — all trial/pro users have full access
 
     // Get cloud storage token for portal owner based on portal's storageProvider setting
-    console.log(
+    logger.log(
       "[Portal Direct Upload] Portal storage provider:",
       portal.storageProvider,
     );
@@ -302,13 +304,13 @@ export async function POST(request: NextRequest) {
     // Fallback to other provider if configured one isn't available
     if (!accessToken) {
       if (portal.storageProvider === "google_drive") {
-        console.log(
+        logger.log(
           "[Portal Direct Upload] Google Drive not available, trying Dropbox...",
         );
         accessToken = await getValidToken(portal.userId, "dropbox");
         provider = "dropbox";
       } else if (portal.storageProvider === "dropbox") {
-        console.log(
+        logger.log(
           "[Portal Direct Upload] Dropbox not available, trying Google Drive...",
         );
         accessToken = await getValidToken(portal.userId, "google");
@@ -325,7 +327,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!accessToken) {
-      console.log(
+      logger.log(
         "[Portal Direct Upload] No cloud storage connected for user:",
         portal.userId,
       );
@@ -340,7 +342,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[Portal Direct Upload] Using provider:", provider);
+    logger.log("[Portal Direct Upload] Using provider:", provider);
 
     // Determine folder structure
     let parentFolderId: string;
@@ -395,12 +397,10 @@ export async function POST(request: NextRequest) {
 
     if (provider === "google") {
       // Create Google Drive resumable upload session
-      console.log("[Portal Direct Upload] Creating Google Drive session:", {
+      logger.log("[Portal Direct Upload] Creating Google Drive session:", {
         fileName,
         fileSize,
         parentFolderId,
-        hasAccessToken: !!accessToken,
-        tokenLength: accessToken?.length,
       });
 
       const response = await fetch(
@@ -424,15 +424,11 @@ export async function POST(request: NextRequest) {
       if (!response.ok) {
         const errorText = await response.text();
 
-        console.error(
+        logger.error(
           "[Portal Direct Upload] Google Drive session creation failed:",
           {
             status: response.status,
-            statusText: response.statusText,
             error: errorText,
-            fileName,
-            fileSize,
-            parentFolderId,
           },
         );
         throw new Error(
@@ -454,7 +450,7 @@ export async function POST(request: NextRequest) {
         chunkSize: 4 * 1024 * 1024, // 4MB chunks
       };
 
-      console.log(
+      logger.log(
         "[Portal Direct Upload] Google Drive resumable upload URL created for streaming",
       );
     } else {
@@ -470,7 +466,7 @@ export async function POST(request: NextRequest) {
         uploadToken,
       };
 
-      console.log("[Portal Direct Upload] Dropbox direct upload configured");
+      logger.log("[Portal Direct Upload] Dropbox direct upload configured");
     }
 
     return NextResponse.json({
@@ -483,7 +479,7 @@ export async function POST(request: NextRequest) {
       ...uploadData,
     });
   } catch (error) {
-    console.error("[Portal Direct Upload] Error:", error);
+    logger.error("[Portal Direct Upload] Error:", error);
 
     const errorMessage =
       error instanceof Error ? error.message : "Failed to prepare upload";

@@ -34,6 +34,7 @@ import {
 import { usePaywall } from "@/components/paywall-modal";
 import { PlanType } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
+import { logger } from "@/lib/logger";
 import { validateSlug, sanitizeSlug } from "@/lib/slug-validation";
 import { useStorageConnections } from "@/lib/hooks/useStorageConnections";
 
@@ -270,7 +271,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                     dysumFolder = await createRes.json();
                   }
                 } catch (error) {
-                  console.error("Error creating Dysumcorp folder:", error);
+                  logger.error("Error creating Dysumcorp folder:", error);
                 }
               }
 
@@ -344,7 +345,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                   dysumFolder = await createRes.json();
                 }
               } catch (error) {
-                console.error("Error creating dysumcorp folder:", error);
+                logger.error("Error creating dysumcorp folder:", error);
               }
             }
 
@@ -369,7 +370,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
         }
       }
     } catch (error) {
-      console.error("Error initializing storage:", error);
+      logger.error("Error initializing storage:", error);
     } finally {
       setLoadingFolders(false);
     }
@@ -391,7 +392,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
         setFolders(data);
       }
     } catch (error) {
-      console.error("Error fetching folders:", error);
+      logger.error("Error fetching folders:", error);
     } finally {
       setLoadingFolders(false);
     }
@@ -440,7 +441,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
         }
       }
     } catch (error) {
-      console.error("Error creating folder:", error);
+      logger.error("Error creating folder:", error);
       setFolderError("An unexpected error occurred");
     } finally {
       setLoadingFolders(false);
@@ -1321,10 +1322,10 @@ export default function CreatePortalPage() {
           setHasCreatedTrialPortal(true);
         }
       } else {
-        console.error("Failed to fetch user plan:", data.error);
+        logger.error("Failed to fetch user plan:", data.error);
       }
     } catch (error) {
-      console.error("Failed to fetch user plan:", error);
+      logger.error("Failed to fetch user plan:", error);
     } finally {
       setIsLoadingPlan(false);
     }
@@ -1407,7 +1408,7 @@ export default function CreatePortalPage() {
 
       throw new Error("No file URL returned from upload");
     } catch (error) {
-      console.error("Logo upload error:", error);
+      logger.error("Logo upload error:", error);
       throw error;
     }
   };
@@ -1460,7 +1461,7 @@ export default function CreatePortalPage() {
           });
         }
       } catch (error) {
-        console.error("Error checking slug:", error);
+        logger.error("Error checking slug:", error);
         setSlugValidation({
           isValid: false,
           isChecking: false,
@@ -1759,7 +1760,7 @@ export default function CreatePortalPage() {
       router.push("/dashboard/portals");
       router.refresh();
     } catch (error) {
-      console.error("Failed to create portal:", error);
+      logger.error("Failed to create portal:", error);
       setError("Failed to create portal. Please try again.");
     } finally {
       setLoading(false);
