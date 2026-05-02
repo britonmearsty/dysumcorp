@@ -2920,26 +2920,15 @@ export default function CreatePortalPage() {
                   <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-destructive font-bold">{error}</p>
-                    {error && (
-                      <div className="mt-3 flex items-center gap-3">
-                        <Link
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-                          href="/dashboard/billing"
-                        >
-                          Upgrade Plan
-                          <ChevronRight className="w-4 h-4" />
-                        </Link>
-                        <button
-                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                          type="button"
-                          onClick={() => {
-                            setError("");
-                          }}
-                        >
-                          Dismiss
-                        </button>
-                      </div>
-                    )}
+                    <button
+                      className="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      type="button"
+                      onClick={() => {
+                        setError("");
+                      }}
+                    >
+                      Dismiss
+                    </button>
                   </div>
                 </div>
               </motion.div>
