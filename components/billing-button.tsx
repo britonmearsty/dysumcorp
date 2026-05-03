@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@heroui/button";
-
-import { useToast } from "@/lib/toast";
+import { useRouter } from "next/navigation";
 
 interface BillingButtonProps {
   planId?: string;
@@ -27,47 +25,19 @@ interface BillingButtonProps {
 }
 
 export function BillingButton({
-  planId = "pro",
-  billingCycle = "monthly",
   label = "Subscribe Now",
   variant = "solid",
   color = "primary",
 }: BillingButtonProps) {
-  const [loading, setLoading] = useState(false);
-  const { showToast } = useToast();
+  const router = useRouter();
 
-  const handleCheckout = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId, billingCycle }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        showToast(data.error || "Failed to start checkout", "error");
-
-        return;
-      }
-
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      }
-    } catch (err) {
-      console.error("Failed to create checkout:", err);
-      showToast("Failed to start checkout process", "error");
-    } finally {
-      setLoading(false);
-    }
+  const handleCheckout = () => {
+    router.push("/dashboard/billing?tab=plans");
   };
 
   return (
     <Button
       color={color}
-      isLoading={loading}
       variant={variant}
       onPress={handleCheckout}
     >

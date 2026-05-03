@@ -49,26 +49,9 @@ export function PaywallModal({
 
   const plan = PRICING_PLANS["pro"];
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = () => {
     onClose();
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planId: "pro",
-          billingCycle: "monthly",
-        }),
-      });
-      const data = await response.json();
-
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      }
-    } catch (err) {
-      console.error("Checkout error:", err);
-      window.location.href = "/dashboard/billing?tab=plans";
-    }
+    window.location.href = "/dashboard/billing?tab=plans";
   };
 
   const handleViewPlans = () => {

@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
+import { useRouter } from "next/navigation";
 
 import { CustomerPortalButton } from "./customer-portal-button";
 
 import { PRICING_PLANS } from "@/config/pricing";
 import { useToast } from "@/lib/toast";
+// REMOVABLE: DISCOUNT - Remove this import to disable discount promo
+import { getDiscount, calculateDiscountedPrice } from "@/config/discounts";
 
 interface SubscriptionManagerProps {
   currentPlan: string;
@@ -20,31 +23,19 @@ export function SubscriptionManager({
   currentStatus,
 }: SubscriptionManagerProps) {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const { showToast } = useToast();
 
   const isPro = currentPlan === "pro";
   const isCancelledGrace = isPro && currentStatus === "cancelled";
 
-  const handleSubscribe = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: "pro", billingCycle: "monthly" }),
-      });
-      const data = await response.json();
+  // REMOVABLE: DISCOUNT - Remove this block to disable discount display
+  const discount = getDiscount("monthly");
+  const displayPrice = calculateDiscountedPrice(PRICING_PLANS.pro.price, discount.percent);
+  // END REMOVABLE: DISCOUNT
 
-      if (!response.ok) {
-        showToast(data.error || "Failed to start checkout", "error");
-        return;
-      }
-      window.location.href = data.checkoutUrl;
-    } catch {
-      showToast("Failed to start checkout process", "error");
-    } finally {
-      setLoading(false);
-    }
+  const handleSubscribe = () => {
+    router.push("/dashboard/billing?tab=plans");
   };
 
   // Active pro subscriber
@@ -95,7 +86,9 @@ export function SubscriptionManager({
           isLoading={loading}
           onPress={handleSubscribe}
         >
-          Subscribe to Pro — ${PRICING_PLANS.pro.price}/mo
+          {/* REMOVABLE: DISCOUNT - Restore original: Subscribe to Pro — ${PRICING_PLANS.pro.price}/mo */}
+          Subscribe to Pro — ${displayPrice}/mo
+          {/* END REMOVABLE: DISCOUNT */}
         </Button>
         <p className="text-xs text-muted-foreground text-center">
           Cancel anytime. No hidden fees.

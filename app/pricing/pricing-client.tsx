@@ -20,35 +20,12 @@ export function PricingClient() {
   const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
   const { showToast } = useToast();
 
-  const handleSubscribe = async (planId: string, isAnnual: boolean) => {
+  const handleSubscribe = (planId: string, isAnnual: boolean) => {
     if (!session?.user) {
-      router.push("/auth?redirect=/pricing");
-
+      router.push("/auth?redirect=/dashboard/billing?tab=plans");
       return;
     }
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planId,
-          billingCycle: isAnnual ? "annual" : "monthly",
-        }),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        showToast(data.error || "Failed to create checkout session", "error");
-        router.push("/dashboard/billing");
-
-        return;
-      }
-      window.location.href = data.checkoutUrl;
-    } catch (error) {
-      console.error("Subscription error:", error);
-      showToast("Failed to start checkout process", "error");
-      router.push("/dashboard/billing");
-    }
+    router.push("/dashboard/billing?tab=plans");
   };
 
   return (
