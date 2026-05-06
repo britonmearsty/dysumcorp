@@ -1,7 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Standalone output for Docker
-  output: "standalone",
+   // Fix pnpm symlink resolution for Turbopack
+   transpilePackages: ["@prisma/client", "@prisma/client-runtime-utils"],
+
+   // Standalone output for Docker
+   output: "standalone",
 
   // Optimize for production
   reactStrictMode: true,
@@ -72,19 +75,7 @@ const nextConfig = {
     return config;
   },
 
-  // Exclude reference folders from page compilation
-  pageExtensions: ["tsx", "ts", "jsx", "js"]
-    .map((ext) => `page.${ext}`)
-    .concat(["tsx", "ts", "jsx", "js"]),
 
-  // Exclude specific directories from output file tracing
-  outputFileTracingExcludes: {
-    "*": [
-      "./dashboard-pages-reference/**/*",
-      "./design-reference/**/*",
-      "./dysum/**/*",
-    ],
-  },
 
   // Disable ESLint during builds (warnings are treated as errors)
   eslint: {
