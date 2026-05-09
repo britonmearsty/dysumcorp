@@ -192,7 +192,7 @@ export default function PortalsPage() {
       showPaywall(
         userPlan,
         "Create Portal",
-        "You've already created your free trial portal. Upgrade to Pro to create unlimited portals.",
+        "You've already created your free trial portal. Upgrade to Pro to create upto 100 portals.",
       );
       return;
     }

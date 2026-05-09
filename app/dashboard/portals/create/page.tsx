@@ -1618,7 +1618,7 @@ export default function CreatePortalPage() {
       showPaywall(
         userPlan,
         "Create Portal",
-        "You've already created your free trial portal. Upgrade to Pro to create unlimited portals.",
+        "You've already created your free trial portal. Upgrade to Pro to create upto 100 portals.",
       );
 
       return;
@@ -1826,7 +1826,7 @@ export default function CreatePortalPage() {
                 className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                 href="/dashboard/billing"
               >
-                Upgrade to Pro for unlimited portals →
+                Upgrade to Pro for upto 100 portals →
               </Link>
             </div>
           </div>

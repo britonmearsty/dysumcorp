@@ -68,7 +68,7 @@ export async function checkPortalLimit(
     }
   }
 
-  // Pro has unlimited portals (999999) — always allowed
+  // Pro has upto 100 portals (100) — always allowed
   return { allowed: true, current: 0, limit: limits.portals };
 }
 
