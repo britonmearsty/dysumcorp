@@ -1,4 +1,5 @@
 import { Building2 } from "lucide-react";
+import { LogoDisplay } from "@/components/logo-display";
 
 interface PortalHeaderProps {
   name: string;
@@ -39,20 +40,21 @@ export function PortalHeader({
   return (
     <header className="w-full border-b border-slate-200 bg-white">
       <div className="px-6 pt-5 pb-4 flex items-center gap-4">
-        <div
-          className="flex items-center justify-center w-12 h-12 rounded-2xl shrink-0 overflow-hidden"
-          style={logoUrl ? {} : gradientStyle}
-        >
-          {logoUrl ? (
-            <img
-              alt={name}
-              className="w-full h-full object-contain"
-              src={logoUrl}
-            />
-          ) : (
+        {logoUrl ? (
+          <LogoDisplay
+            logoUrl={logoUrl}
+            alt={name}
+            size="md"
+            className="shrink-0"
+          />
+        ) : (
+          <div
+            className="flex items-center justify-center w-12 h-12 rounded-2xl shrink-0"
+            style={gradientStyle}
+          >
             <Building2 className="w-6 h-6 text-white" />
-          )}
-        </div>
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <h2
             className="font-bold text-xl tracking-tight"

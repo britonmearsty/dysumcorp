@@ -29,8 +29,13 @@ export function UserMenu() {
         size="sm"
         variant="outline"
         onClick={async () => {
-          await signOut();
-          router.push("/");
+          await signOut({
+            fetchOptions: {
+              onSuccess: () => {
+                window.location.href = "/";
+              }
+            }
+          });
         }}
       >
         <span className="hidden sm:inline">Sign Out</span>

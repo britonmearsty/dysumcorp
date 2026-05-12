@@ -1302,6 +1302,16 @@ export default function CreatePortalPage() {
     fetchUserPlan();
   }, []);
 
+  // Initialize logo preview with default portal logo from user settings
+  useEffect(() => {
+    if (session?.user && !logoPreview) {
+      const defaultLogo = (session.user as any)?.portalLogo;
+      if (defaultLogo) {
+        setLogoPreview(defaultLogo);
+      }
+    }
+  }, [session, logoPreview]);
+
   const fetchUserPlan = async () => {
     if (!session?.user?.id) {
       setIsLoadingPlan(false);
@@ -1334,7 +1344,9 @@ export default function CreatePortalPage() {
   const handleLogoSelect = (file: File | null) => {
     if (!file) {
       updateFormData("logo", null);
-      setLogoPreview(null);
+      // Revert to default logo from settings
+      const defaultLogo = (session?.user as any)?.portalLogo;
+      setLogoPreview(defaultLogo || null);
 
       return;
     }

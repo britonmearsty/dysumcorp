@@ -11,6 +11,7 @@ import { PortalTextarea } from "@/components/portal/portal-textarea";
 import { PortalDropZone } from "@/components/portal/portal-drop-zone";
 import { PortalFileList } from "@/components/portal/portal-file-list";
 import { PortalButton } from "@/components/portal/portal-button";
+import { LogoDisplay } from "@/components/logo-display";
 import { PortalSuccessView } from "@/components/portal/portal-success-view";
 import { uploadFiles } from "@/lib/upload-manager";
 
@@ -607,11 +608,13 @@ export default function PublicPortalPage() {
         >
           <div className="text-center mb-6">
             {portal.logoUrl && (
-              <img
-                alt={portal.name}
-                className="w-16 h-16 mx-auto mb-4 object-contain"
-                src={portal.logoUrl}
-              />
+              <div className="flex justify-center mb-4">
+                <LogoDisplay
+                  logoUrl={portal.logoUrl}
+                  alt={portal.name}
+                  size="lg"
+                />
+              </div>
             )}
             <h1
               className="text-2xl font-bold"
