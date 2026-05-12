@@ -49,15 +49,15 @@ const sections = [
       "Notify us immediately of any unauthorized access or security breaches.",
     ],
   },
-  {
-    title: "3. Ownership of Your Data",
-    content: [
-      "You retain full ownership of all files you upload to Dysumcorp.",
-      "We never claim ownership of your documents or use them for any purpose without your consent.",
-      "When you delete data or close your account, we remove it from our systems within 30 days.",
-      "You grant us permission to store and transmit your files as necessary to provide the service.",
-    ],
-  },
+     {
+       title: "3. Ownership of Your Data",
+       content: [
+         "You retain full ownership of all files you upload to Dysumcorp.",
+         "We never claim ownership of your documents or use them for any purpose without your consent.",
+         "Files in transit are automatically purged from Dysumcorp infrastructure within 24 hours of upload, regardless of account status. Account data and portal settings are removed within 30 days of account closure.",
+         "You grant us permission to store and transmit your files as necessary to provide the service.",
+       ],
+     },
   {
     title: "4. Acceptable Use",
     content: [

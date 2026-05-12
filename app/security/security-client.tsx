@@ -8,13 +8,20 @@ import { Button } from "@/components/ui/button";
 import { FadeIn, Stagger, StaggerItem } from "@/components/animations";
 
 const securityPillars = [
-  {
-    icon: Lock,
-    title: "Encryption in Transit and at Rest",
-    desc: "Your files never live on our servers. They go straight from your client to your Drive or Dropbox, encrypted with AES-256 at every step.",
-    detail:
-      "AES-256 encryption protects your data during upload and while stored in your cloud. We don't store copies on Dysumcorp infrastructure.",
-  },
+    {
+      icon: Lock,
+      title: "Encryption in Transit and at Rest",
+      desc: "Files are temporarily held on Cloudflare's infrastructure during transfer, then automatically deleted within 24 hours.",
+      detail:
+        "Files are encrypted with AES-256 during upload and while temporarily held on Cloudflare's infrastructure during routing to your storage. Files are automatically purged from our infrastructure within 24 hours of upload.",
+    },
+    {
+      icon: Eye,
+      title: "Private by Design",
+      desc: "Your documents are accessible only to you and your clients. Dysumcorp does not store, read, or access your files. We're the pipe, not the vault.",
+      detail:
+        "Files are temporarily routed through Cloudflare infrastructure during transfer and automatically deleted within 24 hours. Dysumcorp does not read, index, or access your files at any point. Your cloud, your control.",
+    },
   {
     icon: Eye,
     title: "Private by Design",
@@ -29,13 +36,13 @@ const securityPillars = [
     detail:
       "Passwords are hashed using industry-standard algorithms. Link expiry is enforced at the server level.",
   },
-  {
-    icon: ShieldCheck,
-    title: "No Document Storage",
-    desc: "Dysumcorp does not store your documents. Files go directly from your client to your Google Drive or Dropbox — zero intermediary copies.",
-    detail:
-      "We generate upload tokens that allow direct-to-cloud transfers. Once the file arrives in your storage, Dysumcorp has no further access to it.",
-  },
+   {
+      icon: ShieldCheck,
+      title: "Temporary Transit Only",
+      desc: "Files are held temporarily on Cloudflare R2 during routing to your cloud storage and deleted automatically within 24 hours.",
+      detail:
+        "Files are held temporarily on Cloudflare R2 during routing to your cloud storage and deleted automatically within 24 hours. Dysumcorp never holds files permanently. Once forwarded to your Drive or Dropbox, we have no further access.",
+    },
 ];
 
 const footerLinks = [
@@ -56,18 +63,18 @@ export function SecurityClient() {
               <span className="inline-block text-stone-500 font-bold tracking-[0.3em] uppercase text-xs mb-6">
                 Security First
               </span>
-              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold serif-font text-[#1c1917] mb-6 leading-[1.1]">
-                Your files never live
-                <br />
-                <span className="italic font-normal text-stone-600">
-                  on our servers.
-                </span>
-              </h1>
-              <p className="text-lg sm:text-xl text-stone-700 font-medium mb-10 max-w-2xl mx-auto leading-relaxed">
-                Your files go straight from your client to your Drive or
-                Dropbox. Dysumcorp never stores your documents. We're the pipe,
-                not the storage.
-              </p>
+               <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold serif-font text-[#1c1917] mb-6 leading-[1.1]">
+                 Your files don't stay
+                 <br />
+                 <span className="italic font-normal text-stone-600">
+                   on our servers.
+                 </span>
+               </h1>
+               <p className="text-lg sm:text-xl text-stone-700 font-medium mb-10 max-w-2xl mx-auto leading-relaxed">
+                 Files are temporarily held on Cloudflare's infrastructure during transfer,
+                 then automatically deleted within 24 hours.
+                 They are never stored permanently — only in your Google Drive or Dropbox.
+               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button
                   className="px-10 py-5 bg-[#1c1917] text-stone-50 rounded-xl font-bold text-lg hover:bg-stone-800 transition-all premium-shadow inline-flex items-center gap-3"
@@ -86,7 +93,7 @@ export function SecurityClient() {
           </div>
         </section>
 
-        {/* Quick Stats */}
+         {/* Quick Stats */}
         <section className="py-10 px-4 sm:px-6 bg-[#1c1917]">
           <div className="max-w-5xl mx-auto">
             <Stagger
@@ -97,7 +104,7 @@ export function SecurityClient() {
                 { num: "AES-256", label: "Encryption" },
                 { num: "Private", label: "By Design" },
                 { num: "Direct", label: "Cloud Transfer" },
-                { num: "Zero", label: "Server Storage" },
+                { num: "Auto-Deleted", label: "Within 24h" },
               ].map((stat, i) => (
                 <StaggerItem key={i}>
                   <div className="py-6">

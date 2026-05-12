@@ -21,6 +21,8 @@ export interface PricingPlan {
   polarProductIdAnnual: string;
   limits: PlanLimits;
   features: string[];
+  /** Items shown with an X icon (limitations). Only used for the Free plan. */
+  limitations?: string[];
   popular?: boolean;
 }
 
@@ -47,6 +49,11 @@ export const FREE_PLAN: PricingPlan = {
     "Google Drive & Dropbox",
     "No client account required",
   ],
+  limitations: [
+    "No custom branding",
+    "No multiple portals",
+  ],
+  // Which features are limitations (shown with X icon)
 };
 
 export const PRICING_PLANS: Record<"pro", PricingPlan> = {

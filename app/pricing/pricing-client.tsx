@@ -10,6 +10,7 @@ import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { LandingNavbar } from "@/components/landing-navbar";
 import { PricingCard } from "@/components/pricing-card";
+import { PricingCardFree } from "@/components/pricing-card-free";
 import { FadeIn } from "@/components/animations";
 
 const faqItems = [
@@ -108,37 +109,12 @@ export function PricingClient() {
 
           <div className="grid gap-8 md:grid-cols-2 max-w-3xl mx-auto mb-16 px-4">
             {/* Free Plan */}
-            <div className="p-8 sm:p-12 rounded-[2.5rem] border border-stone-200 premium-shadow-hover h-full flex flex-col bg-white">
-              <h3 className="text-2xl font-bold serif-font mb-2 text-[#1c1917]">
-                {FREE_PLAN.name}
-              </h3>
-              <p className="text-sm text-stone-600 mb-4">
-                {FREE_PLAN.description}
-              </p>
-              <div className="flex items-baseline gap-1 mb-8">
-                <span className="text-4xl font-bold text-[#1c1917]">$0</span>
-                <span className="text-sm font-medium text-stone-600">
-                  /month
-                </span>
-              </div>
-              <ul className="space-y-4 mb-12 flex-grow">
-                {FREE_PLAN.features.map((feature, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center gap-3 text-sm font-medium text-stone-700"
-                  >
-                    <Check className="w-4 h-4 flex-shrink-0 text-stone-500" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Button
-                className="w-full py-4 rounded-xl font-bold text-sm bg-stone-100 text-[#1c1917] hover:bg-stone-200 transition-all"
-                onClick={() => router.push("/auth")}
-              >
-                Create free portal
-              </Button>
-            </div>
+            <PricingCardFree
+              plan={FREE_PLAN}
+              variant="landing"
+              ctaLabel="Create free portal"
+              onSubscribe={() => router.push("/auth")}
+            />
 
             {/* Pro Plan */}
             <PricingCard
@@ -146,6 +122,7 @@ export function PricingClient() {
               ctaLabel="Upgrade to Pro"
               currentPlan={currentPlan}
               plan={PRICING_PLANS.pro}
+              variant="landing"
               onSubscribe={handleSubscribe}
             />
           </div>

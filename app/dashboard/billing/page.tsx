@@ -18,8 +18,9 @@ import {
 import { SubscriptionStatus } from "@/components/subscription-status";
 import { SubscriptionManager } from "@/components/subscription-manager";
 import { PricingCard } from "@/components/pricing-card";
+import { PricingCardFree } from "@/components/pricing-card-free";
 import { UsageDashboard } from "@/components/usage-dashboard";
-import { PRICING_PLANS } from "@/config/pricing";
+import { PRICING_PLANS, FREE_PLAN } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
 import { useToast } from "@/lib/toast";
 
@@ -336,8 +337,16 @@ export default function BillingPage() {
                         </Tabs>
                       </div>
 
-                      <div className="max-w-sm">
-                        {/* REVERSIBILITY: Remove variant prop to revert */}
+                      <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
+                        {/* Free Plan */}
+                        <PricingCardFree
+                          plan={FREE_PLAN}
+                          variant="dashboard"
+                          ctaLabel="Current Plan"
+                          onSubscribe={() => {}}
+                        />
+
+                        {/* Pro Plan */}
                         <PricingCard
                           billingCycle={billingCycle}
                           currentPlan={currentPlan}
