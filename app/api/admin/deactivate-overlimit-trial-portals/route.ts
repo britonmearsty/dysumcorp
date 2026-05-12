@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { checkPortalTrialExpiration } from "@/lib/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/admin/deactivate-overlimit-trial-portals
- * One-time backfill to deactivate trial portals that exceeded file limit.
+ * POST /api/admin/deactivate-overlimit-portals
+ * One-time backfill to deactivate portals that exceeded file limit.
  * Requires admin secret.
  */
 export async function POST(request: NextRequest) {
@@ -21,11 +20,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Find all trial users (free plan with hasCreatedTrialPortal)
-    const trialUsers = await prisma.user.findMany({
+    // Find all free users with active portals
+    const freeUsers = await prisma.user.findMany({
       where: {
         subscriptionPlan: "free",
-        hasCreatedTrialPortal: true,
       },
       select: {
         id: true,
@@ -36,7 +34,7 @@ export async function POST(request: NextRequest) {
     const results = [];
     let deactivatedCount = 0;
 
-    for (const user of trialUsers) {
+    for (const user of freeUsers) {
       // Find user's portals
       const portals = await prisma.portal.findMany({
         where: {
@@ -50,45 +48,33 @@ export async function POST(request: NextRequest) {
       });
 
       for (const portal of portals) {
-        // Check if trial is still valid
-        const trialCheck = await checkPortalTrialExpiration(portal.id);
-        
-        if (!trialCheck.isExpired) {
-          // Count files
-          const fileCount = await prisma.file.count({
-            where: { portalId: portal.id },
+        // Count files
+        const fileCount = await prisma.file.count({
+          where: { portalId: portal.id },
+        });
+
+        if (fileCount >= 10) {
+          // Deactivate portal
+          await prisma.portal.update({
+            where: { id: portal.id },
+            data: { isActive: false },
           });
 
-          if (fileCount >= 10) {
-            // Deactivate portal
-            await prisma.portal.update({
-              where: { id: portal.id },
-              data: { isActive: false },
-            });
-
-            deactivatedCount++;
-            results.push({
-              portalId: portal.id,
-              name: portal.name,
-              userEmail: user.email,
-              fileCount,
-              action: "deactivated",
-            });
-          } else {
-            results.push({
-              portalId: portal.id,
-              name: portal.name,
-              userEmail: user.email,
-              fileCount,
-              action: "active",
-            });
-          }
+          deactivatedCount++;
+          results.push({
+            portalId: portal.id,
+            name: portal.name,
+            userEmail: user.email,
+            fileCount,
+            action: "deactivated",
+          });
         } else {
           results.push({
             portalId: portal.id,
             name: portal.name,
             userEmail: user.email,
-            action: "trial_expired",
+            fileCount,
+            action: "active",
           });
         }
       }

@@ -176,7 +176,7 @@ export function DropboxClient() {
             </span>
           </div>
           <span className="text-sm font-medium text-stone-500">
-            © 2025 Dysumcorp. All rights reserved.
+            © 2026 Dysumcorp. All rights reserved.
           </span>
           <nav className="flex gap-8">
             <Link

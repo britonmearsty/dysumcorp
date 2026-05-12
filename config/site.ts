@@ -3,7 +3,7 @@ export type SiteConfig = typeof siteConfig;
 export const siteConfig = {
   name: "Dysumcorp",
   description:
-    "Professional secure file collection portal for CPAs, lawyers, and consultants. Branded client document upload with bank-level encryption. No client login required. Start free.",
+    "The simplest way for solo professionals and small teams to receive client files — straight to their Google Drive or Dropbox. No client account needed.",
   storageRootFolder: process.env.STORAGE_ROOT_FOLDER || "dysumcorp",
   navItems: [
     {

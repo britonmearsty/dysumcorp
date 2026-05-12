@@ -63,6 +63,7 @@ interface PricingCardProps {
   currentStatus?: string;
   onSubscribe?: (planId: string, isAnnual: boolean) => void;
   variant?: "landing" | "dashboard";
+  ctaLabel?: string;
 }
 
 // REVERSIBILITY: Remove variant param to revert
@@ -73,6 +74,7 @@ export function PricingCard({
   currentStatus,
   onSubscribe,
   variant = "landing",
+  ctaLabel,
 }: PricingCardProps) {
   const isCurrentPlan = currentPlan === plan.id;
   const isCancelledGrace = isCurrentPlan && currentStatus === "cancelled";
@@ -221,7 +223,7 @@ export function PricingCard({
               ? "Cancelling at Period End"
               : isCurrentPlan
                 ? "Current Plan"
-                : "Subscribe"}
+                : ctaLabel || "Subscribe"}
           </Button>
         </CardBody>
       </Card>

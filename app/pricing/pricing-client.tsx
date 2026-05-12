@@ -2,23 +2,50 @@
 
 import { useState } from "react";
 import { Tabs, Tab } from "@heroui/tabs";
+import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { PricingCard } from "@/components/pricing-card";
-import { PRICING_PLANS } from "@/config/pricing";
+import { PRICING_PLANS, FREE_PLAN } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { LandingNavbar } from "@/components/landing-navbar";
-import { useToast } from "@/lib/toast";
+import { PricingCard } from "@/components/pricing-card";
+import { FadeIn } from "@/components/animations";
+
+const faqItems = [
+  {
+    q: "Do my clients need to create an account to upload files?",
+    a: "No. Your clients just click the link and upload. No account, no app, no login required on their end.",
+  },
+  {
+    q: "What's included in the free portal?",
+    a: "Your free portal lets you collect up to 10 files. It's a real portal — not a demo. When you're ready for more, Pro gives you unlimited portals and unlimited files.",
+  },
+  {
+    q: "Which cloud storage is supported?",
+    a: "Google Drive and Dropbox. Files go directly into your chosen storage — automatically organized when they arrive.",
+  },
+  {
+    q: "Is there a file size limit?",
+    a: "No enforced limit per file. Upload what you need.",
+  },
+  {
+    q: "What happens to files in transit?",
+    a: "Files go directly from your client to your cloud storage. Dysumcorp does not store your documents.",
+  },
+  {
+    q: "Can I cancel Pro anytime?",
+    a: "Yes. No long-term commitment.",
+  },
+];
 
 export function PricingClient() {
   const router = useRouter();
   const { data: session } = useSession();
+  const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
     "monthly",
   );
-  const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
-  const { showToast } = useToast();
 
   const handleSubscribe = (planId: string, isAnnual: boolean) => {
     if (!session?.user) {
@@ -34,19 +61,22 @@ export function PricingClient() {
       <div className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 block">
-              Pricing Plans
-            </span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold serif-font text-[#1c1917] mb-6">
-              Simple, Transparent Pricing
-            </h1>
-            <p className="text-lg md:text-xl text-stone-700 max-w-2xl mx-auto font-medium">
-              Choose the perfect plan for your needs. Upgrade, downgrade, or
-              cancel anytime.
-            </p>
+            <FadeIn delay={0.1}>
+              <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 block">
+                Pricing Plans
+              </span>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold serif-font text-[#1c1917] mb-6 max-w-4xl mx-auto">
+                One straightforward plan for professionals who just need it to
+                work.
+              </h1>
+              <p className="text-lg md:text-xl text-stone-700 max-w-2xl mx-auto font-medium">
+                Start free. Upgrade when you need more. No card required to
+                start. Cancel Pro anytime.
+              </p>
+            </FadeIn>
           </div>
 
-          <div className="flex justify-center mb-12">
+          <div className="flex justify-center mb-8">
             <Tabs
               classNames={{
                 tabList: "bg-white border border-stone-200 rounded-full p-1",
@@ -76,98 +106,75 @@ export function PricingClient() {
             </Tabs>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto mb-16 px-4">
-            {Object.values(PRICING_PLANS).map((plan) => (
-              <PricingCard
-                key={plan.id}
-                billingCycle={billingCycle}
-                currentPlan={currentPlan}
-                plan={plan}
-                onSubscribe={handleSubscribe}
-              />
-            ))}
+          <div className="grid gap-8 md:grid-cols-2 max-w-3xl mx-auto mb-16 px-4">
+            {/* Free Plan */}
+            <div className="p-8 sm:p-12 rounded-[2.5rem] border border-stone-200 premium-shadow-hover h-full flex flex-col bg-white">
+              <h3 className="text-2xl font-bold serif-font mb-2 text-[#1c1917]">
+                {FREE_PLAN.name}
+              </h3>
+              <p className="text-sm text-stone-600 mb-4">
+                {FREE_PLAN.description}
+              </p>
+              <div className="flex items-baseline gap-1 mb-8">
+                <span className="text-4xl font-bold text-[#1c1917]">$0</span>
+                <span className="text-sm font-medium text-stone-600">
+                  /month
+                </span>
+              </div>
+              <ul className="space-y-4 mb-12 flex-grow">
+                {FREE_PLAN.features.map((feature, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center gap-3 text-sm font-medium text-stone-700"
+                  >
+                    <Check className="w-4 h-4 flex-shrink-0 text-stone-500" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Button
+                className="w-full py-4 rounded-xl font-bold text-sm bg-stone-100 text-[#1c1917] hover:bg-stone-200 transition-all"
+                onClick={() => router.push("/auth")}
+              >
+                Create free portal
+              </Button>
+            </div>
+
+            {/* Pro Plan */}
+            <PricingCard
+              billingCycle={billingCycle}
+              ctaLabel="Upgrade to Pro"
+              currentPlan={currentPlan}
+              plan={PRICING_PLANS.pro}
+              onSubscribe={handleSubscribe}
+            />
           </div>
 
+          <FadeIn delay={0.2}>
+            <p className="text-center text-sm text-stone-500 font-medium mb-16">
+              Start free. Upgrade when you need more.
+              <br className="sm:hidden" /> No card required to start. Cancel Pro
+              anytime.
+            </p>
+          </FadeIn>
+
+          {/* FAQ Section */}
           <div className="max-w-3xl mx-auto mt-20 pt-20 border-t border-stone-200">
             <h2 className="text-3xl font-bold serif-font text-center mb-12 text-[#1c1917]">
               Frequently Asked Questions
             </h2>
             <div className="grid md:grid-cols-2 gap-x-12 gap-y-10">
-              <div>
-                <h3 className="font-bold text-lg mb-3 text-[#1c1917] serif-font">
-                  Can I upgrade or downgrade later?
-                </h3>
-                <p className="text-stone-600 leading-relaxed font-medium">
-                  Yes! You can cancel your Pro subscription at any time.
-                  Changes take effect at the end of your billing period, and
-                  you&apos;ll retain access until then.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-3 text-[#1c1917] serif-font">
-                  What happens if I exceed my limits?
-                </h3>
-                <p className="text-stone-600 leading-relaxed font-medium">
-                  You&apos;ll be notified when you reach your portal or storage
-                  limit. To continue creating portals or uploading files,
-                  you&apos;ll need to upgrade to Pro or remove some content.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-3 text-[#1c1917] serif-font">
-                  Do you offer refunds?
-                </h3>
-                <p className="text-stone-600 leading-relaxed font-medium">
-                  Yes, we offer a 14-day money-back guarantee on the Pro plan.
-                  No questions asked.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-3 text-[#1c1917] serif-font">
-                  Payment methods
-                </h3>
-                <p className="text-stone-600 leading-relaxed font-medium">
-                  We accept all major credit cards, debit cards, and support
-                  various payment methods through our secure payment processor.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-3 text-[#1c1917] serif-font">
-                  Can I try before I buy?
-                </h3>
-                <p className="text-stone-600 leading-relaxed font-medium">
-                  You can create an account to explore the dashboard, but portal
-                  creation and file collection require an active Pro subscription.
-                  We offer a 14-day money-back guarantee if you&apos;re not satisfied.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-3 text-[#1c1917] serif-font">
-                  Cancel anytime?
-                </h3>
-                <p className="text-stone-600 leading-relaxed font-medium">
-                  Absolutely! You can cancel your Pro subscription at any time.
-                  You&apos;ll retain access to Pro features until the end of
-                  your billing period.
-                </p>
-              </div>
+              {faqItems.map((faq, i) => (
+                <div key={i}>
+                  <h3 className="font-bold text-lg mb-3 text-[#1c1917] serif-font">
+                    {faq.q}
+                  </h3>
+                  <p className="text-stone-600 leading-relaxed font-medium">
+                    {faq.a}
+                  </p>
+                </div>
+              ))}
             </div>
-          </div>
-
-          <div className="max-w-4xl mx-auto mt-24 p-10 sm:p-16 glass-surface rounded-3xl premium-shadow text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold serif-font mb-6 text-[#1c1917]">
-              Still have questions?
-            </h2>
-            <p className="text-lg text-stone-700 mb-10 max-w-xl mx-auto font-medium">
-              Our team is here to help. Reach out for any questions or support
-              regarding our plans.
-            </p>
-            <Button
-              className="px-10 py-5 bg-[#1c1917] text-stone-50 rounded-xl font-bold lg:text-lg hover:bg-stone-800 transition-all premium-shadow"
-              onClick={() => router.push("/dashboard/support")}
-            >
-              Contact Support
-            </Button>
           </div>
         </div>
       </div>

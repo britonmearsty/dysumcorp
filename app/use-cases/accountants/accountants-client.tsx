@@ -41,8 +41,8 @@ export function AccountantsClient() {
               Secure Document Collection for Tax Season
             </h2>
             <p className="text-stone-400 font-medium mb-10 text-lg">
-              Collect documents from clients securely. SOC 2 compliant
-              encryption.
+              Collect documents from clients directly to your Google Drive or
+              Dropbox. No client account needed.
             </p>
             <Button
               className="px-8 py-5 bg-stone-50 text-[#1c1917] rounded-xl font-bold text-lg hover:bg-stone-200 transition-colors"
@@ -65,7 +65,7 @@ export function AccountantsClient() {
             </span>
           </div>
           <span className="text-sm font-medium text-stone-500">
-            © 2025 Dysumcorp. All rights reserved.
+            © 2026 Dysumcorp. All rights reserved.
           </span>
           <nav className="flex gap-8">
             <Link

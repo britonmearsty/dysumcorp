@@ -17,6 +17,8 @@ Dysumcorp is designed to streamline the document collection process for professi
 - [For Freelancers](/use-cases/freelancers): Simple and secure file requests for independent contractors.
 - [For Marketing Agencies](/use-cases/marketing-agencies): Collecting assets and approvals from clients efficiently.
 - [For Photographers](/use-cases/photographers): Managing client photo uploads and project assets.
+- [For Wealth Advisors](/use-cases/wealth-advisors): Collecting financial documents and portfolio statements from high-net-worth clients.
+- [For Real Estate](/use-cases/real-estate): Centralizing closing documents, appraisals, and inspections for faster deal completions.
 
 ## Technical Details
 

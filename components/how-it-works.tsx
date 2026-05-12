@@ -7,17 +7,17 @@ export default function HowItWorks() {
     {
       num: "01",
       title: "Create your portal",
-      desc: "Set up a portal in minutes. Choose your cloud storage, customize settings, and generate a shareable link.",
+      desc: "Connect your Google Drive or Dropbox, name your portal, and get a shareable link. Done in under 2 minutes.",
     },
     {
       num: "02",
       title: "Share with clients",
-      desc: "Send the link to your clients. They can upload files instantly from any device without creating an account.",
+      desc: "Send the link by email, WhatsApp, or embed it on your website. Clients upload from any device — no login, no app, no friction.",
     },
     {
       num: "03",
       title: "Files auto-sync",
-      desc: "Uploaded files automatically sync to your cloud storage. Get notified instantly when new documents arrive.",
+      desc: "Every upload lands directly in your Drive or Dropbox, organized and ready. You get an instant notification — no manual downloading ever.",
     },
   ];
 

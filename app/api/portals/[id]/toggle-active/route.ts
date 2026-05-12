@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth-server";
-import { checkAccess, checkPortalTrialExpiration } from "@/lib/access";
+import { checkAccess } from "@/lib/access";
 import { isValidUUID } from "@/lib/validation";
 
 // POST /api/portals/[id]/toggle-active - Toggle portal active status
@@ -39,62 +39,27 @@ export async function POST(
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
-    // If trying to activate (turn ON), check subscription or trial status
+    // If trying to activate (turn ON), check subscription access
     if (!existingPortal.isActive) {
       const access = await checkAccess(session.user.id);
 
       if (!access.allowed) {
-        // REVERSIBILITY: Remove this trial check to revert trial feature
-        // Check if user is on free trial and can reactivate
-        const user = await prisma.user.findUnique({
-          where: { id: session.user.id },
-          select: {
-            subscriptionPlan: true,
-            hasCreatedTrialPortal: true,
-          },
+        // Check file count (max 10 for free)
+        const fileCount = await prisma.file.count({
+          where: { portalId: existingPortal.id },
         });
 
-        // If free user with trial portal, check if trial is still valid
-        if (user?.subscriptionPlan === "free" && user?.hasCreatedTrialPortal) {
-          // Check trial expiration
-          const trialCheck = await checkPortalTrialExpiration(existingPortal.id);
-          
-          if (trialCheck.isExpired) {
-            return NextResponse.json(
-              {
-                error: "Your trial has expired. Upgrade to Pro to reactivate this portal.",
-                code: "TRIAL_EXPIRED",
-              },
-              { status: 403 },
-            );
-          }
-
-          // Check file count (max 10 for trial)
-          const fileCount = await prisma.file.count({
-            where: { portalId: existingPortal.id },
-          });
-
-          if (fileCount >= 10) {
-            return NextResponse.json(
-              {
-                error: "You've reached the 10 file limit for trial portals. Upgrade to Pro to receive more files.",
-                code: "TRIAL_FILE_LIMIT_REACHED",
-              },
-              { status: 403 },
-            );
-          }
-
-          // Trial is valid, allow activation
-        } else {
-          // Not a trial user, require subscription
+        if (fileCount >= 10) {
           return NextResponse.json(
             {
-              error: "A subscription is required to activate portals.",
-              code: "SUBSCRIPTION_REQUIRED",
+              error: "You've reached the 10 file limit. Upgrade to Pro to receive more files.",
+              code: "FILE_LIMIT_REACHED",
             },
-            { status: 402 },
+            { status: 403 },
           );
         }
+
+        // Free user within limits, allow activation
       }
     }
 

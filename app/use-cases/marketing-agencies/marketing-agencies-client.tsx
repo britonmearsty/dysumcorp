@@ -29,7 +29,7 @@ const features = [
     icon: Shield,
     title: "NDA-Ready Security",
     description:
-      "Enterprise-grade encryption keeps sensitive campaign data protected.",
+      "AES-256 encryption keeps sensitive campaign data protected during transfer.",
   },
   {
     icon: Zap,
@@ -133,7 +133,7 @@ export function MarketingAgenciesClient() {
             </span>
           </div>
           <span className="text-sm font-medium text-stone-500">
-            © 2025 Dysumcorp. All rights reserved.
+            © 2026 Dysumcorp. All rights reserved.
           </span>
           <nav className="flex gap-8">
             <Link

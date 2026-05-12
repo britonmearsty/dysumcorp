@@ -29,7 +29,7 @@ const features = [
   {
     icon: Shield,
     title: "Secure File Handling",
-    description: "256-bit encryption keeps client files safe. SOC 2 compliant.",
+    description: "AES-256 encryption keeps client files safe during transfer.",
   },
   {
     icon: Zap,
@@ -169,7 +169,7 @@ export function FreelancersClient() {
             </span>
           </div>
           <span className="text-sm font-medium text-stone-500">
-            © 2025 Dysumcorp. All rights reserved.
+            © 2026 Dysumcorp. All rights reserved.
           </span>
           <nav className="flex gap-8">
             <Link

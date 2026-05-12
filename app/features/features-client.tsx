@@ -23,13 +23,12 @@ import { FadeIn, Stagger, StaggerItem } from "@/components/animations";
 const coreFeatures = [
   {
     icon: CloudUpload,
-    title: "Cloud Gravity",
+    title: "Direct Cloud Sync",
     tag: "Core Feature",
-    desc: "Files collected by clients sync directly to your Google Drive, Dropbox, or OneDrive — no manual downloads, no intermediary storage. Documents arrive organized exactly where you expect them.",
+    desc: "Files collected by clients sync directly to your Google Drive or Dropbox — no manual downloads, no intermediary storage. Documents arrive organized exactly where you expect them.",
     details: [
       "Google Drive integration",
       "Dropbox integration",
-      "OneDrive integration",
       "Automatic folder creation per portal",
       "Zero intermediary storage",
     ],
@@ -52,7 +51,7 @@ const coreFeatures = [
   {
     icon: Zap,
     title: "Professional Branding",
-    tag: "Coming Soon",
+    tag: "Pro Feature",
     desc: "Maintain your firm's professional identity with fully white-labeled portals under your own domain. Clients see your brand, your colors, and your logo — not Dysumcorp.",
     details: [
       "Custom domain support",
@@ -62,7 +61,6 @@ const coreFeatures = [
       "Remove all Dysumcorp branding",
     ],
     dark: false,
-    comingSoon: true,
   },
 ];
 
@@ -135,9 +133,8 @@ export function FeaturesClient() {
                 </span>
               </h1>
               <p className="text-lg sm:text-xl text-stone-700 font-medium mb-10 max-w-2xl mx-auto leading-relaxed">
-                Dysumcorp combines cloud-native document collection, intelligent
-                checklists, and enterprise security into one seamless platform
-                built for professionals.
+                Dysumcorp does one thing well — it gets client files into your
+                cloud storage without the back-and-forth.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button
@@ -184,11 +181,6 @@ export function FeaturesClient() {
                         : "bg-white border-stone-100"
                     }`}
                   >
-                    {feature.comingSoon && (
-                      <div className="absolute top-6 right-6 bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-full border border-amber-200">
-                        Coming Soon
-                      </div>
-                    )}
                     <div
                       className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 ${
                         feature.dark ? "bg-white/10" : "bg-stone-100"
@@ -286,9 +278,8 @@ export function FeaturesClient() {
                 Which features do you get?
               </h2>
               <p className="text-stone-400 font-medium mb-10 text-lg max-w-xl mx-auto leading-relaxed">
-                Portal creation and file collection require Pro. Unlock up to
-                100 portals, white-labeling, analytics, and more with a
-                subscription.
+                Portal creation and file collection are free to start. Unlock
+                unlimited portals, white-labeling, and more with Pro.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button
@@ -320,7 +311,7 @@ export function FeaturesClient() {
             </span>
           </div>
           <span className="text-sm font-medium text-stone-500">
-            © 2025 Dysumcorp. All rights reserved.
+            © 2026 Dysumcorp. All rights reserved.
           </span>
           <nav className="flex gap-8">
             {footerLinks.map((link) => (

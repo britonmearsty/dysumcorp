@@ -1296,7 +1296,6 @@ export default function CreatePortalPage() {
 
   const currentStepIndex = steps.findIndex((s) => s.id === currentStep);
 
-  const [hasCreatedTrialPortal, setHasCreatedTrialPortal] = useState(false);
   const [isLoadingPlan, setIsLoadingPlan] = useState(true);
 
   useEffect(() => {
@@ -1317,10 +1316,6 @@ export default function CreatePortalPage() {
 
       if (response.ok) {
         setUserPlan(data.planType);
-        // REVERSIBILITY: Remove this check to revert trial feature
-        if (data.planType === "free" && data.hasCreatedTrialPortal) {
-          setHasCreatedTrialPortal(true);
-        }
       } else {
         logger.error("Failed to fetch user plan:", data.error);
       }
@@ -1612,18 +1607,6 @@ export default function CreatePortalPage() {
   const handleSubmit = async () => {
     setError("");
 
-    // REVERSIBILITY: Remove this check to revert trial feature
-    // Check if free user has already used their trial portal
-    if (userPlan === "free" && hasCreatedTrialPortal) {
-      showPaywall(
-        userPlan,
-        "Create Portal",
-        "You've already created your free trial portal. Upgrade to Pro to create upto 100 portals.",
-      );
-
-      return;
-    }
-
     // Validate required fields
     if (!formData.portalName.trim()) {
       setError("Portal name is required");
@@ -1784,9 +1767,8 @@ export default function CreatePortalPage() {
         </div>
       )}
 
-      {/* REVERSIBILITY: Remove this block to revert trial feature */}
-      {/* Show trial limitations for free users creating their first portal - only after loading completes */}
-      {!isLoadingPlan && userPlan === "free" && !hasCreatedTrialPortal && (
+      {/* Show limitations for free users */}
+      {!isLoadingPlan && userPlan === "free" && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
           <div className="flex items-start gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex-shrink-0">
@@ -1795,27 +1777,23 @@ export default function CreatePortalPage() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-bold text-sm text-blue-900 dark:text-blue-100">
-                  Free Trial Portal
+                  Free Portal
                 </h3>
                 <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-2 py-0.5 rounded-full">
-                  Trial
+                  Free
                 </span>
               </div>
               <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed mb-2">
-                You're creating your free trial portal with these limitations:
+                Your free portal has these limitations:
               </p>
               <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1 mb-3">
                 <li className="flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-600 dark:bg-blue-400 rounded-full flex-shrink-0" />
-                  <span>1 trial portal allowed</span>
+                  <span>1 portal allowed</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-600 dark:bg-blue-400 rounded-full flex-shrink-0" />
                   <span>10 file uploads maximum</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1 h-1 bg-blue-600 dark:bg-blue-400 rounded-full flex-shrink-0" />
-                  <span>Expires after 7 days</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-600 dark:bg-blue-400 rounded-full flex-shrink-0" />
@@ -1826,7 +1804,7 @@ export default function CreatePortalPage() {
                 className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                 href="/dashboard/billing"
               >
-                Upgrade to Pro for upto 100 portals →
+                Upgrade to Pro for unlimited portals →
               </Link>
             </div>
           </div>

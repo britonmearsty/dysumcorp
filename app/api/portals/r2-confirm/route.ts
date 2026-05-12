@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { sendFileUploadNotification } from "@/lib/email-service";
-import { checkPortalTrialExpiration } from "@/lib/access";
+import { checkAccess } from "@/lib/access";
 import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
@@ -210,41 +210,26 @@ export async function POST(request: NextRequest) {
         `[r2-confirm:${requestId}] ✓ File record created: ${file.id}`,
       );
 
-      // Check if trial portal has reached file limit and deactivate if so
+      // Check if free portal has reached file limit
       const portal = await prisma.portal.findUnique({
         where: { id: portalId },
-        select: {
-          id: true,
-          userId: true,
-          isActive: true,
-          user: {
-            select: {
-              subscriptionPlan: true,
-              hasCreatedTrialPortal: true,
-            },
-          },
-        },
+        select: { id: true, userId: true, isActive: true },
       });
 
-      if (portal?.isActive && portal.user) {
-        if (
-          portal.user.subscriptionPlan === "free" &&
-          portal.user.hasCreatedTrialPortal
-        ) {
-          const trialCheck = await checkPortalTrialExpiration(portal.id);
-          if (!trialCheck.isExpired) {
-            const fileCount = await prisma.file.count({
-              where: { portalId: portal.id },
+      if (portal?.isActive) {
+        const access = await checkAccess(portal.userId);
+        if (!access.allowed) {
+          const fileCount = await prisma.file.count({
+            where: { portalId: portal.id },
+          });
+          if (fileCount >= 10) {
+            await prisma.portal.update({
+              where: { id: portal.id },
+              data: { isActive: false },
             });
-            if (fileCount >= 10) {
-              await prisma.portal.update({
-                where: { id: portal.id },
-                data: { isActive: false },
-              });
-              logger.log(
-                `[r2-confirm:${requestId}] 🚫 Trial portal ${portal.id} deactivated: file limit reached (${fileCount}/10)`,
-              );
-            }
+            logger.log(
+              `[r2-confirm:${requestId}] Free portal ${portal.id} deactivated: file limit reached (${fileCount}/10)`,
+            );
           }
         }
       }

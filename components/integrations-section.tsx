@@ -15,18 +15,6 @@ const integrations = [
     desc: "Direct API integration for speed.",
     logo: "/Dropbox.png",
   },
-  {
-    name: "OneDrive",
-    desc: "Seamless for Microsoft 365 teams.",
-    comingSoon: true,
-    logo: "/OneDrive.png",
-  },
-  {
-    name: "AWS S3",
-    desc: "Enterprise-grade storage archiving.",
-    comingSoon: true,
-    logo: "/s3.png",
-  },
 ];
 
 export default function IntegrationsSection() {
@@ -43,17 +31,12 @@ export default function IntegrationsSection() {
         </FadeIn>
 
         <Stagger
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-xl mx-auto"
           delay={0.1}
         >
           {integrations.map((integration, index) => (
             <StaggerItem key={index}>
               <div className="p-10 rounded-[2.5rem] border border-stone-100 bg-white hover:premium-shadow transition-all duration-500 group text-center h-full relative">
-                {integration.comingSoon && (
-                  <div className="absolute top-4 right-4 bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-full border border-amber-200">
-                    Coming Soon
-                  </div>
-                )}
                 <div className="mb-6 flex justify-center items-center h-16">
                   <Image
                     alt={integration.name}

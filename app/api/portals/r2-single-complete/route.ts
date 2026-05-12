@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { validateUploadToken } from "@/lib/upload-tokens";
 import { headR2Object } from "@/lib/r2-client";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
-import { checkPortalTrialExpiration } from "@/lib/access";
+import { checkAccess } from "@/lib/access";
 import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
@@ -85,31 +85,17 @@ export async function POST(request: NextRequest) {
       `[r2-single-complete:${requestId}] ✓ r2Etag captured: ${r2Head.etag}`,
     );
 
-    // Check if trial portal has reached file limit and deactivate if so
+    // Check if free portal has reached file limit and deactivate if so
     const portalId = token.portalId;
     if (portalId) {
       const portal = await prisma.portal.findUnique({
         where: { id: portalId },
-        select: {
-          id: true,
-          userId: true,
-          isActive: true,
-          user: {
-            select: {
-              subscriptionPlan: true,
-              hasCreatedTrialPortal: true,
-            },
-          },
-        },
+        select: { id: true, userId: true, isActive: true },
       });
 
-      if (
-        portal?.isActive &&
-        portal.user?.subscriptionPlan === "free" &&
-        portal.user?.hasCreatedTrialPortal
-      ) {
-        const trialCheck = await checkPortalTrialExpiration(portal.id);
-        if (!trialCheck.isExpired) {
+      if (portal?.isActive) {
+        const access = await checkAccess(portal.userId);
+        if (!access.allowed) {
           const fileCount = await prisma.file.count({
             where: { portalId: portal.id },
           });
@@ -119,7 +105,7 @@ export async function POST(request: NextRequest) {
               data: { isActive: false },
             });
             logger.log(
-              `[r2-single-complete:${requestId}] 🚫 Trial portal ${portal.id} deactivated: file limit reached (${fileCount}/10)`,
+              `[r2-single-complete:${requestId}] Free portal ${portal.id} deactivated: file limit reached (${fileCount}/10)`,
             );
           }
         }

@@ -13,16 +13,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const planType = await getUserPlanType(userId);
-    
-    // REVERSIBILITY: Remove this block to revert trial feature
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { hasCreatedTrialPortal: true },
-    });
 
     return NextResponse.json({ 
       planType,
-      hasCreatedTrialPortal: user?.hasCreatedTrialPortal || false,
     });
   } catch (error) {
     console.error("Failed to get user plan:", error);

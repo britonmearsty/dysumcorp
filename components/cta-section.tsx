@@ -18,15 +18,18 @@ export default function CTASection() {
               <span className="inline-block mb-6 px-6 py-2 bg-white/10 backdrop-blur rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border border-white/10">
                 Secure Document Exchange
               </span>
-              <h2 className="text-5xl md:text-7xl font-bold mb-10 serif-font">
-                Ready to transform your file collection?
+              <h2 className="text-5xl md:text-7xl font-bold mb-6 serif-font">
+                Stop chasing files. Start receiving them.
               </h2>
+              <p className="text-stone-400 text-lg mb-10 max-w-xl mx-auto font-medium">
+                No credit card needed. Up and running in 2 minutes.
+              </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
                 <Button
                   className="w-full sm:w-auto px-12 py-6 bg-stone-50 text-[#1c1917] rounded-xl font-bold text-xl hover:scale-105 transition-transform premium-shadow"
                   onClick={() => (window.location.href = "/auth")}
                 >
-                  Create portal free
+                  Create your free portal
                 </Button>
                 <Link
                   className="w-full sm:w-auto px-12 py-6 bg-white/5 backdrop-blur border border-white/20 rounded-xl font-bold text-xl hover:bg-white/10 transition-colors text-stone-100"
@@ -55,8 +58,7 @@ export default function CTASection() {
                 </span>
               </div>
               <p className="text-sm text-stone-600 max-w-xs leading-relaxed">
-                The enterprise-standard for secure client document collection
-                and cloud synchronization.
+                Simple file collection for professionals who value their time.
               </p>
             </div>
 
@@ -138,6 +140,22 @@ export default function CTASection() {
                       Agencies
                     </Link>
                   </li>
+                  <li>
+                    <Link
+                      className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
+                      href="/use-cases/wealth-advisors"
+                    >
+                      Wealth Advisors
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      className="text-sm text-stone-600 hover:text-[#1c1917] transition-colors"
+                      href="/use-cases/real-estate"
+                    >
+                      Real Estate
+                    </Link>
+                  </li>
                 </ul>
               </div>
 
@@ -191,17 +209,11 @@ export default function CTASection() {
             </div>
           </div>
 
-          <div className="mt-20 pt-10 border-t border-stone-100 flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-xs text-stone-500 font-medium">
-              © 2024 Dysumcorp Inc. Crafted for excellence.
-            </p>
-            <div className="flex items-center gap-4">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">
-                System Status: Operational
-              </span>
-            </div>
-          </div>
+           <div className="mt-20 pt-10 border-t border-stone-100 flex flex-col md:flex-row justify-between items-center gap-6">
+               <p className="text-xs text-stone-500 font-medium">
+               © 2026 Dysumcorp Inc.
+             </p>
+           </div>
         </div>
       </footer>
     </>

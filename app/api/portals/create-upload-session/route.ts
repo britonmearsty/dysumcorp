@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { checkAccess, checkPortalTrialExpiration } from "@/lib/access";
+import { checkAccess } from "@/lib/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,59 +42,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // REVERSIBILITY: Remove this trial check to revert
-    // Check portal owner's subscription access - allow trial users if valid
+    // Check access - allow free users within limits
     const access = await checkAccess(portal.userId);
 
     if (!access.allowed) {
-      // Check if user is on free trial
-      const user = await prisma.user.findUnique({
-        where: { id: portal.userId },
-        select: {
-          subscriptionPlan: true,
-          hasCreatedTrialPortal: true,
-        },
+      // Check file count (max 10 for free)
+      const fileCount = await prisma.file.count({
+        where: { portalId: portal.id },
       });
 
-      if (user?.subscriptionPlan === "free" && user?.hasCreatedTrialPortal) {
-        // Check trial expiration
-        const trialCheck = await checkPortalTrialExpiration(portal.id);
-
-        if (trialCheck.isExpired) {
-          return NextResponse.json(
-            {
-              error: "Trial expired. Upgrade to Pro to receive more files.",
-              code: "TRIAL_EXPIRED",
-            },
-            { status: 403 },
-          );
-        }
-
-        // Check file count (max 10 for trial)
-        const fileCount = await prisma.file.count({
-          where: { portalId: portal.id },
-        });
-
-        if (fileCount >= 10) {
-          return NextResponse.json(
-            {
-              error: "File limit reached (10/10). Upgrade to Pro for unlimited uploads.",
-              code: "TRIAL_FILE_LIMIT_REACHED",
-            },
-            { status: 403 },
-          );
-        }
-        // Trial is valid, allow upload session
-      } else {
-        // Not a trial user, block upload
+      if (fileCount >= 10) {
         return NextResponse.json(
           {
-            error: "This portal is not currently accepting uploads",
-            code: "PORTAL_UNAVAILABLE",
+            error: "File limit reached (10/10). Upgrade to Pro for unlimited uploads.",
+            code: "FILE_LIMIT_REACHED",
           },
-          { status: 402 },
+          { status: 403 },
         );
       }
+      // Free user within limits, allow upload session
     }
 
     // Create new upload session

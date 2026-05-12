@@ -20,7 +20,7 @@ const useCases = [
     icon: Scale,
     title: "Law Firms",
     desc: "Securely collect KYC documents, evidence files, and signed agreements without the email back-and-forth.",
-    tag: "Ideal for Case Intake",
+    tag: "Client Document Intake",
     href: "/use-cases/lawyers",
   },
   {
@@ -33,16 +33,16 @@ const useCases = [
   {
     icon: PieChart,
     title: "Wealth Advisors",
-    desc: "Streamline financial reviews by collecting portfolio statements and identification in a high-trust environment.",
-    tag: "High-Net-Worth Standard",
-    href: "/use-cases/freelancers", // Fallback to freelancers or same for advisors
+    desc: "Streamline financial reviews by collecting portfolio statements and identification in a clean, professional experience.",
+    tag: "Financial Document Collection",
+    href: "/use-cases/wealth-advisors", // Fixed URL
   },
   {
     icon: Building2,
     title: "Real Estate",
     desc: "Centralize closing documents, appraisal reports, and inspections for faster, organized deal completions.",
-    tag: "Transaction Efficiency",
-    href: "/use-cases/marketing-agencies", // Fallback
+    tag: "Closing Document Collection",
+    href: "/use-cases/real-estate", // Fixed URL
   },
 ];
 
@@ -50,8 +50,8 @@ const features = [
   {
     stat: "Seamless",
     statLabel: "cloud sync",
-    title: "Cloud Gravity",
-    desc: "Collect files directly to Google Drive, Dropbox, or OneDrive. No manual downloads ever.",
+    title: "Direct Cloud Sync",
+    desc: "Collect files directly to Google Drive or Dropbox. No manual downloads ever.",
     visual: (
       <div className="bg-stone-100 border border-stone-200 rounded-2xl p-6">
         <div className="flex items-center justify-between text-[11px] mb-3">
@@ -130,8 +130,8 @@ export default function FeaturesSection() {
                 Designed for professionals
               </h2>
               <p className="text-stone-700 mt-4 sm:mt-6 max-w-xl mx-auto text-base sm:text-lg leading-relaxed px-2 sm:px-0">
-                Tailored document collection workflows for high-stakes
-                industries where security and client experience are paramount.
+                Document collection workflows designed for the way
+                professionals actually work.
               </p>
             </div>
           </FadeIn>

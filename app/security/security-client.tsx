@@ -1,19 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ArrowRight,
-  Lock,
-  ShieldCheck,
-  Server,
-  Building,
-  Eye,
-  FileKey,
-  AlertTriangle,
-  RefreshCw,
-  Users,
-  Globe,
-} from "lucide-react";
+import { ArrowRight, Lock, Eye, FileKey, ShieldCheck } from "lucide-react";
 
 import { LandingNavbar } from "@/components/landing-navbar";
 import { Button } from "@/components/ui/button";
@@ -22,100 +10,31 @@ import { FadeIn, Stagger, StaggerItem } from "@/components/animations";
 const securityPillars = [
   {
     icon: Lock,
-    title: "Enterprise Encryption",
-    desc: "Every file is protected by military-grade encryption from upload to delivery. Your documents remain unreadable to unauthorized parties at every stage.",
+    title: "Encryption in Transit and at Rest",
+    desc: "Your files never live on our servers. They go straight from your client to your Drive or Dropbox, encrypted with AES-256 at every step.",
     detail:
-      "AES-256 encryption safeguards data in transit and at rest, meeting the standards trusted by financial institutions worldwide.",
+      "AES-256 encryption protects your data during upload and while stored in your cloud. We don't store copies on Dysumcorp infrastructure.",
   },
   {
     icon: Eye,
-    title: "Privacy-First Design",
-    desc: "Your documents are accessible only to you and your clients. Our architecture ensures data remains within your control throughout the entire process.",
+    title: "Private by Design",
+    desc: "Your documents are accessible only to you and your clients. Dysumcorp does not store, read, or access your files. We're the pipe, not the vault.",
     detail:
-      "Files are processed securely with minimal retention, ensuring your data remains confidential and protected.",
+      "Files are processed in memory during transfer and never written to Dysumcorp storage. Your cloud, your control.",
   },
   {
     icon: FileKey,
     title: "Access Control",
-    desc: "Every portal can be protected with a unique password. Combine optional password protection with expiring links to create time-limited, credential-gated upload windows.",
+    desc: "Every portal can be protected with a unique password. Combine optional password protection with expiring links for time-limited, credential-gated upload windows.",
     detail:
-      "Passwords are hashed using industry-standard algorithms. Link expiry is enforced at the server level with no client-side bypass.",
-  },
-  {
-    icon: AlertTriangle,
-    title: "Threat Protection",
-    desc: "All uploaded files are scanned for security threats before delivery. Suspicious files are quarantined immediately and you are notified.",
-    detail:
-      "Integrated with industry-leading threat intelligence, continuously updated to identify emerging risks.",
-  },
-  {
-    icon: RefreshCw,
-    title: "Audit Trails",
-    desc: "Every file upload, portal access, and configuration change is logged with a full audit trail. Know exactly who accessed what and when.",
-    detail:
-      "Audit logs are tamper-proof, retained for compliance periods, and exportable for reporting.",
-  },
-  {
-    icon: Users,
-    title: "Team Permissions",
-    desc: "Control exactly what each team member can see and do within your organization. Role-based access control ensures sensitive portals stay protected.",
-    detail:
-      "Granular permissions down to individual portal level. SSO integrations available for enterprise customers.",
-  },
-];
-
-const certifications = [
-  {
-    icon: Server,
-    title: "SOC 2 Type II",
-    badge: "Audited",
-    badgeColor: "bg-blue-50 text-blue-700 border-blue-100",
-    desc: "Audited and certified by independent third parties against the AICPA's Trust Services Criteria, covering security, availability, and confidentiality.",
-    items: [
-      "Annual third-party audit",
-      "Security, Availability & Confidentiality",
-      "Continuous controls monitoring",
-      "Report available on request",
-    ],
+      "Passwords are hashed using industry-standard algorithms. Link expiry is enforced at the server level.",
   },
   {
     icon: ShieldCheck,
-    title: "GDPR Compliant",
-    badge: "Certified",
-    badgeColor: "bg-green-50 text-green-700 border-green-100",
-    desc: "Full adherence to the European Union's General Data Protection Regulation. We uphold data subject rights, lawful processing, and all required safeguards.",
-    items: [
-      "EU data residency options",
-      "Data Processing Agreements (DPA)",
-      "Right to erasure supported",
-      "Data portability available",
-    ],
-  },
-  {
-    icon: Building,
-    title: "Industry Ready",
-    badge: "Healthcare",
-    badgeColor: "bg-purple-50 text-purple-700 border-purple-100",
-    desc: "Built to meet the stringent requirements of regulated industries including healthcare, legal, and financial services.",
-    items: [
-      "Business Associate Agreements available",
-      "Sensitive data handling protocols",
-      "Access logging and monitoring",
-      "Breach notification procedures",
-    ],
-  },
-  {
-    icon: Globe,
-    title: "Enterprise Infrastructure",
-    badge: "Enterprise",
-    badgeColor: "bg-amber-50 text-amber-700 border-amber-100",
-    desc: "Built on reliable cloud infrastructure with high availability, automated backups, and built-in threat mitigation.",
-    items: [
-      "High availability architecture",
-      "Automated backup systems",
-      "Advanced threat protection",
-      "Compliance-certified facilities",
-    ],
+    title: "No Document Storage",
+    desc: "Dysumcorp does not store your documents. Files go directly from your client to your Google Drive or Dropbox — zero intermediary copies.",
+    detail:
+      "We generate upload tokens that allow direct-to-cloud transfers. Once the file arrives in your storage, Dysumcorp has no further access to it.",
   },
 ];
 
@@ -138,16 +57,16 @@ export function SecurityClient() {
                 Security First
               </span>
               <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold serif-font text-[#1c1917] mb-6 leading-[1.1]">
-                Bank-grade protection
+                Your files never live
                 <br />
                 <span className="italic font-normal text-stone-600">
-                  for sensitive data.
+                  on our servers.
                 </span>
               </h1>
               <p className="text-lg sm:text-xl text-stone-700 font-medium mb-10 max-w-2xl mx-auto leading-relaxed">
-                Security is the foundation of everything we build. Your documents
-                are protected by enterprise-grade encryption from upload through
-                delivery, ensuring they remain confidential and secure.
+                Your files go straight from your client to your Drive or
+                Dropbox. Dysumcorp never stores your documents. We're the pipe,
+                not the storage.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button
@@ -177,8 +96,8 @@ export function SecurityClient() {
               {[
                 { num: "AES-256", label: "Encryption" },
                 { num: "Private", label: "By Design" },
-                { num: "SOC 2", label: "Type II Certified" },
-                { num: "99.9%", label: "Uptime SLA" },
+                { num: "Direct", label: "Cloud Transfer" },
+                { num: "Zero", label: "Server Storage" },
               ].map((stat, i) => (
                 <StaggerItem key={i}>
                   <div className="py-6">
@@ -242,65 +161,20 @@ export function SecurityClient() {
           </div>
         </section>
 
-        {/* Compliance Certifications */}
-        <section className="py-16 lg:py-24 px-4 sm:px-6 bg-[#fafaf9]">
-          <div className="max-w-7xl mx-auto">
+        {/* Summary Section */}
+        <section className="py-16 lg:py-24 px-4 sm:px-6 bg-stone-100">
+          <div className="max-w-3xl mx-auto text-center">
             <FadeIn>
-              <div className="text-center mb-16">
-                <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs">
-                  Compliance
-                </span>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mt-4 serif-font text-[#1c1917]">
-                  Built for regulated industries
-                </h2>
-                <p className="text-stone-700 mt-6 max-w-xl mx-auto text-base sm:text-lg leading-relaxed">
-                  Whether you&apos;re a law firm, healthcare provider, or
-                  financial firm, Dysumcorp meets the compliance standards your
-                  industry demands.
-                </p>
-              </div>
+              <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs">
+                In Short
+              </span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mt-4 serif-font text-[#1c1917]">
+                We're the pipe, not the storage.
+              </h2>
+              <p className="text-stone-700 mt-6 text-lg leading-relaxed font-medium">
+                Your files, your cloud, your control.
+              </p>
             </FadeIn>
-
-            <Stagger
-              className="grid grid-cols-1 sm:grid-cols-2 gap-8"
-              delay={0.1}
-            >
-              {certifications.map((cert, index) => (
-                <StaggerItem key={index}>
-                  <div className="bg-white p-8 sm:p-10 rounded-[2.5rem] border border-stone-100 premium-shadow-hover h-full flex flex-col">
-                    <div className="flex items-start gap-5 mb-6">
-                      <div className="w-14 h-14 bg-stone-50 border border-stone-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-                        <cert.icon className="w-7 h-7 text-[#1c1917]" />
-                      </div>
-                      <div>
-                        <span
-                          className={`inline-block text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-full border mb-2 ${cert.badgeColor}`}
-                        >
-                          {cert.badge}
-                        </span>
-                        <h3 className="text-2xl font-bold serif-font text-[#1c1917]">
-                          {cert.title}
-                        </h3>
-                      </div>
-                    </div>
-                    <p className="text-stone-600 leading-relaxed mb-6 flex-grow">
-                      {cert.desc}
-                    </p>
-                    <ul className="space-y-2.5">
-                      {cert.items.map((item, i) => (
-                        <li
-                          key={i}
-                          className="flex items-center gap-3 text-sm font-medium text-stone-700"
-                        >
-                          <ShieldCheck className="w-4 h-4 text-[#1c1917] flex-shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </StaggerItem>
-              ))}
-            </Stagger>
           </div>
         </section>
 
@@ -316,8 +190,7 @@ export function SecurityClient() {
                 </span>
               </h2>
               <p className="text-stone-400 font-medium mb-10 text-lg max-w-xl mx-auto leading-relaxed">
-                Start collecting documents with enterprise-grade security today.
-                Free to get started, no credit card required.
+                Start collecting files in minutes. No credit card required.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button
@@ -349,7 +222,7 @@ export function SecurityClient() {
             </span>
           </div>
           <span className="text-sm font-medium text-stone-500">
-            © 2025 Dysumcorp. All rights reserved.
+            © 2026 Dysumcorp. All rights reserved.
           </span>
           <nav className="flex gap-8">
             {footerLinks.map((link) => (

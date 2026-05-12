@@ -58,17 +58,17 @@ const useCases = [
     title: "Wealth Advisors",
     tag: "High-Net-Worth",
     tagColor: "bg-amber-50 text-amber-700 border-amber-100",
-    href: "/use-cases/freelancers",
-    headline: "Elevate the client onboarding experience",
+    href: "/use-cases/wealth-advisors",
+    headline: "Simplify client financial document collection",
     summary:
-      "High-net-worth clients expect a premium, discreet experience. Dysumcorp's white-labeled portals let you collect portfolio statements, identification, and compliance documents under your firm's brand — not a generic link.",
+      "Financial advisors spend too much time chasing portfolio statements, identification, and compliance documents. Dysumcorp lets clients upload directly to your Drive or Dropbox — no account, no friction.",
     benefits: [
       "White-labeled client portals",
       "Custom domain support",
       "Encrypted document delivery",
       "Password-protected access",
-      "Compliance-friendly audit trail",
-      "Premium, branded experience",
+      "No client account required",
+      "Direct-to-cloud storage",
     ],
   },
   {
@@ -76,7 +76,7 @@ const useCases = [
     title: "Real Estate",
     tag: "Transaction Efficiency",
     tagColor: "bg-purple-50 text-purple-700 border-purple-100",
-    href: "/use-cases/marketing-agencies",
+    href: "/use-cases/real-estate",
     headline: "Close deals faster with organized documents",
     summary:
       "Real estate transactions involve mountains of paperwork — appraisals, inspections, title documents, and signed disclosures. Dysumcorp centralizes everything in one portal per deal, making closings faster and far less stressful.",
@@ -85,7 +85,7 @@ const useCases = [
       "Appraisal & inspection file collection",
       "Signed disclosure organization",
       "Buyer/seller document tracking",
-      "Auto-sync to OneDrive / Dropbox",
+      "Auto-sync to Drive / Dropbox",
       "Instant notification on upload",
     ],
   },
@@ -153,9 +153,8 @@ export function UseCasesClient() {
                 </span>
               </h1>
               <p className="text-lg sm:text-xl text-stone-700 font-medium mb-10 max-w-2xl mx-auto leading-relaxed">
-                Dysumcorp was built for high-stakes industries where data
-                security, client experience, and operational efficiency are
-                non-negotiable.
+                The simplest way for solo professionals and small teams to
+                receive client files — straight to your Google Drive or Dropbox.
               </p>
               <Button
                 className="px-10 py-5 bg-[#1c1917] text-stone-50 rounded-xl font-bold text-lg hover:bg-stone-800 transition-all premium-shadow inline-flex items-center gap-3"
@@ -271,7 +270,7 @@ export function UseCasesClient() {
             </span>
           </div>
           <span className="text-sm font-medium text-stone-500">
-            © 2025 Dysumcorp. All rights reserved.
+            © 2026 Dysumcorp. All rights reserved.
           </span>
           <nav className="flex gap-8">
             {footerLinks.map((link) => (

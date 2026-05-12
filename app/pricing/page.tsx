@@ -7,7 +7,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 export const metadata: Metadata = {
   title: "Simple, Transparent Pricing | Dysumcorp",
   description:
-    "Pro plan for collecting files from clients. Up to 100 portals, custom branding, and priority support. 14-day money-back guarantee.",
+    "One straightforward plan for professionals who just need it to work. Free portal available — no credit card required.",
   alternates: {
     canonical: "https://dysumcorp.pro/pricing",
   },
@@ -19,34 +19,50 @@ const faqData = {
   mainEntity: [
     {
       "@type": "Question",
-      question: "How do I subscribe to Pro?",
+      name: "Do my clients need to create an account to upload files?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Click the \"Upgrade to Pro\" button in your dashboard, choose your billing cycle (monthly or annual), and complete the secure checkout. Your Pro features are activated immediately.",
+        text: "No. Your clients just click the link and upload. No account, no app, no login required on their end.",
       },
     },
     {
       "@type": "Question",
-      question: "What happens when I sign up?",
+      name: "What's included in the free portal?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "You can create an account and explore the dashboard, but portal creation and file collection require an active Pro subscription.",
+        text: "Your free portal lets you collect up to 10 files. It's a real portal — not a demo. When you're ready for more, Pro gives you unlimited portals and unlimited files.",
       },
     },
     {
       "@type": "Question",
-      name: "Do you offer refunds?",
+      name: "Which cloud storage is supported?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes, we offer a 14-day money-back guarantee on the Pro plan. No questions asked.",
+        text: "Google Drive and Dropbox. Files go directly into your chosen storage — automatically organized when they arrive.",
       },
     },
     {
       "@type": "Question",
-      name: "Is there a free trial for Pro?",
+      name: "Is there a file size limit?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "We offer a 14-day money-back guarantee on the Pro plan. Create an account to explore, and subscribe when you're ready to start collecting files.",
+        text: "No enforced limit per file. Upload what you need.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What happens to files in transit?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Files go directly from your client to your cloud storage. Dysumcorp does not store your documents.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I cancel Pro anytime?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. No long-term commitment.",
       },
     },
   ],

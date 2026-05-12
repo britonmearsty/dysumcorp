@@ -24,8 +24,6 @@ import { useToast } from "@/lib/toast";
 import { useStorageDeleteBehavior } from "@/lib/use-storage-delete-behavior";
 import { DeleteFileModal } from "@/components/ui/delete-file-modal";
 import { DeletePortalModal } from "@/components/ui/delete-portal-modal";
-import { usePaywall } from "@/components/paywall-modal";
-import { PlanType } from "@/config/pricing";
 import { logger } from "@/lib/logger";
 
 interface Portal {
@@ -39,10 +37,6 @@ interface Portal {
   updatedAt: string;
   _count: {
     files: number;
-  };
-  // REVERSIBILITY: Remove these fields to revert trial feature
-  user?: {
-    subscriptionPlan: string;
   };
 }
 
@@ -81,55 +75,9 @@ export default function PortalsPage() {
   const [togglingPortal, setTogglingPortal] = useState<string | null>(null);
   const { showToast } = useToast();
   const { behavior: deleteBehavior } = useStorageDeleteBehavior();
-  const { showPaywall, PaywallModal } = usePaywall();
-
-  // REVERSIBILITY: Remove these state variables to revert trial feature
-  const [userPlan, setUserPlan] = useState<PlanType>("free");
-  const [hasCreatedTrialPortal, setHasCreatedTrialPortal] = useState(false);
-
-  // REVERSIBILITY: Remove this helper function to revert trial feature
-  const getTrialStatus = (portal: Portal) => {
-    if (portal.user?.subscriptionPlan === "free") {
-      const createdAt = new Date(portal.createdAt);
-      const expiresAt = new Date(createdAt);
-      expiresAt.setDate(expiresAt.getDate() + 7);
-      const daysRemaining = Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-      const fileCount = portal._count.files;
-      
-      return {
-        isTrial: true,
-        daysRemaining: Math.max(0, daysRemaining),
-        fileCount,
-        fileLimit: 10,
-        isExpired: daysRemaining <= 0,
-      };
-    }
-    return { isTrial: false };
-  };
-
   useEffect(() => {
     fetchPortals();
-    fetchUserPlan();
   }, []);
-
-  // REVERSIBILITY: Remove this function to revert trial feature
-  const fetchUserPlan = async () => {
-    if (!session?.user?.id) return;
-
-    try {
-      const response = await fetch(`/api/plan-limits?userId=${session.user.id}`);
-      const data = await response.json();
-
-      if (response.ok) {
-        setUserPlan(data.planType);
-        if (data.planType === "free" && data.hasCreatedTrialPortal) {
-          setHasCreatedTrialPortal(true);
-        }
-      }
-    } catch (error) {
-      logger.error("Failed to fetch user plan:", error);
-    }
-  };
 
   const fetchPortals = async () => {
     try {
@@ -186,18 +134,6 @@ export default function PortalsPage() {
   };
 
   const handleCreatePortal = async () => {
-    // REVERSIBILITY: Remove this check to revert trial feature
-    // Check if free user has already used their trial portal before navigating
-    if (userPlan === "free" && hasCreatedTrialPortal) {
-      showPaywall(
-        userPlan,
-        "Create Portal",
-        "You've already created your free trial portal. Upgrade to Pro to create upto 100 portals.",
-      );
-      return;
-    }
-
-    // If pro user or free user hasn't used trial, navigate to create page
     router.push("/dashboard/portals/create");
   };
 
@@ -564,28 +500,6 @@ export default function PortalsPage() {
                         Premium
                       </span>
                     )}
-                    {(() => {
-                      const trial = getTrialStatus(portal);
-                      if (trial.isTrial) {
-                        return (
-                          <>
-                            <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-950/50">
-                              Trial
-                            </span>
-                            {trial.isExpired ? (
-                              <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-red-50 text-red-600 dark:bg-red-950/50">
-                                Expired
-                              </span>
-                            ) : (
-                              <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-amber-50 text-amber-600 dark:bg-amber-950/50">
-                                {trial.daysRemaining}d left
-                              </span>
-                            )}
-                          </>
-                        );
-                      }
-                      return null;
-                    })()}
                   </div>
                 </div>
               </div>
@@ -596,13 +510,7 @@ export default function PortalsPage() {
                   <span className="text-muted-foreground">Files</span>
                   <span className="font-medium flex items-center gap-1">
                     <FileText className="w-3.5 h-3.5" />
-                    {(() => {
-                      const trial = getTrialStatus(portal);
-                      if (trial.isTrial) {
-                        return `${trial.fileCount}/${trial.fileLimit}`;
-                      }
-                      return portal._count.files;
-                    })()}
+                    {portal._count.files}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -982,8 +890,6 @@ export default function PortalsPage() {
         onConfirm={confirmDeleteFile}
       />
 
-      {/* Paywall Modal - shown when trial user tries to create second portal */}
-      <PaywallModal />
     </div>
   );
 }

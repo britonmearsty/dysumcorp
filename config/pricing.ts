@@ -6,7 +6,6 @@ export interface PlanLimits {
   customDomains: number;
   whiteLabeling: boolean;
   passwordProtection: boolean;
-  expiringLinks: boolean;
   customBranding: boolean;
 }
 
@@ -25,11 +24,36 @@ export interface PricingPlan {
   popular?: boolean;
 }
 
+export const FREE_PLAN: PricingPlan = {
+  id: "free",
+  name: "Free",
+  description: "Try it out — no risk, no card required",
+  price: 0,
+  priceAnnual: 0,
+  monthlyPrice: 0,
+  annualPrice: 0,
+  polarProductId: "",
+  polarProductIdAnnual: "",
+  limits: {
+    portals: 1,
+    customDomains: 0,
+    whiteLabeling: false,
+    passwordProtection: false,
+    customBranding: false,
+  },
+  features: [
+    "1 portal",
+    "Up to 10 file uploads",
+    "Google Drive & Dropbox",
+    "No client account required",
+  ],
+};
+
 export const PRICING_PLANS: Record<"pro", PricingPlan> = {
   pro: {
     id: "pro",
     name: "Pro",
-    description: "For professionals and power users",
+    description: "For professionals who need unlimited collection",
     price: 10,
     priceAnnual: 96, // 20% discount (10 * 12 * 0.8 = 96)
     monthlyPrice: 10,
@@ -42,15 +66,13 @@ export const PRICING_PLANS: Record<"pro", PricingPlan> = {
       customDomains: 0, // Coming soon
       whiteLabeling: true,
       passwordProtection: true,
-      expiringLinks: true,
       customBranding: true,
     },
     features: [
-      "Up to 100 Portals",
+      "Unlimited portals",
       "Full white-labeling",
       "Custom branding & themes",
       "Password protection",
-      "Expiring links",
       "Priority support",
     ],
     popular: true,

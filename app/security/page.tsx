@@ -3,9 +3,9 @@ import { Metadata } from "next";
 import { SecurityClient } from "./security-client";
 
 export const metadata: Metadata = {
-  title: "Security | Dysumcorp — Bank-Grade Protection for Your Documents",
+  title: "Security | Dysumcorp — Your Files Never Live on Our Servers",
   description:
-    "Dysumcorp uses 256-bit AES encryption, SOC 2 Type II, GDPR, and HIPAA compliance to keep your files and client data safe.",
+    "Your files go directly from your client to your Drive or Dropbox. Dysumcorp never stores your documents. AES-256 encryption in transit and at rest.",
   alternates: {
     canonical: "https://dysumcorp.pro/security",
   },
