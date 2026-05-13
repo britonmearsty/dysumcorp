@@ -57,7 +57,7 @@ export function LandingNavbar() {
             className="bg-[#1c1917] text-stone-50 px-7 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-stone-800 transition-all"
             onClick={handleSignUp}
           >
-            Sign up
+            Sign in
           </Button>
         </div>
 
@@ -97,7 +97,7 @@ export function LandingNavbar() {
                   className="w-full bg-[#1c1917] text-stone-50 py-6"
                   onClick={handleSignUp}
                 >
-                  Sign up
+                  Sign in
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
