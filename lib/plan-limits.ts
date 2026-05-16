@@ -39,17 +39,20 @@ export async function checkPortalLimit(
 ): Promise<PlanLimitCheck> {
   const limits = getEffectivePlan(planType).limits;
 
-  if (limits.portals === 0) {
+  const currentCount = await prisma.portal.count({
+    where: { userId },
+  });
+
+  if (currentCount >= limits.portals) {
     return {
       allowed: false,
-      reason: "A Pro subscription is required to create portals.",
-      current: 0,
-      limit: 0,
+      reason: `Portal limit reached. Your plan allows ${limits.portals} portal(s).`,
+      current: currentCount,
+      limit: limits.portals,
     };
   }
 
-  // Pro has upto 100 portals — always allowed
-  return { allowed: true, current: 0, limit: limits.portals };
+  return { allowed: true, current: currentCount, limit: limits.portals };
 }
 
 export async function checkStorageLimit(

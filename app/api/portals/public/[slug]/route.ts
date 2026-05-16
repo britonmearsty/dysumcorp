@@ -91,6 +91,12 @@ export async function GET(
     const isSubscriber =
       user?.subscriptionPlan === "pro" && user?.subscriptionStatus === "active";
 
+    // Count current files for file limit display
+    const fileCount = await prisma.file.count({
+      where: { portalId: portal.id },
+    });
+    const fileLimit = isSubscriber ? 999999 : 10;
+
     // Serialize BigInt — strip userId before returning
     const { userId: _userId, ...portalData } = portal;
     const serializedPortal = {
@@ -103,6 +109,8 @@ export async function GET(
       submitButtonText: portal.submitButtonText || "Initialize Transfer",
       successMessage: portal.successMessage || "Transmission Verified",
       isOwnerSubscriber: isSubscriber,
+      fileCount,
+      fileLimit,
     };
 
     return NextResponse.json({ portal: serializedPortal });

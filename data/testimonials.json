@@ -1,0 +1,18 @@
+[
+  {
+    "id": "t1",
+    "name": "John K",
+    "role": "Independent Professional",
+    "message": "I've been using dysumcorp since the early beta and it's completely replaced the way I collect files from clients. No more emailing back and forth — just send the link and everything lands in my Drive.",
+    "avatar": "/avatars/johnkerry.jpg",
+    "featured": true
+  },
+  {
+    "id": "t2",
+    "name": "Nathan Yegon",
+    "role": "Freelancer · Nairobi",
+    "message": "The simplicity is what got me. Set up a portal in under two minutes, shared the link, and files started showing up in my Dropbox instantly. It just works.",
+    "avatar": "/avatars/nathan.jpg",
+    "featured": true
+  }
+]
