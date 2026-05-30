@@ -43,8 +43,8 @@ const privacyPrinciples = [
   },
   {
     icon: Globe,
-    title: "Global Compliance",
-    desc: "Dysumcorp complies with GDPR, CCPA, and other major privacy regulations. Your data stays secure across borders.",
+    title: "Privacy-by-Design",
+    desc: "Dysumcorp is built around privacy principles and strong data protection practices. Your data stays secure across borders.",
   },
 ];
 
