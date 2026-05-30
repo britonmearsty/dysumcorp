@@ -97,8 +97,8 @@ const additionalFeatures = [
   },
   {
     icon: Shield,
-    title: "End-to-End Encryption",
-    desc: "All files are encrypted in transit with TLS and at rest with 256-bit AES. Your documents are protected from upload to delivery.",
+    title: "Strong Encryption",
+    desc: "Files are protected in transit with TLS and at rest with 256-bit AES. Your documents are secured from upload to delivery.",
   },
   {
     icon: Smartphone,

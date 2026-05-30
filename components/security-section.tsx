@@ -30,11 +30,11 @@ export default function SecuritySection() {
                 <div className="flex items-center gap-3">
                   <Lock className="text-2xl text-stone-900" />
                   <span className="font-bold text-sm text-[#1c1917]">
-                    End-to-End Encryption
+                    Strong Encryption
                   </span>
                 </div>
                 <p className="text-xs text-stone-600 leading-relaxed">
-                  AES-256 encryption protects your data at every stage of the journey.
+                  AES-256 encryption protects your data in transit and at rest.
                 </p>
               </div>
               <div className="space-y-4">

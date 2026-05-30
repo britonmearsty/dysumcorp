@@ -29,7 +29,7 @@ const useCases = [
     benefits: [
       "Secure KYC document collection",
       "Attorney-client privilege protection",
-      "SOC 2 Type II compliant",
+      "Secure, audit-ready workflows",
       "Auto-organized by case folder",
       "No client account required",
       "Expiring link access control",

@@ -102,20 +102,16 @@ export default function BlogPostPage() {
             </p>
             <ul>
               <li>
-                <strong>End-to-end encryption:</strong> Data is encrypted at
-                rest and in transit
+                <strong>Transport and storage encryption:</strong> Data is encrypted in transit and at rest, and client-side protections are best for highly sensitive content.
               </li>
               <li>
-                <strong>Two-factor authentication:</strong> Extra layer of
-                account security
+                <strong>Two-factor authentication:</strong> Extra layer of account security
               </li>
               <li>
-                <strong>Audit logs:</strong> Complete tracking of who accessed
-                what, when
+                <strong>Audit logs:</strong> Complete tracking of who accessed what, when
               </li>
               <li>
-                <strong>Compliance certifications:</strong> SOC 2, HIPAA, or
-                GDPR compliance where applicable
+                <strong>Industry standards:</strong> Look for the right audits or regulations for your sector, such as SOC 2 or HIPAA, plus GDPR where applicable.
               </li>
             </ul>
 
