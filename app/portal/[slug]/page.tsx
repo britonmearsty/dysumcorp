@@ -13,7 +13,7 @@ import { PortalFileList } from "@/components/portal/portal-file-list";
 import { PortalButton } from "@/components/portal/portal-button";
 import { LogoDisplay } from "@/components/logo-display";
 import { PortalSuccessView } from "@/components/portal/portal-success-view";
-import { Label } from "@/components/ui/label";
+import { PortalChecklist } from "@/components/portal/portal-checklist";
 import { uploadFiles } from "@/lib/upload-manager";
 
 interface ChecklistItem {
@@ -778,6 +778,7 @@ export default function PublicPortalPage() {
                 style={{ color: portal.textColor }}
               />
               <input
+                autoComplete="current-password"
                 className="w-full pl-12 pr-4 py-4 rounded-xl border outline-none transition-all font-medium"
                 placeholder="Enter password"
                 style={{
@@ -948,47 +949,15 @@ export default function PublicPortalPage() {
                 {/* Drop Zone or File List */}
                 {portal.checklistItems && portal.checklistItems.length > 0 ? (
                   <div className="space-y-6">
-                    {portal.checklistItems.map((item) => (
-                      <div key={item.id} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-sm font-medium">
-                            {item.label}
-                            {item.required && <span className="text-red-500 ml-1">*</span>}
-                          </Label>
-                        </div>
-                        <PortalDropZone
-                          allowedFileTypes={portal.allowedFileTypes || undefined}
-                          maxFileSize={parseInt(portal.maxFileSize)}
-                          primaryColor={portal.primaryColor}
-                          textColor={portal.textColor}
-                          onFilesSelected={(files) => {
-                            handleSlotFiles(item.id, files);
-                          }}
-                        />
-                        {slotFiles[item.id] && slotFiles[item.id].length > 0 && (
-                          <PortalFileList
-                            files={slotFiles[item.id]}
-                            completedFiles={[]}
-                            gradientEnabled={portal.gradientEnabled}
-                            primaryColor={portal.primaryColor}
-                            secondaryColor={portal.secondaryColor}
-                            textColor={portal.textColor}
-                            uploading={uploading}
-                            onAddMore={() => {
-                              const input = document.createElement("input");
-                              input.type = "file";
-                              input.multiple = true;
-                              input.onchange = (e) => {
-                                const target = e.target as HTMLInputElement;
-                                if (target.files) handleSlotFiles(item.id, target.files);
-                              };
-                              input.click();
-                            }}
-                            onRemove={(fileId) => handleRemoveSlotFile(item.id, fileId)}
-                          />
-                        )}
-                      </div>
-                    ))}
+                    <PortalChecklist
+                      items={portal.checklistItems}
+                      primaryColor={portal.primaryColor}
+                      slotFiles={slotFiles}
+                      textColor={portal.textColor}
+                      uploading={uploading}
+                      onFilesSelected={handleSlotFiles}
+                      onRemoveFile={handleRemoveSlotFile}
+                    />
 
                     {!uploading &&
                       Object.values(slotFiles).some((files) =>

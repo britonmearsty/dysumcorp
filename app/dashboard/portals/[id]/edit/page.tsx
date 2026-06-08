@@ -1063,8 +1063,10 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
-              className={`w-full pl-10 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground ${formData.password ? "pr-12" : "pr-4"}`}
-              placeholder={portal?.password ? "••••••••" : "Set new key..."}
+               autoComplete="new-password"
+               className={`w-full pl-10 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring transition-all outline-none font-semibold text-foreground ${formData.password ? "pr-12" : "pr-4"}`}
+               placeholder={portal?.password ? "••••••••" : "Set new key..."}
+
               type={showPassword ? "text" : "password"}
               value={formData.password}
               onChange={(e) => updateFormData("password", e.target.value)}
