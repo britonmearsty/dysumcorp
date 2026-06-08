@@ -63,16 +63,16 @@ export function PortalChecklist({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-bold uppercase tracking-wider opacity-70" style={{ color: textColor }}>
+      <div className="flex items-center justify-between mb-2 px-1">
+        <h3 className="text-[10px] sm:text-sm font-black uppercase tracking-wider opacity-70" style={{ color: textColor }}>
           Required Documents
         </h3>
-        <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: `${primaryColor}15`, color: primaryColor }}>
+        <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: `${primaryColor}15`, color: primaryColor }}>
           {items.length} Items
         </span>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid gap-3 sm:gap-4">
         {items.sort((a, b) => a.sortOrder - b.sortOrder).map((item) => {
           const files = slotFiles[item.id] || [];
           const isCompleted = files.some(f => f.status === "done") || (files.length > 0 && files.every(f => f.status === "pending" || f.status === "done"));
@@ -90,7 +90,7 @@ export function PortalChecklist({
               onDrop={(e) => handleDrop(e, item.id)}
             >
               <div 
-                className={`relative overflow-hidden rounded-2xl border transition-all ${
+                className={`relative overflow-hidden rounded-[20px] sm:rounded-2xl border transition-all ${
                   isDragging ? 'scale-[1.02] shadow-md' : ''
                 } ${
                   hasFiles || isDragging ? 'border-opacity-100' : 'border-opacity-40 hover:border-opacity-100'
@@ -100,36 +100,36 @@ export function PortalChecklist({
                   backgroundColor: isDragging ? `${primaryColor}10` : hasFiles ? `${primaryColor}05` : 'transparent'
                 }}
               >
-                <div className="p-4 flex items-center gap-4">
+                <div className="p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
                   {/* Status Indicator */}
                   <div className="shrink-0">
                     {isCompleted ? (
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-100 text-green-600">
-                        <CheckCircle2 className="w-6 h-6" />
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-green-100 text-green-600">
+                        <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
                     ) : isUploading ? (
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center animate-spin" style={{ color: primaryColor }}>
-                        <Upload className="w-5 h-5" />
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center animate-spin" style={{ color: primaryColor }}>
+                        <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
                     ) : (
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${hasFiles ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'}`}
+                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors ${hasFiles ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'}`}
                            style={hasFiles ? { backgroundColor: `${primaryColor}20`, color: primaryColor } : {}}>
-                        <FileText className="w-5 h-5" />
+                        <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
                     )}
                   </div>
 
                   {/* Item Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Label className="text-sm font-bold truncate cursor-pointer" style={{ color: textColor }}>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <Label className="text-xs sm:text-sm font-black truncate cursor-pointer leading-tight" style={{ color: textColor }}>
                         {item.label}
                       </Label>
-                      {item.required && <span className="text-red-500 text-xs font-black">*</span>}
+                      {item.required && <span className="text-red-500 text-[10px] sm:text-xs font-black">*</span>}
                     </div>
-                    <p className="text-xs opacity-60 mt-0.5" style={{ color: textColor }}>
+                    <p className="text-[10px] sm:text-xs opacity-60 mt-0.5" style={{ color: textColor }}>
                       {files.length > 0 
-                        ? `${files.length} file${files.length > 1 ? 's' : ''} selected`
+                        ? `${files.length} file${files.length > 1 ? 's' : ''}`
                         : item.required ? 'Action required' : 'Optional'
                       }
                     </p>
@@ -148,13 +148,14 @@ export function PortalChecklist({
                     <button
                       onClick={() => document.getElementById(`file-input-${item.id}`)?.click()}
                       disabled={uploading}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100"
+                      className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 whitespace-nowrap"
                       style={{ 
                         backgroundColor: primaryColor,
                         color: '#fff'
                       }}
                     >
-                      {hasFiles ? 'Add More' : 'Select Files'}
+                      <span className="hidden sm:inline">{hasFiles ? 'Add More' : 'Select Files'}</span>
+                      <span className="sm:hidden">{hasFiles ? 'Add' : 'Files'}</span>
                       {!hasFiles && <Plus className="w-3 h-3" />}
                     </button>
                   </div>
@@ -162,27 +163,27 @@ export function PortalChecklist({
 
                 {/* File List for this slot */}
                 {files.length > 0 && (
-                  <div className="px-4 pb-4 space-y-2">
+                  <div className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-1.5 sm:space-y-2">
                     <div className="h-px w-full opacity-10 bg-current" style={{ color: textColor }} />
-                    <div className="grid gap-2 mt-3">
+                    <div className="grid gap-1.5 sm:gap-2 mt-2 sm:mt-3">
                       {files.map((f) => (
                         <div 
                           key={f.id}
-                          className="flex items-center gap-3 rounded-xl px-3 py-2 bg-white/50 border border-black/5 text-xs transition-all"
+                          className="flex items-center gap-2 sm:gap-3 rounded-xl px-2.5 sm:px-3 py-2 bg-white/50 border border-black/5 text-[10px] sm:text-xs transition-all"
                         >
                           <div className="shrink-0">
                             {f.status === 'error' ? (
-                              <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+                              <AlertCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500" />
                             ) : f.status === 'done' ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                              <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-500" />
                             ) : (
-                              <FileText className="w-3.5 h-3.5 opacity-40" />
+                              <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5 opacity-40" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="font-medium truncate opacity-80" style={{ color: textColor }}>{f.file.name}</span>
-                              <span className="shrink-0 opacity-40 tabular-nums">{formatBytes(f.file.size)}</span>
+                              <span className="font-bold truncate opacity-80" style={{ color: textColor }}>{f.file.name}</span>
+                              <span className="shrink-0 opacity-40 tabular-nums hidden xs:inline">{formatBytes(f.file.size)}</span>
                             </div>
                             
                             {f.status === "uploading" && (
@@ -194,7 +195,7 @@ export function PortalChecklist({
                               </div>
                             )}
                             {f.status === "error" && (
-                              <p className="text-[10px] text-red-500 font-bold mt-0.5">{f.error}</p>
+                              <p className="text-[9px] sm:text-[10px] text-red-500 font-bold mt-0.5">{f.error}</p>
                             )}
                           </div>
                           {f.status !== "uploading" && !uploading && (
@@ -202,7 +203,7 @@ export function PortalChecklist({
                               onClick={() => onRemoveFile(item.id, f.id)}
                               className="shrink-0 p-1 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
                             >
-                              <X className="w-3.5 h-3.5" />
+                              <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </button>
                           )}
                         </div>

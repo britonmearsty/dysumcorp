@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 import { NextResponse } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
@@ -78,7 +79,7 @@ function initializeRedis() {
         analytics: true,
       });
     } catch (error) {
-      console.warn("Failed to initialize Redis rate limiting:", error);
+      logger.warn("Failed to initialize Redis rate limiting:", error);
       redis = null;
     }
   }
@@ -181,7 +182,7 @@ export async function getRateLimit(
       };
     }
   } catch (error) {
-    console.warn("Redis rate limiting failed, using fallback:", error);
+    logger.warn("Redis rate limiting failed, using fallback:", error);
   }
 
   return await fallback.checkLimit(identifier);

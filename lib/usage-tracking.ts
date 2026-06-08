@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 import * as cron from "node-cron";
 
 import { prisma } from "@/lib/prisma";
@@ -20,7 +21,7 @@ function getPlanLimits(plan: PlanType) {
 
 export async function updateUsageTracking() {
   try {
-    console.log("Starting usage tracking update...");
+    logger.log("Starting usage tracking update...");
 
     const currentMonth = new Date().toISOString().slice(0, 7);
 
@@ -132,19 +133,19 @@ export async function updateUsageTracking() {
           }
         }
       } catch (userError) {
-        console.error(`Failed to update usage for user ${user.id}:`, userError);
+        logger.error(`Failed to update usage for user ${user.id}:`, userError);
       }
     }
 
-    console.log("Usage tracking update completed successfully");
+    logger.log("Usage tracking update completed successfully");
   } catch (error) {
-    console.error("Usage tracking update failed:", error);
+    logger.error("Usage tracking update failed:", error);
   }
 }
 
 export async function sendWeeklyReports() {
   try {
-    console.log("Starting weekly reports...");
+    logger.log("Starting weekly reports...");
 
     const users = await prisma.user.findMany({
       where: {
@@ -276,22 +277,22 @@ export async function sendWeeklyReports() {
           topPortals,
         });
       } catch (userError) {
-        console.error(
+        logger.error(
           `Failed to send weekly report to user ${user.id}:`,
           userError,
         );
       }
     }
 
-    console.log("Weekly reports completed successfully");
+    logger.log("Weekly reports completed successfully");
   } catch (error) {
-    console.error("Weekly reports failed:", error);
+    logger.error("Weekly reports failed:", error);
   }
 }
 
 export async function cleanupExpiredFiles() {
   try {
-    console.log("Starting expired files cleanup...");
+    logger.log("Starting expired files cleanup...");
 
     const now = new Date();
 
@@ -310,7 +311,7 @@ export async function cleanupExpiredFiles() {
       },
     });
 
-    console.log(`Found ${expiredFiles.length} expired files`);
+    logger.log(`Found ${expiredFiles.length} expired files`);
 
     for (const file of expiredFiles) {
       try {
@@ -319,18 +320,18 @@ export async function cleanupExpiredFiles() {
           where: { id: file.id },
         });
 
-        console.log(`Deleted expired file: ${file.name} (${file.id})`);
+        logger.log(`Deleted expired file: ${file.name} (${file.id})`);
 
         // Note: Actual deletion from cloud storage would require the storage provider tokens
         // and should be implemented based on the storage provider
       } catch (fileError) {
-        console.error(`Failed to delete expired file ${file.id}:`, fileError);
+        logger.error(`Failed to delete expired file ${file.id}:`, fileError);
       }
     }
 
-    console.log("Expired files cleanup completed");
+    logger.log("Expired files cleanup completed");
   } catch (error) {
-    console.error("Expired files cleanup failed:", error);
+    logger.error("Expired files cleanup failed:", error);
   }
 }
 
@@ -398,29 +399,29 @@ export async function getUserUsageStats(userId: string) {
 export function initializeUsageTrackingCron() {
   // Daily usage tracking at 2 AM
   cron.schedule("0 2 * * *", async () => {
-    console.log("Running scheduled usage tracking update...");
+    logger.log("Running scheduled usage tracking update...");
     await updateUsageTracking();
   });
 
   // Weekly reports on Monday at 9 AM
   cron.schedule("0 9 * * 1", async () => {
-    console.log("Running scheduled weekly reports...");
+    logger.log("Running scheduled weekly reports...");
     await sendWeeklyReports();
   });
 
   // Expired files cleanup daily at 3 AM
   cron.schedule("0 3 * * *", async () => {
-    console.log("Running scheduled expired files cleanup...");
+    logger.log("Running scheduled expired files cleanup...");
     await cleanupExpiredFiles();
   });
 
   if (process.env.NODE_ENV === "development") {
-    console.log(
+    logger.log(
       "Cron jobs initialized (development mode - skipping immediate run)",
     );
   }
 
-  console.log(
+  logger.log(
     "Usage tracking cron jobs initialized (daily at 2 AM, weekly on Monday at 9 AM, cleanup at 3 AM)",
   );
 }

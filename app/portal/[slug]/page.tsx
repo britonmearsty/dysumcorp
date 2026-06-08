@@ -910,7 +910,7 @@ export default function PublicPortalPage() {
       />
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center py-10 px-4">
+      <main className="flex-1 flex flex-col items-center py-6 sm:py-10 px-4">
         <div className="w-full max-w-2xl">
           {uploadStatus === "success" ? (
             <PortalSuccessView
@@ -927,13 +927,13 @@ export default function PublicPortalPage() {
             />
           ) : (
             <div
-              className="rounded-2xl overflow-hidden border shadow-md"
+              className="rounded-[24px] sm:rounded-[32px] overflow-hidden border shadow-xl"
               style={{
                 backgroundColor: portal.cardBackgroundColor || "#ffffff",
                 borderColor: `${portal.primaryColor}20`,
               }}
             >
-              <div className="p-8 space-y-5">
+              <div className="p-5 sm:p-10 space-y-6 sm:space-y-8">
                 {/* Name */}
                 {portal.requireClientName && (
                   <PortalInput

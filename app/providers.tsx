@@ -9,6 +9,7 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { useEffect } from "react";
 
 import { ToastProvider } from "@/lib/toast";
+import { logger } from "@/lib/logger";
 
 export interface ProvidersProps {
   children: React.ReactNode;
@@ -32,7 +33,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
     if (typeof window !== "undefined") {
       // The cron job will be initialized on the server side
       // This is just to ensure the client knows about it
-      console.log(
+      logger.log(
         "Providers mounted - usage tracking should be running on server",
       );
     }

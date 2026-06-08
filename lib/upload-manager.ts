@@ -18,6 +18,8 @@
  *    fragmenting bandwidth across too many competing streams.
  */
 
+import { logger } from "./logger";
+
 export interface UploadOptions {
   file: File;
   portalId: string;
@@ -175,7 +177,7 @@ function uploadPart(
         const speed = bytesInWindow / (dt / 1000);
         const pct = Math.floor((e.loaded / e.total) * 100);
 
-        console.log(
+        logger.log(
           `[upload:spd] ${ts()} ${label} ${pct}% — ${fmtSpeed(speed)} (${(e.loaded / 1024 / 1024).toFixed(1)}/${(e.total / 1024 / 1024).toFixed(1)} MB)`,
         );
         lastLoaded = e.loaded;
@@ -188,7 +190,7 @@ function uploadPart(
         const duration = Math.round(performance.now() - partStart);
         const avgSpeed = data.size / (duration / 1000);
 
-        console.log(
+        logger.log(
           `[upload:spd] ${ts()} ${label} DONE — avg ${fmtSpeed(avgSpeed)} in ${duration}ms`,
         );
         const etag =
@@ -295,7 +297,7 @@ async function uploadSingleShot(
             const speed = (e.loaded - lastLoaded) / (dt / 1000);
             const pct = Math.floor((e.loaded / e.total) * 100);
 
-            console.log(
+            logger.log(
               `[upload:spd] ${ts()} ${label} single ${pct}% — ${fmtSpeed(speed)} (${(e.loaded / 1024 / 1024).toFixed(1)}/${(e.total / 1024 / 1024).toFixed(1)} MB)`,
             );
             lastLoaded = e.loaded;
@@ -325,7 +327,7 @@ async function uploadSingleShot(
       const duration = Math.round(performance.now() - attemptStart);
       const avgSpeed = file.size / (duration / 1000);
 
-      console.log(
+      logger.log(
         `[upload] ✓ single-shot PUT complete — avg ${fmtSpeed(avgSpeed)} (${elapsed()})`,
       );
       // Report 100% — UI shows "transferring" state separately during worker phase
@@ -339,7 +341,7 @@ async function uploadSingleShot(
           error: err instanceof Error ? err.message : "R2 upload failed",
         };
       }
-      console.warn(
+      logger.warn(
         `[upload] ${ts()} ${label} single-shot attempt ${attempt} failed, retrying...`,
       );
       await sleep(1000 * Math.pow(2, attempt - 1));
@@ -368,7 +370,7 @@ async function uploadMultipart(
     presignData;
   const partConcurrency = computePartConcurrency(file.size);
 
-  console.log(
+  logger.log(
     `[upload] ${ts()} multipart START "${file.name}" ${partCount} parts × ${partSize / 1024 / 1024} MB, concurrency=${partConcurrency}`,
   );
 
@@ -399,14 +401,14 @@ async function uploadMultipart(
           reportProgress();
         });
 
-        console.log(
+        logger.log(
           `[upload] ${ts()} ✓ part ${partNumber}/${partCount} etag=${etag} (${elapsed()})`,
         );
 
         return { partNumber, etag };
       } catch (err) {
         if (attempt >= MAX_RETRIES) throw err;
-        console.warn(
+        logger.warn(
           `[upload] part ${partNumber} attempt ${attempt} failed, retrying...`,
         );
         await sleep(1000 * Math.pow(2, attempt - 1));
@@ -447,7 +449,7 @@ async function uploadMultipart(
       };
     }
 
-    console.log(
+    logger.log(
       `[upload] ${ts()} ✓ multipart complete "${file.name}" (${elapsed()})`,
     );
 
@@ -491,16 +493,16 @@ export async function uploadFiles(
       const sessionData = await sessionRes.json();
 
       sharedSessionId = sessionData.uploadSessionId;
-      console.log(
+      logger.log(
         `[uploadFiles] ${ts()} ✓ pre-created session: ${sharedSessionId}`,
       );
     } else {
-      console.warn(
+      logger.warn(
         `[uploadFiles] ${ts()} ⚠️ session pre-create failed (${sessionRes.status}), will fall back to per-file sessions`,
       );
     }
   } catch (err) {
-    console.warn(
+    logger.warn(
       `[uploadFiles] ${ts()} ⚠️ session pre-create error (non-fatal):`,
       err,
     );
@@ -559,17 +561,17 @@ export async function uploadFiles(
 
           sharedParentFolderId = ctx.parentFolderId;
           sharedFolderPath = ctx.folderPath;
-          console.log(
+          logger.log(
             `[uploadFiles] ${ts()} ✓ pre-resolved folder: ${sharedParentFolderId} (${sharedFolderPath})`,
           );
         } else {
-          console.warn(
+          logger.warn(
             `[uploadFiles] ${ts()} ⚠️ folder pre-resolve failed (${ctxRes.status}), worker will resolve per-file`,
           );
         }
       }
     } catch (err) {
-      console.warn(
+      logger.warn(
         `[uploadFiles] ${ts()} ⚠️ folder pre-resolve error (non-fatal):`,
         err,
       );
@@ -584,7 +586,7 @@ export async function uploadFiles(
   const sortedFiles = sortedEntries.map((e) => e.file);
   const concurrency = computeFileConcurrency(sortedFiles);
 
-  console.log(
+  logger.log(
     `[uploadFiles] ${ts()} BATCH START: ${files.length} files, concurrency=${concurrency} (sorted small→large)`,
   );
 
@@ -596,7 +598,7 @@ export async function uploadFiles(
   const tasks = sortedEntries.map(({ file, originalIndex }) => async () => {
     const i = originalIndex;
 
-    console.log(
+    logger.log(
       `[uploadFiles] ${ts()} starting "${file.name}" ${(file.size / 1024 / 1024).toFixed(2)} MB (original index ${i})`,
     );
 
@@ -623,13 +625,13 @@ export async function uploadFiles(
     if (r2Result.pollContext) {
       results[i] = { success: true, method: "r2" };
       successfulFiles.push({ name: file.name, size: file.size });
-      console.log(
+      logger.log(
         `[uploadFiles] ${ts()} ✓ R2 done: "${file.name}" (worker runs async)`,
       );
 
       // Fire worker transfer in background - don't block UI
       runPoll(r2Result.pollContext, (pollResult) => {
-        console.log(
+        logger.log(
           `[uploadFiles] ${ts()} worker transfer: "${file.name}" → ${pollResult.success ? "ok" : pollResult.error}`,
         );
       }).catch(() => {});
@@ -641,7 +643,7 @@ export async function uploadFiles(
 
     // Only reaches here if R2 upload actually failed
     results[i] = { success: false, error: r2Result.error, method: "r2" };
-    console.error(
+    logger.error(
       `[uploadFiles] ${ts()} ❌ R2 failed: "${file.name}" — ${r2Result.error}`,
     );
     options.onFileComplete?.(i, {
@@ -653,7 +655,7 @@ export async function uploadFiles(
 
   await pLimit(tasks, concurrency);
 
-  console.log(
+  logger.log(
     `[uploadFiles] ${ts()} BATCH COMPLETE: ${successfulFiles.length}/${files.length} succeeded`,
   );
 
@@ -678,7 +680,7 @@ async function runPoll(
   const pollMaxAttempts = computePollAttempts(file.size);
   const elapsed = () => `${Math.round(performance.now() - t0)}ms`;
 
-  console.log(
+  logger.log(
     `[upload] ${ts()} polling "${file.name}" up to ${pollMaxAttempts} attempts (~${Math.round((pollMaxAttempts * POLL_INTERVAL_MS) / 1000)}s) for ${(file.size / 1024 / 1024).toFixed(1)} MB`,
   );
 
@@ -693,7 +695,7 @@ async function runPoll(
       const data = await res.json();
 
       if (data.status === "completed") {
-        console.log(
+        logger.log(
           `[upload] ${ts()} ✓ DONE "${file.name}" total=${elapsed()}`,
         );
         onPollResult({ success: true, file: data.file, method: "r2" });
@@ -797,7 +799,7 @@ async function uploadViaR2Internal(options: UploadOptions): Promise<
   const t0 = performance.now();
   const elapsed = () => `${Math.round(performance.now() - t0)}ms`;
 
-  console.log(
+  logger.log(
     `[upload] ${ts()} START "${file.name}" ${(file.size / 1024 / 1024).toFixed(2)} MB type=${file.size >= MULTIPART_THRESHOLD ? "multipart" : "single-shot"}`,
   );
 
@@ -806,7 +808,7 @@ async function uploadViaR2Internal(options: UploadOptions): Promise<
 
   if (cachedPresignData) {
     presignData = cachedPresignData;
-    console.log(
+    logger.log(
       `[upload] ${ts()} ✓ presign (cached) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`,
     );
   } else {
@@ -836,7 +838,7 @@ async function uploadViaR2Internal(options: UploadOptions): Promise<
       }
 
       presignData = await res.json();
-      console.log(
+      logger.log(
         `[upload] ${ts()} ✓ presign (${elapsed()}) type=${presignData.uploadType} stagingKey=${presignData.stagingKey}`,
       );
     } catch {
@@ -885,7 +887,7 @@ async function uploadViaR2Internal(options: UploadOptions): Promise<
     );
 
     if (!completeRes.ok) {
-      console.warn(
+      logger.warn(
         `[upload] ${ts()} ⚠️ r2-single-complete failed (non-fatal), worker will proceed`,
       );
     }
@@ -922,7 +924,7 @@ async function uploadViaR2Internal(options: UploadOptions): Promise<
         error: (data as any).error ?? "Worker rejected transfer",
       };
     }
-    console.log(`[upload] ${ts()} ✓ worker accepted (${elapsed()})`);
+    logger.log(`[upload] ${ts()} ✓ worker accepted (${elapsed()})`);
   } catch {
     return { pollContext: null, error: "Failed to reach transfer worker" };
   }

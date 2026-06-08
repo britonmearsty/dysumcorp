@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
 
@@ -46,7 +47,7 @@ async function sendEmailInternal({
 }): Promise<EmailResult> {
   try {
     if (!process.env.RESEND_API_KEY) {
-      console.warn("RESEND_API_KEY not configured, skipping email send");
+      logger.warn("RESEND_API_KEY not configured, skipping email send");
 
       return { success: false, error: "Email service not configured" };
     }
@@ -54,7 +55,7 @@ async function sendEmailInternal({
     const resendClient = getResendClient();
 
     if (!resendClient) {
-      console.warn("Failed to initialize Resend client");
+      logger.warn("Failed to initialize Resend client");
 
       return { success: false, error: "Email service not configured" };
     }
@@ -67,14 +68,14 @@ async function sendEmailInternal({
     });
 
     if (error) {
-      console.error("Email send error:", error);
+      logger.error("Email send error:", error);
 
       return { success: false, error };
     }
 
     return { success: true, data };
   } catch (error) {
-    console.error("Email service error:", error);
+    logger.error("Email service error:", error);
 
     return { success: false, error };
   }
@@ -107,7 +108,7 @@ export async function getUserNotificationSettings(
 
     return user;
   } catch (error) {
-    console.error("Error fetching user notification settings:", error);
+    logger.error("Error fetching user notification settings:", error);
 
     return null;
   }
@@ -146,7 +147,7 @@ export async function sendSignInNotification({
   const settings = await getUserNotificationSettings(to);
 
   if (settings && !settings.notifyOnSignIn) {
-    console.log(`Sign-in notifications disabled for user: ${to}`);
+    logger.log(`Sign-in notifications disabled for user: ${to}`);
 
     return { success: true, data: "Notifications disabled" };
   }
@@ -190,7 +191,7 @@ export async function sendUploadCompletionNotification({
   const settings = await getUserNotificationSettings(to);
 
   if (settings && !settings.notifyOnUpload) {
-    console.log(`Upload notifications disabled for user: ${to}`);
+    logger.log(`Upload notifications disabled for user: ${to}`);
 
     return { success: true, data: "Notifications disabled" };
   }
@@ -228,7 +229,7 @@ export async function sendPortalCreatedNotification({
   const settings = await getUserNotificationSettings(to);
 
   if (settings && !settings.notifyOnPortalCreate) {
-    console.log(`Portal created notifications disabled for user: ${to}`);
+    logger.log(`Portal created notifications disabled for user: ${to}`);
 
     return { success: true, data: "Notifications disabled" };
   }
@@ -265,7 +266,7 @@ export async function sendFileDownloadNotification({
   const settings = await getUserNotificationSettings(userEmail);
 
   if (settings && !settings.notifyOnDownload) {
-    console.log(`Download notifications disabled for user: ${userEmail}`);
+    logger.log(`Download notifications disabled for user: ${userEmail}`);
 
     return { success: true, data: "Notifications disabled" };
   }
@@ -304,7 +305,7 @@ export async function sendStorageWarning({
   const settings = await getUserNotificationSettings(userEmail);
 
   if (settings && !settings.notifyOnStorageWarning) {
-    console.log(
+    logger.log(
       `Storage warning notifications disabled for user: ${userEmail}`,
     );
 
@@ -344,7 +345,7 @@ export async function sendFileUploadNotification({
   const settings = await getUserNotificationSettings(userEmail);
 
   if (settings && !settings.notifyOnUpload) {
-    console.log(`Upload notifications disabled for user: ${userEmail}`);
+    logger.log(`Upload notifications disabled for user: ${userEmail}`);
 
     return { success: true, data: "Notifications disabled" };
   }
@@ -459,7 +460,7 @@ export async function sendWeeklyReport({
   const settings = await getUserNotificationSettings(to);
 
   if (settings && !settings.weeklyReports) {
-    console.log(`Weekly reports disabled for user: ${to}`);
+    logger.log(`Weekly reports disabled for user: ${to}`);
 
     return { success: true, data: "Weekly reports disabled" };
   }

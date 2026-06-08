@@ -69,76 +69,76 @@ export function PortalFileList({
   const fileGroups = groupFiles(pendingFiles);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Upload Bucket Staging Area */}
       <div 
-        className="rounded-2xl border-2 overflow-hidden transition-all duration-300"
+        className="rounded-[20px] sm:rounded-2xl border-2 overflow-hidden transition-all duration-300"
         style={{ 
           borderColor: `${primaryColor}40`,
           background: `${primaryColor}05`
         }}
       >
         {/* Bucket Header */}
-        <div className="px-6 py-4 border-b border-black/5 flex items-center justify-between bg-white/50 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
-            <div className="flex -space-x-2">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white">
-                <FileText className="w-4 h-4 text-blue-600" />
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-black/5 flex items-center justify-between bg-white/50 backdrop-blur-sm rounded-t-[14px]">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex -space-x-2 shrink-0">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white">
+                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
               </div>
-              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center border-2 border-white">
-                <Image className="w-4 h-4 text-emerald-600" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-100 flex items-center justify-center border-2 border-white">
+                <Image className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
               </div>
             </div>
-            <div className="ml-2">
-              <h3 className="text-sm font-bold" style={{ color: textColor }}>Files staged for hand-off</h3>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Secure encryption active</span>
+            <div className="min-w-0">
+              <h3 className="text-xs sm:text-sm font-black truncate" style={{ color: textColor }}>Files staged</h3>
+              <div className="flex items-center gap-1 mt-0.5">
+                <ShieldCheck className="w-2.5 h-2.5 text-emerald-500" />
+                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-wider text-emerald-600 truncate">Secured</span>
               </div>
             </div>
           </div>
           
           {!uploading && (
             <button
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
               style={{ backgroundColor: primaryColor, color: '#fff' }}
               onClick={onAddMore}
             >
-              <Plus className="w-3.5 h-3.5" />
-              Add More
+              <Plus className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
+              <span>Add</span>
             </button>
           )}
         </div>
 
-        <div className="p-4 space-y-6">
+        <div className="p-3 sm:p-4 space-y-4 sm:space-y-6">
           {/* Error Files Section */}
           {errorFiles.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
               <div className="flex items-center gap-2 px-2">
-                <AlertCircle className="w-3.5 h-3.5 text-red-500" />
-                <span className="text-[11px] font-black uppercase tracking-widest text-red-600">
-                  Critical Errors ({errorFiles.length})
+                <AlertCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500" />
+                <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-widest text-red-600">
+                  Errors ({errorFiles.length})
                 </span>
               </div>
               {errorFiles.map((f) => (
                 <div
                   key={f.id}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3 bg-red-50/50 border border-red-100"
+                  className="flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-3 bg-red-50/50 border border-red-100"
                 >
-                  <FileTypeIcon type={f.file.type} />
+                  <FileTypeIcon type={f.file.type} size="w-4 h-4 sm:w-5 h-5" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold truncate text-slate-800">
+                    <p className="text-[11px] sm:text-xs font-bold truncate text-slate-800">
                       {f.file.name}
                     </p>
-                    <p className="text-[10px] text-red-600 font-bold mt-0.5 uppercase">
+                    <p className="text-[8px] sm:text-[10px] text-red-600 font-black mt-0.5 uppercase">
                       {f.error}
                     </p>
                   </div>
                   <button
-                    className="shrink-0 p-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                    className="shrink-0 p-1 rounded-lg hover:bg-red-100 transition-colors"
                     onClick={() => onRemove(f.id)}
                   >
-                    <X className="w-3.5 h-3.5 text-red-400" />
+                    <X className="w-3 sm:w-3.5 h-3 sm:w-3.5 text-red-400" />
                   </button>
                 </div>
               ))}
@@ -147,29 +147,29 @@ export function PortalFileList({
 
           {/* Grouped Pending/Uploading Files */}
           {Object.entries(fileGroups).map(([groupName, groupFiles]) => (
-            <div key={groupName} className="space-y-2">
+            <div key={groupName} className="space-y-1.5 sm:space-y-2">
               <div className="px-2 flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40" style={{ color: textColor }}>
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] opacity-40" style={{ color: textColor }}>
                   {groupName} ({groupFiles.length})
                 </span>
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-1.5 sm:gap-2">
                 {groupFiles.map((f) => (
                   <div
                     key={f.id}
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 bg-white border border-black/5 shadow-sm transition-all hover:shadow-md"
+                    className="flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-3 bg-white border border-black/5 shadow-sm transition-all hover:shadow-md"
                   >
-                    <FileTypeIcon type={f.file.type} />
+                    <FileTypeIcon type={f.file.type} size="w-4 h-4 sm:w-5 h-5" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-bold truncate" style={{ color: textColor }}>
+                        <p className="text-[11px] sm:text-xs font-bold truncate" style={{ color: textColor }}>
                           {f.file.name}
                         </p>
-                        <span className="text-[10px] font-medium opacity-40 tabular-nums">{formatBytes(f.file.size)}</span>
+                        <span className="text-[8px] sm:text-[10px] font-black opacity-30 tabular-nums hidden xs:inline">{formatBytes(f.file.size)}</span>
                       </div>
                       
                       {f.status === "uploading" && (
-                        <div className="mt-2 h-1 w-full rounded-full overflow-hidden bg-slate-100">
+                        <div className="mt-1.5 sm:mt-2 h-1 w-full rounded-full overflow-hidden bg-slate-100">
                           <div
                             className="h-full transition-all duration-300"
                             style={{
@@ -182,16 +182,16 @@ export function PortalFileList({
                     </div>
                     {f.status === "pending" && !uploading && (
                       <button
-                        className="shrink-0 p-1.5 rounded-lg hover:bg-red-50 transition-colors group"
+                        className="shrink-0 p-1 rounded-lg hover:bg-red-50 transition-colors group"
                         onClick={() => onRemove(f.id)}
                       >
-                        <X className="w-3.5 h-3.5 text-slate-300 group-hover:text-red-500" />
+                        <X className="w-3 sm:w-3.5 h-3 sm:w-3.5 text-slate-300 group-hover:text-red-500" />
                       </button>
                     )}
                     {f.status === "uploading" && (
-                      <div className="shrink-0 w-6 h-6 flex items-center justify-center">
+                      <div className="shrink-0 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center">
                         <div
-                          className="w-3.5 h-3.5 border-2 border-t-transparent rounded-full animate-spin"
+                          className="w-3 h-3 sm:w-3.5 sm:h-3.5 border-2 border-t-transparent rounded-full animate-spin"
                           style={{
                             borderColor: primaryColor,
                             borderTopColor: "transparent",

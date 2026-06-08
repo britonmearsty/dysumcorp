@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -49,13 +50,13 @@ export async function getStorageTokens(
     account.accessTokenExpiresAt && account.accessTokenExpiresAt <= new Date();
 
   if (isExpired && account.refreshToken) {
-    console.log(
+    logger.log(
       `[Storage API] Token expired for ${provider}, auto-refreshing...`,
     );
     const newAccessToken = await refreshStorageToken(userId, provider);
 
     if (newAccessToken) {
-      console.log(`[Storage API] Successfully refreshed token for ${provider}`);
+      logger.log(`[Storage API] Successfully refreshed token for ${provider}`);
       const updatedAccount = await prisma.account.findFirst({
         where: {
           userId,
@@ -72,7 +73,7 @@ export async function getStorageTokens(
         };
       }
     } else {
-      console.log(`[Storage API] Failed to refresh token for ${provider}`);
+      logger.log(`[Storage API] Failed to refresh token for ${provider}`);
 
       return null;
     }
@@ -147,7 +148,7 @@ export async function refreshStorageToken(
 
     return data.access_token;
   } catch (error) {
-    console.error(`Failed to refresh ${provider} token:`, error);
+    logger.error(`Failed to refresh ${provider} token:`, error);
 
     return null;
   }

@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 import crypto from "crypto";
 
 export interface UploadToken {
@@ -79,7 +80,7 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
     const token: UploadToken = JSON.parse(tokenJson);
 
     if (Date.now() > token.expiresAt) {
-      console.error("[Upload Token] Token expired");
+      logger.error("[Upload Token] Token expired");
 
       return null;
     }
@@ -115,16 +116,16 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
       .digest("hex");
 
     if (token.signature !== expectedSignature) {
-      console.error("[Upload Token] Invalid signature");
-      console.error("[Upload Token] Expected:", expectedSignature);
-      console.error("[Upload Token] Received:", token.signature);
+      logger.error("[Upload Token] Invalid signature");
+      logger.error("[Upload Token] Expected:", expectedSignature);
+      logger.error("[Upload Token] Received:", token.signature);
 
       return null;
     }
 
     return token;
   } catch (error) {
-    console.error("[Upload Token] Failed to validate token:", error);
+    logger.error("[Upload Token] Failed to validate token:", error);
 
     return null;
   }

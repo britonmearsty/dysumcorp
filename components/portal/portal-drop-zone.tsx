@@ -84,7 +84,7 @@ export function PortalDropZone({
 
   return (
     <div
-      className="relative rounded-2xl border-2 border-dashed flex flex-col items-center justify-center py-16 gap-3 cursor-pointer transition-all duration-300 group"
+      className="relative rounded-2xl border-2 border-dashed flex flex-col items-center justify-center py-10 sm:py-16 gap-3 cursor-pointer transition-all duration-300 group"
       style={{
         borderColor: dragging ? primaryColor : `${primaryColor}30`,
         background: dragging ? `${primaryColor}0D` : "#f8faff",
@@ -95,22 +95,22 @@ export function PortalDropZone({
       onDrop={handleDrop}
     >
       <div
-        className="flex items-center justify-center w-16 h-16 rounded-full transition-transform duration-300 group-hover:scale-110"
+        className="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full transition-transform duration-300 group-hover:scale-110"
         style={{ background: `${primaryColor}1A` }}
       >
-        <Upload className="w-7 h-7" style={{ color: primaryColor }} />
+        <Upload className="w-5 h-5 sm:w-7 sm:h-7" style={{ color: primaryColor }} />
       </div>
-      <div className="text-center flex flex-col items-center">
-        <p className="font-bold text-lg" style={{ color: textColor }}>
-          Drop files here to upload
+      <div className="text-center flex flex-col items-center px-4">
+        <p className="font-black text-base sm:text-lg" style={{ color: textColor }}>
+          Drop files to upload
         </p>
-        <p className="text-slate-400 text-sm mt-1 font-medium">
-          or click to browse from your device
+        <p className="text-slate-400 text-xs sm:text-sm mt-1 font-medium">
+          or click to browse device
         </p>
         
         {getAllowedIcons()}
 
-        <div className="mt-4 flex items-center gap-2 text-xs font-semibold opacity-50" style={{ color: textColor }}>
+        <div className="mt-4 flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-40" style={{ color: textColor }}>
           {maxFileSize && (
             <span>Max {(maxFileSize / 1024 / 1024).toFixed(0)}MB per file</span>
           )}

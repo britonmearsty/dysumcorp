@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 import {
   S3Client,
   PutObjectCommand,
@@ -20,7 +21,7 @@ if (!accountId || !accessKeyId || !secretAccessKey || !bucketName) {
     process.env.NODE_ENV !== "production" ||
     process.env.VERCEL_ENV === "production"
   ) {
-    console.warn(
+    logger.warn(
       "[R2 Client] Missing one or more R2 env vars: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME",
     );
   }
