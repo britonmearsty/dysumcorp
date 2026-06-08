@@ -13,7 +13,15 @@ import { PortalFileList } from "@/components/portal/portal-file-list";
 import { PortalButton } from "@/components/portal/portal-button";
 import { LogoDisplay } from "@/components/logo-display";
 import { PortalSuccessView } from "@/components/portal/portal-success-view";
+import { Label } from "@/components/ui/label";
 import { uploadFiles } from "@/lib/upload-manager";
+
+interface ChecklistItem {
+  id: string;
+  label: string;
+  required: boolean;
+  sortOrder: number;
+}
 
 interface Portal {
   id: string;
@@ -58,6 +66,10 @@ interface Portal {
   userId: string;
   fileCount?: number;
   fileLimit?: number;
+  expiresAt: string | null;
+  maxUploads: number | null;
+  uploadCount: number;
+  checklistItems: ChecklistItem[];
 }
 
 interface UploadFile {
@@ -94,6 +106,9 @@ export default function PublicPortalPage() {
   const [failedFiles, setFailedFiles] = useState<
     Array<{ name: string; size: number; type: string; error?: string }>
   >([]);
+  const [blocked, setBlocked] = useState(false);
+  const [blockedReason, setBlockedReason] = useState("");
+  const [slotFiles, setSlotFiles] = useState<Record<string, UploadFile[]>>({});
 
   useEffect(() => {
     fetchPortal();
@@ -138,16 +153,28 @@ export default function PublicPortalPage() {
 
         setPortal(p);
 
-        // Check if portal requires password
         if (p.password) {
           setAuthenticated(false);
         } else {
           setAuthenticated(true);
         }
+      } else if (response.status === 403) {
+        const errorData = await response.json();
+
+        if (errorData.code === "PORTAL_EXPIRED") {
+          setBlocked(true);
+          setBlockedReason("This portal has expired and is no longer accepting uploads.");
+          setLoading(false);
+          return;
+        }
+        if (errorData.code === "PORTAL_UPLOAD_LIMIT_REACHED") {
+          setBlocked(true);
+          setBlockedReason("This portal has reached its upload limit.");
+          setLoading(false);
+          return;
+        }
       }
-      // Any non-200 (404, 403, 500) → portal stays null → shows unavailable screen
     } catch {
-      // Network error → portal stays null → shows unavailable screen
     } finally {
       setLoading(false);
     }
@@ -380,15 +407,6 @@ export default function PublicPortalPage() {
   };
 
   const handleUpload = async () => {
-    const validFiles = files.filter((f) => f.status === "pending");
-
-    if (validFiles.length === 0) {
-      setErrorMessage("Please select at least one valid file");
-      setUploadStatus("error");
-
-      return;
-    }
-
     if (!portal) {
       setErrorMessage("Portal information not loaded");
       setUploadStatus("error");
@@ -433,6 +451,26 @@ export default function PublicPortalPage() {
       return;
     }
 
+    const mainPending = files.filter((f) => f.status === "pending");
+    const slotPending = Object.entries(slotFiles).flatMap(([slotId, slotList]) =>
+      slotList.filter((f) => f.status === "pending").map((f) => ({ ...f, slotId })),
+    );
+
+    const allFiles = [...mainPending, ...slotPending];
+
+    if (allFiles.length === 0) {
+      setErrorMessage("Please select at least one valid file");
+      setUploadStatus("error");
+
+      return;
+    }
+
+    const indexMap = allFiles.map((f) => ({
+      isSlot: "slotId" in f,
+      slotId: (f as any).slotId as string | undefined,
+      fileId: f.id,
+    }));
+
     setUploading(true);
     setUploadStatus("idle");
     setErrorMessage("");
@@ -445,6 +483,17 @@ export default function PublicPortalPage() {
           : f,
       ),
     );
+    setSlotFiles((prev) => {
+      const next: Record<string, UploadFile[]> = {};
+      for (const [slotId, slotList] of Object.entries(prev)) {
+        next[slotId] = slotList.map((f) =>
+          f.status === "pending"
+            ? { ...f, status: "uploading" as const, progress: 0 }
+            : f,
+        );
+      }
+      return next;
+    });
 
     const successful: Array<{ name: string; size: number; type: string }> = [];
     const failed: Array<{
@@ -456,7 +505,7 @@ export default function PublicPortalPage() {
 
     try {
       await uploadFiles(
-        validFiles.map((f) => f.file),
+        allFiles.map((f) => f.file),
         {
           portalId: portal.id,
           password: portalPassword || undefined,
@@ -464,66 +513,89 @@ export default function PublicPortalPage() {
           uploaderEmail: uploaderEmail.trim(),
           uploaderNotes: textboxValue.trim() || undefined,
           onFileProgress: (fileIndex, progress) => {
-            const fileId = validFiles[fileIndex]?.id;
-
-            if (!fileId) return;
-            setFiles((prev) =>
-              prev.map((f) =>
-                f.id === fileId ? { ...f, progress: Math.floor(progress) } : f,
-              ),
-            );
+            const entry = indexMap[fileIndex];
+            if (!entry) return;
+            if (entry.isSlot) {
+              setSlotFiles((prev) => ({
+                ...prev,
+                [entry.slotId!]: prev[entry.slotId!].map((sf) =>
+                  sf.id === entry.fileId ? { ...sf, progress: Math.floor(progress) } : sf,
+                ),
+              }));
+            } else {
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === entry.fileId ? { ...f, progress: Math.floor(progress) } : f,
+                ),
+              );
+            }
           },
-          // Fires immediately when each file finishes — moves it to the drawer right away
           onFileComplete: (fileIndex, result) => {
-            const uploadFile = validFiles[fileIndex];
+            const entry = indexMap[fileIndex];
+            if (!entry) return;
+            const allFile = allFiles[fileIndex];
+            if (!allFile) return;
 
-            if (!uploadFile) return;
             if (result.success) {
               successful.push({
-                name: uploadFile.file.name,
-                size: uploadFile.file.size,
-                type: uploadFile.file.type,
+                name: allFile.file.name,
+                size: allFile.file.size,
+                type: allFile.file.type,
               });
-              // Mark done, then after a short flash move to completed drawer
-              setFiles((prev) =>
-                prev.map((f) =>
-                  f.id === uploadFile.id
-                    ? { ...f, progress: 100, status: "done" as const }
-                    : f,
-                ),
-              );
-              setTimeout(() => {
-                setFiles((prev) => {
-                  const completed = prev.find((f) => f.id === uploadFile.id);
-
-                  if (completed)
-                    setCompletedFiles((c) => [
-                      ...c,
-                      { ...completed, progress: 100, status: "done" as const },
-                    ]);
-
-                  return prev.filter((f) => f.id !== uploadFile.id);
-                });
-              }, 600);
+              if (entry.isSlot) {
+                setSlotFiles((prev) => ({
+                  ...prev,
+                  [entry.slotId!]: prev[entry.slotId!].map((sf) =>
+                    sf.id === entry.fileId
+                      ? { ...sf, progress: 100, status: "done" as const }
+                      : sf,
+                  ),
+                }));
+              } else {
+                setFiles((prev) =>
+                  prev.map((f) =>
+                    f.id === entry.fileId
+                      ? { ...f, progress: 100, status: "done" as const }
+                      : f,
+                  ),
+                );
+                setTimeout(() => {
+                  setFiles((prev) => {
+                    const completed = prev.find((f) => f.id === entry.fileId);
+                    if (completed)
+                      setCompletedFiles((c) => [
+                        ...c,
+                        { ...completed, progress: 100, status: "done" as const },
+                      ]);
+                    return prev.filter((f) => f.id !== entry.fileId);
+                  });
+                }, 600);
+              }
             } else {
               failed.push({
-                name: uploadFile.file.name,
-                size: uploadFile.file.size,
-                type: uploadFile.file.type,
+                name: allFile.file.name,
+                size: allFile.file.size,
+                type: allFile.file.type,
                 error: result.error ?? "Upload failed",
               });
-              setFiles((prev) =>
-                prev.map((f) =>
-                  f.id === uploadFile.id
-                    ? {
-                        ...f,
-                        status: "error" as const,
-                        error: result.error ?? "Upload failed",
-                        progress: 0,
-                      }
-                    : f,
-                ),
-              );
+              if (entry.isSlot) {
+                setSlotFiles((prev) => ({
+                  ...prev,
+                  [entry.slotId!]: prev[entry.slotId!].map((sf) =>
+                    sf.id === entry.fileId
+                      ? { ...sf, status: "error" as const, error: result.error ?? "Upload failed", progress: 0 }
+                      : sf,
+                  ),
+                }));
+              } else {
+                setFiles((prev) =>
+                  prev.map((f) =>
+                    f.id === entry.fileId
+                      ? { ...f, status: "error" as const, error: result.error ?? "Upload failed", progress: 0 }
+                      : f,
+                  ),
+                );
+              }
             }
           },
         },
@@ -556,6 +628,59 @@ export default function PublicPortalPage() {
     setCompletedFiles([]);
     setSentFiles([]);
     setFailedFiles([]);
+    setSlotFiles({});
+  };
+
+  const handleSlotFiles = (slotId: string, incoming: FileList) => {
+    if (!portal) return;
+
+    const selectedFiles = Array.from(incoming);
+    const portalMaxSize = parseInt(portal.maxFileSize);
+    const portalAllowedTypes = portal.allowedFileTypes || [];
+
+    const newFiles: UploadFile[] = selectedFiles.map((file) => {
+      if (
+        portalAllowedTypes.length > 0 &&
+        !isFileTypeAllowed(file, portalAllowedTypes)
+      ) {
+        return {
+          id: `slot_${slotId}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          file,
+          progress: 0,
+          status: "error" as const,
+          error: "File type not allowed",
+        };
+      }
+
+      if (file.size > portalMaxSize) {
+        return {
+          id: `slot_${slotId}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          file,
+          progress: 0,
+          status: "error" as const,
+          error: `Exceeds ${(portalMaxSize / 1024 / 1024).toFixed(0)}MB limit`,
+        };
+      }
+
+      return {
+        id: `slot_${slotId}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+        file,
+        progress: 0,
+        status: "pending" as const,
+      };
+    });
+
+    setSlotFiles((prev) => ({
+      ...prev,
+      [slotId]: [...(prev[slotId] || []), ...newFiles],
+    }));
+  };
+
+  const handleRemoveSlotFile = (slotId: string, fileId: string) => {
+    setSlotFiles((prev) => ({
+      ...prev,
+      [slotId]: prev[slotId].filter((f) => f.id !== fileId),
+    }));
   };
 
   if (loading) {
@@ -568,6 +693,23 @@ export default function PublicPortalPage() {
           className="w-8 h-8 animate-spin"
           style={{ color: portal?.primaryColor || "#6366f1" }}
         />
+      </div>
+    );
+  }
+
+  if (blocked) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: portal?.backgroundColor || "#f1f5f9" }}
+      >
+        <div className="max-w-md w-full text-center space-y-4">
+          <div className="bg-white/80 backdrop-blur rounded-2xl p-8 shadow-xl">
+            <AlertCircle className="h-12 w-12 mx-auto text-amber-500" />
+            <h2 className="text-xl font-bold mt-4">Portal Unavailable</h2>
+            <p className="text-muted-foreground mt-2">{blockedReason}</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -804,7 +946,66 @@ export default function PublicPortalPage() {
                   )}
 
                 {/* Drop Zone or File List */}
-                {files.length === 0 ? (
+                {portal.checklistItems && portal.checklistItems.length > 0 ? (
+                  <div className="space-y-6">
+                    {portal.checklistItems.map((item) => (
+                      <div key={item.id} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">
+                            {item.label}
+                            {item.required && <span className="text-red-500 ml-1">*</span>}
+                          </Label>
+                        </div>
+                        <PortalDropZone
+                          allowedFileTypes={portal.allowedFileTypes || undefined}
+                          maxFileSize={parseInt(portal.maxFileSize)}
+                          primaryColor={portal.primaryColor}
+                          textColor={portal.textColor}
+                          onFilesSelected={(files) => {
+                            handleSlotFiles(item.id, files);
+                          }}
+                        />
+                        {slotFiles[item.id] && slotFiles[item.id].length > 0 && (
+                          <PortalFileList
+                            files={slotFiles[item.id]}
+                            completedFiles={[]}
+                            gradientEnabled={portal.gradientEnabled}
+                            primaryColor={portal.primaryColor}
+                            secondaryColor={portal.secondaryColor}
+                            textColor={portal.textColor}
+                            uploading={uploading}
+                            onAddMore={() => {
+                              const input = document.createElement("input");
+                              input.type = "file";
+                              input.multiple = true;
+                              input.onchange = (e) => {
+                                const target = e.target as HTMLInputElement;
+                                if (target.files) handleSlotFiles(item.id, target.files);
+                              };
+                              input.click();
+                            }}
+                            onRemove={(fileId) => handleRemoveSlotFile(item.id, fileId)}
+                          />
+                        )}
+                      </div>
+                    ))}
+
+                    {!uploading &&
+                      Object.values(slotFiles).some((files) =>
+                        files.some((f) => f.status === "pending"),
+                      ) && (
+                        <PortalButton
+                          gradientEnabled={portal.gradientEnabled}
+                          icon={<Upload className="w-4 h-4" />}
+                          primaryColor={portal.primaryColor}
+                          secondaryColor={portal.secondaryColor}
+                          onClick={handleUpload}
+                        >
+                          {portal.submitButtonText}
+                        </PortalButton>
+                      )}
+                  </div>
+                ) : files.length === 0 ? (
                   <PortalDropZone
                     allowedFileTypes={portal.allowedFileTypes || undefined}
                     maxFileSize={parseInt(portal.maxFileSize)}

@@ -134,10 +134,19 @@ model Portal {
   textboxSectionTitle  String?
   textboxSectionPlaceholder String?
   textboxSectionRequired Boolean @default(false)
+  // Expiry
+  expiresAt           DateTime?
+  maxUploads          Int?
+  uploadCount         Int      @default(0)
+  // Auto-renaming & folder templates (future)
+  renameTemplate      String?
+  folderTemplate      String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   files               File[]
   uploadSessions      UploadSession[]
+  checklistItems      ChecklistItem[]
+  reminders           Reminder[]
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -153,13 +162,39 @@ model UploadSession {
   uploadedAt    DateTime @default(now())
   fileCount     Int      @default(0)
   totalSize     BigInt   @default(0)
-  portal        Portal   @relation(fields: [portalId], references: [id], onDelete: Cascade)
-  files         File[]
+  portal          Portal   @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  files           File[]
+  checklistItemId String?
 
   @@index([portalId])
   @@index([uploaderEmail])
   @@index([uploadedAt])
   @@map("upload_session")
+}
+
+model ChecklistItem {
+  id        String  @id @default(cuid())
+  portalId  String
+  label     String
+  required  Boolean @default(true)
+  sortOrder Int     @default(0)
+  portal    Portal  @relation(fields: [portalId], references: [id], onDelete: Cascade)
+
+  @@index([portalId])
+  @@map("checklist_item")
+}
+
+model Reminder {
+  id             String   @id @default(cuid())
+  portalId       String
+  interval       Int
+  maxReminders   Int?
+  nextReminderAt DateTime
+  reminderCount  Int      @default(0)
+  portal         Portal   @relation(fields: [portalId], references: [id], onDelete: Cascade)
+
+  @@index([portalId])
+  @@map("reminder")
 }
 
 model File {

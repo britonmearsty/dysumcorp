@@ -53,6 +53,9 @@ export async function GET(
             uploaderEmail: true,
           },
         },
+        checklistItems: {
+          orderBy: { sortOrder: "asc" },
+        },
         _count: {
           select: { files: true },
         },
@@ -153,6 +156,9 @@ export async function PATCH(
       textboxSectionTitle,
       textboxSectionPlaceholder,
       textboxSectionRequired,
+      expiresAt,
+      maxUploads,
+      checklistItems,
     } = body;
 
     // Build update data object
@@ -239,6 +245,11 @@ export async function PATCH(
     if (allowedFileTypes !== undefined)
       updateData.allowedFileTypes = allowedFileTypes;
 
+    if (expiresAt !== undefined) {
+      updateData.expiresAt = expiresAt ? new Date(expiresAt) : null;
+    }
+    if (maxUploads !== undefined) updateData.maxUploads = maxUploads;
+
     // Messaging
     if (welcomeMessage !== undefined)
       updateData.welcomeMessage = welcomeMessage || null;
@@ -291,6 +302,25 @@ export async function PATCH(
     });
 
     console.log("[Portal Update] Portal updated successfully");
+
+    // Update checklist items if provided
+    if (checklistItems !== undefined) {
+      await prisma.checklistItem.deleteMany({
+        where: { portalId: existingPortal.id },
+      });
+      if (checklistItems.length > 0) {
+        await prisma.checklistItem.createMany({
+          data: checklistItems.map(
+            (item: { label: string; required: boolean; sortOrder: number }) => ({
+              portalId: existingPortal.id,
+              label: item.label,
+              required: item.required ?? true,
+              sortOrder: item.sortOrder ?? 0,
+            }),
+          ),
+        });
+      }
+    }
 
     // Serialize BigInt
     const serializedPortal = {

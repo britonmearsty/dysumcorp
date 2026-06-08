@@ -23,6 +23,9 @@ interface Portal {
   whiteLabeled: boolean;
   customDomain: string | null;
   updatedAt: string;
+  expiresAt: string | null;
+  maxUploads: number | null;
+  uploadCount: number;
   _count?: {
     files: number;
   };
@@ -509,6 +512,16 @@ export default function DashboardPage() {
                         >
                           {portal.isActive ? "Active" : "Inactive"}
                         </span>
+                        {portal.expiresAt && new Date(portal.expiresAt) < new Date() && (
+                          <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-red-50 text-red-600 dark:bg-red-950/50">
+                            Expired
+                          </span>
+                        )}
+                        {portal.maxUploads != null && (
+                          <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-amber-50 text-amber-600 dark:bg-amber-950/50">
+                            {portal.uploadCount}/{portal.maxUploads} uploads
+                          </span>
+                        )}
                         {portal.whiteLabeled && (
                           <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-purple-50 text-purple-600 dark:bg-purple-950/50 hidden sm:inline">
                             Premium

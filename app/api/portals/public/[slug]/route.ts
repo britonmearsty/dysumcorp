@@ -60,6 +60,20 @@ export async function GET(
         textboxSectionTitle: true,
         textboxSectionPlaceholder: true,
         textboxSectionRequired: true,
+        // Expiry
+        expiresAt: true,
+        maxUploads: true,
+        uploadCount: true,
+        // Checklist
+        checklistItems: {
+          select: {
+            id: true,
+            label: true,
+            required: true,
+            sortOrder: true,
+          },
+          orderBy: { sortOrder: "asc" },
+        },
       },
     });
 
@@ -69,6 +83,32 @@ export async function GET(
 
     if (!portal.isActive) {
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
+    }
+
+    // Check expiry before portal loads
+    if (portal.expiresAt && new Date(portal.expiresAt) < new Date()) {
+      return NextResponse.json(
+        {
+          error: "This portal has expired",
+          code: "PORTAL_EXPIRED",
+        },
+        { status: 403 },
+      );
+    }
+
+    // Check upload count limit
+    if (
+      portal.maxUploads !== null &&
+      portal.maxUploads !== undefined &&
+      portal.uploadCount >= portal.maxUploads
+    ) {
+      return NextResponse.json(
+        {
+          error: "This portal has reached its upload limit",
+          code: "PORTAL_UPLOAD_LIMIT_REACHED",
+        },
+        { status: 403 },
+      );
     }
 
     // Check owner's subscription — return generic unavailable
@@ -111,6 +151,10 @@ export async function GET(
       isOwnerSubscriber: isSubscriber,
       fileCount,
       fileLimit,
+      expiresAt: portal.expiresAt?.toISOString() ?? null,
+      maxUploads: portal.maxUploads,
+      uploadCount: portal.uploadCount,
+      checklistItems: portal.checklistItems,
     };
 
     return NextResponse.json({ portal: serializedPortal });

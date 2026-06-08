@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       uploaderName,
       uploaderEmail,
       uploaderNotes,
+      checklistItemId,
       uploadSessionId: clientSessionId,
       skipNotification,
       error: transferError,
@@ -157,16 +158,23 @@ export async function POST(request: NextRequest) {
           `[r2-confirm:${requestId}] Creating new UploadSession...`,
         );
         // No session yet — create one (first file in this batch)
-        const session = await prisma.uploadSession.create({
-          data: {
-            portalId,
-            uploaderName: uploaderName ?? null,
-            uploaderEmail: uploaderEmail ?? null,
-            uploaderNotes: uploaderNotes ?? null,
-            fileCount: 1,
-            totalSize: BigInt(fileSize),
-          },
-        });
+        const [session] = await prisma.$transaction([
+          prisma.uploadSession.create({
+            data: {
+              portalId,
+              uploaderName: uploaderName ?? null,
+              uploaderEmail: uploaderEmail ?? null,
+              uploaderNotes: uploaderNotes ?? null,
+              checklistItemId: checklistItemId ?? null,
+              fileCount: 1,
+              totalSize: BigInt(fileSize),
+            },
+          }),
+          prisma.portal.update({
+            where: { id: portalId },
+            data: { uploadCount: { increment: 1 } },
+          }),
+        ]);
 
         resolvedSessionId = session.id;
         logger.log(

@@ -69,6 +69,9 @@ export async function POST(request: Request) {
       textboxSectionEnabled,
       textboxSectionTitle,
       textboxSectionRequired,
+      // Expiry
+      expiresAt,
+      maxUploads,
     } = body;
 
     // Validate required fields
@@ -162,6 +165,8 @@ export async function POST(request: Request) {
         requireClientEmail: requireClientEmail || false,
         maxFileSize: BigInt(finalMaxFileSize),
         allowedFileTypes: allowedFileTypes || [],
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        maxUploads: maxUploads ?? null,
         // Messaging
         welcomeMessage: welcomeMessage || null,
         welcomeToastMessage: welcomeToastMessage || null,
@@ -176,6 +181,20 @@ export async function POST(request: Request) {
         textboxSectionRequired: textboxSectionRequired ?? false,
       },
     });
+
+    // Create checklist items if provided
+    if (body.checklistItems && Array.isArray(body.checklistItems)) {
+      await prisma.checklistItem.createMany({
+        data: body.checklistItems.map(
+          (item: { label: string; required: boolean; sortOrder: number }) => ({
+            portalId: portal.id,
+            label: item.label,
+            required: item.required ?? true,
+            sortOrder: item.sortOrder ?? 0,
+          }),
+        ),
+      });
+    }
 
     // REVERSIBILITY: Remove this block to revert trial feature
     // Mark free users as having used their trial portal

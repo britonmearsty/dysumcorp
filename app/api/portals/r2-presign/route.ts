@@ -88,6 +88,9 @@ export async function POST(request: NextRequest) {
         password: true,
         maxFileSize: true,
         allowedFileTypes: true,
+        expiresAt: true,
+        maxUploads: true,
+        uploadCount: true,
         user: { select: { email: true } },
       },
     });
@@ -99,6 +102,27 @@ export async function POST(request: NextRequest) {
     if (!portal.isActive) {
       return NextResponse.json(
         { error: "This portal is not accepting uploads" },
+        { status: 403 },
+      );
+    }
+
+    if (portal.expiresAt && new Date(portal.expiresAt) < new Date()) {
+      return NextResponse.json(
+        { error: "This portal has expired", code: "PORTAL_EXPIRED" },
+        { status: 403 },
+      );
+    }
+
+    if (
+      portal.maxUploads !== null &&
+      portal.maxUploads !== undefined &&
+      portal.uploadCount >= portal.maxUploads
+    ) {
+      return NextResponse.json(
+        {
+          error: "This portal has reached its upload limit",
+          code: "PORTAL_UPLOAD_LIMIT_REACHED",
+        },
         { status: 403 },
       );
     }

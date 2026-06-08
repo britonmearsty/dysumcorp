@@ -16,12 +16,18 @@ import {
   FolderOpen,
   Hash,
   XIcon,
+  ListChecks,
+  GripVertical,
+  Plus,
 } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +41,7 @@ import { PlanType } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
 import { useStorageConnections } from "@/lib/hooks/useStorageConnections";
 
-type Step = "identity" | "branding" | "storage" | "security" | "messaging";
+type Step = "identity" | "branding" | "storage" | "security" | "checklist" | "messaging";
 
 interface ConnectedAccount {
   provider: "google" | "dropbox";
@@ -927,6 +933,10 @@ interface SecuritySectionProps {
   portal: any;
   showPassword?: boolean;
   setShowPassword?: (show: boolean) => void;
+  expiresAt: string;
+  setExpiresAt: (v: string) => void;
+  maxUploads: string;
+  setMaxUploads: (v: string) => void;
 }
 
 const FILE_TYPE_OPTIONS = [
@@ -960,6 +970,10 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
   portal,
   showPassword = false,
   setShowPassword = () => {},
+  expiresAt,
+  setExpiresAt,
+  maxUploads,
+  setMaxUploads,
 }) => {
   return (
     <div className="space-y-6 lg:space-y-8">
@@ -1213,6 +1227,32 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
         </div>
       </div>
 
+      <div className="space-y-4 pt-4 border-t">
+        <h4 className="text-sm font-semibold text-foreground/80">Portal Expiry</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="expiresAt">Expiry Date (optional)</Label>
+            <Input
+              id="expiresAt"
+              type="datetime-local"
+              value={expiresAt}
+              onChange={(e) => setExpiresAt(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="maxUploads">Max Uploads (optional)</Label>
+            <Input
+              id="maxUploads"
+              type="number"
+              min="0"
+              placeholder="e.g. 100"
+              value={maxUploads}
+              onChange={(e) => setMaxUploads(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
         <div />
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -1226,9 +1266,9 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
           <button
             className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors"
             type="button"
-            onClick={() => setCurrentStep("messaging")}
+            onClick={() => setCurrentStep("checklist")}
           >
-            Next: Messaging
+            Next: Checklist
           </button>
         </div>
       </div>
@@ -1270,6 +1310,20 @@ export default function EditPortalPage() {
     welcomeToast: false,
     textboxSection: false,
   });
+
+  const [expiresAt, setExpiresAt] = useState<string>("");
+  const [maxUploads, setMaxUploads] = useState<string>("");
+
+  const [checklistItems, setChecklistItems] = useState<{ id: string; label: string; required: boolean; sortOrder: number }[]>([]);
+  const addChecklistItem = () => {
+    setChecklistItems(prev => [...prev, { id: `item_${Date.now()}`, label: "", required: true, sortOrder: prev.length }]);
+  };
+  const removeChecklistItem = (id: string) => {
+    setChecklistItems(prev => prev.filter(i => i.id !== id).map((i, idx) => ({ ...i, sortOrder: idx })));
+  };
+  const updateChecklistItem = (id: string, field: string, value: any) => {
+    setChecklistItems(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i));
+  };
 
   // Constants for default messages
   const DEFAULT_WELCOME_MESSAGE =
@@ -1332,6 +1386,7 @@ export default function EditPortalPage() {
     { id: "branding", label: "Branding", icon: Palette },
     { id: "storage", label: "Storage", icon: Cloud },
     { id: "security", label: "Security", icon: Lock },
+    { id: "checklist", label: "Checklist", icon: ListChecks },
     { id: "messaging", label: "Messaging", icon: Settings2 },
   ];
 
@@ -1401,6 +1456,21 @@ export default function EditPortalPage() {
         welcomeToast: !!p.welcomeToastMessage,
         textboxSection: p.textboxSectionEnabled ?? false,
       });
+
+      if (p.expiresAt) {
+        const d = new Date(p.expiresAt);
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        setExpiresAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+      }
+      if (p.maxUploads != null) setMaxUploads(String(p.maxUploads));
+      if (p.checklistItems) {
+        setChecklistItems(p.checklistItems.map((item: any) => ({
+          id: item.id,
+          label: item.label,
+          required: item.required,
+          sortOrder: item.sortOrder,
+        })));
+      }
     } catch (error) {
       console.error("Error fetching portal:", error);
       setError("Failed to load portal");
@@ -1561,6 +1631,8 @@ export default function EditPortalPage() {
         return validateStorageSection() ? "complete" : "incomplete";
       case "security":
         return validateSecuritySection() ? "complete" : "incomplete";
+      case "checklist":
+        return "complete";
       case "messaging":
         return validateMessagingSection() ? "complete" : "incomplete";
       default:
@@ -1575,6 +1647,7 @@ export default function EditPortalPage() {
       "branding",
       "storage",
       "security",
+      "checklist",
       "messaging",
     ];
     const currentIndex = sections.indexOf(currentStep);
@@ -1593,6 +1666,8 @@ export default function EditPortalPage() {
         return validateStorageSection();
       case "security":
         return validateSecuritySection();
+      case "checklist":
+        return true;
       case "messaging":
         return validateMessagingSection();
       default:
@@ -1709,6 +1784,9 @@ export default function EditPortalPage() {
         requireClientEmail: formData.requireClientEmail,
         maxFileSize: Math.floor(finalMaxFileSize * 1024 * 1024), // Convert MB to bytes, ensure integer
         allowedFileTypes: formData.allowedFileTypes,
+        expiresAt: expiresAt || null,
+        maxUploads: maxUploads ? parseInt(maxUploads, 10) : null,
+        checklistItems: checklistItems.filter(i => i.label.trim()),
 
         // Messaging
         welcomeMessage: expandedSections.welcomeMessage
@@ -1871,6 +1949,7 @@ export default function EditPortalPage() {
                                   "branding",
                                   "storage",
                                   "security",
+                                  "checklist",
                                   "messaging",
                                 ];
                                 const currentIndex =
@@ -2390,7 +2469,54 @@ export default function EditPortalPage() {
                             setShowPassword={setShowPassword}
                             showPassword={showPassword}
                             updateFormData={updateFormData}
+                            expiresAt={expiresAt}
+                            setExpiresAt={setExpiresAt}
+                            maxUploads={maxUploads}
+                            setMaxUploads={setMaxUploads}
                           />
+                        )}
+
+                        {/* Checklist Section */}
+                        {currentStep === "checklist" && (
+                          <div className="space-y-6">
+                            <div>
+                              <h3 className="text-lg font-semibold">Upload Checklist</h3>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Define named slots for files. Uploaders will see a drop zone for each item.
+                              </p>
+                            </div>
+                            <div className="space-y-3">
+                              {checklistItems.map((item, index) => (
+                                <div key={item.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                                  <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
+                                  <div className="flex-1 space-y-2">
+                                    <Input
+                                      placeholder="e.g. Business License, ID Document"
+                                      value={item.label}
+                                      onChange={(e) => updateChecklistItem(item.id, "label", e.target.value)}
+                                    />
+                                    <div className="flex items-center gap-2">
+                                      <Switch
+                                        checked={item.required}
+                                        onCheckedChange={(v) => updateChecklistItem(item.id, "required", v)}
+                                      />
+                                      <span className="text-xs text-muted-foreground">Required</span>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeChecklistItem(item.id)}
+                                  >
+                                    <XIcon className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                            <Button variant="outline" onClick={addChecklistItem}>
+                              <Plus className="h-4 w-4 mr-2" /> Add Item
+                            </Button>
+                          </div>
                         )}
 
                         {/* Messaging Section */}

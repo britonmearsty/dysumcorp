@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { portalId, uploaderName, uploaderEmail, uploaderNotes } = body;
+    const { portalId, uploaderName, uploaderEmail, uploaderNotes, checklistItemId } = body;
 
     console.log("[Create Upload Session] Request:", {
       portalId,
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Verify portal exists and is active
     const portal = await prisma.portal.findUnique({
       where: { id: portalId },
-      select: { id: true, isActive: true, userId: true },
+      select: { id: true, isActive: true, userId: true, expiresAt: true, maxUploads: true, uploadCount: true },
     });
 
     if (!portal) {
@@ -38,6 +38,24 @@ export async function POST(request: NextRequest) {
     if (!portal.isActive) {
       return NextResponse.json(
         { error: "This portal is not accepting uploads" },
+        { status: 403 },
+      );
+    }
+
+    if (portal.expiresAt && new Date(portal.expiresAt) < new Date()) {
+      return NextResponse.json(
+        { error: "This portal has expired", code: "PORTAL_EXPIRED" },
+        { status: 403 },
+      );
+    }
+
+    if (
+      portal.maxUploads !== null &&
+      portal.maxUploads !== undefined &&
+      portal.uploadCount >= portal.maxUploads
+    ) {
+      return NextResponse.json(
+        { error: "This portal has reached its upload limit", code: "PORTAL_UPLOAD_LIMIT_REACHED" },
         { status: 403 },
       );
     }
@@ -63,17 +81,24 @@ export async function POST(request: NextRequest) {
       // Free user within limits, allow upload session
     }
 
-    // Create new upload session
-    const session = await prisma.uploadSession.create({
-      data: {
-        portalId,
-        uploaderName: uploaderName || null,
-        uploaderEmail: uploaderEmail || null,
-        uploaderNotes: uploaderNotes || null,
-        fileCount: 0,
-        totalSize: BigInt(0),
-      },
-    });
+    // Create new upload session atomically with upload count increment
+    const [session] = await prisma.$transaction([
+      prisma.uploadSession.create({
+        data: {
+          portalId,
+          uploaderName: uploaderName || null,
+          uploaderEmail: uploaderEmail || null,
+          uploaderNotes: uploaderNotes || null,
+          checklistItemId: checklistItemId ?? null,
+          fileCount: 0,
+          totalSize: BigInt(0),
+        },
+      }),
+      prisma.portal.update({
+        where: { id: portal.id },
+        data: { uploadCount: { increment: 1 } },
+      }),
+    ]);
 
     console.log("[Create Upload Session] Created session:", session.id);
 

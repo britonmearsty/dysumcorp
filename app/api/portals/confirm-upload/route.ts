@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       uploaderName,
       uploaderEmail,
       uploaderNotes,
+      checklistItemId,
       password,
       uploadToken, // New: security token
       uploadSessionId, // New: to group files from same upload
@@ -122,16 +123,23 @@ export async function POST(request: NextRequest) {
       logger.log(
         "[Portal Confirm Upload] No sessionId provided, creating new session",
       );
-      const session = await prisma.uploadSession.create({
-        data: {
-          portalId,
+      const [session] = await prisma.$transaction([
+        prisma.uploadSession.create({
+          data: {
+            portalId,
           uploaderName: uploaderName || null,
           uploaderEmail: uploaderEmail || null,
           uploaderNotes: uploaderNotes || null,
+          checklistItemId: checklistItemId ?? null,
           fileCount: 0,
           totalSize: BigInt(0),
-        },
-      });
+          },
+        }),
+        prisma.portal.update({
+          where: { id: portalId },
+          data: { uploadCount: { increment: 1 } },
+        }),
+      ]);
 
       sessionId = session.id;
       logger.log(
