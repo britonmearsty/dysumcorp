@@ -19,27 +19,30 @@ export function PortalTextarea({
   return (
     <div>
       <label
-        className="block text-sm mb-1.5 font-semibold"
+        className="block text-xs mb-2 font-black uppercase tracking-widest opacity-60"
         style={{ color: textColor }}
       >
         {label}
         {!required && (
-          <span className="text-slate-400 font-normal ml-1">(optional)</span>
+          <span className="text-slate-400 font-normal ml-1 lowercase italic">(optional)</span>
         )}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
       <textarea
-        className={`w-full rounded-xl px-4 py-3 placeholder-slate-400 outline-none border border-slate-200 transition-all resize-none bg-white focus:ring-2 ${className}`}
+        className={`w-full rounded-2xl px-4 py-4 placeholder-slate-400 outline-none border transition-all resize-none bg-white font-medium ${className}`}
         style={{
           color: textColor,
+          borderColor: `${primaryColor}20`,
         }}
         onBlur={(e) => {
-          e.currentTarget.style.borderColor = "#e2e8f0";
+          e.currentTarget.style.borderColor = `${primaryColor}20`;
           e.currentTarget.style.boxShadow = "none";
+          e.currentTarget.style.backgroundColor = "white";
         }}
         onFocus={(e) => {
-          e.currentTarget.style.borderColor = `${primaryColor}66`;
-          e.currentTarget.style.boxShadow = `0 0 0 3px ${primaryColor}1A`;
+          e.currentTarget.style.borderColor = primaryColor;
+          e.currentTarget.style.boxShadow = `0 0 0 4px ${primaryColor}15`;
+          e.currentTarget.style.backgroundColor = `${primaryColor}05`;
         }}
         {...props}
       />

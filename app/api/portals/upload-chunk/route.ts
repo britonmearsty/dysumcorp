@@ -39,6 +39,9 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("image/bmp");
           allowedMimeTypes.add("image/tiff");
           allowedMimeTypes.add("image/webp");
+          allowedMimeTypes.add("image/heic");
+          allowedMimeTypes.add("image/heif");
+          allowedMimeTypes.add("image/avif");
         } else if (prefix === "video") {
           allowedMimeTypes.add("video/mp4");
           allowedMimeTypes.add("video/webm");
@@ -46,6 +49,9 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("video/mpeg");
           allowedMimeTypes.add("video/quicktime");
           allowedMimeTypes.add("video/x-msvideo");
+          allowedMimeTypes.add("video/x-matroska");
+          allowedMimeTypes.add("video/avi");
+          allowedMimeTypes.add("video/3gpp");
         } else if (prefix === "audio") {
           allowedMimeTypes.add("audio/mpeg");
           allowedMimeTypes.add("audio/mp3");
@@ -54,6 +60,8 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("audio/webm");
           allowedMimeTypes.add("audio/aac");
           allowedMimeTypes.add("audio/midi");
+          allowedMimeTypes.add("audio/flac");
+          allowedMimeTypes.add("audio/m4a");
         } else if (prefix === "text") {
           allowedMimeTypes.add("text/plain");
           allowedMimeTypes.add("text/csv");
@@ -74,6 +82,7 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("application/x-bzip2");
           allowedMimeTypes.add("application/x-xz");
           allowedMimeTypes.add("application/octet-stream");
+          allowedMimeTypes.add("application/x-apple-diskimage");
         } else if (prefix === "application") {
           // Document types
           allowedMimeTypes.add("application/pdf");
@@ -85,6 +94,15 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add(
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           );
+          allowedMimeTypes.add("application/vnd.ms-powerpoint");
+          allowedMimeTypes.add(
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+          );
+          allowedMimeTypes.add("application/rtf");
+          allowedMimeTypes.add("application/vnd.oasis.opendocument.text");
+          allowedMimeTypes.add("application/vnd.oasis.opendocument.spreadsheet");
+          allowedMimeTypes.add("application/vnd.oasis.opendocument.presentation");
+          allowedMimeTypes.add("application/octet-stream");
         } else {
           allowedMimeTypes.add(mimeType);
         }

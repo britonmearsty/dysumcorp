@@ -35,6 +35,11 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("image/x-tiff");
           allowedMimeTypes.add("image/heic");
           allowedMimeTypes.add("image/heif");
+          allowedMimeTypes.add("image/avif");
+          allowedMimeTypes.add("image/x-adobe-dng");
+          allowedMimeTypes.add("image/x-canon-cr2");
+          allowedMimeTypes.add("image/x-nikon-nef");
+          allowedMimeTypes.add("image/vnd.adobe.photoshop");
         } else if (prefix === "video") {
           allowedMimeTypes.add("video/mp4");
           allowedMimeTypes.add("video/webm");
@@ -47,6 +52,8 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("video/x-flv");
           allowedMimeTypes.add("video/3gpp");
           allowedMimeTypes.add("video/3gpp2");
+          allowedMimeTypes.add("video/mp2t");
+          allowedMimeTypes.add("video/x-ms-wmv");
         } else if (prefix === "audio") {
           allowedMimeTypes.add("audio/mpeg");
           allowedMimeTypes.add("audio/mp3");
@@ -54,6 +61,7 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("audio/x-m4a");
           allowedMimeTypes.add("audio/m4a");
           allowedMimeTypes.add("audio/wav");
+          allowedMimeTypes.add("audio/x-wav");
           allowedMimeTypes.add("audio/ogg");
           allowedMimeTypes.add("audio/webm");
           allowedMimeTypes.add("audio/aac");
@@ -62,6 +70,8 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("audio/x-flac");
           allowedMimeTypes.add("audio/midi");
           allowedMimeTypes.add("audio/x-midi");
+          allowedMimeTypes.add("audio/aiff");
+          allowedMimeTypes.add("audio/x-aiff");
         } else if (prefix === "text") {
           allowedMimeTypes.add("text/plain");
           allowedMimeTypes.add("text/csv");
@@ -70,6 +80,10 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("text/javascript");
           allowedMimeTypes.add("text/css");
           allowedMimeTypes.add("text/markdown");
+          allowedMimeTypes.add("text/x-python");
+          allowedMimeTypes.add("text/x-java-source");
+          allowedMimeTypes.add("text/x-c");
+          allowedMimeTypes.add("text/x-c++");
         } else if (prefix === "archive") {
           allowedMimeTypes.add("application/zip");
           allowedMimeTypes.add("application/x-zip-compressed");
@@ -82,6 +96,8 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add("application/x-bzip2");
           allowedMimeTypes.add("application/x-xz");
           allowedMimeTypes.add("application/octet-stream");
+          allowedMimeTypes.add("application/x-apple-diskimage");
+          allowedMimeTypes.add("application/java-archive");
         } else if (prefix === "application") {
           // Document types
           allowedMimeTypes.add("application/pdf");
@@ -93,6 +109,18 @@ function parseAllowedFileTypes(allowedFileTypes: string[]): Set<string> {
           allowedMimeTypes.add(
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           );
+          allowedMimeTypes.add("application/vnd.ms-powerpoint");
+          allowedMimeTypes.add(
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+          );
+          allowedMimeTypes.add("application/rtf");
+          allowedMimeTypes.add("application/vnd.oasis.opendocument.text");
+          allowedMimeTypes.add("application/vnd.oasis.opendocument.spreadsheet");
+          allowedMimeTypes.add("application/vnd.oasis.opendocument.presentation");
+          allowedMimeTypes.add("application/x-iwork-pages-sffpages");
+          allowedMimeTypes.add("application/x-iwork-numbers-sffnumbers");
+          allowedMimeTypes.add("application/x-iwork-keynote-sffkey");
+          allowedMimeTypes.add("application/octet-stream"); // Allow generic binary for safer fallbacks
         } else {
           allowedMimeTypes.add(mimeType);
         }

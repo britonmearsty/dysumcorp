@@ -940,25 +940,30 @@ interface SecuritySectionProps {
 }
 
 const FILE_TYPE_OPTIONS = [
-  { label: "Images (JPG, PNG, GIF)", value: "image/*" },
+  { label: "Images (JPG, PNG, GIF, WEBP, SVG)", value: "image/*" },
   {
-    label: "Documents (PDF, DOC)",
+    label: "Documents (PDF, DOC, DOCX, ODT, RTF)",
     value:
-      "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,application/rtf",
   },
   {
-    label: "Spreadsheets (XLS, CSV)",
+    label: "Spreadsheets (XLS, XLSX, CSV, ODS)",
     value:
-      "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv",
+      "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/vnd.oasis.opendocument.spreadsheet",
+  },
+  {
+    label: "Presentations (PPT, PPTX, ODP)",
+    value:
+      "application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.oasis.opendocument.presentation",
   },
   {
     label: "Archives (ZIP, RAR, 7Z, TAR, GZ)",
     value:
       "application/zip,application/x-rar-compressed,application/x-7z-compressed,application/x-tar,application/gzip,application/x-gzip,application/x-bzip2,application/x-xz,application/force-download,archive/*",
   },
-  { label: "Videos (MP4, MOV)", value: "video/*" },
-  { label: "Audio (MP3, WAV)", value: "audio/*" },
-  { label: "Text/Code Files (TXT, MD, JS)", value: "text/*" },
+  { label: "Videos (MP4, MOV, AVI, MKV)", value: "video/*" },
+  { label: "Audio (MP3, WAV, OGG, FLAC)", value: "audio/*" },
+  { label: "Text/Code Files (TXT, MD, JS, PY)", value: "text/*" },
 ];
 
 const SecuritySection: React.FC<SecuritySectionProps> = ({
@@ -1362,9 +1367,10 @@ export default function EditPortalPage() {
     maxFileSize: 50,
     allowedFileTypes: [
       "image/*",
-      "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv",
-      "application/zip,application/x-rar-compressed,application/x-7z-compressed",
+      "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,application/rtf",
+      "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/vnd.oasis.opendocument.spreadsheet",
+      "application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.oasis.opendocument.presentation",
+      "application/zip,application/x-rar-compressed,application/x-7z-compressed,application/x-tar,application/gzip,application/x-gzip,application/x-bzip2,application/x-xz,application/force-download,archive/*",
       "video/*",
       "audio/*",
       "text/*",

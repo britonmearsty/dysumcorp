@@ -51,46 +51,43 @@ export function PortalSuccessView({
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col gap-6">
       {/* Success hero */}
-      <div className="flex flex-col items-center text-center gap-4">
-        <div
-          className="flex items-center justify-center w-20 h-20 rounded-full"
-          style={{
-            background: `${primaryColor}1A`,
-            border: `2px solid ${primaryColor}`,
-            boxShadow: `0 0 0 6px ${primaryColor}0D`,
-          }}
-        >
-          <CheckCircle className="w-9 h-9" style={{ color: primaryColor }} />
+      <div className="flex flex-col items-center text-center gap-6 py-4">
+        <div className="relative">
+          <div 
+            className="absolute inset-0 blur-3xl opacity-30 animate-pulse"
+            style={{ background: primaryColor }}
+          />
+          <div
+            className="relative flex items-center justify-center w-24 h-24 rounded-[32px] bg-white shadow-2xl border transition-transform hover:scale-105 duration-500"
+            style={{
+              borderColor: `${primaryColor}20`,
+            }}
+          >
+            <CheckCircle className="w-12 h-12" style={{ color: primaryColor }} />
+          </div>
         </div>
         <div>
           <h1
-            className="text-3xl font-bold tracking-tight mb-2"
+            className="text-4xl font-black tracking-tight mb-3"
             style={{ color: textColor }}
           >
             {successMessage}
           </h1>
           {uploaderName ? (
-            <p className="text-slate-500">
-              Thank you,{" "}
-              <span className="font-semibold" style={{ color: primaryColor }}>
+            <p className="text-slate-500 text-lg leading-relaxed max-w-md mx-auto">
+              Mission accomplished,{" "}
+              <span className="font-bold" style={{ color: primaryColor }}>
                 {uploaderName}
               </span>
-              . We'll be in touch
+              ! Your files are secured. 
               {uploaderEmail && (
-                <>
-                  {" at "}
-                  <span
-                    className="font-semibold"
-                    style={{ color: primaryColor }}
-                  >
-                    {uploaderEmail}
-                  </span>
-                </>
+                <span className="block text-sm mt-2 opacity-60">
+                  Confirmation sent to {uploaderEmail}
+                </span>
               )}
-              .
             </p>
           ) : (
-            <p className="text-slate-500">
+            <p className="text-slate-500 text-lg">
               Your files have been received and are in safe hands.
             </p>
           )}

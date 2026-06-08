@@ -1,4 +1,4 @@
-import { X, AlertCircle, CheckCircle } from "lucide-react";
+import { X, AlertCircle, CheckCircle, FileText, Image, FileArchive, Film, Music, ShieldCheck, Plus } from "lucide-react";
 
 import { FileTypeIcon } from "./file-type-icon";
 
@@ -45,206 +45,202 @@ export function PortalFileList({
       ? `linear-gradient(90deg, ${primaryColor}, ${secondaryColor})`
       : primaryColor;
 
-  const pendingFiles = files.filter((f) => f.status === "pending");
-  const uploadingFiles = files.filter((f) => f.status === "uploading");
+  const pendingFiles = files.filter((f) => f.status === "pending" || f.status === "uploading");
   const errorFiles = files.filter((f) => f.status === "error");
 
+  // Group files by type
+  const groupFiles = (fileList: FileItem[]) => {
+    const groups: Record<string, FileItem[]> = {};
+    fileList.forEach(f => {
+      let group = "Other";
+      const t = f.file.type.toLowerCase();
+      if (t.startsWith("image/")) group = "Images";
+      else if (t.startsWith("video/")) group = "Videos";
+      else if (t.startsWith("audio/")) group = "Audio";
+      else if (t.includes("zip") || t.includes("rar") || t.includes("tar")) group = "Archives";
+      else if (t.includes("pdf") || t.includes("text") || t.includes("doc")) group = "Documents";
+      
+      if (!groups[group]) groups[group] = [];
+      groups[group].push(f);
+    });
+    return groups;
+  };
+
+  const fileGroups = groupFiles(pendingFiles);
+
   return (
-    <div className="space-y-4">
-      {/* Error Files Section */}
-      {errorFiles.length > 0 && (
-        <div className="space-y-2">
+    <div className="space-y-6">
+      {/* Upload Bucket Staging Area */}
+      <div 
+        className="rounded-2xl border-2 overflow-hidden transition-all duration-300"
+        style={{ 
+          borderColor: `${primaryColor}40`,
+          background: `${primaryColor}05`
+        }}
+      >
+        {/* Bucket Header */}
+        <div className="px-6 py-4 border-b border-black/5 flex items-center justify-between bg-white/50 backdrop-blur-sm">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-500" />
-            <span className="text-sm font-semibold text-red-600">
-              Files with Errors{" "}
-              <span className="ml-1 text-xs px-2 py-0.5 rounded-full font-semibold bg-red-100">
-                {errorFiles.length}
-              </span>
-            </span>
-          </div>
-          {errorFiles.map((f) => (
-            <div
-              key={f.id}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 bg-red-50 border border-red-200"
-            >
-              <div className="shrink-0">
-                <FileTypeIcon type={f.file.type} />
+            <div className="flex -space-x-2">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white">
+                <FileText className="w-4 h-4 text-blue-600" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate text-slate-800">
-                  {f.file.name}
-                </p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-slate-400 text-xs">
-                    {formatBytes(f.file.size)}
-                  </span>
-                  <span className="text-slate-300 text-xs">·</span>
-                  <span className="text-red-600 text-xs font-medium">
-                    {f.error}
-                  </span>
-                </div>
+              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center border-2 border-white">
+                <Image className="w-4 h-4 text-emerald-600" />
               </div>
-              <button
-                className="shrink-0 flex items-center justify-center w-7 h-7 rounded-full hover:bg-red-100 transition-colors group"
-                title="Remove file"
-                onClick={() => onRemove(f.id)}
-              >
-                <X className="w-4 h-4 text-red-400 group-hover:text-red-600 transition-colors" />
-              </button>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Pending/Uploading Files Section */}
-      {(pendingFiles.length > 0 || uploadingFiles.length > 0) && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between mb-2">
-            <span
-              className="text-sm font-semibold"
-              style={{ color: textColor }}
-            >
-              Files to Upload{" "}
-              <span
-                className="ml-1 text-xs px-2 py-0.5 rounded-full font-semibold"
-                style={{ background: `${primaryColor}1A`, color: primaryColor }}
-              >
-                {pendingFiles.length + uploadingFiles.length}
-              </span>
-            </span>
-            {!uploading && (
-              <button
-                className="text-xs font-semibold hover:opacity-80 transition-colors"
-                style={{ color: primaryColor }}
-                onClick={onAddMore}
-              >
-                + Add more
-              </button>
-            )}
-          </div>
-
-          {[...uploadingFiles, ...pendingFiles].map((f) => (
-            <div
-              key={f.id}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 bg-slate-50 border border-slate-200"
-            >
-              <div className="shrink-0">
-                <FileTypeIcon type={f.file.type} />
+            <div className="ml-2">
+              <h3 className="text-sm font-bold" style={{ color: textColor }}>Files staged for hand-off</h3>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Secure encryption active</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p
-                  className="text-sm font-medium truncate"
-                  style={{ color: textColor }}
+            </div>
+          </div>
+          
+          {!uploading && (
+            <button
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95"
+              style={{ backgroundColor: primaryColor, color: '#fff' }}
+              onClick={onAddMore}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add More
+            </button>
+          )}
+        </div>
+
+        <div className="p-4 space-y-6">
+          {/* Error Files Section */}
+          {errorFiles.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-2">
+                <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+                <span className="text-[11px] font-black uppercase tracking-widest text-red-600">
+                  Critical Errors ({errorFiles.length})
+                </span>
+              </div>
+              {errorFiles.map((f) => (
+                <div
+                  key={f.id}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 bg-red-50/50 border border-red-100"
                 >
-                  {f.file.name}
-                </p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-slate-400 text-xs">
-                    {formatBytes(f.file.size)}
-                  </span>
-                  {f.status === "uploading" && (
-                    <>
-                      <span className="text-slate-300 text-xs">·</span>
-                      {f.progress >= 100 ? (
-                        <span
-                          className="text-xs font-medium animate-pulse"
-                          style={{ color: primaryColor }}
-                        >
-                          Transferring...
-                        </span>
-                      ) : (
-                        <span
-                          className="text-xs font-medium"
-                          style={{ color: primaryColor }}
-                        >
-                          {Math.floor(f.progress)}%
-                        </span>
-                      )}
-                    </>
-                  )}
-                </div>
-                {f.status === "uploading" && (
-                  <div className="mt-2 h-1.5 w-full rounded-full overflow-hidden bg-slate-200">
-                    <div
-                      className="h-full rounded-full transition-all duration-300"
-                      style={{
-                        width: `${f.progress}%`,
-                        background: gradientStyle,
-                      }}
-                    />
+                  <FileTypeIcon type={f.file.type} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate text-slate-800">
+                      {f.file.name}
+                    </p>
+                    <p className="text-[10px] text-red-600 font-bold mt-0.5 uppercase">
+                      {f.error}
+                    </p>
                   </div>
-                )}
-              </div>
-              {f.status === "pending" && !uploading && (
-                <button
-                  className="shrink-0 flex items-center justify-center w-7 h-7 rounded-full hover:bg-red-50 transition-colors group"
-                  title="Remove file"
-                  onClick={() => onRemove(f.id)}
-                >
-                  <X className="w-4 h-4 text-slate-400 group-hover:text-red-500 transition-colors" />
-                </button>
-              )}
-              {f.status === "uploading" && (
-                <div className="shrink-0 w-7 h-7 flex items-center justify-center">
-                  <div
-                    className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                    style={{
-                      borderColor: primaryColor,
-                      borderTopColor: "transparent",
-                    }}
-                  />
+                  <button
+                    className="shrink-0 p-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                    onClick={() => onRemove(f.id)}
+                  >
+                    <X className="w-3.5 h-3.5 text-red-400" />
+                  </button>
                 </div>
-              )}
+              ))}
+            </div>
+          )}
+
+          {/* Grouped Pending/Uploading Files */}
+          {Object.entries(fileGroups).map(([groupName, groupFiles]) => (
+            <div key={groupName} className="space-y-2">
+              <div className="px-2 flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40" style={{ color: textColor }}>
+                  {groupName} ({groupFiles.length})
+                </span>
+              </div>
+              <div className="grid gap-2">
+                {groupFiles.map((f) => (
+                  <div
+                    key={f.id}
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 bg-white border border-black/5 shadow-sm transition-all hover:shadow-md"
+                  >
+                    <FileTypeIcon type={f.file.type} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-bold truncate" style={{ color: textColor }}>
+                          {f.file.name}
+                        </p>
+                        <span className="text-[10px] font-medium opacity-40 tabular-nums">{formatBytes(f.file.size)}</span>
+                      </div>
+                      
+                      {f.status === "uploading" && (
+                        <div className="mt-2 h-1 w-full rounded-full overflow-hidden bg-slate-100">
+                          <div
+                            className="h-full transition-all duration-300"
+                            style={{
+                              width: `${f.progress}%`,
+                              background: gradientStyle,
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    {f.status === "pending" && !uploading && (
+                      <button
+                        className="shrink-0 p-1.5 rounded-lg hover:bg-red-50 transition-colors group"
+                        onClick={() => onRemove(f.id)}
+                      >
+                        <X className="w-3.5 h-3.5 text-slate-300 group-hover:text-red-500" />
+                      </button>
+                    )}
+                    {f.status === "uploading" && (
+                      <div className="shrink-0 w-6 h-6 flex items-center justify-center">
+                        <div
+                          className="w-3.5 h-3.5 border-2 border-t-transparent rounded-full animate-spin"
+                          style={{
+                            borderColor: primaryColor,
+                            borderTopColor: "transparent",
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
+
+          {pendingFiles.length === 0 && errorFiles.length === 0 && (
+            <div className="py-8 text-center">
+              <p className="text-sm font-medium opacity-40" style={{ color: textColor }}>No files staged yet</p>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Completed Files Drawer */}
       {completedFiles.length > 0 && (
-        <div className="space-y-2 pt-3 border-t border-slate-200">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="w-4 h-4" style={{ color: primaryColor }} />
-            <span
-              className="text-sm font-semibold"
-              style={{ color: primaryColor }}
-            >
-              Completed{" "}
-              <span
-                className="ml-1 text-xs px-2 py-0.5 rounded-full font-semibold"
-                style={{ background: `${primaryColor}1A`, color: primaryColor }}
-              >
-                {completedFiles.length}
-              </span>
+        <div className="space-y-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center gap-2 px-2">
+            <CheckCircle className="w-4 h-4 text-emerald-500" />
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
+              Successfully Handed Off ({completedFiles.length})
             </span>
           </div>
-          {completedFiles.map((f) => (
-            <div
-              key={f.id}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 border"
-              style={{
-                background: `${primaryColor}0D`,
-                borderColor: `${primaryColor}40`,
-              }}
-            >
-              <div className="shrink-0">
+          <div className="grid gap-2">
+            {completedFiles.map((f) => (
+              <div
+                key={f.id}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 bg-emerald-50/30 border border-emerald-100/50"
+              >
                 <FileTypeIcon type={f.file.type} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold truncate text-slate-700">
+                    {f.file.name}
+                  </p>
+                  <span className="text-[10px] opacity-40 font-medium">
+                    {formatBytes(f.file.size)}
+                  </span>
+                </div>
+                <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate text-slate-800">
-                  {f.file.name}
-                </p>
-                <span className="text-slate-400 text-xs">
-                  {formatBytes(f.file.size)}
-                </span>
-              </div>
-              <CheckCircle
-                className="w-5 h-5 shrink-0"
-                style={{ color: primaryColor }}
-              />
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>

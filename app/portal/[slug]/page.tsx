@@ -227,6 +227,10 @@ export default function PublicPortalPage() {
       m4a: "audio",
       wma: "audio",
       opus: "audio",
+      m4b: "audio",
+      m4p: "audio",
+      aiff: "audio",
+      alac: "audio",
       // Video
       mp4: "video",
       mov: "video",
@@ -236,6 +240,11 @@ export default function PublicPortalPage() {
       wmv: "video",
       flv: "video",
       m4v: "video",
+      "3gp": "video",
+      "3g2": "video",
+      mpg: "video",
+      mpeg: "video",
+      h264: "video",
       // Image
       jpg: "image",
       jpeg: "image",
@@ -246,6 +255,13 @@ export default function PublicPortalPage() {
       bmp: "image",
       ico: "image",
       tiff: "image",
+      tif: "image",
+      heic: "image",
+      heif: "image",
+      raw: "image",
+      psd: "image",
+      ai: "image",
+      eps: "image",
       // Archive - map to actual MIME types for compatibility
       zip: "application/zip",
       rar: "application/x-rar-compressed",
@@ -255,12 +271,24 @@ export default function PublicPortalPage() {
       bz2: "application/x-bzip2",
       xz: "application/x-xz",
       pen: "application/x-tar",
+      jar: "application/java-archive",
+      iso: "application/x-iso9660-image",
+      dmg: "application/x-apple-diskimage",
       // Documents
       pdf: "application/pdf",
       doc: "application/msword",
       docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       xls: "application/vnd.ms-excel",
       xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ppt: "application/vnd.ms-powerpoint",
+      pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      odt: "application/vnd.oasis.opendocument.text",
+      ods: "application/vnd.oasis.opendocument.spreadsheet",
+      odp: "application/vnd.oasis.opendocument.presentation",
+      rtf: "application/rtf",
+      pages: "application/x-iwork-pages-sffpages",
+      numbers: "application/x-iwork-numbers-sffnumbers",
+      key: "application/x-iwork-keynote-sffkey",
       csv: "text/csv",
     };
 
@@ -311,6 +339,10 @@ export default function PublicPortalPage() {
       "env",
       "gitignore",
       "dockerfile",
+      "lock",
+      "json5",
+      "vtt",
+      "srt",
     ];
 
     return allowedTypes.some((allowedType) => {
@@ -449,6 +481,23 @@ export default function PublicPortalPage() {
       setUploadStatus("error");
 
       return;
+    }
+
+    // Check if required checklist items have files
+    if (portal.checklistItems && portal.checklistItems.length > 0) {
+      const missingRequired = portal.checklistItems.filter(item => {
+        if (!item.required) return false;
+        const items = slotFiles[item.id] || [];
+        return items.length === 0 || items.every(f => f.status === "error");
+      });
+
+      if (missingRequired.length > 0) {
+        setErrorMessage(
+          `Please provide files for: ${missingRequired.map(i => i.label).join(", ")}`,
+        );
+        setUploadStatus("error");
+        return;
+      }
     }
 
     const mainPending = files.filter((f) => f.status === "pending");
@@ -740,60 +789,71 @@ export default function PublicPortalPage() {
   if (!authenticated) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
+        className="min-h-screen flex items-center justify-center relative overflow-hidden"
         style={{ background: portal.backgroundColor }}
       >
+        {/* Brand Glow */}
+        <div 
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full blur-[120px] opacity-20 pointer-events-none"
+          style={{ background: portal.primaryColor }}
+        />
+
         <div
-          className="w-full max-w-md p-8 rounded-2xl border shadow-lg"
+          className="w-full max-w-md p-10 rounded-[32px] border shadow-2xl relative z-10 backdrop-blur-sm"
           style={{
-            backgroundColor: portal.cardBackgroundColor,
-            borderColor: `${portal.primaryColor}30`,
+            backgroundColor: `${portal.cardBackgroundColor}ee` || "#ffffffdd",
+            borderColor: `${portal.primaryColor}20`,
           }}
         >
-          <div className="text-center mb-6">
-            {portal.logoUrl && (
-              <div className="flex justify-center mb-4">
-                <LogoDisplay
-                  logoUrl={portal.logoUrl}
-                  alt={portal.name}
-                  size="lg"
-                />
+          <div className="text-center mb-10">
+            {portal.logoUrl ? (
+              <div className="flex justify-center mb-6">
+                <div className="p-2 rounded-2xl bg-white shadow-md border border-black/5">
+                  <LogoDisplay
+                    logoUrl={portal.logoUrl}
+                    alt={portal.name}
+                    size="lg"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div 
+                className="w-20 h-20 mx-auto mb-6 rounded-[24px] flex items-center justify-center shadow-lg"
+                style={{ background: `linear-gradient(135deg, ${portal.primaryColor}, ${portal.secondaryColor || portal.primaryColor})` }}
+              >
+                <Lock className="w-8 h-8 text-white" />
               </div>
             )}
             <h1
-              className="text-2xl font-bold"
+              className="text-3xl font-black tracking-tight"
               style={{ color: portal.textColor }}
             >
               {portal.name}
             </h1>
-            <p className="mt-2 text-sm" style={{ color: portal.textColor }}>
-              This portal is password protected
+            <p className="mt-3 text-sm font-bold uppercase tracking-widest opacity-40" style={{ color: portal.textColor }}>
+              Protected Access
             </p>
           </div>
 
-          <form className="space-y-6" onSubmit={handlePasswordSubmit}>
-            <div className="relative">
-              <Lock
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4"
-                style={{ color: portal.textColor }}
-              />
-              <input
-                autoComplete="current-password"
-                className="w-full pl-12 pr-4 py-4 rounded-xl border outline-none transition-all font-medium"
-                placeholder="Enter password"
-                style={{
-                  backgroundColor: portal.backgroundColor,
-                  color: portal.textColor,
-                  borderColor: `${portal.primaryColor}30`,
-                }}
-                type="password"
-                value={portalPassword}
-                onChange={(e) => setPortalPassword(e.target.value)}
-              />
-            </div>
+          <form className="space-y-8" onSubmit={handlePasswordSubmit}>
+            <PortalInput
+              label="Password Required"
+              placeholder="Enter password"
+              primaryColor={portal.primaryColor}
+              textColor={portal.textColor}
+              type="password"
+              autoComplete="current-password"
+              value={portalPassword}
+              onChange={(e) => setPortalPassword(e.target.value)}
+            />
+            
             {passwordError && (
-              <p className="text-sm font-bold text-red-500">{passwordError}</p>
+              <div className="p-3 rounded-xl bg-red-50 border border-red-100 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-500" />
+                <p className="text-xs font-black text-red-600 uppercase tracking-wider">{passwordError}</p>
+              </div>
             )}
+            
             <PortalButton
               gradientEnabled={portal.gradientEnabled}
               loading={authenticating}
@@ -801,7 +861,7 @@ export default function PublicPortalPage() {
               secondaryColor={portal.secondaryColor}
               type="submit"
             >
-              Access Portal
+              Unlock Portal
             </PortalButton>
           </form>
         </div>
@@ -811,9 +871,18 @@ export default function PublicPortalPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col relative overflow-hidden"
       style={{ background: portal.backgroundColor }}
     >
+      {/* Brand Glows */}
+      <div 
+        className="absolute -top-[250px] -right-[250px] w-[600px] h-[600px] rounded-full blur-[150px] opacity-10 pointer-events-none"
+        style={{ background: portal.primaryColor }}
+      />
+      <div 
+        className="absolute -bottom-[300px] -left-[300px] w-[700px] h-[700px] rounded-full blur-[180px] opacity-10 pointer-events-none"
+        style={{ background: portal.secondaryColor || portal.primaryColor }}
+      />
       {/* Toast Notifications */}
       <Toaster
         position="top-center"
@@ -963,15 +1032,18 @@ export default function PublicPortalPage() {
                       Object.values(slotFiles).some((files) =>
                         files.some((f) => f.status === "pending"),
                       ) && (
-                        <PortalButton
-                          gradientEnabled={portal.gradientEnabled}
-                          icon={<Upload className="w-4 h-4" />}
-                          primaryColor={portal.primaryColor}
-                          secondaryColor={portal.secondaryColor}
-                          onClick={handleUpload}
-                        >
-                          {portal.submitButtonText}
-                        </PortalButton>
+                        <div className="mt-8 sticky bottom-4 z-20">
+                          <PortalButton
+                            className="shadow-2xl hover:scale-[1.02] active:scale-[0.98] py-5 text-lg uppercase tracking-wider"
+                            gradientEnabled={portal.gradientEnabled}
+                            icon={<Upload className="w-5 h-5" />}
+                            primaryColor={portal.primaryColor}
+                            secondaryColor={portal.secondaryColor}
+                            onClick={handleUpload}
+                          >
+                            {portal.submitButtonText}
+                          </PortalButton>
+                        </div>
                       )}
                   </div>
                 ) : files.length === 0 ? (
@@ -984,42 +1056,47 @@ export default function PublicPortalPage() {
                   />
                 ) : (
                   <>
-                    <PortalFileList
-                      completedFiles={completedFiles}
-                      files={files}
-                      gradientEnabled={portal.gradientEnabled}
-                      primaryColor={portal.primaryColor}
-                      secondaryColor={portal.secondaryColor}
-                      textColor={portal.textColor}
-                      uploading={uploading}
-                      onAddMore={() => {
-                        const input = document.createElement("input");
+                    <div className="relative">
+                      <PortalFileList
+                        completedFiles={completedFiles}
+                        files={files}
+                        gradientEnabled={portal.gradientEnabled}
+                        primaryColor={portal.primaryColor}
+                        secondaryColor={portal.secondaryColor}
+                        textColor={portal.textColor}
+                        uploading={uploading}
+                        onAddMore={() => {
+                          const input = document.createElement("input");
 
-                        input.type = "file";
-                        input.multiple = true;
-                        input.onchange = (e) => {
-                          const target = e.target as HTMLInputElement;
+                          input.type = "file";
+                          input.multiple = true;
+                          input.onchange = (e) => {
+                            const target = e.target as HTMLInputElement;
 
-                          if (target.files) addFiles(target.files);
-                        };
-                        input.click();
-                      }}
-                      onRemove={removeFile}
-                    />
+                            if (target.files) addFiles(target.files);
+                          };
+                          input.click();
+                        }}
+                        onRemove={removeFile}
+                      />
 
-                    {!uploading &&
-                      files.filter((f) => f.status === "pending").length >
-                        0 && (
-                        <PortalButton
-                          gradientEnabled={portal.gradientEnabled}
-                          icon={<Upload className="w-4 h-4" />}
-                          primaryColor={portal.primaryColor}
-                          secondaryColor={portal.secondaryColor}
-                          onClick={handleUpload}
-                        >
-                          {portal.submitButtonText}
-                        </PortalButton>
-                      )}
+                      {!uploading &&
+                        files.filter((f) => f.status === "pending").length >
+                          0 && (
+                          <div className="mt-8 sticky bottom-4 z-20">
+                            <PortalButton
+                              className="shadow-2xl hover:scale-[1.02] active:scale-[0.98] py-5 text-lg uppercase tracking-wider"
+                              gradientEnabled={portal.gradientEnabled}
+                              icon={<Upload className="w-5 h-5" />}
+                              primaryColor={portal.primaryColor}
+                              secondaryColor={portal.secondaryColor}
+                              onClick={handleUpload}
+                            >
+                              {portal.submitButtonText}
+                            </PortalButton>
+                          </div>
+                        )}
+                    </div>
                   </>
                 )}
 

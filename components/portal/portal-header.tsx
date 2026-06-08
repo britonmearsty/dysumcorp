@@ -38,60 +38,66 @@ export function PortalHeader({
   const messageDescription = messageParts.slice(1).join(" ") || "";
 
   return (
-    <header className="w-full border-b border-slate-200 bg-white">
+    <header className="w-full border-b border-black/5 bg-white/80 backdrop-blur-md sticky top-0 z-30">
       <div className="px-6 pt-5 pb-4 flex items-center gap-4">
         {logoUrl ? (
-          <LogoDisplay
-            logoUrl={logoUrl}
-            alt={name}
-            size="md"
-            className="shrink-0"
-          />
+          <div className="p-1 rounded-2xl bg-white shadow-sm border border-black/5">
+            <LogoDisplay
+              logoUrl={logoUrl}
+              alt={name}
+              size="md"
+              className="shrink-0"
+            />
+          </div>
         ) : (
           <div
-            className="flex items-center justify-center w-12 h-12 rounded-2xl shrink-0"
+            className="flex items-center justify-center w-12 h-12 rounded-2xl shrink-0 shadow-lg relative overflow-hidden group"
             style={gradientStyle}
           >
-            <Building2 className="w-6 h-6 text-white" />
+            <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Building2 className="w-6 h-6 text-white relative z-10" />
           </div>
         )}
         <div className="flex-1 min-w-0">
           <h2
-            className="font-bold text-xl tracking-tight"
+            className="font-black text-xl tracking-tight leading-none"
             style={{ color: textColor }}
           >
             {name}
           </h2>
           {(companyWebsite || companyEmail) && (
             <div
-              className="text-sm font-medium mt-0.5 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1"
+              className="text-[11px] font-black uppercase tracking-[0.15em] mt-1.5 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 opacity-70"
               style={{ color: primaryColor }}
             >
               {companyWebsite && (
-                <span className="break-all">{companyWebsite}</span>
+                <span className="break-all hover:opacity-100 transition-opacity cursor-pointer">{companyWebsite}</span>
               )}
               {companyWebsite && companyEmail && (
-                <span className="hidden sm:inline">·</span>
+                <span className="hidden sm:inline opacity-30">|</span>
               )}
               {companyEmail && (
-                <span className="break-all">{companyEmail}</span>
+                <span className="break-all hover:opacity-100 transition-opacity cursor-pointer">{companyEmail}</span>
               )}
             </div>
           )}
         </div>
       </div>
       {welcomeMessage && (
-        <div className="px-6 pb-5 border-t border-slate-100 bg-slate-50">
+        <div 
+          className="px-6 pb-5 border-t border-black/5"
+          style={{ backgroundColor: `${primaryColor}05` }}
+        >
           {messageTitle && (
             <p
-              className="text-base font-medium pt-4"
+              className="text-base font-bold pt-4"
               style={{ color: textColor }}
             >
               {messageTitle}
             </p>
           )}
           {messageDescription && (
-            <p className="text-slate-500 text-sm mt-1">{messageDescription}</p>
+            <p className="text-slate-500 text-sm mt-1 leading-relaxed opacity-80">{messageDescription}</p>
           )}
         </div>
       )}
