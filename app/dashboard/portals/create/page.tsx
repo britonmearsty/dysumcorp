@@ -2585,9 +2585,32 @@ export default function CreatePortalPage() {
                             </div>
                           ))}
                         </div>
-                        <Button variant="outline" onClick={addChecklistItem}>
+                        <Button variant="outline" type="button" onClick={addChecklistItem}>
                           <Plus className="h-4 w-4 mr-2" /> Add Item
                         </Button>
+                      </div>
+                    )}
+
+                    {/* Checklist Section Navigation */}
+                    {currentStep === "checklist" && (
+                      <div className="pt-4 flex flex-col sm:flex-row justify-between gap-3">
+                        <div />
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                          <button
+                            className="px-4 py-2.5 border border-border text-muted-foreground rounded-xl font-bold text-sm hover:bg-muted transition-colors"
+                            type="button"
+                            onClick={() => setCurrentStep("messaging")}
+                          >
+                            Jump to Finish
+                          </button>
+                          <button
+                            className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors"
+                            type="button"
+                            onClick={() => setCurrentStep("messaging")}
+                          >
+                            Next: Messaging
+                          </button>
+                        </div>
                       </div>
                     )}
 
