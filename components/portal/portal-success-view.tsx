@@ -113,12 +113,12 @@ export function PortalSuccessView({
             {failedFiles.map((f, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-3 bg-red-50/50 border border-red-100"
+                className="flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-3 bg-red-50/50 border border-red-100 overflow-hidden"
               >
                 <div className="shrink-0">
                   <FileTypeIcon type={f.type} size="w-4 h-4 sm:w-5 h-5" />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-hidden">
                   <p className="text-xs sm:text-sm font-bold truncate text-red-800">
                     {f.name}
                   </p>
@@ -168,12 +168,12 @@ export function PortalSuccessView({
             {sentFiles.map((f, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-3 bg-slate-50 border border-slate-200"
+                className="flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-3 bg-slate-50 border border-slate-200 overflow-hidden"
               >
                 <div className="shrink-0">
                   <FileTypeIcon type={f.type} size="w-4 h-4 sm:w-5 h-5" />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-hidden">
                   <p
                     className="text-xs sm:text-sm font-bold truncate"
                     style={{ color: textColor }}
@@ -204,11 +204,6 @@ export function PortalSuccessView({
       >
         Upload More Files
       </PortalButton>
-
-      <p className="text-center text-slate-400 text-xs">
-        Your name and email will be pre-filled when you return to the upload
-        form.
-      </p>
     </div>
   );
 }

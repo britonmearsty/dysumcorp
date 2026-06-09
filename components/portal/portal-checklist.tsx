@@ -169,7 +169,7 @@ export function PortalChecklist({
                       {files.map((f) => (
                         <div 
                           key={f.id}
-                          className="flex items-center gap-2 sm:gap-3 rounded-xl px-2.5 sm:px-3 py-2 bg-white/50 border border-black/5 text-[10px] sm:text-xs transition-all"
+                          className="flex items-center gap-2 sm:gap-3 rounded-xl px-2.5 sm:px-3 py-2 bg-white/50 border border-black/5 text-[10px] sm:text-xs transition-all overflow-hidden"
                         >
                           <div className="shrink-0">
                             {f.status === 'error' ? (
@@ -180,7 +180,7 @@ export function PortalChecklist({
                               <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5 opacity-40" />
                             )}
                           </div>
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 overflow-hidden">
                             <div className="flex items-center justify-between gap-2">
                               <span className="font-bold truncate opacity-80" style={{ color: textColor }}>{f.file.name}</span>
                               <span className="shrink-0 opacity-40 tabular-nums hidden xs:inline">{formatBytes(f.file.size)}</span>

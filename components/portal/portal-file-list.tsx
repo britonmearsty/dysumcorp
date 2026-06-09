@@ -72,14 +72,14 @@ export function PortalFileList({
     <div className="space-y-4 sm:space-y-6">
       {/* Upload Bucket Staging Area */}
       <div 
-        className="rounded-[20px] sm:rounded-2xl border-2 overflow-hidden transition-all duration-300"
+        className="rounded-[20px] sm:rounded-2xl border overflow-hidden transition-all duration-300"
         style={{ 
           borderColor: `${primaryColor}40`,
           background: `${primaryColor}05`
         }}
       >
         {/* Bucket Header */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-black/5 flex items-center justify-between bg-white/50 backdrop-blur-sm rounded-t-[14px]">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-black/5 flex items-center justify-between bg-white/50 backdrop-blur-sm">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="flex -space-x-2 shrink-0">
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white">
@@ -123,10 +123,10 @@ export function PortalFileList({
               {errorFiles.map((f) => (
                 <div
                   key={f.id}
-                  className="flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-3 bg-red-50/50 border border-red-100"
+                  className="flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-3 bg-red-50/50 border border-red-100 overflow-hidden"
                 >
                   <FileTypeIcon type={f.file.type} size="w-4 h-4 sm:w-5 h-5" />
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 overflow-hidden">
                     <p className="text-[11px] sm:text-xs font-bold truncate text-slate-800">
                       {f.file.name}
                     </p>
@@ -157,10 +157,10 @@ export function PortalFileList({
                 {groupFiles.map((f) => (
                   <div
                     key={f.id}
-                    className="flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-3 bg-white border border-black/5 shadow-sm transition-all hover:shadow-md"
+                    className="flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-3 bg-white/50 border border-black/5 transition-all duration-200 overflow-hidden"
                   >
                     <FileTypeIcon type={f.file.type} size="w-4 h-4 sm:w-5 h-5" />
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 overflow-hidden">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-[11px] sm:text-xs font-bold truncate" style={{ color: textColor }}>
                           {f.file.name}
@@ -226,10 +226,10 @@ export function PortalFileList({
             {completedFiles.map((f) => (
               <div
                 key={f.id}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 bg-emerald-50/30 border border-emerald-100/50"
+                className="flex items-center gap-3 rounded-xl px-4 py-3 bg-emerald-50/30 border border-emerald-100/50 overflow-hidden"
               >
                 <FileTypeIcon type={f.file.type} />
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-hidden">
                   <p className="text-xs font-bold truncate text-slate-700">
                     {f.file.name}
                   </p>
