@@ -979,43 +979,8 @@ export default function PublicPortalPage() {
                   />
                 )}
 
-                {/* File limit indicator — only for non-subscriber (free) portals */}
-                {!portal.isOwnerSubscriber &&
-                  portal.fileLimit !== undefined &&
-                  portal.fileCount !== undefined && (
-                    <div
-                      className="flex items-center gap-2 px-4 py-3 rounded-xl border text-sm"
-                      style={{
-                        borderColor: `${portal.primaryColor}30`,
-                        background: `${portal.primaryColor}08`,
-                        color: portal.textColor,
-                      }}
-                    >
-                      <div className="flex-1 flex items-center gap-2">
-                        {portal.fileCount >= portal.fileLimit ? (
-                          <span className="font-medium text-amber-600">
-                            File limit reached
-                          </span>
-                        ) : (
-                          <>
-                            <span className="font-medium">
-                              {portal.fileLimit - portal.fileCount} file
-                              {portal.fileLimit - portal.fileCount !== 1
-                                ? "s"
-                                : ""}{" "}
-                              remaining
-                            </span>
-                            <span className="text-slate-400">·</span>
-                          </>
-                        )}
-                        <span className="text-slate-500">
-                          {portal.fileCount} of {portal.fileLimit} used
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
                 {/* Drop Zone or File List */}
+
                 {portal.checklistItems && portal.checklistItems.length > 0 ? (
                   <div className="space-y-6">
                     <PortalChecklist
