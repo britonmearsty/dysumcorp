@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Box } from "lucide-react";
@@ -44,11 +45,11 @@ export default function AuthPage() {
       } else if (data?.data?.url) {
         window.location.href = data.data.url;
       } else {
-        console.error("No redirect URL found:", data);
+        logger.error("No redirect URL found:", data);
         setLoading(null);
       }
     } catch (err) {
-      console.error("OAuth sign in failed:", err);
+      logger.error("OAuth sign in failed:", err);
       setLoading(null);
     }
 

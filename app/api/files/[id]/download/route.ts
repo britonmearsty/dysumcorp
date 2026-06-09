@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -69,11 +70,11 @@ export async function GET(
           portalName: file.portal.name,
           downloaderName: session.user.name || undefined,
         }).catch((error) => {
-          console.error("Failed to send download notification:", error);
+          logger.error("Failed to send download notification:", error);
         });
       }
     } catch (error) {
-      console.error("Error preparing download notification:", error);
+      logger.error("Error preparing download notification:", error);
     }
 
     // Check if file has expired
@@ -193,7 +194,7 @@ export async function GET(
           });
         }
       } catch (error) {
-        console.error("Failed to download from cloud storage:", error);
+        logger.error("Failed to download from cloud storage:", error);
       }
     }
 
@@ -203,7 +204,7 @@ export async function GET(
       { status: 404 },
     );
   } catch (error) {
-    console.error("Error downloading file:", error);
+    logger.error("Error downloading file:", error);
 
     return NextResponse.json(
       { error: "Failed to download file" },

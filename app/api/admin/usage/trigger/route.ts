@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { triggerUsageTracking } from "@/lib/usage-tracking";
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
       message: "Usage tracking update triggered successfully",
     });
   } catch (error) {
-    console.error("Error triggering usage tracking:", error);
+    logger.error("Error triggering usage tracking:", error);
 
     return NextResponse.json(
       { error: "Failed to trigger usage tracking" },

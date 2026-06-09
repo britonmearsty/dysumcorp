@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
       const settings = await getUserNotificationSettings(portal.user.email);
 
       if (settings && !settings.notifyOnUpload) {
-        console.log(
+        logger.log(
           `Upload notifications disabled for user: ${portal.user.email}`,
         );
 
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ success: true });
     } catch (emailError) {
-      console.error("[Batch Notification] Failed to send email:", emailError);
+      logger.error("[Batch Notification] Failed to send email:", emailError);
 
       return NextResponse.json(
         { error: "Failed to send notification email" },
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error("[Batch Notification] Error:", error);
+    logger.error("[Batch Notification] Error:", error);
 
     return NextResponse.json(
       { error: "Internal server error" },

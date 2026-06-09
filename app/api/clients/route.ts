@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -98,7 +99,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ clients });
   } catch (error) {
-    console.error("Error fetching clients:", error);
+    logger.error("Error fetching clients:", error);
 
     return NextResponse.json(
       { error: "Failed to fetch clients" },

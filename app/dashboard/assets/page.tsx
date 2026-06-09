@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -97,7 +98,7 @@ export default function AssetsPage() {
         setFiles(data.files);
       }
     } catch (error) {
-      console.error("Failed to fetch files:", error);
+      logger.error("Failed to fetch files:", error);
     } finally {
       setLoading(false);
     }
@@ -125,7 +126,7 @@ export default function AssetsPage() {
         showToast(error.error || "Failed to sync", "error");
       }
     } catch (error) {
-      console.error("Failed to sync:", error);
+      logger.error("Failed to sync:", error);
       showToast("Failed to sync with cloud storage", "error");
     } finally {
       setSyncing(false);
@@ -155,7 +156,7 @@ export default function AssetsPage() {
         showToast("Failed to delete file", "error");
       }
     } catch (error) {
-      console.error("Failed to delete file:", error);
+      logger.error("Failed to delete file:", error);
       showToast("Failed to delete file", "error");
     } finally {
       setDeleting(null);
@@ -202,7 +203,7 @@ export default function AssetsPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to download file:", error);
+      logger.error("Failed to download file:", error);
       showToast("Failed to download file", "error");
     }
   };

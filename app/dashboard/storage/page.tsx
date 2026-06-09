@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 
@@ -79,7 +81,7 @@ export default function StoragePage() {
       } else if (data?.data?.url) {
         window.location.href = data.data.url;
       } else {
-        console.error("No redirect URL found:", data);
+        logger.error("No redirect URL found:", data);
         showToast(
           `Failed to connect to ${provider === "google" ? "Google Drive" : "Dropbox"}. Please try again.`,
           "error",
@@ -87,7 +89,7 @@ export default function StoragePage() {
         setActionLoading(null);
       }
     } catch (err) {
-      console.error("Failed to connect:", err);
+      logger.error("Failed to connect:", err);
       showToast(
         `Failed to connect to ${provider === "google" ? "Google Drive" : "Dropbox"}. Please try again.`,
         "error",
@@ -123,7 +125,7 @@ export default function StoragePage() {
         showToast("Failed to disconnect. Please try again.", "error");
       }
     } catch (error) {
-      console.error("Failed to disconnect:", error);
+      logger.error("Failed to disconnect:", error);
       showToast("Failed to disconnect. Please try again.", "error");
     } finally {
       setActionLoading(null);

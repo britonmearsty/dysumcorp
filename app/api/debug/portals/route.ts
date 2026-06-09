@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
       message: `Found ${count} portal(s) for user ${userId}`,
     });
   } catch (error) {
-    console.error("Error fetching portals:", error);
+    logger.error("Error fetching portals:", error);
 
     return NextResponse.json(
       { error: "Failed to fetch portals" },

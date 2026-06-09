@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 import { Redis } from "@upstash/redis";
 
 // Lazy initialization to avoid build-time errors
@@ -18,7 +19,7 @@ function initializeRedis() {
         token: process.env.UPSTASH_REDIS_REST_TOKEN,
       });
     } catch (error) {
-      console.warn("Failed to initialize Redis for upload sessions:", error);
+      logger.warn("Failed to initialize Redis for upload sessions:", error);
       redis = null;
     }
   }
@@ -51,7 +52,7 @@ export async function getUploadSession(
 
     return data as UploadSession | null;
   } catch (error) {
-    console.error("Failed to get upload session from Redis:", error);
+    logger.error("Failed to get upload session from Redis:", error);
 
     return null;
   }
@@ -78,7 +79,7 @@ export async function setUploadSession(
 
     return true;
   } catch (error) {
-    console.error("Failed to set upload session in Redis:", error);
+    logger.error("Failed to set upload session in Redis:", error);
 
     return false;
   }
@@ -111,7 +112,7 @@ export async function updateUploadSession(
 
     return true;
   } catch (error) {
-    console.error("Failed to update upload session in Redis:", error);
+    logger.error("Failed to update upload session in Redis:", error);
 
     return false;
   }
@@ -131,7 +132,7 @@ export async function deleteUploadSession(sessionId: string): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error("Failed to delete upload session from Redis:", error);
+    logger.error("Failed to delete upload session from Redis:", error);
 
     return false;
   }
@@ -161,7 +162,7 @@ export async function incrementUploadedBytes(
 
     return session;
   } catch (error) {
-    console.error("Failed to increment uploaded bytes:", error);
+    logger.error("Failed to increment uploaded bytes:", error);
 
     return null;
   }

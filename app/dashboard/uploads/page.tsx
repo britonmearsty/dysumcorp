@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -152,11 +154,11 @@ export default function UploadsPage() {
       } else {
         const errorData = await response.json();
 
-        console.error("Failed to fetch uploads:", errorData);
+        logger.error("Failed to fetch uploads:", errorData);
         showToast(errorData.error || "Failed to fetch uploads", "error");
       }
     } catch (error) {
-      console.error("Failed to fetch uploads:", error);
+      logger.error("Failed to fetch uploads:", error);
       showToast("Failed to fetch uploads", "error");
     } finally {
       setLoading(false);
@@ -311,7 +313,7 @@ export default function UploadsPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to download file:", error);
+      logger.error("Failed to download file:", error);
       showToast("Failed to download file", "error");
     }
   };
@@ -358,7 +360,7 @@ export default function UploadsPage() {
         showToast("Failed to delete file", "error");
       }
     } catch (error) {
-      console.error("Failed to delete file:", error);
+      logger.error("Failed to delete file:", error);
       showToast("Failed to delete file", "error");
     } finally {
       setDeletingFile(null);

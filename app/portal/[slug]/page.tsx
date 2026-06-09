@@ -1028,15 +1028,16 @@ export default function PublicPortalPage() {
                       onRemoveFile={handleRemoveSlotFile}
                     />
 
-                    {!uploading &&
-                      Object.values(slotFiles).some((files) =>
-                        files.some((f) => f.status === "pending"),
+                    {Object.values(slotFiles).some((files) =>
+                        files.some((f) => f.status === "pending" || f.status === "uploading"),
                       ) && (
                         <div className="mt-8 sticky bottom-4 z-20">
                           <PortalButton
                             className="shadow-2xl hover:scale-[1.02] active:scale-[0.98] py-5 text-lg uppercase tracking-wider"
                             gradientEnabled={portal.gradientEnabled}
                             icon={<Upload className="w-5 h-5" />}
+                            loading={uploading}
+                            disabled={uploading}
                             primaryColor={portal.primaryColor}
                             secondaryColor={portal.secondaryColor}
                             onClick={handleUpload}
@@ -1080,14 +1081,15 @@ export default function PublicPortalPage() {
                         onRemove={removeFile}
                       />
 
-                      {!uploading &&
-                        files.filter((f) => f.status === "pending").length >
+                      {files.filter((f) => f.status === "pending" || f.status === "uploading").length >
                           0 && (
                           <div className="mt-8 sticky bottom-4 z-20">
                             <PortalButton
                               className="shadow-2xl hover:scale-[1.02] active:scale-[0.98] py-5 text-lg uppercase tracking-wider"
                               gradientEnabled={portal.gradientEnabled}
                               icon={<Upload className="w-5 h-5" />}
+                              loading={uploading}
+                              disabled={uploading}
                               primaryColor={portal.primaryColor}
                               secondaryColor={portal.secondaryColor}
                               onClick={handleUpload}

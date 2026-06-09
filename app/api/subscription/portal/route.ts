@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 import { Polar } from "@polar-sh/sdk";
 
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: portalSession.customerPortalUrl });
   } catch (error) {
-    console.error("Portal session error:", error);
+    logger.error("Portal session error:", error);
 
     return NextResponse.json(
       { error: "Failed to create portal session" },

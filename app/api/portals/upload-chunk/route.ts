@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -193,7 +194,7 @@ export async function POST(request: NextRequest) {
     const mimeType =
       (formData.get("mimeType") as string) || "application/octet-stream";
 
-    console.log(
+    logger.log(
       `[Upload Chunk] Chunk ${chunkIndex + 1}/${totalChunks} for ${fileName}`,
     );
 
@@ -350,7 +351,7 @@ export async function POST(request: NextRequest) {
 
     // First chunk: initialize upload session
     if (chunkIndex === 0) {
-      console.log(`[Upload Chunk] Initializing session for ${fileName}`);
+      logger.log(`[Upload Chunk] Initializing session for ${fileName}`);
 
       if (provider === "google") {
         const response = await fetch(
@@ -373,7 +374,7 @@ export async function POST(request: NextRequest) {
         if (!response.ok) {
           const errorText = await response.text();
 
-          console.error(
+          logger.error(
             "[Upload Chunk] Google Drive session creation failed:",
             errorText,
           );
@@ -396,9 +397,9 @@ export async function POST(request: NextRequest) {
           createdAt: Date.now(),
         };
 
-        console.log(`[Upload Chunk] Saving Google session ${sessionId}`);
+        logger.log(`[Upload Chunk] Saving Google session ${sessionId}`);
         await saveSession(sessionId, sessionData);
-        console.log(`[Upload Chunk] Session saved successfully`);
+        logger.log(`[Upload Chunk] Session saved successfully`);
       } else {
         // Dropbox - store session info for chunked upload
         const sessionData = {
@@ -411,19 +412,19 @@ export async function POST(request: NextRequest) {
           createdAt: Date.now(),
         };
 
-        console.log(`[Upload Chunk] Saving Dropbox session ${sessionId}`);
+        logger.log(`[Upload Chunk] Saving Dropbox session ${sessionId}`);
         await saveSession(sessionId, sessionData);
-        console.log(`[Upload Chunk] Session saved successfully`);
+        logger.log(`[Upload Chunk] Session saved successfully`);
       }
     }
 
     // Get session
-    console.log(`[Upload Chunk] Retrieving session ${sessionId}`);
+    logger.log(`[Upload Chunk] Retrieving session ${sessionId}`);
     const session = await getSession(sessionId);
 
     if (!session) {
-      console.error(`[Upload Chunk] Session not found: ${sessionId}`);
-      console.error(
+      logger.error(`[Upload Chunk] Session not found: ${sessionId}`);
+      logger.error(
         `[Upload Chunk] ChunkIndex: ${chunkIndex}, Expected session to exist`,
       );
 
@@ -433,7 +434,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[Upload Chunk] Session found:`, {
+    logger.log(`[Upload Chunk] Session found:`, {
       provider: session.provider,
       uploadedBytes: session.uploadedBytes,
       totalBytes: session.totalBytes,
@@ -470,7 +471,7 @@ export async function POST(request: NextRequest) {
 
         await removeSession(sessionId);
 
-        console.log(
+        logger.log(
           `[Upload Chunk] Google Drive upload complete: ${result.id}`,
         );
 
@@ -505,7 +506,7 @@ export async function POST(request: NextRequest) {
 
       if (result.complete) {
         await removeSession(sessionId);
-        console.log(`[Upload Chunk] Dropbox upload complete: ${result.id}`);
+        logger.log(`[Upload Chunk] Dropbox upload complete: ${result.id}`);
 
         uploadResult = {
           success: true,
@@ -538,7 +539,7 @@ export async function POST(request: NextRequest) {
       provider: session.provider,
     });
   } catch (error) {
-    console.error("[Upload Chunk] Error:", error);
+    logger.error("[Upload Chunk] Error:", error);
 
     const errorMessage =
       error instanceof Error ? error.message : "Upload failed";

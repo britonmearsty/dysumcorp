@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -23,7 +24,7 @@ export async function GET() {
       storageDeleteBehavior: user?.storageDeleteBehavior ?? "ask",
     });
   } catch (error) {
-    console.error("Error fetching storage delete behavior:", error);
+    logger.error("Error fetching storage delete behavior:", error);
 
     return NextResponse.json(
       { error: "Failed to fetch preference" },
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error updating storage delete behavior:", error);
+    logger.error("Error updating storage delete behavior:", error);
 
     return NextResponse.json(
       { error: "Failed to update preference" },

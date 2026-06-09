@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getSessionFromRequest } from "@/lib/auth-server";
@@ -143,7 +144,7 @@ export async function GET(request: NextRequest) {
       { status: 400 },
     );
   } catch (error) {
-    console.error("Storage list error:", error);
+    logger.error("Storage list error:", error);
 
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "List failed" },

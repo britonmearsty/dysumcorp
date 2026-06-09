@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
       results,
     });
   } catch (error) {
-    console.error("[Deactivate Overlimit Portals] Error:", error);
+    logger.error("[Deactivate Overlimit Portals] Error:", error);
 
     return NextResponse.json(
       { error: "Failed to process portals" },

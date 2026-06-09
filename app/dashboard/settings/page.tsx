@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -140,7 +142,7 @@ export default function SettingsPage() {
           setWeeklyReports(data.weeklyReports ?? false);
         }
       } catch (error) {
-        console.error("Failed to fetch notification settings:", error);
+        logger.error("Failed to fetch notification settings:", error);
       }
     }
 
@@ -226,7 +228,7 @@ export default function SettingsPage() {
       router.refresh();
       resetStatus(setProfileStatus);
     } catch (error) {
-      console.error("Image upload error:", error);
+      logger.error("Image upload error:", error);
       setProfileStatus("error");
       resetStatus(setProfileStatus);
     } finally {
@@ -269,7 +271,7 @@ export default function SettingsPage() {
       router.refresh();
       resetStatus(setProfileStatus);
     } catch (error) {
-      console.error("Logo upload error:", error);
+      logger.error("Logo upload error:", error);
       setPortalLogo(originalLogo);
       setProfileStatus("error");
       resetStatus(setProfileStatus);

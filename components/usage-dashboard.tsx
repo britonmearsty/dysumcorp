@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { Card, CardBody } from "@heroui/card";
 import { Progress } from "@heroui/progress";
 import { useEffect, useState } from "react";
@@ -37,7 +39,7 @@ export function UsageDashboard() {
           setUsage(data);
         }
       } catch (error) {
-        console.error("Failed to fetch usage:", error);
+        logger.error("Failed to fetch usage:", error);
       } finally {
         setLoading(false);
       }

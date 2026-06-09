@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
       user: updatedUser,
     });
   } catch (error: unknown) {
-    console.error("Manual sync error:", error);
+    logger.error("Manual sync error:", error);
 
     const errorMessage =
       error instanceof Error ? error.message : "Failed to sync subscription";

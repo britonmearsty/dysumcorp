@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error("Debug error:", error);
+    logger.error("Debug error:", error);
 
     return NextResponse.json(
       { error: error?.message || "Failed to fetch debug info" },

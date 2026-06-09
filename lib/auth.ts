@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 
@@ -163,7 +164,7 @@ export const auth = betterAuth({
           try {
             await sendWelcomeEmail({ to: user.email, userName });
           } catch (error) {
-            console.error("Failed to send welcome email:", error);
+            logger.error("Failed to send welcome email:", error);
           }
         }
       }
@@ -176,7 +177,7 @@ export const auth = betterAuth({
             time: new Date().toLocaleString(),
           });
         } catch (error) {
-          console.error("Failed to send sign-in notification:", error);
+          logger.error("Failed to send sign-in notification:", error);
         }
       }
 

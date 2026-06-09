@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -71,7 +72,7 @@ export async function POST(
 
     return NextResponse.json({ valid: true });
   } catch (error) {
-    console.error("Error verifying portal password:", error);
+    logger.error("Error verifying portal password:", error);
 
     return NextResponse.json(
       { error: "Failed to verify password" },

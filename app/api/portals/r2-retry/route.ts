@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   const requestId = Math.random().toString(36).slice(2, 8);
 
-  console.log(`[r2-retry:${requestId}] POST /api/portals/r2-retry`);
+  logger.log(`[r2-retry:${requestId}] POST /api/portals/r2-retry`);
 
   try {
     const body = await request.json();
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
     const workerUrl = process.env.WORKER_URL;
 
     if (!workerUrl) {
-      console.error(`[r2-retry:${requestId}] WORKER_URL not configured`);
+      logger.error(`[r2-retry:${requestId}] WORKER_URL not configured`);
 
       return NextResponse.json(
         { error: "Worker not configured" },
@@ -112,11 +113,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[r2-retry:${requestId}] ✓ Retry triggered for ${stagingKey}`);
+    logger.log(`[r2-retry:${requestId}] ✓ Retry triggered for ${stagingKey}`);
 
     return NextResponse.json({ success: true, status: "UPLOADED" });
   } catch (error) {
-    console.error(`[r2-retry:${requestId}] ❌ UNCAUGHT ERROR:`, error);
+    logger.error(`[r2-retry:${requestId}] ❌ UNCAUGHT ERROR:`, error);
 
     return NextResponse.json(
       { error: "Internal server error" },

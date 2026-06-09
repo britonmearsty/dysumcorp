@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -217,7 +218,7 @@ export async function POST(request: Request) {
       } catch (emailError) {
         // Don't fail the request if email fails - log in development only
         if (process.env.NODE_ENV === "development") {
-          console.error("Failed to send notification email:", emailError);
+          logger.error("Failed to send notification email:", emailError);
         }
       }
     }
@@ -234,7 +235,7 @@ export async function POST(request: Request) {
       message: "Portal created successfully",
     });
   } catch (error) {
-    console.error("[/api/portals/create] Error creating portal:", error);
+    logger.error("[/api/portals/create] Error creating portal:", error);
 
     return NextResponse.json(
       {

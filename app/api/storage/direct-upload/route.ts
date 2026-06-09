@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
       fileName,
     });
   } catch (error) {
-    console.error("Direct upload URL generation error:", error);
+    logger.error("Direct upload URL generation error:", error);
 
     return NextResponse.json(
       { error: "Failed to generate upload URL" },

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -49,12 +50,12 @@ export async function GET(request: NextRequest) {
         where: { id: record.id },
         data: { status: "failed" },
       });
-      console.log(
+      logger.log(
         `[r2-cleanup] Deleted orphan status=${record.status} stagingKey=${record.stagingKey} age=${Math.round((Date.now() - record.createdAt.getTime()) / 60000)}min`,
       );
       deleted++;
     } catch (err) {
-      console.error(
+      logger.error(
         `[r2-cleanup] Failed to delete stagingKey=${record.stagingKey}:`,
         err,
       );

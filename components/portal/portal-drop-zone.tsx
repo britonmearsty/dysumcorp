@@ -84,10 +84,10 @@ export function PortalDropZone({
 
   return (
     <div
-      className="relative rounded-2xl border-2 border-dashed flex flex-col items-center justify-center py-10 sm:py-16 gap-3 cursor-pointer transition-all duration-300 group"
+      className="relative rounded-[20px] sm:rounded-2xl border overflow-hidden flex flex-col items-center justify-center py-10 sm:py-16 gap-4 cursor-pointer transition-all duration-300 group shadow-sm"
       style={{
-        borderColor: dragging ? primaryColor : `${primaryColor}30`,
-        background: dragging ? `${primaryColor}0D` : "#f8faff",
+        borderColor: dragging ? primaryColor : `${primaryColor}40`,
+        background: dragging ? `${primaryColor}10` : `${primaryColor}05`,
       }}
       onClick={handleClick}
       onDragLeave={handleDragLeave}
@@ -95,26 +95,29 @@ export function PortalDropZone({
       onDrop={handleDrop}
     >
       <div
-        className="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full transition-transform duration-300 group-hover:scale-110"
-        style={{ background: `${primaryColor}1A` }}
+        className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full transition-transform duration-300 group-hover:scale-105"
+        style={{ background: primaryColor }}
       >
-        <Upload className="w-5 h-5 sm:w-7 sm:h-7" style={{ color: primaryColor }} />
+        <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
       </div>
-      <div className="text-center flex flex-col items-center px-4">
+      <div className="text-center max-w-lg px-4">
         <p className="font-black text-base sm:text-lg" style={{ color: textColor }}>
           Drop files to upload
         </p>
-        <p className="text-slate-400 text-xs sm:text-sm mt-1 font-medium">
-          or click to browse device
+        <p className="mt-2 text-sm opacity-80" style={{ color: textColor }}>
+          or click to browse your device
         </p>
-        
-        {getAllowedIcons()}
-
-        <div className="mt-4 flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-40" style={{ color: textColor }}>
-          {maxFileSize && (
-            <span>Max {(maxFileSize / 1024 / 1024).toFixed(0)}MB per file</span>
-          )}
-        </div>
+      </div>
+      {getAllowedIcons()}
+      <div className="flex flex-col items-center gap-2">
+        {maxFileSize && (
+          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-70" style={{ color: textColor }}>
+            Max {(maxFileSize / 1024 / 1024).toFixed(0)}MB per file
+          </span>
+        )}
+        <span className="rounded-full px-3 py-1 text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-70" style={{ color: textColor, background: 'rgba(255,255,255,0.35)' }}>
+          Tap to select or drag files here
+        </span>
       </div>
       <input
         ref={fileInputRef}

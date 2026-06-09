@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
@@ -315,7 +317,7 @@ export function useProgressiveLimits() {
         canProceed: state.canProceed,
       };
     } catch (error) {
-      console.error("Failed to check limit:", error);
+      logger.error("Failed to check limit:", error);
 
       return {
         level: "normal" as const,

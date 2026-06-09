@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { Webhooks } from "@polar-sh/nextjs";
 
 import { prisma } from "@/lib/prisma";
@@ -13,11 +14,11 @@ export const POST = Webhooks({
     const sub = payload.data;
     const userId = sub.customer.externalId;
     if (!userId) {
-      console.error("[Polar] onSubscriptionActive: no customer.externalId");
+      logger.error("[Polar] onSubscriptionActive: no customer.externalId");
       return;
     }
 
-    console.log(`[Polar] Subscription active for user ${userId}`);
+    logger.log(`[Polar] Subscription active for user ${userId}`);
 
     await prisma.user.update({
       where: { id: userId },
@@ -51,7 +52,7 @@ export const POST = Webhooks({
     // Only act on cancel_at_period_end changes here — active renewals are
     // handled by onSubscriptionActive.
     if (sub.cancelAtPeriodEnd) {
-      console.log(
+      logger.log(
         `[Polar] Subscription scheduled to cancel at period end for user ${userId}`,
       );
       await prisma.user.update({
@@ -76,7 +77,7 @@ export const POST = Webhooks({
     const userId = sub.customer.externalId;
     if (!userId) return;
 
-    console.log(
+    logger.log(
       `[Polar] Subscription canceled (grace period active) for user ${userId}`,
     );
 
@@ -100,11 +101,11 @@ export const POST = Webhooks({
     const sub = payload.data;
     const userId = sub.customer.externalId;
     if (!userId) {
-      console.error("[Polar] onSubscriptionRevoked: no customer.externalId");
+      logger.error("[Polar] onSubscriptionRevoked: no customer.externalId");
       return;
     }
 
-    console.log(`[Polar] Subscription revoked for user ${userId}`);
+    logger.log(`[Polar] Subscription revoked for user ${userId}`);
 
     await prisma.user.update({
       where: { id: userId },
@@ -131,7 +132,7 @@ export const POST = Webhooks({
     const userId = customer.externalId;
     if (!userId) return;
 
-    console.log(
+    logger.log(
       `[Polar] Customer created: ${customer.id} for user ${userId}`,
     );
 
@@ -146,7 +147,7 @@ export const POST = Webhooks({
    * Also handles subscription.uncancelled which isn't a specific handler.
    */
   onPayload: async (payload) => {
-    console.log(`[Polar] Webhook received: ${payload.type}`);
+    logger.log(`[Polar] Webhook received: ${payload.type}`);
 
     // Handle subscription.uncanceled/uncancelled (user reactivated subscription)
     if (payload.type === "subscription.uncanceled") {
@@ -154,7 +155,7 @@ export const POST = Webhooks({
       const userId = sub.customer?.externalId;
       if (!userId) return;
 
-      console.log(`[Polar] Subscription uncancelled for user ${userId}`);
+      logger.log(`[Polar] Subscription uncancelled for user ${userId}`);
 
       await prisma.user.update({
         where: { id: userId },

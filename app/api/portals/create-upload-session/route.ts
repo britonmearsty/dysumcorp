@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { portalId, uploaderName, uploaderEmail, uploaderNotes, checklistItemId } = body;
 
-    console.log("[Create Upload Session] Request:", {
+    logger.log("[Create Upload Session] Request:", {
       portalId,
       uploaderName,
       uploaderEmail,
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!portal) {
-      console.log("[Create Upload Session] Portal not found:", portalId);
+      logger.log("[Create Upload Session] Portal not found:", portalId);
 
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
@@ -100,14 +101,14 @@ export async function POST(request: NextRequest) {
       }),
     ]);
 
-    console.log("[Create Upload Session] Created session:", session.id);
+    logger.log("[Create Upload Session] Created session:", session.id);
 
     return NextResponse.json({
       success: true,
       uploadSessionId: session.id,
     });
   } catch (error) {
-    console.error("[Create Upload Session] Error:", error);
+    logger.error("[Create Upload Session] Error:", error);
 
     const errorMessage =
       error instanceof Error

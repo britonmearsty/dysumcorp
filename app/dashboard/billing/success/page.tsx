@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle } from "lucide-react";
@@ -12,7 +13,7 @@ export default function CheckoutSuccessPage() {
 
   useEffect(() => {
     // You can track the successful subscription here
-    console.log("Subscription successful");
+    logger.log("Subscription successful");
   }, []);
 
   return (

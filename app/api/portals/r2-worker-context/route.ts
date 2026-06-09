@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -27,10 +28,10 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   const requestId = Math.random().toString(36).slice(2, 8);
 
-  console.log(
+  logger.log(
     `[worker-context:${requestId}] ═══════════════════════════════════════════════════════`,
   );
-  console.log(
+  logger.log(
     `[worker-context:${requestId}] POST /api/portals/r2-worker-context`,
   );
 
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    console.log(
+    logger.log(
       `[worker-context:${requestId}] Request body:`,
       JSON.stringify(body, null, 2),
     );
@@ -60,13 +61,13 @@ export async function POST(request: NextRequest) {
     const envSecret = process.env.WORKER_SECRET;
 
     // Debug logging
-    console.log(
+    logger.log(
       `[worker-context:${requestId}] workerSecret present: ${!!workerSecret}, prefix: ${workerSecret?.slice(0, 6)}`,
     );
-    console.log(
+    logger.log(
       `[worker-context:${requestId}] env WORKER_SECRET present: ${!!envSecret}, prefix: ${envSecret?.slice(0, 6)}`,
     );
-    console.log(
+    logger.log(
       `[worker-context:${requestId}] match: ${workerSecret === envSecret}`,
     );
 
@@ -77,15 +78,15 @@ export async function POST(request: NextRequest) {
       workerSecret === envSecret
     );
 
-    console.log(`[worker-context:${requestId}] isWorkerCall: ${isWorkerCall}`);
+    logger.log(`[worker-context:${requestId}] isWorkerCall: ${isWorkerCall}`);
 
     if (!isWorkerCall) {
-      console.log(
+      logger.log(
         `[worker-context:${requestId}] Not a worker call, validating upload token...`,
       );
       // Fall back to upload token validation (direct/browser calls)
       if (!uploadToken) {
-        console.error(
+        logger.error(
           `[worker-context:${requestId}] ❌ uploadToken is required`,
         );
 
@@ -97,13 +98,13 @@ export async function POST(request: NextRequest) {
       const token = validateUploadToken(uploadToken);
 
       if (!token) {
-        console.error(
+        logger.error(
           `[worker-context:${requestId}] ❌ Token validation failed`,
         );
 
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
-      console.log(`[worker-context:${requestId}] ✓ Upload token valid`);
+      logger.log(`[worker-context:${requestId}] ✓ Upload token valid`);
 
       // Per-stagingKey limit: 5 context fetches per key per minute.
       // This endpoint creates Drive/Dropbox folders — spamming it is expensive.
@@ -117,14 +118,14 @@ export async function POST(request: NextRequest) {
         if (keyLimit) return keyLimit;
       }
     } else {
-      console.log(
+      logger.log(
         `[worker-context:${requestId}] ✓ Worker authenticated via WORKER_SECRET`,
       );
     }
 
     // Decode token payload to get portalId
     if (!uploadToken) {
-      console.error(
+      logger.error(
         `[worker-context:${requestId}] ❌ uploadToken is required for decoding`,
       );
 
@@ -134,18 +135,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[worker-context:${requestId}] Decoding token payload...`);
+    logger.log(`[worker-context:${requestId}] Decoding token payload...`);
     let tokenPayload: { portalId: string; uploaderName?: string };
 
     try {
       tokenPayload = JSON.parse(
         Buffer.from(uploadToken, "base64").toString("utf-8"),
       );
-      console.log(
+      logger.log(
         `[worker-context:${requestId}] ✓ Token decoded, portalId: ${tokenPayload.portalId}`,
       );
     } catch {
-      console.error(`[worker-context:${requestId}] ❌ Token decode failed`);
+      logger.error(`[worker-context:${requestId}] ❌ Token decode failed`);
 
       return NextResponse.json(
         { error: "Invalid token format" },
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!tokenPayload.portalId) {
-      console.error(`[worker-context:${requestId}] ❌ Token missing portalId`);
+      logger.error(`[worker-context:${requestId}] ❌ Token missing portalId`);
 
       return NextResponse.json(
         { error: "Invalid token: missing portalId" },
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(
+    logger.log(
       `[worker-context:${requestId}] Fetching portal: ${tokenPayload.portalId}`,
     );
 
@@ -180,12 +181,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (!portal) {
-      console.error(`[worker-context:${requestId}] ❌ Portal not found`);
+      logger.error(`[worker-context:${requestId}] ❌ Portal not found`);
 
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
-    console.log(`[worker-context:${requestId}] ✓ Portal found:`, {
+    logger.log(`[worker-context:${requestId}] ✓ Portal found:`, {
       id: portal.id,
       name: portal.name,
       userId: portal.userId,
@@ -197,15 +198,15 @@ export async function POST(request: NextRequest) {
     const provider =
       portal.storageProvider === "dropbox" ? "dropbox" : "google";
 
-    console.log(`[worker-context:${requestId}] Resolved provider: ${provider}`);
+    logger.log(`[worker-context:${requestId}] Resolved provider: ${provider}`);
 
-    console.log(
+    logger.log(
       `[worker-context:${requestId}] Getting valid OAuth token for userId: ${portal.userId}...`,
     );
     const accessToken = await getValidToken(portal.userId, provider);
 
     if (!accessToken) {
-      console.error(
+      logger.error(
         `[worker-context:${requestId}] ❌ No ${provider} storage connected`,
       );
 
@@ -214,12 +215,12 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    console.log(
+    logger.log(
       `[worker-context:${requestId}] ✓ Access token retrieved (length: ${accessToken.length})`,
     );
 
     // Resolve folder hierarchy
-    console.log(`[worker-context:${requestId}] Resolving folder hierarchy...`);
+    logger.log(`[worker-context:${requestId}] Resolving folder hierarchy...`);
     let parentFolderId: string;
     let folderPath: string;
 
@@ -227,13 +228,13 @@ export async function POST(request: NextRequest) {
     // This prevents the race condition where concurrent worker calls each try to create
     // the same folder, resulting in duplicate folders.
     if (preResolvedFolderId && preResolvedFolderPath) {
-      console.log(
+      logger.log(
         `[worker-context:${requestId}] ✓ Using pre-resolved folder: ${preResolvedFolderId} (${preResolvedFolderPath})`,
       );
       parentFolderId = preResolvedFolderId;
       folderPath = preResolvedFolderPath;
     } else if (portal.storageFolderId) {
-      console.log(
+      logger.log(
         `[worker-context:${requestId}] Using portal's configured folder`,
       );
 
@@ -246,7 +247,7 @@ export async function POST(request: NextRequest) {
           portal.storageFolderId,
         );
         if (!folderStillExists) {
-          console.warn(
+          logger.warn(
             `[worker-context:${requestId}] ⚠️ Stored folder ${portal.storageFolderId} not found in Drive, falling back to auto-create`,
           );
         }
@@ -255,7 +256,7 @@ export async function POST(request: NextRequest) {
       if (folderStillExists) {
         parentFolderId = portal.storageFolderId;
         folderPath = portal.storageFolderPath || portal.name;
-        console.log(
+        logger.log(
           `[worker-context:${requestId}] parentFolderId: ${parentFolderId}, folderPath: ${folderPath}`,
         );
       } else {
@@ -266,7 +267,7 @@ export async function POST(request: NextRequest) {
           provider,
         );
 
-        console.log(
+        logger.log(
           `[worker-context:${requestId}] ✓ Root folder: ${rootFolder.id}`,
         );
 
@@ -277,7 +278,7 @@ export async function POST(request: NextRequest) {
           provider,
         );
 
-        console.log(
+        logger.log(
           `[worker-context:${requestId}] ✓ New portal folder: ${portalFolder.id}`,
         );
 
@@ -292,12 +293,12 @@ export async function POST(request: NextRequest) {
             storageFolderPath: folderPath,
           },
         });
-        console.log(
+        logger.log(
           `[worker-context:${requestId}] ✓ Portal storageFolderId updated to ${parentFolderId}`,
         );
       }
     } else {
-      console.log(
+      logger.log(
         `[worker-context:${requestId}] Creating default folder structure...`,
       );
       const rootFolder = await findOrCreateRootFolder(
@@ -306,7 +307,7 @@ export async function POST(request: NextRequest) {
         provider,
       );
 
-      console.log(
+      logger.log(
         `[worker-context:${requestId}] ✓ Root folder: ${rootFolder.id}`,
       );
 
@@ -317,24 +318,24 @@ export async function POST(request: NextRequest) {
         provider,
       );
 
-      console.log(
+      logger.log(
         `[worker-context:${requestId}] ✓ Portal folder: ${portalFolder.id}`,
       );
 
       parentFolderId = portalFolder.id;
       folderPath = `dysumcorp/${portal.name}`;
-      console.log(`[worker-context:${requestId}] folderPath: ${folderPath}`);
+      logger.log(`[worker-context:${requestId}] folderPath: ${folderPath}`);
     }
 
     // Client sub-folder if enabled — skip when folder was pre-resolved (already includes client folder)
     const clientName = uploaderName ?? tokenPayload.uploaderName;
 
-    console.log(
+    logger.log(
       `[worker-context:${requestId}] useClientFolders: ${portal.useClientFolders}, clientName: "${clientName}", preResolved: ${!!preResolvedFolderId}`,
     );
 
     if (!preResolvedFolderId && portal.useClientFolders && clientName?.trim()) {
-      console.log(
+      logger.log(
         `[worker-context:${requestId}] Creating client folder for: "${clientName.trim()}"`,
       );
       const clientFolder = await findOrCreateClientFolder(
@@ -344,24 +345,24 @@ export async function POST(request: NextRequest) {
         provider,
       );
 
-      console.log(
+      logger.log(
         `[worker-context:${requestId}] ✓ Client folder: ${clientFolder.id} (${clientFolder.name})`,
       );
       parentFolderId = clientFolder.id;
       folderPath = `${folderPath}/${clientFolder.name}`;
     }
 
-    console.log(
+    logger.log(
       `[worker-context:${requestId}] ✓✓✓ SUCCESS - Returning context`,
     );
-    console.log(`[worker-context:${requestId}] Final context:`, {
+    logger.log(`[worker-context:${requestId}] Final context:`, {
       provider,
       parentFolderId,
       folderPath,
       portalName: portal.name,
       useClientFolders: portal.useClientFolders,
     });
-    console.log(
+    logger.log(
       `[worker-context:${requestId}] ═══════════════════════════════════════════════════════`,
     );
 
@@ -374,15 +375,15 @@ export async function POST(request: NextRequest) {
       useClientFolders: portal.useClientFolders,
     });
   } catch (error) {
-    console.error(
+    logger.error(
       `[worker-context:${requestId}] ❌❌❌ UNCAUGHT ERROR:`,
       error,
     );
-    console.error(
+    logger.error(
       `[worker-context:${requestId}] Error stack:`,
       error instanceof Error ? error.stack : "N/A",
     );
-    console.error(
+    logger.error(
       `[worker-context:${requestId}] ═══════════════════════════════════════════════════════`,
     );
 

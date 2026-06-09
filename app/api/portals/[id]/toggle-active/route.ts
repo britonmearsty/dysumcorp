@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -83,7 +84,7 @@ export async function POST(
       isActive: portal.isActive,
     });
   } catch (error) {
-    console.error("Error toggling portal status:", error);
+    logger.error("Error toggling portal status:", error);
 
     return NextResponse.json(
       { error: "Failed to toggle portal status" },

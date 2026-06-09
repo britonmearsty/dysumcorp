@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -114,7 +116,7 @@ export default function DashboardPage() {
           setRecentActivities(files);
         }
       } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
+        logger.error("Failed to fetch dashboard data:", error);
       } finally {
         setLoading(false);
       }
@@ -135,7 +137,7 @@ export default function DashboardPage() {
         setPortalFiles(data.portal?.files || []);
       }
     } catch (error) {
-      console.error("Failed to fetch portal files:", error);
+      logger.error("Failed to fetch portal files:", error);
     }
   };
 
@@ -185,7 +187,7 @@ export default function DashboardPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to toggle portal status:", error);
+      logger.error("Failed to toggle portal status:", error);
       showToast("Failed to toggle portal status", "error");
     } finally {
       setTogglingPortal(null);
@@ -232,7 +234,7 @@ export default function DashboardPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to download file:", error);
+      logger.error("Failed to download file:", error);
       showToast("Failed to download file", "error");
     }
   };
@@ -258,7 +260,7 @@ export default function DashboardPage() {
         showToast("Failed to delete file", "error");
       }
     } catch (error) {
-      console.error("Failed to delete file:", error);
+      logger.error("Failed to delete file:", error);
       showToast("Failed to delete file", "error");
     } finally {
       setDeletingFile(null);

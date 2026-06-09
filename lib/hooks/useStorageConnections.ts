@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "../logger";
 import { useEffect, useState, useCallback, useRef } from "react";
 
 interface ConnectedAccount {
@@ -54,7 +55,7 @@ export function useStorageConnections(
         onConnectionsChange(accounts);
       }
     } catch (err) {
-      console.error("Failed to check storage connections:", err);
+      logger.error("Failed to check storage connections:", err);
       setError(
         err instanceof Error
           ? err.message

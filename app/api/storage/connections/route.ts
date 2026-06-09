@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 
@@ -38,7 +39,7 @@ export async function GET() {
       },
     });
 
-    console.log(
+    logger.log(
       `[Storage Connections] Found ${accounts.length} accounts for user ${session.user.id}`,
     );
 
@@ -62,7 +63,7 @@ export async function GET() {
 
         // Auto-refresh only when the token is genuinely expired and we have a refresh token
         if (isExpired && account.refreshToken) {
-          console.log(
+          logger.log(
             `[Storage Connections] Token expired for ${account.providerId}, attempting refresh...`,
           );
 
@@ -73,19 +74,19 @@ export async function GET() {
             );
 
             if (newToken) {
-              console.log(
+              logger.log(
                 `[Storage Connections] Successfully refreshed token for ${account.providerId}`,
               );
               accessToken = newToken.accessToken;
               expiresAt = newToken.expiresAt;
               isExpired = false;
             } else {
-              console.log(
+              logger.log(
                 `[Storage Connections] Failed to refresh token for ${account.providerId}`,
               );
             }
           } catch (error) {
-            console.error(
+            logger.error(
               `[Storage Connections] Error refreshing token for ${account.providerId}:`,
               error,
             );
@@ -96,7 +97,7 @@ export async function GET() {
         // No expiresAt = token has no expiry (e.g. Dropbox offline token) = still valid.
         const hasValidToken = !!accessToken && !isExpired;
 
-        console.log(
+        logger.log(
           `[Storage Connections] ${account.providerId}: hasToken=${!!accessToken}, expiresAt=${expiresAt}, isValid=${hasValidToken}`,
         );
 
@@ -113,7 +114,7 @@ export async function GET() {
       }),
     );
 
-    console.log(
+    logger.log(
       `[Storage Connections] Returning ${connectedAccounts.length} accounts, ${connectedAccounts.filter((a) => a.isConnected).length} connected`,
     );
 
@@ -121,7 +122,7 @@ export async function GET() {
       accounts: connectedAccounts,
     });
   } catch (error) {
-    console.error("Error checking storage connections:", error);
+    logger.error("Error checking storage connections:", error);
 
     return NextResponse.json(
       { error: "Failed to check connections" },
@@ -168,7 +169,7 @@ async function refreshAccessToken(
     if (!response.ok) {
       const errorText = await response.text();
 
-      console.error(
+      logger.error(
         `Token refresh failed for ${provider}:`,
         response.status,
         errorText,
@@ -204,7 +205,7 @@ async function refreshAccessToken(
       expiresAt,
     };
   } catch (error) {
-    console.error(`Failed to refresh ${provider} token:`, error);
+    logger.error(`Failed to refresh ${provider} token:`, error);
 
     return null;
   }

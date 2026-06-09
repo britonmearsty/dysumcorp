@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
       planType,
     });
   } catch (error) {
-    console.error("Failed to get user plan:", error);
+    logger.error("Failed to get user plan:", error);
 
     return NextResponse.json(
       { error: "Failed to get user plan" },

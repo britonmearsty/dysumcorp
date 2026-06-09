@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import type { AccessResult } from "@/lib/access";
 
 import { useState, useEffect } from "react";
@@ -153,7 +154,7 @@ export default function BillingPage() {
 
       window.location.href = data.checkoutUrl;
     } catch (error) {
-      console.error("Subscription error:", error);
+      logger.error("Subscription error:", error);
       showToast("Failed to start checkout process", "error");
     }
   };

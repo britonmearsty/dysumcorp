@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -159,7 +160,7 @@ export async function GET(
 
     return NextResponse.json({ portal: serializedPortal });
   } catch (error) {
-    console.error("Error fetching portal:", error);
+    logger.error("Error fetching portal:", error);
 
     return NextResponse.json(
       { error: "Failed to fetch portal" },

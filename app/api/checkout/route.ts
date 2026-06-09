@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 import { Polar } from "@polar-sh/sdk";
 
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
         : plan.polarProductId;
 
     if (!productId || productId.trim() === "") {
-      console.error(`Missing POLAR_PRODUCT_ID_${billingCycle === "annual" ? "ANNUAL" : "MONTHLY"} environment variable`);
+      logger.error(`Missing POLAR_PRODUCT_ID_${billingCycle === "annual" ? "ANNUAL" : "MONTHLY"} environment variable`);
       return NextResponse.json(
         {
           error:
@@ -99,7 +100,7 @@ export async function POST(request: Request) {
       billingCycle,
     });
   } catch (error: any) {
-    console.error("Checkout error:", error);
+    logger.error("Checkout error:", error);
 
     let errorMessage = "Failed to create checkout session";
 

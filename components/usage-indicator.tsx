@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useState, useEffect } from "react";
 import { Progress } from "@heroui/progress";
 import { Chip } from "@heroui/chip";
@@ -62,7 +64,7 @@ export function UsageIndicator({
         setCurrentPlan(planData.planType);
       }
     } catch (error) {
-      console.error("Failed to fetch usage data:", error);
+      logger.error("Failed to fetch usage data:", error);
     } finally {
       setLoading(false);
     }

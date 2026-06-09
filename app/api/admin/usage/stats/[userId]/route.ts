@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { isAdmin } from "@/lib/admin";
@@ -34,7 +35,7 @@ export async function GET(
 
     return NextResponse.json(stats);
   } catch (error) {
-    console.error("Error getting usage stats:", error);
+    logger.error("Error getting usage stats:", error);
 
     return NextResponse.json(
       { error: "Failed to get usage stats" },

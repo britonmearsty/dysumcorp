@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
       valid: true,
     });
   } catch (error) {
-    console.error("Error checking slug:", error);
+    logger.error("Error checking slug:", error);
 
     return NextResponse.json(
       { error: "Failed to check slug availability" },

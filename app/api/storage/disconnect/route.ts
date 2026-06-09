@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error disconnecting storage:", error);
+    logger.error("Error disconnecting storage:", error);
 
     return NextResponse.json(
       { error: "Failed to disconnect" },

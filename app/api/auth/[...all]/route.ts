@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { toNextJsHandler } from "better-auth/next-js";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -9,17 +10,17 @@ const handler = toNextJsHandler(auth);
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.href;
 
-  console.log("[AUTH] GET request to:", url);
+  logger.log("[AUTH] GET request to:", url);
 
   try {
     const response = await handler.GET(request);
 
-    console.log("[AUTH] GET response status:", response.status);
+    logger.log("[AUTH] GET response status:", response.status);
 
     return response;
   } catch (error) {
-    console.error("Auth GET error:", error);
-    console.error(
+    logger.error("Auth GET error:", error);
+    logger.error(
       "Auth GET error stack:",
       error instanceof Error ? error.stack : "unknown",
     );
@@ -37,17 +38,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const url = request.nextUrl.href;
 
-  console.log("[AUTH] POST request to:", url);
+  logger.log("[AUTH] POST request to:", url);
 
   try {
     const response = await handler.POST(request);
 
-    console.log("[AUTH] POST response status:", response.status);
+    logger.log("[AUTH] POST response status:", response.status);
 
     return response;
   } catch (error) {
-    console.error("Auth POST error:", error);
-    console.error(
+    logger.error("Auth POST error:", error);
+    logger.error(
       "Auth POST error stack:",
       error instanceof Error ? error.stack : "unknown",
     );

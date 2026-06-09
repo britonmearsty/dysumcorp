@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -71,14 +72,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[Portal Upload] Starting upload process...");
+    logger.log("[Portal Upload] Starting upload process...");
 
     // Check content length before parsing
     const contentLength = request.headers.get("content-length");
     const MAX_SIZE = 4.5 * 1024 * 1024; // 4.5MB Vercel limit
 
     if (contentLength && parseInt(contentLength) > MAX_SIZE) {
-      console.log(
+      logger.log(
         `[Portal Upload] File too large: ${contentLength} bytes (max: ${MAX_SIZE})`,
       );
 
@@ -94,17 +95,17 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
 
-    console.log("[Portal Upload] FormData parsed successfully");
+    logger.log("[Portal Upload] FormData parsed successfully");
     const portalId = formData.get("portalId") as string;
     const files = formData.getAll("files") as File[];
     const passwords = formData.getAll("passwords") as string[];
 
-    console.log(
+    logger.log(
       `[Portal Upload] Portal ID: ${portalId}, Files: ${files.length}`,
     );
 
     if (!portalId) {
-      console.log("[Portal Upload] Error: Missing portal ID");
+      logger.log("[Portal Upload] Error: Missing portal ID");
 
       return NextResponse.json(
         { error: "Portal ID is required" },
@@ -113,20 +114,20 @@ export async function POST(request: NextRequest) {
     }
 
     if (files.length === 0) {
-      console.log("[Portal Upload] Error: No files provided");
+      logger.log("[Portal Upload] Error: No files provided");
 
       return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
     // Log file sizes
     files.forEach((file, i) => {
-      console.log(
+      logger.log(
         `[Portal Upload] File ${i + 1}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`,
       );
     });
 
     // Verify portal exists and get owner info
-    console.log("[Portal Upload] Fetching portal from database...");
+    logger.log("[Portal Upload] Fetching portal from database...");
     const portal = await prisma.portal.findUnique({
       where: { id: portalId },
       select: {
@@ -143,12 +144,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (!portal) {
-      console.log("[Portal Upload] Error: Portal not found");
+      logger.log("[Portal Upload] Error: Portal not found");
 
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
-    console.log(
+    logger.log(
       `[Portal Upload] Portal found: ${portal.name}, Owner: ${portal.user.email}`,
     );
     const userId = portal.userId;
@@ -171,14 +172,14 @@ export async function POST(request: NextRequest) {
     const portalProvider =
       portal.storageProvider === "dropbox" ? "dropbox" : "google";
 
-    console.log(`[Portal Upload] Portal storage provider: ${portalProvider}`);
+    logger.log(`[Portal Upload] Portal storage provider: ${portalProvider}`);
 
     let accessToken = await getValidToken(userId, portalProvider);
     let provider: "google" | "dropbox" = portalProvider;
 
     // Cloud storage is required - no local fallback
     if (!accessToken) {
-      console.log(
+      logger.log(
         `[Portal Upload] Error: No ${portalProvider} storage connected`,
       );
 
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[Portal Upload] Using ${provider} for storage`);
+    logger.log(`[Portal Upload] Using ${provider} for storage`);
 
     // Determine folder structure
     let parentFolderId: string;
@@ -235,10 +236,10 @@ export async function POST(request: NextRequest) {
       folderPath = `${folderPath}/${clientFolder.name}`;
     }
 
-    console.log("[Portal Upload] Starting file uploads...");
+    logger.log("[Portal Upload] Starting file uploads...");
     const uploadedFiles = await Promise.all(
       files.map(async (file, index) => {
-        console.log(
+        logger.log(
           `[Portal Upload] Uploading file ${index + 1}/${files.length}: ${file.name}`,
         );
         let storageUrl: string;
@@ -247,7 +248,7 @@ export async function POST(request: NextRequest) {
         // Upload to cloud storage
         try {
           if (provider === "google") {
-            console.log(
+            logger.log(
               `[Portal Upload] Uploading to Google Drive: ${file.name}`,
             );
             const result = await uploadToGoogleDrive(
@@ -262,11 +263,11 @@ export async function POST(request: NextRequest) {
               result.webViewLink ||
               `https://drive.google.com/file/d/${result.id}/view`;
             actualSize = result.size ? Number(result.size) : file.size;
-            console.log(
+            logger.log(
               `[Portal Upload] Google Drive upload successful: ${file.name}`,
             );
           } else {
-            console.log(`[Portal Upload] Uploading to Dropbox: ${file.name}`);
+            logger.log(`[Portal Upload] Uploading to Dropbox: ${file.name}`);
             const result = await uploadToDropbox(
               accessToken,
               `/${folderPath}/${file.name}`,
@@ -275,12 +276,12 @@ export async function POST(request: NextRequest) {
 
             storageUrl = result.id;
             actualSize = result.size ? Number(result.size) : file.size;
-            console.log(
+            logger.log(
               `[Portal Upload] Dropbox upload successful: ${file.name}`,
             );
           }
         } catch (uploadError) {
-          console.error(
+          logger.error(
             `[Portal Upload] Failed to upload ${file.name}:`,
             uploadError,
           );
@@ -333,7 +334,7 @@ export async function POST(request: NextRequest) {
           uploaderName: uploaderName || undefined,
         });
       } catch (emailError) {
-        console.error("Failed to send email notification:", emailError);
+        logger.error("Failed to send email notification:", emailError);
         // Don't fail the upload if email fails
       }
     }
@@ -356,7 +357,7 @@ export async function POST(request: NextRequest) {
       },
     );
   } catch (error) {
-    console.error("Portal upload error:", error);
+    logger.error("Portal upload error:", error);
 
     // Provide more detailed error message
     const errorMessage =

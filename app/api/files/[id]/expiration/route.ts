@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -62,7 +63,7 @@ export async function PUT(
       expiresAt: expirationDate,
     });
   } catch (error) {
-    console.error("Error setting file expiration:", error);
+    logger.error("Error setting file expiration:", error);
 
     return NextResponse.json(
       { error: "Failed to set expiration date" },
@@ -108,7 +109,7 @@ export async function DELETE(
       message: "Expiration date removed successfully",
     });
   } catch (error) {
-    console.error("Error removing file expiration:", error);
+    logger.error("Error removing file expiration:", error);
 
     return NextResponse.json(
       { error: "Failed to remove expiration date" },

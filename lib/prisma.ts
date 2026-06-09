@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
@@ -21,7 +22,7 @@ if (connectionString) {
   });
 
   pool.on("error", (err) => {
-    console.error("Unexpected pg pool error:", err);
+    logger.error("Unexpected pg pool error:", err);
   });
 
   // Cast to any to avoid @types/pg version conflict between top-level and @prisma/adapter-pg bundled types

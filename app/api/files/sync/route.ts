@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -147,14 +148,14 @@ export async function POST(request: Request) {
           results.deleted++;
         }
       } catch (error) {
-        console.error(`Error checking file ${file.id}:`, error);
+        logger.error(`Error checking file ${file.id}:`, error);
         results.errors.push(`Failed to check file: ${file.name}`);
       }
     }
 
     return NextResponse.json(results);
   } catch (error) {
-    console.error("Error syncing files:", error);
+    logger.error("Error syncing files:", error);
 
     return NextResponse.json(
       { error: "Failed to sync files" },

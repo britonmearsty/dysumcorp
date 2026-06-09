@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getSession } from "@/lib/auth-server";
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error updating user:", error);
+    logger.error("Error updating user:", error);
 
     return NextResponse.json(
       { error: "Failed to update user" },

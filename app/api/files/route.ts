@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -51,7 +52,7 @@ export async function GET(request: Request) {
       });
     } catch (relationError: any) {
       // If uploadSession relation doesn't exist yet, fetch without it
-      console.log(
+      logger.log(
         "[Files API] Falling back to query without uploadSession:",
         relationError.message,
       );
@@ -88,7 +89,7 @@ export async function GET(request: Request) {
       })),
     });
   } catch (error) {
-    console.error("Error fetching files:", error);
+    logger.error("Error fetching files:", error);
 
     return NextResponse.json(
       { error: "Failed to fetch files" },

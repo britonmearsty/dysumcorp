@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
@@ -95,7 +97,7 @@ export default function PublicPortalPage() {
         setErrorMessage("Portal not found");
       }
     } catch (error) {
-      console.error("Failed to fetch portal:", error);
+      logger.error("Failed to fetch portal:", error);
       setErrorMessage("Failed to load portal");
     } finally {
       setLoading(false);
@@ -324,7 +326,7 @@ export default function PublicPortalPage() {
           throw new Error(`${file.name} exceeds the portal's size limit`);
         }
 
-        console.log(
+        logger.log(
           `[Upload] Starting upload for file ${i + 1}/${files.length}: ${file.name}`,
         );
 
@@ -352,7 +354,7 @@ export default function PublicPortalPage() {
 
         const uploadData = await directUploadResponse.json();
 
-        console.log(
+        logger.log(
           `[Upload] Upload credentials received for ${file.name}, provider: ${uploadData.provider}`,
         );
 
@@ -364,7 +366,7 @@ export default function PublicPortalPage() {
           const chunkSize = uploadData.chunkSize || 4 * 1024 * 1024;
           const totalChunks = Math.ceil(file.size / chunkSize);
 
-          console.log(
+          logger.log(
             `[Upload] Streaming ${file.name} in ${totalChunks} chunks`,
           );
 
@@ -417,7 +419,7 @@ export default function PublicPortalPage() {
 
             storageFileId = fileData.id;
             storageUrl = `https://drive.google.com/file/d/${fileData.id}/view`;
-            console.log(`[Upload] File uploaded to Google Drive: ${file.name}`);
+            logger.log(`[Upload] File uploaded to Google Drive: ${file.name}`);
           } else if (uploadData.provider === "dropbox") {
             // Dropbox parallel chunk upload with dynamic concurrency
             // Vercel limit: ~10 concurrent functions, we use 8 for safety
@@ -430,7 +432,7 @@ export default function PublicPortalPage() {
               Math.floor(MAX_CONCURRENT_CHUNKS / files.length),
             );
 
-            console.log(
+            logger.log(
               `[Upload] Dropbox parallel upload: ${concurrency} chunks at once for ${file.name}`,
             );
 
@@ -474,7 +476,7 @@ export default function PublicPortalPage() {
             if (totalChunks === 1 && startResult.complete) {
               storageFileId = startResult.fileData.id;
               storageUrl = startResult.fileData.id;
-              console.log(
+              logger.log(
                 `[Upload] Single chunk file uploaded to Dropbox: ${file.name}`,
               );
             } else {
@@ -560,7 +562,7 @@ export default function PublicPortalPage() {
                   if (lastResult && lastResult.result.fileData) {
                     storageFileId = lastResult.result.fileData.id;
                     storageUrl = lastResult.result.fileData.id;
-                    console.log(
+                    logger.log(
                       `[Upload] File uploaded to Dropbox: ${file.name} (${concurrency} chunks at once)`,
                     );
                   }
@@ -597,7 +599,7 @@ export default function PublicPortalPage() {
           throw new Error(errorData.error || "Failed to confirm upload");
         }
 
-        console.log(`[Upload] Upload confirmed for ${file.name}`);
+        logger.log(`[Upload] Upload confirmed for ${file.name}`);
         setFileProgress((prev) => ({ ...prev, [i]: 100 }));
 
         return {
@@ -625,7 +627,7 @@ export default function PublicPortalPage() {
             }),
           });
         } catch (notifError) {
-          console.error("[Upload] Failed to send notification:", notifError);
+          logger.error("[Upload] Failed to send notification:", notifError);
           // Don't fail the upload if notification fails
         }
       }
@@ -637,7 +639,7 @@ export default function PublicPortalPage() {
       setUploaderEmail("");
       setFileProgress({});
     } catch (error) {
-      console.error("Upload failed:", error);
+      logger.error("Upload failed:", error);
       const errorMsg =
         error instanceof Error
           ? error.message

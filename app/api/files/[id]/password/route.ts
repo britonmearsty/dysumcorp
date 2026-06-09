@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -66,7 +67,7 @@ export async function PUT(
       message: "Password protection added successfully",
     });
   } catch (error) {
-    console.error("Error setting file password:", error);
+    logger.error("Error setting file password:", error);
 
     return NextResponse.json(
       { error: "Failed to set password" },
@@ -113,7 +114,7 @@ export async function DELETE(
       message: "Password protection removed successfully",
     });
   } catch (error) {
-    console.error("Error removing file password:", error);
+    logger.error("Error removing file password:", error);
 
     return NextResponse.json(
       { error: "Failed to remove password" },

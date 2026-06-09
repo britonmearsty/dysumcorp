@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useEffect, useState } from "react";
 import {
   Type,
@@ -320,7 +322,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                     dysumFolder = await createRes.json();
                   }
                 } catch (error) {
-                  console.error("Error creating Dysumcorp folder:", error);
+                  logger.error("Error creating Dysumcorp folder:", error);
                 }
               }
 
@@ -394,7 +396,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
                   dysumFolder = await createRes.json();
                 }
               } catch (error) {
-                console.error("Error creating dysumcorp folder:", error);
+                logger.error("Error creating dysumcorp folder:", error);
               }
             }
 
@@ -419,7 +421,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
         }
       }
     } catch (error) {
-      console.error("Error initializing storage:", error);
+      logger.error("Error initializing storage:", error);
     } finally {
       setLoadingFolders(false);
     }
@@ -441,7 +443,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
         setFolders(data);
       }
     } catch (error) {
-      console.error("Error fetching folders:", error);
+      logger.error("Error fetching folders:", error);
     } finally {
       setLoadingFolders(false);
     }
@@ -488,7 +490,7 @@ const StorageSection: React.FC<StorageSectionProps> = ({
         }
       }
     } catch (error) {
-      console.error("Error creating folder:", error);
+      logger.error("Error creating folder:", error);
       setFolderError("An unexpected error occurred");
     } finally {
       setLoadingFolders(false);
@@ -1480,7 +1482,7 @@ export default function EditPortalPage() {
         })));
       }
     } catch (error) {
-      console.error("Error fetching portal:", error);
+      logger.error("Error fetching portal:", error);
       setError("Failed to load portal");
     } finally {
       setLoading(false);
@@ -1499,10 +1501,10 @@ export default function EditPortalPage() {
       if (response.ok) {
         setUserPlan(data.planType);
       } else {
-        console.error("Failed to fetch user plan:", data.error);
+        logger.error("Failed to fetch user plan:", data.error);
       }
     } catch (error) {
-      console.error("Failed to fetch user plan:", error);
+      logger.error("Failed to fetch user plan:", error);
     }
   };
 
@@ -1583,7 +1585,7 @@ export default function EditPortalPage() {
 
       throw new Error("No file URL returned from upload");
     } catch (error) {
-      console.error("Logo upload error:", error);
+      logger.error("Logo upload error:", error);
       throw error;
     }
   };
@@ -1739,9 +1741,9 @@ export default function EditPortalPage() {
         ? formData.maxFileSize
         : 50; // Default 50MB
 
-    console.log("[Edit Portal] Form data maxFileSize:", formData.maxFileSize);
-    console.log("[Edit Portal] Final maxFileSize (MB):", finalMaxFileSize);
-    console.log(
+    logger.log("[Edit Portal] Form data maxFileSize:", formData.maxFileSize);
+    logger.log("[Edit Portal] Final maxFileSize (MB):", finalMaxFileSize);
+    logger.log(
       "[Edit Portal] Final maxFileSize (bytes):",
       finalMaxFileSize * 1024 * 1024,
     );
@@ -1813,7 +1815,7 @@ export default function EditPortalPage() {
         textboxSectionRequired: formData.textboxSectionRequired,
       };
 
-      console.log(
+      logger.log(
         "[Edit Portal] Request body:",
         JSON.stringify(requestBody, null, 2),
       );
@@ -1835,7 +1837,7 @@ export default function EditPortalPage() {
       router.push("/dashboard/portals");
       router.refresh();
     } catch (error) {
-      console.error("Failed to update portal:", error);
+      logger.error("Failed to update portal:", error);
       setError("Failed to update portal. Please try again.");
     } finally {
       setSaving(false);

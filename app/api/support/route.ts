@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getSession } from "@/lib/auth-server";
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error in support API:", error);
+    logger.error("Error in support API:", error);
 
     return NextResponse.json(
       { error: "Internal server error" },

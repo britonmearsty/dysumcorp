@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -103,11 +105,11 @@ export default function ClientsPage() {
       } else {
         const errorData = await response.json();
 
-        console.error("Failed to fetch clients:", errorData);
+        logger.error("Failed to fetch clients:", errorData);
         showToast(errorData.error || "Failed to fetch clients", "error");
       }
     } catch (error) {
-      console.error("Failed to fetch clients:", error);
+      logger.error("Failed to fetch clients:", error);
       showToast("Failed to fetch clients", "error");
     } finally {
       setLoading(false);
@@ -176,7 +178,7 @@ export default function ClientsPage() {
         setClientFiles(filtered);
       }
     } catch (error) {
-      console.error("Failed to fetch client files:", error);
+      logger.error("Failed to fetch client files:", error);
     } finally {
       setLoadingFiles(false);
     }
@@ -240,7 +242,7 @@ export default function ClientsPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to download file:", error);
+      logger.error("Failed to download file:", error);
       showToast("Failed to download file", "error");
     }
   };
@@ -266,7 +268,7 @@ export default function ClientsPage() {
         showToast("Failed to delete file", "error");
       }
     } catch (error) {
-      console.error("Failed to delete file:", error);
+      logger.error("Failed to delete file:", error);
       showToast("Failed to delete file", "error");
     } finally {
       setDeletingFile(null);

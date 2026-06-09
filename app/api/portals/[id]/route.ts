@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -85,7 +86,7 @@ export async function GET(
 
     return NextResponse.json({ portal: serializedPortal });
   } catch (error) {
-    console.error("Error fetching portal:", error);
+    logger.error("Error fetching portal:", error);
 
     return NextResponse.json(
       { error: "Failed to fetch portal" },
@@ -110,19 +111,19 @@ export async function PATCH(
       );
     }
 
-    console.log(`[Portal Update] Starting update for portal: ${id}`);
+    logger.log(`[Portal Update] Starting update for portal: ${id}`);
 
     const session = await getSessionFromRequest(request);
 
     if (!session?.user) {
-      console.log("[Portal Update] Unauthorized - no session");
+      logger.log("[Portal Update] Unauthorized - no session");
 
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
 
-    console.log("[Portal Update] Request body:", JSON.stringify(body, null, 2));
+    logger.log("[Portal Update] Request body:", JSON.stringify(body, null, 2));
 
     const {
       name,
@@ -213,7 +214,7 @@ export async function PATCH(
     // Handle maxFileSize conversion carefully
     if (maxFileSize !== undefined) {
       try {
-        console.log(
+        logger.log(
           `[Portal Update] Converting maxFileSize: ${maxFileSize} (type: ${typeof maxFileSize})`,
         );
         // Convert to number first if it's a string, then to BigInt
@@ -226,11 +227,11 @@ export async function PATCH(
           throw new Error(`Invalid maxFileSize value: ${maxFileSize}`);
         }
         updateData.maxFileSize = BigInt(fileSizeNum);
-        console.log(
+        logger.log(
           `[Portal Update] Converted maxFileSize to BigInt: ${updateData.maxFileSize}`,
         );
       } catch (conversionError) {
-        console.error(
+        logger.error(
           "[Portal Update] Error converting maxFileSize:",
           conversionError,
         );
@@ -272,7 +273,7 @@ export async function PATCH(
     if (textboxSectionRequired !== undefined)
       updateData.textboxSectionRequired = textboxSectionRequired;
 
-    console.log(
+    logger.log(
       "[Portal Update] Update data prepared:",
       JSON.stringify(updateData, (key, value) =>
         typeof value === "bigint" ? value.toString() : value,
@@ -280,7 +281,7 @@ export async function PATCH(
     );
 
     // Find portal first (supports UUID and slug)
-    console.log("[Portal Update] Looking up portal...");
+    logger.log("[Portal Update] Looking up portal...");
     const existingPortal = await prisma.portal.findFirst({
       where: {
         OR: [{ id }, { slug: id }],
@@ -290,18 +291,18 @@ export async function PATCH(
     });
 
     if (!existingPortal) {
-      console.log("[Portal Update] Portal not found");
+      logger.log("[Portal Update] Portal not found");
       return NextResponse.json({ error: "Portal not found" }, { status: 404 });
     }
 
     // Update portal
-    console.log("[Portal Update] Executing database update...");
+    logger.log("[Portal Update] Executing database update...");
     const portal = await prisma.portal.update({
       where: { id: existingPortal.id },
       data: updateData,
     });
 
-    console.log("[Portal Update] Portal updated successfully");
+    logger.log("[Portal Update] Portal updated successfully");
 
     // Update checklist items if provided
     if (checklistItems !== undefined) {
@@ -330,13 +331,13 @@ export async function PATCH(
 
     return NextResponse.json({ success: true, portal: serializedPortal });
   } catch (error) {
-    console.error("[Portal Update] Error updating portal:", error);
+    logger.error("[Portal Update] Error updating portal:", error);
 
     // Provide more detailed error message
     const errorMessage =
       error instanceof Error ? error.message : "Failed to update portal";
 
-    console.error("[Portal Update] Error details:", errorMessage);
+    logger.error("[Portal Update] Error details:", errorMessage);
 
     return NextResponse.json(
       {
@@ -449,7 +450,7 @@ export async function DELETE(
             if (token) await deleteFromDropbox(token, file.storageFileId);
           }
         } catch (err) {
-          console.error(`Failed to delete file ${file.id} from cloud:`, err);
+          logger.error(`Failed to delete file ${file.id} from cloud:`, err);
         }
       }
     }
@@ -459,7 +460,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting portal:", error);
+    logger.error("Error deleting portal:", error);
 
     return NextResponse.json(
       { error: "Failed to delete portal" },

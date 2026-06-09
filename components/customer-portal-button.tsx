@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useState } from "react";
 import { Button } from "@heroui/button";
 import { Alert } from "@heroui/alert";
@@ -56,7 +58,7 @@ export function CustomerPortalButton({
         setError("No portal URL returned. Please contact support.");
       }
     } catch (err: any) {
-      console.error("Failed to open portal:", err);
+      logger.error("Failed to open portal:", err);
       setError(err?.message || "Failed to open customer portal");
     } finally {
       setLoading(false);

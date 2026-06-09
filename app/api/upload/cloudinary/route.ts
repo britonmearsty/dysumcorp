@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getSessionFromRequest } from "@/lib/auth-server";
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
       publicId: result.public_id,
     });
   } catch (error) {
-    console.error(
+    logger.error(
       "Cloudinary upload error:",
       error instanceof Error ? error.message : error,
     );

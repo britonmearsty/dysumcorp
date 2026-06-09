@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getSessionFromRequest } from "@/lib/auth-server";
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest) {
       file: result,
     });
   } catch (error) {
-    console.error("Storage upload error:", error);
+    logger.error("Storage upload error:", error);
 
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Upload failed" },

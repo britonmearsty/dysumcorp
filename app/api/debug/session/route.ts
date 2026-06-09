@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { getSessionFromRequest } from "@/lib/auth-server";
@@ -29,7 +30,7 @@ export async function GET(request: Request) {
         : null,
     });
   } catch (error) {
-    console.error("Error checking session:", error);
+    logger.error("Error checking session:", error);
 
     return NextResponse.json(
       {

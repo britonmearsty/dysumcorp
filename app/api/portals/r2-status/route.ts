@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -18,23 +19,23 @@ export async function GET(request: NextRequest) {
 
   const requestId = Math.random().toString(36).slice(2, 8);
 
-  console.log(
+  logger.log(
     `[r2-status:${requestId}] ═══════════════════════════════════════════════════════`,
   );
-  console.log(`[r2-status:${requestId}] GET /api/portals/r2-status`);
+  logger.log(`[r2-status:${requestId}] GET /api/portals/r2-status`);
 
   try {
     const { searchParams } = new URL(request.url);
     const stagingKey = searchParams.get("stagingKey");
     const uploadToken = searchParams.get("uploadToken");
 
-    console.log(`[r2-status:${requestId}] stagingKey: ${stagingKey}`);
-    console.log(
+    logger.log(`[r2-status:${requestId}] stagingKey: ${stagingKey}`);
+    logger.log(
       `[r2-status:${requestId}] uploadToken length: ${uploadToken?.length}`,
     );
 
     if (!stagingKey || !uploadToken) {
-      console.error(`[r2-status:${requestId}] ❌ Missing required params`);
+      logger.error(`[r2-status:${requestId}] ❌ Missing required params`);
 
       return NextResponse.json(
         { error: "stagingKey and uploadToken are required" },
@@ -42,26 +43,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`[r2-status:${requestId}] Validating upload token...`);
+    logger.log(`[r2-status:${requestId}] Validating upload token...`);
     const token = validateUploadToken(uploadToken);
 
     if (!token) {
-      console.error(`[r2-status:${requestId}] ❌ Token validation failed`);
+      logger.error(`[r2-status:${requestId}] ❌ Token validation failed`);
 
       return NextResponse.json(
         { error: "Invalid or expired upload token" },
         { status: 401 },
       );
     }
-    console.log(`[r2-status:${requestId}] ✓ Token valid`);
+    logger.log(`[r2-status:${requestId}] ✓ Token valid`);
 
     // Ensure the token was issued for this exact staging key
     if (token.stagingKey !== stagingKey) {
-      console.error(`[r2-status:${requestId}] ❌ stagingKey mismatch`);
-      console.error(
+      logger.error(`[r2-status:${requestId}] ❌ stagingKey mismatch`);
+      logger.error(
         `[r2-status:${requestId}] Token stagingKey: ${token.stagingKey}`,
       );
-      console.error(
+      logger.error(
         `[r2-status:${requestId}] Request stagingKey: ${stagingKey}`,
       );
 
@@ -70,15 +71,15 @@ export async function GET(request: NextRequest) {
         { status: 403 },
       );
     }
-    console.log(`[r2-status:${requestId}] ✓ stagingKey matches token`);
+    logger.log(`[r2-status:${requestId}] ✓ stagingKey matches token`);
 
-    console.log(`[r2-status:${requestId}] Querying R2StagingUpload record...`);
+    logger.log(`[r2-status:${requestId}] Querying R2StagingUpload record...`);
     const staging = await prisma.r2StagingUpload.findUnique({
       where: { stagingKey },
     });
 
     if (!staging) {
-      console.error(`[r2-status:${requestId}] ❌ Staging record not found`);
+      logger.error(`[r2-status:${requestId}] ❌ Staging record not found`);
 
       return NextResponse.json(
         { error: "Staging record not found" },
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`[r2-status:${requestId}] Staging record found:`, {
+    logger.log(`[r2-status:${requestId}] Staging record found:`, {
       id: staging.id,
       status: staging.status,
       fileId: staging.fileId,
@@ -95,7 +96,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (staging.status === "DELIVERED" || staging.status === "completed") {
-      console.log(
+      logger.log(
         `[r2-status:${requestId}] Status is COMPLETED, fetching File record...`,
       );
       // Use the direct fileId FK set by r2-confirm — no fuzzy matching
@@ -115,20 +116,20 @@ export async function GET(request: NextRequest) {
         : null;
 
       if (file) {
-        console.log(`[r2-status:${requestId}] ✓ File record found:`, {
+        logger.log(`[r2-status:${requestId}] ✓ File record found:`, {
           id: file.id,
           name: file.name,
           size: file.size.toString(),
           uploadSessionId: file.uploadSessionId,
         });
       } else {
-        console.warn(
+        logger.warn(
           `[r2-status:${requestId}] ⚠️ Status completed but no File record found (fileId: ${staging.fileId})`,
         );
       }
 
-      console.log(`[r2-status:${requestId}] ✓✓✓ Returning completed status`);
-      console.log(
+      logger.log(`[r2-status:${requestId}] ✓✓✓ Returning completed status`);
+      logger.log(
         `[r2-status:${requestId}] ═══════════════════════════════════════════════════════`,
       );
 
@@ -143,21 +144,21 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(
+    logger.log(
       `[r2-status:${requestId}] Status: ${staging.status} (still processing)`,
     );
-    console.log(
+    logger.log(
       `[r2-status:${requestId}] ═══════════════════════════════════════════════════════`,
     );
 
     return NextResponse.json({ status: staging.status });
   } catch (error) {
-    console.error(`[r2-status:${requestId}] ❌❌❌ UNCAUGHT ERROR:`, error);
-    console.error(
+    logger.error(`[r2-status:${requestId}] ❌❌❌ UNCAUGHT ERROR:`, error);
+    logger.error(
       `[r2-status:${requestId}] Error stack:`,
       error instanceof Error ? error.stack : "N/A",
     );
-    console.error(
+    logger.error(
       `[r2-status:${requestId}] ═══════════════════════════════════════════════════════`,
     );
 

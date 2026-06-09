@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Public upload URL error:", error);
+    logger.error("Public upload URL error:", error);
 
     return NextResponse.json(
       { error: "Failed to get upload URL" },

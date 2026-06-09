@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
@@ -95,7 +96,7 @@ export async function DELETE(
               cloudDeleted = true;
             }
           } catch (err) {
-            console.error("Failed to delete from Google Drive:", err);
+            logger.error("Failed to delete from Google Drive:", err);
           }
         }
       } else if (isDropbox && file.storageFileId) {
@@ -108,7 +109,7 @@ export async function DELETE(
             cloudDeleted = true;
           }
         } catch (err) {
-          console.error("Failed to delete from Dropbox:", err);
+          logger.error("Failed to delete from Dropbox:", err);
         }
       }
     }
@@ -117,7 +118,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, cloudDeleted });
   } catch (error) {
-    console.error("Error deleting file:", error);
+    logger.error("Error deleting file:", error);
 
     return NextResponse.json(
       { error: "Failed to delete file" },
