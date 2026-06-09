@@ -37,6 +37,12 @@ export function PortalHeader({
   const messageTitle = messageParts[0] || "";
   const messageDescription = messageParts.slice(1).join(" ") || "";
 
+  const formatWebsiteHref = (website: string) => {
+    const trimmed = website.trim();
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  };
+
   return (
     <header className="w-full border-b border-black/5 bg-white/80 backdrop-blur-md sticky top-0 z-30">
       <div className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 flex items-center gap-3 sm:gap-4">
@@ -77,13 +83,25 @@ export function PortalHeader({
               style={{ color: primaryColor }}
             >
               {companyWebsite && (
-                <span className="break-all hover:opacity-100 transition-opacity cursor-pointer">{companyWebsite}</span>
+                <a
+                  href={formatWebsiteHref(companyWebsite)}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="break-all hover:opacity-100 transition-opacity underline-offset-2 hover:underline"
+                >
+                  {companyWebsite}
+                </a>
               )}
               {companyWebsite && companyEmail && (
                 <span className="hidden sm:inline opacity-30">|</span>
               )}
               {companyEmail && (
-                <span className="break-all hover:opacity-100 transition-opacity cursor-pointer">{companyEmail}</span>
+                <a
+                  href={`mailto:${companyEmail.trim()}`}
+                  className="break-all hover:opacity-100 transition-opacity underline-offset-2 hover:underline"
+                >
+                  {companyEmail}
+                </a>
               )}
             </div>
           )}

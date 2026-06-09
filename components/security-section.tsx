@@ -17,8 +17,7 @@ export default function SecuritySection() {
               Built with your privacy in mind
             </h2>
             <p className="text-stone-700 mt-8 text-lg leading-relaxed">
-              Your files go directly from your client to your Drive or Dropbox.
-              Dysumcorp never stores your documents.
+              Files upload securely to your Drive or Dropbox via our infrastructure. We never keep copies. Your cloud, your control.
             </p>
 
             <p className="text-stone-700 mt-6 text-lg leading-relaxed font-medium italic">
