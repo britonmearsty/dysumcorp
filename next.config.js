@@ -34,7 +34,7 @@ const nextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://cdn.fontshare.com; connect-src 'self' https://*.vercel.app https://*.googleapis.com https://*.dropboxapi.com https://*.r2.cloudflarestream.com https://*.r2.cloudflarestorage.com https://*.cloudflarestorage.com https://*.dysumcorp.workers.dev;",
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://cdn.fontshare.com https://fonts.gstatic.com; connect-src 'self' https://*.vercel.app https://*.googleapis.com https://*.dropboxapi.com https://*.r2.cloudflarestream.com https://*.r2.cloudflarestorage.com https://*.cloudflarestorage.com https://*.dysumcorp.workers.dev https://*.neon.tech wss://*.neon.tech;",
           },
           // Referrer policy - don't leak referrer to external sites
           {
@@ -105,37 +105,6 @@ const nextConfig = {
 
   // Disable x-powered-by header
   poweredByHeader: false,
-
-  // Content Security Policy
-  async headers() {
-    return [
-      {
-        source: "/:path*",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.dropboxapi.com; frame-ancestors 'none'; upgrade-insecure-requests;",
-          },
-          {
-            key: "X-Frame-Options",
-            value: "DENY",
-          },
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=31536000; includeSubDomains; preload",
-          },
-        ],
-      },
-    ];
-  },
 
   // Compression
   compress: true,
