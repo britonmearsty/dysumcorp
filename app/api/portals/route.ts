@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     });
 
     // Convert BigInt fields to strings for JSON serialization
-    const serializedPortals = portals.map((portal) => ({
+    const serializedPortals = portals.map((portal: { maxFileSize: bigint; [key: string]: unknown }) => ({
       ...portal,
       maxFileSize: portal.maxFileSize.toString(),
     }));

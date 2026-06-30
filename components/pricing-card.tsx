@@ -138,7 +138,7 @@ export function PricingCard({
                   <p className={`text-[10px] font-bold uppercase tracking-wider ${
                     variant === "dashboard" ? "text-amber-600 dark:text-amber-400" : "text-amber-600"
                   }`}>
-                    Limited Special — Ends {discount.endsAt}
+                    First subscription only — click to copy
                   </p>
                   <p className={`text-sm font-bold ${
                     variant === "dashboard" ? "text-amber-800 dark:text-amber-200" : "text-amber-800"
@@ -191,7 +191,7 @@ export function PricingCard({
             {/* REMOVABLE: DISCOUNT - Remove monthly savings badge */}
             {billingCycle === "monthly" && (
               <p className={`text-xs font-bold mt-1 ${cardStyles.savingsBadge} inline-block px-2 py-0.5 rounded-full uppercase tracking-wider`}>
-                Save {discount.percent}% this month
+                Save {discount.percent}% on your first month
               </p>
             )}
             {/* END REMOVABLE: DISCOUNT */}

@@ -105,7 +105,7 @@ export async function GET(request: Request) {
         diagnostics.checks.existingPortals = {
           status: "success",
           count: portals.length,
-          portals: portals.map((p) => ({
+          portals: portals.map((p: { id: string; name: string; slug: string }) => ({
             id: p.id,
             name: p.name,
             slug: p.slug,

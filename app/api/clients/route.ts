@@ -53,7 +53,13 @@ export async function GET(request: Request) {
       }
     >();
 
-    files.forEach((file) => {
+    files.forEach((file: {
+      uploaderName: string | null;
+      uploaderEmail: string | null;
+      uploadedAt: Date;
+      size: bigint;
+      portal: { id: string; name: string };
+    }) => {
       // Use email as primary identifier, fall back to name
       const identifier = file.uploaderEmail || file.uploaderName || "Unknown";
       const existing = clientsMap.get(identifier);

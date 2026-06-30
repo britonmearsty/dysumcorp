@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
-
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -42,9 +42,6 @@ export async function middleware(request: NextRequest) {
   const isWebhookApi = pathname.startsWith("/api/webhooks");
   const isPublicApi =
     pathname.startsWith("/api/portals/public") ||
-    pathname.startsWith("/api/portals/upload") ||
-    pathname.startsWith("/api/portals/direct-upload") ||
-    pathname.startsWith("/api/portals/stream-upload") ||
     pathname.startsWith("/api/portals/confirm-upload") ||
     pathname.startsWith("/api/portals/r2-presign") ||
     pathname.startsWith("/api/portals/r2-worker-context") ||

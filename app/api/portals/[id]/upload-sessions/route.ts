@@ -63,10 +63,20 @@ export async function GET(
     });
 
     // Convert BigInt to string for JSON serialization
-    const serializedSessions = uploadSessions.map((session) => ({
+    const serializedSessions = uploadSessions.map((session: {
+      id: string;
+      portalId: string;
+      uploaderName: string | null;
+      uploaderEmail: string | null;
+      uploaderNotes: string | null;
+      uploadedAt: Date;
+      totalSize: bigint;
+      files: { id: string; name: string; size: bigint; mimeType: string; uploadedAt: Date }[];
+      [key: string]: unknown;
+    }) => ({
       ...session,
       totalSize: session.totalSize.toString(),
-      files: session.files.map((file) => ({
+      files: session.files.map((file: { id: string; name: string; size: bigint; mimeType: string; uploadedAt: Date }) => ({
         ...file,
         size: file.size.toString(),
       })),

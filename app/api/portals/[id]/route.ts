@@ -78,7 +78,18 @@ export async function GET(
       welcomeToastDuration: portal.welcomeToastDuration ?? 3000,
       submitButtonText: portal.submitButtonText || "Initialize Transfer",
       successMessage: portal.successMessage || "Transmission Verified",
-      files: portal.files.map((file) => ({
+      files: portal.files.map((file: {
+        id: string;
+        name: string;
+        size: bigint;
+        mimeType: string;
+        storageUrl: string | null;
+        uploadedAt: Date;
+        passwordHash: string | null;
+        downloads: number;
+        uploaderName: string | null;
+        uploaderEmail: string | null;
+      }) => ({
         ...file,
         size: file.size.toString(),
       })),

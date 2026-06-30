@@ -290,6 +290,56 @@ export default function PublicPortalPage() {
       numbers: "application/x-iwork-numbers-sffnumbers",
       key: "application/x-iwork-keynote-sffkey",
       csv: "text/csv",
+      // MS Access
+      accdb: "application/msaccess",
+      mdb: "application/msaccess",
+      // MS Project
+      mpp: "application/vnd.ms-project",
+      mpt: "application/vnd.ms-project",
+      // MS Visio
+      vsd: "application/vnd.visio",
+      vsdx: "application/vnd.ms-visio.drawing",
+      // OneNote
+      one: "application/onenote",
+      onetoc2: "application/onenote",
+      // CAD
+      dwg: "image/vnd.dwg",
+      dxf: "application/dxf",
+      // Design
+      indd: "application/x-indesign",
+      sketch: "application/x-sketch",
+      fig: "application/figma",
+      xd: "application/figma",
+      // eBooks
+      epub: "application/epub+zip",
+      mobi: "application/x-mobipocket-ebook",
+      azw: "application/x-mobipocket-ebook",
+      azw3: "application/x-mobipocket-ebook",
+      // Executables & Installers
+      exe: "application/x-msdownload",
+      msi: "application/x-msi",
+      deb: "application/vnd.debian.binary-package",
+      rpm: "application/x-rpm",
+      pkg: "application/x-newton-compatible-pkg",
+      appx: "application/appx",
+      apk: "application/vnd.android.package-archive",
+      // Database
+      sqlite: "application/x-sqlite3",
+      sqlite3: "application/x-sqlite3",
+      db: "application/x-sqlite3",
+      db3: "application/x-sqlite3",
+      // 3D / CAM
+      stl: "model/stl",
+      obj: "model/obj",
+      fbx: "application/octet-stream",
+      step: "application/octet-stream",
+      stp: "application/octet-stream",
+      iges: "application/octet-stream",
+      igs: "application/octet-stream",
+      "3mf": "application/octet-stream",
+      blend: "application/octet-stream",
+      glb: "model/gltf-binary",
+      gltf: "model/gltf+json",
     };
 
     const textExtensions = [
@@ -381,7 +431,17 @@ export default function PublicPortalPage() {
       if (fileExtension === allowed) return true;
       // Handle comma-separated list of MIME types
       if (allowed.includes(",")) {
-        return allowed.split(",").some((type) => type.trim() === fileType);
+        return allowed.split(",").some((type) => {
+          const t = type.trim();
+          // Match by MIME type
+          if (t === fileType) return true;
+          // Match by extension (with or without dot)
+          if (t === fileExtension || t === `.${fileExtension}`) return true;
+          // Match by mapped MIME from extension
+          const mapped = extToCategory[fileExtension];
+          if (mapped && mapped === t) return true;
+          return false;
+        });
       }
 
       return false;

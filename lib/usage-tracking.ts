@@ -251,7 +251,7 @@ export async function sendWeeklyReports() {
         );
 
         const topPortals = portalStats
-          .sort((a, b) => b.downloads - a.downloads)
+          .sort((a: { downloads: number }, b: { downloads: number }) => b.downloads - a.downloads)
           .slice(0, 5);
 
         // Storage is optional - if not set, files go to user's cloud

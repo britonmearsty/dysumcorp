@@ -33,6 +33,8 @@ export function generateUploadToken(data: {
 }): string {
   const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
 
+  // Stability: always include optional fields in the HMAC payload as empty strings if missing.
+  // This avoids signature mismatches between different environments or object shapes.
   const tokenData = {
     portalId: data.portalId,
     fileName: data.fileName,
@@ -40,15 +42,13 @@ export function generateUploadToken(data: {
     mimeType: data.mimeType,
     uploaderEmail: data.uploaderEmail,
     uploaderName: data.uploaderName,
-    // Normalise optional fields: always include them, use "" for undefined so the
-    // HMAC payload is identical whether the field was omitted or explicitly empty.
-    uploaderNotes: data.uploaderNotes ?? "",
-    stagingKey: data.stagingKey ?? "",
+    uploaderNotes: data.uploaderNotes || "",
+    stagingKey: data.stagingKey || "",
     expiresAt,
   };
 
-  // Stable canonical JSON: fixed key order, no surprises from undefined dropping.
-  const canonicalJson = JSON.stringify(tokenData, [
+  // Canonical JSON: fixed key order
+  const keys = [
     "portalId",
     "fileName",
     "fileSize",
@@ -58,7 +58,9 @@ export function generateUploadToken(data: {
     "uploaderNotes",
     "stagingKey",
     "expiresAt",
-  ]);
+  ];
+
+  const canonicalJson = JSON.stringify(tokenData, keys);
 
   const signature = crypto
     .createHmac("sha256", SECRET)
@@ -92,13 +94,12 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
       mimeType: token.mimeType,
       uploaderEmail: token.uploaderEmail,
       uploaderName: token.uploaderName,
-      uploaderNotes: token.uploaderNotes ?? "",
-      stagingKey: token.stagingKey ?? "",
+      uploaderNotes: token.uploaderNotes || "",
+      stagingKey: token.stagingKey || "",
       expiresAt: token.expiresAt,
     };
 
-    // Same fixed key order as generateUploadToken
-    const canonicalJson = JSON.stringify(dataToSign, [
+    const keys = [
       "portalId",
       "fileName",
       "fileSize",
@@ -108,7 +109,9 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
       "uploaderNotes",
       "stagingKey",
       "expiresAt",
-    ]);
+    ];
+
+    const canonicalJson = JSON.stringify(dataToSign, keys);
 
     const expectedSignature = crypto
       .createHmac("sha256", SECRET)
@@ -117,13 +120,16 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
 
     if (token.signature !== expectedSignature) {
       logger.error("[Upload Token] Invalid signature");
-      logger.error("[Upload Token] Expected:", expectedSignature);
-      logger.error("[Upload Token] Received:", token.signature);
 
       return null;
     }
 
-    return token;
+    // Normalise return: map empty strings back to undefined to match original input in tests
+    return {
+      ...token,
+      uploaderNotes: token.uploaderNotes || undefined,
+      stagingKey: token.stagingKey || undefined,
+    };
   } catch (error) {
     logger.error("[Upload Token] Failed to validate token:", error);
 

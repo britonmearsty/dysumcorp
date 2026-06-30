@@ -1,5 +1,6 @@
 import { logger } from "./logger";
 import { prisma } from "@/lib/prisma";
+import { encrypt, decrypt, isEncrypted } from "./crypto-utils";
 
 /**
  * Storage API utilities for Google Drive and Dropbox
@@ -46,10 +47,19 @@ export async function getStorageTokens(
     return null;
   }
 
+  // Decrypt tokens if they appear to be encrypted
+  const accessToken = isEncrypted(account.accessToken) 
+    ? decrypt(account.accessToken) 
+    : account.accessToken;
+  
+  const refreshToken = account.refreshToken && isEncrypted(account.refreshToken)
+    ? decrypt(account.refreshToken)
+    : account.refreshToken;
+
   const isExpired =
     account.accessTokenExpiresAt && account.accessTokenExpiresAt <= new Date();
 
-  if (isExpired && account.refreshToken) {
+  if (isExpired && refreshToken) {
     logger.log(
       `[Storage API] Token expired for ${provider}, auto-refreshing...`,
     );
@@ -57,6 +67,10 @@ export async function getStorageTokens(
 
     if (newAccessToken) {
       logger.log(`[Storage API] Successfully refreshed token for ${provider}`);
+      // newAccessToken returned from refreshStorageToken is ALREADY decrypted (plain text)
+      // but let's re-read from DB to be consistent if needed, or just return what we have.
+      // refreshStorageToken already updated the DB with ENCRYPTED values.
+      
       const updatedAccount = await prisma.account.findFirst({
         where: {
           userId,
@@ -66,8 +80,8 @@ export async function getStorageTokens(
 
       if (updatedAccount) {
         return {
-          accessToken: updatedAccount.accessToken!,
-          refreshToken: updatedAccount.refreshToken || undefined,
+          accessToken: newAccessToken,
+          refreshToken: refreshToken || undefined,
           accessTokenExpiresAt:
             updatedAccount.accessTokenExpiresAt || undefined,
         };
@@ -80,8 +94,8 @@ export async function getStorageTokens(
   }
 
   return {
-    accessToken: account.accessToken,
-    refreshToken: account.refreshToken || undefined,
+    accessToken: accessToken,
+    refreshToken: refreshToken || undefined,
     accessTokenExpiresAt: account.accessTokenExpiresAt || undefined,
   };
 }
@@ -104,6 +118,11 @@ export async function refreshStorageToken(
     return null;
   }
 
+  // Decrypt refresh token if needed
+  const refreshToken = isEncrypted(account.refreshToken)
+    ? decrypt(account.refreshToken)
+    : account.refreshToken;
+
   try {
     let tokenUrl: string;
     let clientId: string;
@@ -125,7 +144,7 @@ export async function refreshStorageToken(
       body: new URLSearchParams({
         client_id: clientId,
         client_secret: clientSecret,
-        refresh_token: account.refreshToken,
+        refresh_token: refreshToken,
         grant_type: "refresh_token",
       }),
     });
@@ -136,17 +155,18 @@ export async function refreshStorageToken(
 
     const data = await response.json();
 
+    // Encrypt new tokens before saving
     await prisma.account.update({
       where: { id: account.id },
       data: {
-        accessToken: data.access_token,
+        accessToken: encrypt(data.access_token),
         accessTokenExpiresAt: data.expires_in
           ? new Date(Date.now() + data.expires_in * 1000)
           : null, // No expiration for Dropbox long-lived tokens
       },
     });
 
-    return data.access_token;
+    return data.access_token; // Return plain text for immediate use
   } catch (error) {
     logger.error(`Failed to refresh ${provider} token:`, error);
 

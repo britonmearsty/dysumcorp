@@ -922,6 +922,56 @@ const FILE_TYPE_OPTIONS = [
   { label: "Videos (MP4, MOV, AVI, MKV)", value: "video/*" },
   { label: "Audio (MP3, WAV, OGG, FLAC)", value: "audio/*" },
   { label: "Text/Code Files (TXT, MD, JS, PY)", value: "text/*" },
+  {
+    label: "MS Access (ACCDB, MDB)",
+    value:
+      "application/msaccess,application/x-msaccess,application/vnd.ms-access,application/mdb,accdb,mdb",
+  },
+  {
+    label: "MS Project (MPP, MPT)",
+    value:
+      "application/vnd.ms-project,application/x-project,mpp,mpt",
+  },
+  {
+    label: "MS Visio (VSD, VSDX)",
+    value:
+      "application/vnd.visio,application/vnd.ms-visio.drawing,application/vnd.ms-visio.template,vsd,vsdx",
+  },
+  {
+    label: "OneNote (ONE)",
+    value:
+      "application/onenote,application/msonenote,one,onetoc2",
+  },
+  {
+    label: "CAD Files (DWG, DXF)",
+    value:
+      "application/acad,application/x-acad,image/vnd.dwg,image/x-dwg,application/dxf,image/vnd.dxf,dwg,dxf",
+  },
+  {
+    label: "Design Files (PSD, AI, INDD, SKETCH, FIG)",
+    value:
+      "image/vnd.adobe.photoshop,application/postscript,application/x-indesign,application/x-sketch,application/figma,psd,ai,indd,sketch,fig,xd",
+  },
+  {
+    label: "eBooks (EPUB, MOBI)",
+    value:
+      "application/epub+zip,application/x-mobipocket-ebook,epub,mobi,azw,azw3",
+  },
+  {
+    label: "Executables & Installers (EXE, MSI, DMG, DEB)",
+    value:
+      "application/x-msdownload,application/x-msi,application/x-apple-diskimage,application/vnd.debian.binary-package,exe,msi,dmg,deb,rpm,pkg,appx,apk",
+  },
+  {
+    label: "Database Files (SQL, SQLITE, DB)",
+    value:
+      "application/x-sqlite3,application/vnd.sqlite3,text/x-sql,sql,sqlite,sqlite3,db,db3",
+  },
+  {
+    label: "3D / CAM Files (STL, OBJ, FBX, STEP)",
+    value:
+      "model/stl,model/obj,application/octet-stream,stl,obj,fbx,step,stp,iges,igs,3mf,blend,glb,gltf",
+  },
 ];
 
 const SecuritySection: React.FC<SecuritySectionProps> = ({

@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (portal.allowedFileTypes.length > 0) {
-      const allowed = portal.allowedFileTypes.map((t) =>
+      const allowed = portal.allowedFileTypes.map((t: string) =>
         t.toLowerCase().trim(),
       );
       const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
@@ -187,7 +187,15 @@ export async function POST(request: NextRequest) {
         bmp: "image",
         ico: "image",
         tiff: "image",
-        // Archive - map to actual MIME types for compatibility with allowed list
+        tif: "image",
+        heic: "image",
+        heif: "image",
+        avif: "image",
+        raw: "image",
+        cr2: "image",
+        nef: "image",
+        arw: "image",
+        // Archive
         zip: "application/zip",
         rar: "application/x-rar-compressed",
         "7z": "application/x-7z-compressed",
@@ -199,11 +207,77 @@ export async function POST(request: NextRequest) {
         pdf: "application/pdf",
         doc: "application/msword",
         docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        odt: "application/vnd.oasis.opendocument.text",
+        rtf: "application/rtf",
         xls: "application/vnd.ms-excel",
         xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ods: "application/vnd.oasis.opendocument.spreadsheet",
         csv: "text/csv",
+        ppt: "application/vnd.ms-powerpoint",
+        pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        odp: "application/vnd.oasis.opendocument.presentation",
+        // MS Access
+        accdb: "application/msaccess",
+        mdb: "application/msaccess",
+        // MS Project
+        mpp: "application/vnd.ms-project",
+        mpt: "application/vnd.ms-project",
+        // MS Visio
+        vsd: "application/vnd.visio",
+        vsdx: "application/vnd.ms-visio.drawing",
+        // OneNote
+        one: "application/onenote",
+        onetoc2: "application/onenote",
+        // CAD
+        dwg: "image/vnd.dwg",
+        dxf: "application/dxf",
+        // Design
+        psd: "image/vnd.adobe.photoshop",
+        ai: "application/postscript",
+        indd: "application/x-indesign",
+        sketch: "application/x-sketch",
+        fig: "application/figma",
+        xd: "application/figma",
+        // eBooks
+        epub: "application/epub+zip",
+        mobi: "application/x-mobipocket-ebook",
+        azw: "application/x-mobipocket-ebook",
+        azw3: "application/x-mobipocket-ebook",
+        // Executables & Installers
+        exe: "application/x-msdownload",
+        msi: "application/x-msi",
+        dmg: "application/x-apple-diskimage",
+        deb: "application/vnd.debian.binary-package",
+        rpm: "application/x-rpm",
+        pkg: "application/x-newton-compatible-pkg",
+        appx: "application/appx",
+        apk: "application/vnd.android.package-archive",
+        // Database
+        sql: "text/x-sql",
+        sqlite: "application/x-sqlite3",
+        sqlite3: "application/x-sqlite3",
+        db: "application/x-sqlite3",
+        db3: "application/x-sqlite3",
+        // 3D / CAM
+        stl: "model/stl",
+        obj: "model/obj",
+        fbx: "application/octet-stream",
+        step: "application/octet-stream",
+        stp: "application/octet-stream",
+        iges: "application/octet-stream",
+        igs: "application/octet-stream",
+        "3mf": "application/octet-stream",
+        blend: "application/octet-stream",
+        glb: "model/gltf-binary",
+        gltf: "model/gltf+json",
       };
-      const typeAllowed = allowed.some((t) => {
+
+      // Also check if the extension itself is listed directly in allowed types
+      // (for formats like accdb/mdb where MIME types are inconsistent across browsers)
+      const extAllowed = allowed.some(
+        (t: string) => t === ext || t === `.${ext}`,
+      );
+      const typeAllowed = allowed.some((t: string) => {
         const allowedType = t.toLowerCase();
 
         // Exact match with MIME type
@@ -237,7 +311,7 @@ export async function POST(request: NextRequest) {
         return false;
       });
 
-      if (!typeAllowed) {
+      if (!typeAllowed && !extAllowed) {
         return NextResponse.json(
           { error: `File type not allowed. Allowed: ${allowed.join(", ")}` },
           { status: 400 },

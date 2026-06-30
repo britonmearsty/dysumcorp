@@ -45,7 +45,14 @@ export async function GET() {
 
     // Transform accounts and auto-refresh expired tokens
     const connectedAccounts = await Promise.all(
-      accounts.map(async (account) => {
+      accounts.map(async (account: {
+        id: string;
+        providerId: string;
+        accountId: string;
+        accessToken: string | null;
+        refreshToken: string | null;
+        accessTokenExpiresAt: Date | null;
+      }) => {
         let accessToken = account.accessToken;
         let expiresAt = account.accessTokenExpiresAt;
 

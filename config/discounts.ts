@@ -7,12 +7,10 @@ export const DISCOUNT_CONFIG = {
   monthly: {
     code: "5MVH04XL",
     percent: 50,
-    endsAt: "June 30, 2026",
   },
   yearly: {
     code: "ZRED2R2I",
     percent: 25,
-    endsAt: "June 30, 2026",
   },
 } as const;
 
