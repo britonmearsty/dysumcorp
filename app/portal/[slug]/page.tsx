@@ -78,6 +78,7 @@ interface UploadFile {
   progress: number;
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
+  speed?: string;
 }
 
 export default function PublicPortalPage() {
@@ -621,20 +622,24 @@ export default function PublicPortalPage() {
           uploaderName: uploaderName.trim(),
           uploaderEmail: uploaderEmail.trim(),
           uploaderNotes: textboxValue.trim() || undefined,
-          onFileProgress: (fileIndex, progress) => {
+          onFileProgress: (fileIndex, progress, speedStr) => {
             const entry = indexMap[fileIndex];
             if (!entry) return;
             if (entry.isSlot) {
               setSlotFiles((prev) => ({
                 ...prev,
                 [entry.slotId!]: prev[entry.slotId!].map((sf) =>
-                  sf.id === entry.fileId ? { ...sf, progress: Math.floor(progress) } : sf,
+                  sf.id === entry.fileId
+                    ? { ...sf, progress: Math.floor(progress), ...(speedStr ? { speed: speedStr } : {}) }
+                    : sf,
                 ),
               }));
             } else {
               setFiles((prev) =>
                 prev.map((f) =>
-                  f.id === entry.fileId ? { ...f, progress: Math.floor(progress) } : f,
+                  f.id === entry.fileId
+                    ? { ...f, progress: Math.floor(progress), ...(speedStr ? { speed: speedStr } : {}) }
+                    : f,
                 ),
               );
             }

@@ -27,7 +27,7 @@ export interface UploadOptions {
   uploaderName?: string;
   uploaderEmail?: string;
   uploaderNotes?: string;
-  onProgress?: (progress: number) => void;
+  onProgress?: (progress: number, speedStr?: string) => void;
   skipNotification?: boolean;
   /** Pre-resolved session ID — shared across all files in a batch */
   uploadSessionId?: string;
@@ -40,8 +40,8 @@ export interface UploadOptions {
 }
 
 export interface BatchUploadOptions extends Omit<UploadOptions, "file"> {
-  /** Called with (fileIndex, progress 0-100) for each file individually */
-  onFileProgress?: (fileIndex: number, progress: number) => void;
+  /** Called with (fileIndex, progress 0-100, speedStr) for each file individually */
+  onFileProgress?: (fileIndex: number, progress: number, speedStr?: string) => void;
   /** Called immediately when a single file finishes (success or failure), before all files are done */
   onFileComplete?: (fileIndex: number, result: UploadResult) => void;
 }
@@ -265,7 +265,7 @@ export async function uploadFile(
 async function uploadSingleShot(
   file: File,
   presignedUrl: string,
-  onProgress: ((p: number) => void) | undefined,
+  onProgress: ((p: number, speedStr?: string) => void) | undefined,
   elapsed: () => string,
 ): Promise<{ ok: boolean; error?: string }> {
   const label = `"${file.name}"`;
@@ -284,24 +284,26 @@ async function uploadSingleShot(
           if (!e.lengthComputable) return;
           const p = Math.floor((e.loaded / e.total) * 100);
 
-          if (p !== last) {
-            last = p;
-            if (onProgress) onProgress(p);
-          }
-
-          // Speed sample every ~2s
+          // Speed sample
           const now = performance.now();
           const dt = now - lastSampleTime;
+          let speedStr: string | undefined;
 
-          if (dt >= 2000) {
+          if (dt >= 500) {
             const speed = (e.loaded - lastLoaded) / (dt / 1000);
-            const pct = Math.floor((e.loaded / e.total) * 100);
+            speedStr = fmtSpeed(speed);
+            if (dt >= 2000) {
+              logger.log(
+                `[upload:spd] ${ts()} ${label} single ${p}% — ${speedStr} (${(e.loaded / 1024 / 1024).toFixed(1)}/${(e.total / 1024 / 1024).toFixed(1)} MB)`,
+              );
+              lastLoaded = e.loaded;
+              lastSampleTime = now;
+            }
+          }
 
-            logger.log(
-              `[upload:spd] ${ts()} ${label} single ${pct}% — ${fmtSpeed(speed)} (${(e.loaded / 1024 / 1024).toFixed(1)}/${(e.total / 1024 / 1024).toFixed(1)} MB)`,
-            );
-            lastLoaded = e.loaded;
-            lastSampleTime = now;
+          if (p !== last) {
+            last = p;
+            if (onProgress) onProgress(p, speedStr);
           }
         });
 
@@ -330,7 +332,6 @@ async function uploadSingleShot(
       logger.log(
         `[upload] ✓ single-shot PUT complete — avg ${fmtSpeed(avgSpeed)} (${elapsed()})`,
       );
-      // Report 100% — UI shows "transferring" state separately during worker phase
       if (onProgress) onProgress(100);
 
       return { ok: true };
@@ -363,7 +364,7 @@ async function uploadMultipart(
     stagingKey: string;
     uploadToken: string;
   },
-  onProgress: ((p: number) => void) | undefined,
+  onProgress: ((p: number, speedStr?: string) => void) | undefined,
   elapsed: () => string,
 ): Promise<{ ok: boolean; error?: string }> {
   const { uploadId, partUrls, partSize, partCount, stagingKey, uploadToken } =
@@ -374,16 +375,26 @@ async function uploadMultipart(
     `[upload] ${ts()} multipart START "${file.name}" ${partCount} parts × ${partSize / 1024 / 1024} MB, concurrency=${partConcurrency}`,
   );
 
-  // Track bytes uploaded to R2 (0-100% of file). When it hits 100%, UI shows
-  // "Transferring..." while worker handles the remaining transfer phase.
   const partLoaded = new Array(partCount).fill(0);
   const totalBytes = file.size;
+  let lastReportedLoaded = 0;
+  let lastReportTime = performance.now();
 
   function reportProgress() {
     if (!onProgress) return;
-    const loaded = partLoaded.reduce((a, b) => a + b, 0);
+    const loaded = partLoaded.reduce((a: number, b: number) => a + b, 0);
+    const now = performance.now();
+    const dt = now - lastReportTime;
+    let speedStr: string | undefined;
 
-    onProgress(Math.floor((loaded / totalBytes) * 100));
+    if (dt >= 500) {
+      const speed = (loaded - lastReportedLoaded) / (dt / 1000);
+      speedStr = fmtSpeed(speed);
+      lastReportedLoaded = loaded;
+      lastReportTime = now;
+    }
+
+    onProgress(Math.floor((loaded / totalBytes) * 100), speedStr);
   }
 
   // Build one task per part
@@ -617,7 +628,7 @@ export async function uploadFiles(
       folderPath: sharedFolderPath,
       cachedPresignData,
       onProgress: options.onFileProgress
-        ? (progress) => options.onFileProgress!(i, progress)
+        ? (progress, speedStr) => options.onFileProgress!(i, progress, speedStr)
         : options.onProgress,
     });
 
