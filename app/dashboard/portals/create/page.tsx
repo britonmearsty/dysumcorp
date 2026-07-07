@@ -1338,6 +1338,7 @@ export default function CreatePortalPage() {
   });
 
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoCleared, setLogoCleared] = useState(false);
 
   const [formData, setFormData] = useState({
     // Identity
@@ -1463,12 +1464,12 @@ export default function CreatePortalPage() {
   const handleLogoSelect = (file: File | null) => {
     if (!file) {
       updateFormData("logo", null);
-      // Revert to default logo from settings
-      const defaultLogo = (session?.user as any)?.portalLogo;
-      setLogoPreview(defaultLogo || null);
+      setLogoPreview(null);
+      setLogoCleared(true);
 
       return;
     }
+    setLogoCleared(false);
 
     // Validate file type
     const validTypes = [
@@ -1818,6 +1819,7 @@ export default function CreatePortalPage() {
           cardBackgroundColor: formData.cardBackgroundColor,
           gradientEnabled: formData.gradientEnabled,
           logoUrl: logoUrl,
+          clearLogo: logoCleared,
           companyWebsite: formData.companyWebsite || null,
           companyEmail: formData.companyEmail || null,
 
@@ -2227,16 +2229,12 @@ export default function CreatePortalPage() {
                             Portal Logo
                           </label>
                           <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-muted-foreground/50 transition-colors bg-muted/20">
-                            {logoPreview ||
-                            (session?.user as any)?.portalLogo ? (
+                            {logoPreview ? (
                               <div className="relative w-48 h-24 mx-auto mb-4 group">
                                 <img
                                   alt="Logo Preview"
                                   className="w-full h-full object-contain p-2 bg-card rounded-lg border border-border"
-                                  src={
-                                    logoPreview ||
-                                    (session?.user as any)?.portalLogo
-                                  }
+                                  src={logoPreview}
                                 />
                                 <button
                                   className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
@@ -2245,20 +2243,32 @@ export default function CreatePortalPage() {
                                 >
                                   <XIcon className="w-3 h-3" />
                                 </button>
-                                {!logoPreview &&
-                                  (session?.user as any)?.portalLogo && (
-                                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary/10 border border-primary/20 rounded-md">
-                                      <p className="text-[8px] font-bold text-primary uppercase tracking-tighter">
-                                        Default Active
-                                      </p>
-                                    </div>
-                                  )}
+                              </div>
+                            ) : !logoCleared && (session?.user as any)?.portalLogo ? (
+                              <div className="relative w-48 h-24 mx-auto mb-4 group">
+                                <img
+                                  alt="Default Logo"
+                                  className="w-full h-full object-contain p-2 bg-card rounded-lg border border-border"
+                                  src={(session?.user as any)?.portalLogo}
+                                />
+                                <button
+                                  className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                  type="button"
+                                  onClick={() => handleLogoSelect(null)}
+                                >
+                                  <XIcon className="w-3 h-3" />
+                                </button>
+                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary/10 border border-primary/20 rounded-md">
+                                  <p className="text-[8px] font-bold text-primary uppercase tracking-tighter">
+                                    Default Active
+                                  </p>
+                                </div>
                               </div>
                             ) : (
                               <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                             )}
                             <p className="text-sm text-muted-foreground mb-4 font-medium">
-                              {logoPreview || (session?.user as any)?.portalLogo
+                              {logoPreview || (!logoCleared && (session?.user as any)?.portalLogo)
                                 ? "Replace current branding asset"
                                 : "Click to upload or drag and drop"}
                             </p>
@@ -2280,8 +2290,7 @@ export default function CreatePortalPage() {
                                   document.getElementById("logo")?.click()
                                 }
                               >
-                                {logoPreview ||
-                                (session?.user as any)?.portalLogo
+                                {logoPreview || (!logoCleared && (session?.user as any)?.portalLogo)
                                   ? "CHANGE FILE"
                                   : "SELECT LOGO"}
                               </Button>

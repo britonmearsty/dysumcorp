@@ -47,6 +47,7 @@ export async function POST(request: Request) {
       cardBackgroundColor,
       gradientEnabled,
       logoUrl,
+      clearLogo,
       companyWebsite,
       companyEmail,
       // Storage
@@ -151,7 +152,7 @@ export async function POST(request: Request) {
         backgroundColor: backgroundColor || "#f1f5f9",
         cardBackgroundColor: cardBackgroundColor || "#ffffff",
         gradientEnabled: gradientEnabled !== undefined ? gradientEnabled : true,
-        logoUrl: logoUrl || user?.portalLogo || null,
+        logoUrl: clearLogo ? null : (logoUrl || user?.portalLogo || null),
         companyWebsite: companyWebsite || null,
         companyEmail: companyEmail || null,
         // Storage

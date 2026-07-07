@@ -1360,6 +1360,7 @@ export default function EditPortalPage() {
     Set<string>
   >(new Set());
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoCleared, setLogoCleared] = useState(false);
   const [expandedSections, setExpandedSections] = useState<{
     welcomeMessage: boolean;
     welcomeToast: boolean;
@@ -1566,10 +1567,12 @@ export default function EditPortalPage() {
   const handleLogoSelect = (file: File | null) => {
     if (!file) {
       updateFormData("logo", null);
-      setLogoPreview(portal?.logoUrl || null);
+      setLogoPreview(null);
+      setLogoCleared(true);
 
       return;
     }
+    setLogoCleared(false);
 
     // Validate file type
     const validTypes = [
@@ -1815,6 +1818,8 @@ export default function EditPortalPage() {
 
           return;
         }
+      } else if (logoCleared) {
+        logoUrl = null;
       }
 
       const requestBody = {
@@ -2162,19 +2167,32 @@ export default function EditPortalPage() {
                                     >
                                       <XIcon className="w-3 h-3" />
                                     </button>
-                                    {logoPreview === portal?.logoUrl && (
-                                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary/10 border border-primary/20 rounded-md">
-                                        <p className="text-[8px] font-bold text-primary uppercase tracking-tighter">
-                                          Current Live
-                                        </p>
-                                      </div>
-                                    )}
+                                  </div>
+                                ) : !logoCleared && portal?.logoUrl ? (
+                                  <div className="relative w-48 h-24 mx-auto mb-4 group">
+                                    <img
+                                      alt="Current Logo"
+                                      className="w-full h-full object-contain p-2 bg-card rounded-lg border border-border"
+                                      src={portal.logoUrl}
+                                    />
+                                    <button
+                                      className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                      type="button"
+                                      onClick={() => handleLogoSelect(null)}
+                                    >
+                                      <XIcon className="w-3 h-3" />
+                                    </button>
+                                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary/10 border border-primary/20 rounded-md">
+                                      <p className="text-[8px] font-bold text-primary uppercase tracking-tighter">
+                                        Current Live
+                                      </p>
+                                    </div>
                                   </div>
                                 ) : (
                                   <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                                 )}
                                 <p className="text-sm text-muted-foreground mb-4 font-medium">
-                                  {logoPreview
+                                  {logoPreview || (!logoCleared && portal?.logoUrl)
                                     ? "Replace current branding asset"
                                     : "Click to upload or drag and drop"}
                                 </p>
@@ -2198,7 +2216,7 @@ export default function EditPortalPage() {
                                       document.getElementById("logo")?.click()
                                     }
                                   >
-                                    {logoPreview
+                                    {logoPreview || (!logoCleared && portal?.logoUrl)
                                       ? "CHANGE FILE"
                                       : "SELECT LOGO"}
                                   </Button>
