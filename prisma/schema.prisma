@@ -30,6 +30,7 @@ model User {
   deletedAt          DateTime?
   accounts           Account[]
   portals            Portal[]
+  sharedFiles        SharedFile[]
   sessions           Session[]
 
   notifyOnUpload          Boolean @default(true)
@@ -219,6 +220,27 @@ model File {
   @@index([uploaderEmail])
   @@index([uploadSessionId])
   @@map("file")
+}
+
+model SharedFile {
+  id            String    @id @default(cuid())
+  userId        String
+  name          String
+  size          BigInt
+  mimeType      String
+  storageKey    String
+  shareToken    String    @unique
+  passwordHash  String?
+  expiresAt     DateTime?
+  maxDownloads  Int?
+  downloadCount Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([shareToken])
+  @@map("shared_file")
 }
 
 model UsageTracking {

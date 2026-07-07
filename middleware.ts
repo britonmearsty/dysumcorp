@@ -37,10 +37,12 @@ export async function middleware(request: NextRequest) {
   const isDashboardRoute = pathname.startsWith("/dashboard");
   const isAuthPage = pathname === "/auth";
   const isPublicPortal = pathname.startsWith("/portal/");
+  const isSharePage = pathname.startsWith("/share/");
   const isApiRoute = pathname.startsWith("/api");
   const isAuthApi = pathname.startsWith("/api/auth");
   const isWebhookApi = pathname.startsWith("/api/webhooks");
   const isPublicApi =
+    pathname.startsWith("/api/shared/") ||
     pathname.startsWith("/api/portals/public") ||
     pathname.startsWith("/api/portals/confirm-upload") ||
     pathname.startsWith("/api/portals/r2-presign") ||

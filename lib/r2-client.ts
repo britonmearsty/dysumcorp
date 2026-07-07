@@ -1,6 +1,7 @@
 import { logger } from "./logger";
 import {
   S3Client,
+  GetObjectCommand,
   PutObjectCommand,
   DeleteObjectCommand,
   CreateMultipartUploadCommand,
@@ -156,6 +157,22 @@ export async function deleteR2Object(key: string): Promise<void> {
     throw new Error("[R2 Client] R2_BUCKET_NAME is not configured.");
   await r2Client.send(
     new DeleteObjectCommand({ Bucket: bucketName, Key: key }),
+  );
+}
+
+/** Generate a presigned GET URL for downloading an object from R2. */
+export async function getPresignedGetUrl(
+  key: string,
+  expiresInSeconds: number = 3600,
+): Promise<string> {
+  requireEnv();
+  return getSignedUrl(
+    r2Client,
+    new GetObjectCommand({
+      Bucket: bucketName!,
+      Key: key,
+    }),
+    { expiresIn: expiresInSeconds },
   );
 }
 

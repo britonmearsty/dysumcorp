@@ -17,6 +17,7 @@ import { BlocksIcon } from "@/components/ui/blocks";
 import { BoxIcon } from "@/components/ui/box";
 import { UserIcon } from "@/components/ui/user";
 import { GaugeIcon } from "@/components/ui/gauge";
+import { FileTextIcon } from "@/components/ui/file-text";
 import { CircleDollarSignIcon } from "@/components/ui/circle-dollar-sign";
 import { CircleHelpIcon } from "@/components/ui/circle-help";
 import { SettingsIcon } from "@/components/ui/settings";
@@ -35,6 +36,7 @@ const navItems: NavItem[] = [
   { label: "ASSETS", href: "/dashboard/assets", icon: BoxIcon },
   { label: "CLIENTS", href: "/dashboard/clients", icon: UserIcon },
   { label: "UPLOADS", href: "/dashboard/uploads", icon: BoxIcon },
+  { label: "SHARED FILES", href: "/dashboard/shared-files", icon: FileTextIcon },
   { label: "STORAGE", href: "/dashboard/storage", icon: GaugeIcon },
   { label: "BILLING", href: "/dashboard/billing", icon: CircleDollarSignIcon },
   { label: "SUPPORT", href: "/dashboard/support", icon: CircleHelpIcon },
