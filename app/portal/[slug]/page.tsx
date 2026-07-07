@@ -608,6 +608,8 @@ export default function PublicPortalPage() {
       <PortalHeader
         name={portal.name}
         logoUrl={portal.logoUrl}
+        companyWebsite={portal.companyWebsite}
+        companyEmail={portal.companyEmail}
         primaryColor={portal.primaryColor}
         textColor={portal.textColor}
         secondaryColor={portal.secondaryColor}
