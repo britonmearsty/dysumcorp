@@ -23,6 +23,7 @@ interface PortalChecklistProps {
   uploading: boolean;
   primaryColor: string;
   textColor: string;
+  cardBackgroundColor?: string;
   onFilesSelected: (itemId: string, files: FileList) => void;
   onRemoveFile: (itemId: string, fileId: string) => void;
 }
@@ -46,9 +47,11 @@ export function PortalChecklist({
   uploading,
   primaryColor,
   textColor,
+  cardBackgroundColor = "#ffffff",
   onFilesSelected,
   onRemoveFile,
 }: PortalChecklistProps) {
+  const innerCardBg = `${cardBackgroundColor}CC`;
   const [dragSlot, setDragSlot] = React.useState<string | null>(null);
 
   const formatBytes = (bytes: number) => {
@@ -127,7 +130,7 @@ export function PortalChecklist({
                     ? `${primaryColor}08`
                     : hasFiles
                       ? `${primaryColor}03`
-                      : "white",
+                      : innerCardBg,
                 }}
               >
                 <div className="flex items-center gap-4 p-4">

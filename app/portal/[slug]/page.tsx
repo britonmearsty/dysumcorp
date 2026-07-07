@@ -482,7 +482,7 @@ export default function PublicPortalPage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: portal?.backgroundColor || "#f8fafc" }}>
         <div className="max-w-md w-full">
-          <div className="rounded-xl border shadow-sm bg-white/80 backdrop-blur-sm p-8 text-center space-y-4" style={{ borderColor: `${portal?.primaryColor || "#6366f1"}20` }}>
+          <div className="rounded-xl border shadow-sm backdrop-blur-sm p-8 text-center space-y-4" style={{ backgroundColor: `${portal?.cardBackgroundColor || "#ffffff"}DD`, borderColor: `${portal?.primaryColor || "#6366f1"}20` }}>
             <div className="w-14 h-14 mx-auto rounded-full flex items-center justify-center" style={{ backgroundColor: `${portal?.primaryColor || "#6366f1"}10` }}>
               <AlertCircle className="h-7 w-7" style={{ color: portal?.primaryColor || "#6366f1" }} />
             </div>
@@ -552,6 +552,7 @@ export default function PublicPortalPage() {
                 placeholder="Enter password"
                 primaryColor={portal.primaryColor}
                 textColor={portal.textColor}
+                cardBackgroundColor={portal.cardBackgroundColor}
                 type="password"
                 autoComplete="current-password"
                 value={portalPassword}
@@ -627,6 +628,7 @@ export default function PublicPortalPage() {
               failedFiles={failedFiles}
               successMessage={portal.successMessage}
               textColor={portal.textColor}
+              cardBackgroundColor={portal.cardBackgroundColor}
               uploaderEmail={uploaderEmail}
               uploaderName={uploaderName}
               onUploadMore={handleUploadMore}
@@ -663,6 +665,7 @@ export default function PublicPortalPage() {
                       placeholder="Jane Doe"
                       primaryColor={portal.primaryColor}
                       textColor={portal.textColor}
+                      cardBackgroundColor={portal.cardBackgroundColor}
                       type="text"
                       value={uploaderName}
                       onChange={(e) => setUploaderName(e.target.value)}
@@ -676,6 +679,7 @@ export default function PublicPortalPage() {
                       placeholder="jane@example.com"
                       primaryColor={portal.primaryColor}
                       textColor={portal.textColor}
+                      cardBackgroundColor={portal.cardBackgroundColor}
                       type="email"
                       value={uploaderEmail}
                       onChange={(e) => setUploaderEmail(e.target.value)}
@@ -690,6 +694,7 @@ export default function PublicPortalPage() {
                       required={portal.textboxSectionRequired}
                       rows={4}
                       textColor={portal.textColor}
+                      cardBackgroundColor={portal.cardBackgroundColor}
                       value={textboxValue}
                       onChange={(e) => setTextboxValue(e.target.value)}
                     />
@@ -702,6 +707,7 @@ export default function PublicPortalPage() {
                         primaryColor={portal.primaryColor}
                         slotFiles={slotFiles}
                         textColor={portal.textColor}
+                        cardBackgroundColor={portal.cardBackgroundColor}
                         uploading={uploading}
                         onFilesSelected={handleSlotFiles}
                         onRemoveFile={handleRemoveSlotFile}
@@ -740,6 +746,7 @@ export default function PublicPortalPage() {
                         primaryColor={portal.primaryColor}
                         secondaryColor={portal.secondaryColor}
                         textColor={portal.textColor}
+                        cardBackgroundColor={portal.cardBackgroundColor}
                         uploading={uploading}
                         onAddMore={() => {
                           const input = document.createElement("input");

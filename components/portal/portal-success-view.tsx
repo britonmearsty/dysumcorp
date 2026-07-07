@@ -24,6 +24,7 @@ interface PortalSuccessViewProps {
   primaryColor: string;
   secondaryColor?: string;
   textColor: string;
+  cardBackgroundColor?: string;
   gradientEnabled?: boolean;
   onUploadMore: () => void;
 }
@@ -37,9 +38,11 @@ export function PortalSuccessView({
   primaryColor,
   secondaryColor,
   textColor,
+  cardBackgroundColor = "#ffffff",
   gradientEnabled = true,
   onUploadMore,
 }: PortalSuccessViewProps) {
+  const innerCardBg = `${cardBackgroundColor}CC`;
   const formatBytes = (bytes: number) => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
@@ -55,8 +58,8 @@ export function PortalSuccessView({
             style={{ background: primaryColor }}
           />
           <div
-            className="relative flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white shadow-md border"
-            style={{ borderColor: `${primaryColor}15` }}
+            className="relative flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl shadow-md border"
+            style={{ backgroundColor: innerCardBg, borderColor: `${primaryColor}15` }}
           >
             <CheckCircle
               className="w-8 h-8 sm:w-10 sm:h-10"
@@ -99,7 +102,9 @@ export function PortalSuccessView({
       </div>
 
       {failedFiles.length > 0 && (
-        <div className="rounded-xl overflow-hidden border border-red-200 bg-white shadow-sm">
+        <div className="rounded-xl overflow-hidden border border-red-200 shadow-sm"
+          style={{ backgroundColor: innerCardBg }}
+        >
           <div className="px-4 py-3 flex items-center gap-2 border-b border-red-100 bg-red-50">
             <AlertCircle className="w-4 h-4 text-red-500" />
             <span className="text-xs font-semibold text-red-700">
@@ -132,8 +137,8 @@ export function PortalSuccessView({
       )}
 
       {sentFiles.length > 0 && (
-        <div className="rounded-xl overflow-hidden border shadow-sm bg-white"
-          style={{ borderColor: `${primaryColor}15` }}
+        <div className="rounded-xl overflow-hidden border shadow-sm"
+          style={{ backgroundColor: innerCardBg, borderColor: `${primaryColor}15` }}
         >
           <div
             className="px-4 py-3 flex items-center gap-2 border-b"

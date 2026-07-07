@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Building2 } from "lucide-react";
 
 interface LogoDisplayProps {
   logoUrl?: string | null;
@@ -19,18 +21,13 @@ export function LogoDisplay({
   showBackground = true,
   fallbackText,
 }: LogoDisplayProps) {
-  const sizeClasses = {
-    sm: "w-8 h-8",
-    md: "w-12 h-12",
-    lg: "w-16 h-16",
-    xl: "w-20 h-20",
-  };
+  const [imgError, setImgError] = useState(false);
 
-  const paddingClasses = {
-    sm: "p-1",
-    md: "p-2",
-    lg: "p-3",
-    xl: "p-4",
+  const sizeClasses = {
+    sm: "w-10 h-10",
+    md: "w-16 h-16",
+    lg: "w-20 h-20",
+    xl: "w-24 h-24",
   };
 
   if (!logoUrl && !fallbackText) {
@@ -46,21 +43,16 @@ export function LogoDisplay({
         className
       )}
     >
-      {logoUrl ? (
+      {logoUrl && !imgError ? (
         <img
           alt={alt}
-          className={cn("w-full h-full object-contain", paddingClasses[size])}
+          className="w-full h-full object-contain p-1.5"
           src={logoUrl}
-          style={{ width: "100%", height: "100%" }}
+          onError={() => setImgError(true)}
         />
       ) : (
-        <div
-          className={cn(
-            "w-full h-full flex items-center justify-center text-[10px] font-bold text-stone-400 uppercase tracking-wider",
-            paddingClasses[size]
-          )}
-        >
-          {fallbackText}
+        <div className="w-full h-full flex items-center justify-center text-stone-400">
+          <Building2 className="w-5 h-5" />
         </div>
       )}
     </div>

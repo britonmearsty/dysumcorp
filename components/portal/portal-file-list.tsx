@@ -18,6 +18,7 @@ interface PortalFileListProps {
   primaryColor: string;
   secondaryColor?: string;
   textColor: string;
+  cardBackgroundColor?: string;
   gradientEnabled?: boolean;
   uploading?: boolean;
 }
@@ -30,9 +31,13 @@ export function PortalFileList({
   primaryColor,
   secondaryColor,
   textColor,
+  cardBackgroundColor = "#ffffff",
   gradientEnabled = true,
   uploading = false,
 }: PortalFileListProps) {
+  // Derive a nested-card bg: slightly more opaque than the outer card so it's
+  // distinguishable but still part of the same palette.
+  const innerCardBg = `${cardBackgroundColor}CC`;
   const formatBytes = (bytes: number) => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
@@ -72,7 +77,7 @@ export function PortalFileList({
         className="rounded-xl border transition-all duration-200 overflow-hidden"
         style={{
           borderColor: hasActiveUploads ? primaryColor : `${primaryColor}15`,
-          backgroundColor: "white",
+          backgroundColor: innerCardBg,
         }}
       >
         <div
