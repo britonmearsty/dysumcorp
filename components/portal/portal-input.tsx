@@ -25,7 +25,7 @@ export function PortalInput({
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
       <input
-        className={`w-full rounded-2xl px-4 py-4 placeholder-slate-400 outline-none border transition-all bg-white font-medium ${className}`}
+        className={`w-full rounded-xl px-4 py-3.5 placeholder-slate-400 outline-none border transition-all bg-white text-sm ${className}`}
         style={{
           color: textColor,
           borderColor: `${primaryColor}20`,

@@ -1,5 +1,4 @@
 import { CheckCircle, Upload, Send, AlertCircle } from "lucide-react";
-
 import { FileTypeIcon } from "./file-type-icon";
 import { PortalButton } from "./portal-button";
 
@@ -44,148 +43,149 @@ export function PortalSuccessView({
   const formatBytes = (bytes: number) => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
-
     return (bytes / 1048576).toFixed(1) + " MB";
   };
 
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col gap-6">
-      {/* Success hero */}
-      <div className="flex flex-col items-center text-center gap-4 sm:gap-6 py-2 sm:py-4">
+      <div className="flex flex-col items-center text-center gap-4 sm:gap-5 py-4 sm:py-6">
         <div className="relative">
-          <div 
-            className="absolute inset-0 blur-3xl opacity-30 animate-pulse"
+          <div
+            className="absolute inset-0 blur-2xl opacity-20"
             style={{ background: primaryColor }}
           />
           <div
-            className="relative flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-[28px] sm:rounded-[32px] bg-white shadow-2xl border transition-transform hover:scale-105 duration-500"
-            style={{
-              borderColor: `${primaryColor}20`,
-            }}
+            className="relative flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white shadow-md border"
+            style={{ borderColor: `${primaryColor}15` }}
           >
-            <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12" style={{ color: primaryColor }} />
+            <CheckCircle
+              className="w-8 h-8 sm:w-10 sm:h-10"
+              style={{ color: primaryColor }}
+            />
           </div>
         </div>
         <div>
           <h1
-            className="text-2xl sm:text-4xl font-black tracking-tight mb-2 sm:mb-3 px-4"
+            className="text-xl sm:text-2xl font-bold tracking-tight mb-2 px-4"
             style={{ color: textColor }}
           >
             {successMessage}
           </h1>
           {uploaderName ? (
-            <p className="text-slate-500 text-base sm:text-lg leading-relaxed max-w-md mx-auto px-6">
-              Mission accomplished,{" "}
-              <span className="font-bold" style={{ color: primaryColor }}>
+            <p
+              className="text-sm leading-relaxed max-w-md mx-auto px-6"
+              style={{ color: `${textColor}80` }}
+            >
+              Thanks,{" "}
+              <span className="font-semibold" style={{ color: primaryColor }}>
                 {uploaderName}
               </span>
-              ! Your files are secured. 
+              ! Your files are secured.
               {uploaderEmail && (
-                <span className="block text-xs sm:text-sm mt-1 sm:mt-2 opacity-60">
+                <span className="block mt-1.5 opacity-60">
                   Confirmation sent to {uploaderEmail}
                 </span>
               )}
             </p>
           ) : (
-            <p className="text-slate-500 text-base sm:text-lg px-6">
+            <p
+              className="text-sm px-6"
+              style={{ color: `${textColor}80` }}
+            >
               Your files have been received and are in safe hands.
             </p>
           )}
         </div>
       </div>
 
-      {/* Failed files card */}
       {failedFiles.length > 0 && (
-        <div className="rounded-[20px] sm:rounded-2xl overflow-hidden bg-white border border-red-200 shadow-sm mx-1 sm:mx-0">
-          {/* Card header */}
-          <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-2 border-b border-red-200 bg-red-50">
+        <div className="rounded-xl overflow-hidden border border-red-200 bg-white shadow-sm">
+          <div className="px-4 py-3 flex items-center gap-2 border-b border-red-100 bg-red-50">
             <AlertCircle className="w-4 h-4 text-red-500" />
-            <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-red-700">
+            <span className="text-xs font-semibold text-red-700">
               Failed to Upload
             </span>
-            <span className="ml-auto text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-black bg-red-100 text-red-600">
+            <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-medium bg-red-100 text-red-600">
               {failedFiles.length}
             </span>
           </div>
-
-          {/* File rows */}
-          <div className="p-3 sm:p-4 space-y-1.5 sm:space-y-2">
+          <div className="p-3 space-y-1.5">
             {failedFiles.map((f, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-3 bg-red-50/50 border border-red-100 overflow-hidden"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 bg-red-50/50 border border-red-100"
               >
-                <div className="shrink-0">
-                  <FileTypeIcon type={f.type} size="w-4 h-4 sm:w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0 overflow-hidden">
-                  <p className="text-xs sm:text-sm font-bold truncate text-red-800">
+                <FileTypeIcon type={f.type} size="w-4 h-4" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold truncate text-red-800">
                     {f.name}
                   </p>
-                  <p className="text-red-500 text-[10px] sm:text-xs mt-0.5">
+                  <p className="text-[11px] text-red-500 mt-0.5">
                     {f.error || "Upload failed"}
                   </p>
                 </div>
-                <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-red-500" />
+                <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Sent files card */}
       {sentFiles.length > 0 && (
-        <div className="rounded-[20px] sm:rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm mx-1 sm:mx-0">
-          {/* Card header */}
+        <div className="rounded-xl overflow-hidden border shadow-sm bg-white"
+          style={{ borderColor: `${primaryColor}15` }}
+        >
           <div
-            className="px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-2 border-b"
+            className="px-4 py-3 flex items-center gap-2 border-b"
             style={{
-              background: `${primaryColor}0D`,
-              borderColor: `${primaryColor}40`,
+              backgroundColor: `${primaryColor}06`,
+              borderColor: `${primaryColor}15`,
             }}
           >
-            <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} />
+            <Send
+              className="w-4 h-4"
+              style={{ color: primaryColor }}
+            />
             <span
-              className="text-xs sm:text-sm font-black uppercase tracking-wider"
+              className="text-xs font-semibold"
               style={{ color: textColor }}
             >
               Sent Files
             </span>
             <span
-              className="ml-auto text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-black border"
+              className="ml-auto text-xs px-2 py-0.5 rounded-full font-medium"
               style={{
-                background: `${primaryColor}1A`,
+                backgroundColor: `${primaryColor}10`,
                 color: primaryColor,
-                borderColor: `${primaryColor}40`,
               }}
             >
               {sentFiles.length}
             </span>
           </div>
-
-          {/* File rows */}
-          <div className="p-3 sm:p-4 space-y-1.5 sm:space-y-2">
+          <div className="p-3 space-y-1.5">
             {sentFiles.map((f, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-3 bg-slate-50 border border-slate-200 overflow-hidden"
+                className="flex items-center gap-3 rounded-lg px-3 py-2"
+                style={{ backgroundColor: `${primaryColor}03` }}
               >
-                <div className="shrink-0">
-                  <FileTypeIcon type={f.type} size="w-4 h-4 sm:w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0 overflow-hidden">
+                <FileTypeIcon type={f.type} size="w-4 h-4" />
+                <div className="flex-1 min-w-0">
                   <p
-                    className="text-xs sm:text-sm font-bold truncate"
+                    className="text-xs font-medium truncate"
                     style={{ color: textColor }}
                   >
                     {f.name}
                   </p>
-                  <p className="text-slate-400 text-[10px] sm:text-xs mt-0.5">
+                  <p
+                    className="text-[11px] mt-0.5"
+                    style={{ color: `${textColor}60` }}
+                  >
                     {formatBytes(f.size)}
                   </p>
                 </div>
                 <CheckCircle
-                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0"
+                  className="w-4 h-4 shrink-0"
                   style={{ color: primaryColor }}
                 />
               </div>
@@ -194,7 +194,6 @@ export function PortalSuccessView({
         </div>
       )}
 
-      {/* Upload More button */}
       <PortalButton
         gradientEnabled={gradientEnabled}
         icon={<Upload className="w-4 h-4" />}

@@ -1,4 +1,4 @@
-import { Upload, FileText, Image, FileArchive, Film, Music, File } from "lucide-react";
+import { Upload, FileText } from "lucide-react";
 import { useRef, useState } from "react";
 
 interface PortalDropZoneProps {
@@ -14,7 +14,6 @@ export function PortalDropZone({
   primaryColor,
   textColor,
   maxFileSize,
-  allowedFileTypes,
 }: PortalDropZoneProps) {
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,48 +45,12 @@ export function PortalDropZone({
     }
   };
 
-  // Helper to get icons for allowed types
-  const getAllowedIcons = () => {
-    if (!allowedFileTypes || allowedFileTypes.length === 0) return null;
-    
-    const icons: JSX.Element[] = [];
-    const seen = new Set<string>();
-
-    allowedFileTypes.forEach(type => {
-      const t = type.toLowerCase();
-      if (t.includes('image') && !seen.has('image')) {
-        icons.push(<Image key="image" className="w-5 h-5 text-blue-500/60" />);
-        seen.add('image');
-      } else if ((t.includes('video') || t.includes('mp4')) && !seen.has('video')) {
-        icons.push(<Film key="video" className="w-5 h-5 text-violet-500/60" />);
-        seen.add('video');
-      } else if (t.includes('audio') && !seen.has('audio')) {
-        icons.push(<Music key="audio" className="w-5 h-5 text-pink-500/60" />);
-        seen.add('audio');
-      } else if ((t.includes('archive') || t.includes('zip') || t.includes('rar')) && !seen.has('archive')) {
-        icons.push(<FileArchive key="archive" className="w-5 h-5 text-amber-500/60" />);
-        seen.add('archive');
-      } else if ((t.includes('pdf') || t.includes('text') || t.includes('doc')) && !seen.has('doc')) {
-        icons.push(<FileText key="doc" className="w-5 h-5 text-emerald-600/60" />);
-        seen.add('doc');
-      }
-    });
-
-    if (icons.length === 0) return null;
-    return (
-      <div className="flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full bg-white/50 border border-slate-100">
-        {icons}
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ml-1">Accepted Formats</span>
-      </div>
-    );
-  };
-
   return (
     <div
-      className="relative rounded-[20px] sm:rounded-2xl border overflow-hidden flex flex-col items-center justify-center py-10 sm:py-16 gap-4 cursor-pointer transition-all duration-300 group shadow-sm"
+      className="relative rounded-xl border-2 border-dashed overflow-hidden flex flex-col items-center justify-center py-12 sm:py-16 gap-4 cursor-pointer transition-all duration-200"
       style={{
-        borderColor: dragging ? primaryColor : `${primaryColor}40`,
-        background: dragging ? `${primaryColor}10` : `${primaryColor}05`,
+        borderColor: dragging ? primaryColor : `${primaryColor}20`,
+        backgroundColor: dragging ? `${primaryColor}08` : `${primaryColor}03`,
       }}
       onClick={handleClick}
       onDragLeave={handleDragLeave}
@@ -95,30 +58,40 @@ export function PortalDropZone({
       onDrop={handleDrop}
     >
       <div
-        className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full transition-transform duration-300 group-hover:scale-105"
-        style={{ background: primaryColor }}
+        className="flex items-center justify-center w-12 h-12 rounded-full transition-transform duration-200"
+        style={{
+          backgroundColor: `${primaryColor}10`,
+          color: primaryColor,
+        }}
       >
-        <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+        <Upload className="w-5 h-5" />
       </div>
-      <div className="text-center max-w-lg px-4">
-        <p className="font-black text-base sm:text-lg" style={{ color: textColor }}>
+      <div className="text-center max-w-sm px-4">
+        <p
+          className="text-base font-semibold"
+          style={{ color: textColor }}
+        >
           Drop files to upload
         </p>
-        <p className="mt-2 text-sm opacity-80" style={{ color: textColor }}>
+        <p
+          className="mt-1.5 text-sm"
+          style={{ color: `${textColor}80` }}
+        >
           or click to browse your device
         </p>
       </div>
-      {getAllowedIcons()}
-      <div className="flex flex-col items-center gap-2">
-        {maxFileSize && (
-          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-70" style={{ color: textColor }}>
-            Max {(maxFileSize / 1024 / 1024).toFixed(0)}MB per file
-          </span>
-        )}
-        <span className="rounded-full px-3 py-1 text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-70" style={{ color: textColor, background: 'rgba(255,255,255,0.35)' }}>
-          Tap to select or drag files here
-        </span>
-      </div>
+      {maxFileSize && (
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
+          style={{
+            backgroundColor: `${primaryColor}08`,
+            color: `${textColor}70`,
+          }}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          Max {(maxFileSize / 1024 / 1024).toFixed(0)}MB per file
+        </div>
+      )}
       <input
         ref={fileInputRef}
         multiple
