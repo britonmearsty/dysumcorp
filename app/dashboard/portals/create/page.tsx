@@ -1346,11 +1346,11 @@ export default function CreatePortalPage() {
     portalUrl: "",
 
     // Branding
-    primaryColor: "#6366f1",
-    secondaryColor: "#8b5cf6",
-    textColor: "#1e293b",
-    backgroundColor: "#f1f5f9",
-    cardBackgroundColor: "#ffffff",
+    primaryColor: "#3336ff",
+    secondaryColor: "#6366f1",
+    textColor: "#e1e2e5",
+    backgroundColor: "#000000",
+    cardBackgroundColor: "#10132f",
     gradientEnabled: true,
     logo: null as File | null,
     companyWebsite: "",
