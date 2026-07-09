@@ -85,6 +85,13 @@
   --background: #f8fafc;      /* slate-50  */
   --foreground: #0f172a;      /* slate-900 */
 
+  /* Portalon branding colors */
+  --portalon-primary: #3336ff;
+  --portalon-bg: #000000;
+  --portalon-secondary: #6366f1;
+  --portalon-text: #e1e2e5;
+  --portalon-card: #101322;
+
   /* Landing page theme */
   --color-bg: #f8fafc;        /* unified with --background */
   --color-charcoal: #1e293b;  /* slate-800 */
