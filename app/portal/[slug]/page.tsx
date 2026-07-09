@@ -197,11 +197,11 @@ export default function PublicPortalPage() {
       jpg: "image", jpeg: "image", png: "image", gif: "image", webp: "image",
       svg: "image", bmp: "image", ico: "image", tiff: "image", tif: "image",
       heic: "image", heif: "image", raw: "image", psd: "image", ai: "image", eps: "image",
-      zip: "application/zip", rar: "application/x-rar-compressed",
-      "7z": "application/x-7z-compressed", tar: "application/x-tar",
-      gz: "application/gzip", bz2: "application/x-bzip2", xz: "application/x-xz",
-      pen: "application/x-tar", jar: "application/java-archive",
-      iso: "application/x-iso9660-image", dmg: "application/x-apple-diskimage",
+      zip: "archive", rar: "archive",
+      "7z": "archive", tar: "archive",
+      gz: "archive", bz2: "archive", xz: "archive",
+      pen: "archive", jar: "archive",
+      iso: "archive", dmg: "archive",
       pdf: "application/pdf", doc: "application/msword",
       docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       xls: "application/vnd.ms-excel",
@@ -266,6 +266,12 @@ export default function PublicPortalPage() {
           if (t === fileExtension || t === `.${fileExtension}`) return true;
           const mapped = extToCategory[fileExtension];
           if (mapped && mapped === t) return true;
+          // Handle wildcard patterns in comma-separated types (e.g., "archive/*")
+          if (t.endsWith("/*")) {
+            const baseType = t.replace("/*", "");
+            if (baseType === "archive" && mapped === "archive") return true;
+            if (fileType && fileType.startsWith(baseType)) return true;
+          }
           return false;
         });
       }
@@ -635,7 +641,13 @@ export default function PublicPortalPage() {
             />
           ) : (
             <>
-              <div className="w-full text-center mb-8 sm:mb-10">
+              <div
+                className="w-full text-center mb-8 sm:mb-10 rounded-xl border backdrop-blur-md p-6 sm:p-8"
+                style={{
+                  backgroundColor: `${portal.cardBackgroundColor}B3`,
+                  borderColor: `${portal.primaryColor}15`,
+                }}
+              >
                 <h1
                   className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
                   style={{ color: portal.textColor }}

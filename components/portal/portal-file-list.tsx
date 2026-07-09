@@ -128,24 +128,29 @@ export function PortalFileList({
         <div className="p-3 space-y-3">
           {errorFiles.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-[11px] font-semibold text-red-600 uppercase tracking-wider px-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wider px-1" style={{ color: primaryColor }}>
                 Errors ({errorFiles.length})
               </p>
               {errorFiles.map((f) => (
                 <div
                   key={f.id}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 bg-red-50/50 border border-red-100"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 border"
+                  style={{
+                    backgroundColor: `${primaryColor}08`,
+                    borderColor: `${primaryColor}20`,
+                  }}
                 >
                   <FileTypeIcon type={f.file.type} size="w-4 h-4" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate text-red-800">{f.file.name}</p>
-                    <p className="text-[10px] text-red-600 mt-0.5">{f.error}</p>
+                    <p className="text-xs font-medium truncate" style={{ color: textColor }}>{f.file.name}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: `${textColor}70` }}>{f.error}</p>
                   </div>
                   <button
-                    className="shrink-0 p-0.5 rounded hover:bg-red-100 transition-colors"
+                    className="shrink-0 p-0.5 rounded transition-colors"
+                    style={{ hover: { backgroundColor: `${primaryColor}15` } }}
                     onClick={() => onRemove(f.id)}
                   >
-                    <X className="w-3 h-3 text-red-400" />
+                    <X className="w-3 h-3" style={{ color: `${textColor}50` }} />
                   </button>
                 </div>
               ))}
