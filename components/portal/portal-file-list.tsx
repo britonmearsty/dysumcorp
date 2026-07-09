@@ -146,8 +146,7 @@ export function PortalFileList({
                     <p className="text-[10px] mt-0.5" style={{ color: `${textColor}70` }}>{f.error}</p>
                   </div>
                   <button
-                    className="shrink-0 p-0.5 rounded transition-colors"
-                    style={{ hover: { backgroundColor: `${primaryColor}15` } }}
+                    className="shrink-0 p-0.5 rounded transition-colors hover:opacity-70"
                     onClick={() => onRemove(f.id)}
                   >
                     <X className="w-3 h-3" style={{ color: `${textColor}50` }} />
