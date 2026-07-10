@@ -56,18 +56,16 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
 
     await prisma.$transaction(async (tx: any) => {
-      // Lock all rows where early_access = true so that no concurrent
-      // transaction can insert a new claim until this one commits.
-      // NOTE: Adjust the WHERE value to change the spot cap
-      //       (currently EARLY_ACCESS_SPOTS = 20 in lib/early-access.ts).
-      const [{ count }] = await tx.$queryRaw<[{ count: bigint }]>`
-        SELECT COUNT(*) AS count
+      // Lock the actual early-access rows (not an aggregate) so concurrent
+      // transactions block until this one commits. Then count in JS.
+      const lockedRows = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id
         FROM "user"
         WHERE "earlyAccess" = true
         FOR UPDATE
       `;
 
-      if (Number(count) >= EARLY_ACCESS_SPOTS) {
+      if (lockedRows.length >= EARLY_ACCESS_SPOTS) {
         throw new NoSpotsError();
       }
 
