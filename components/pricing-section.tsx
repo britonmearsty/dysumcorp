@@ -27,6 +27,9 @@ export default function PricingSection({ initialAvailability = null }: PricingSe
   const currentPlan: string = user?.subscriptionPlan || "free";
   const currentStatus: string = user?.subscriptionStatus || "active";
   const hasEarlyAccess: boolean = user?.earlyAccess === true;
+  const earlyAccessExpiresAt: Date | null = user?.earlyAccessExpiresAt
+    ? new Date(user.earlyAccessExpiresAt)
+    : null;
   const isLoggedIn = !!session?.user;
   const isPro = currentPlan === "pro";
 
@@ -138,12 +141,14 @@ export default function PricingSection({ initialAvailability = null }: PricingSe
             <PricingCardFree
               plan={FREE_PLAN}
               variant="landing"
-              ctaLabel={isLoggedIn ? "Your current plan" : "Get started free"}
-              onSubscribe={() =>
-                isLoggedIn
-                  ? (window.location.href = "/dashboard")
-                  : (window.location.href = "/auth")
+              ctaLabel={
+                !isLoggedIn
+                  ? "Get started free"
+                  : isPro || hasEarlyAccess
+                    ? "Go to dashboard"
+                    : "Your current plan"
               }
+              onSubscribe={() => (window.location.href = isLoggedIn ? "/dashboard" : "/auth")}
             />
           </StaggerItem>
 
@@ -157,7 +162,7 @@ export default function PricingSection({ initialAvailability = null }: PricingSe
               currentStatus={currentStatus}
               earlyAccessAvailability={earlyAccessAvailability}
               hasEarlyAccess={hasEarlyAccess}
-              // Visitors must sign up before claiming; logged-in free users can claim directly
+              earlyAccessExpiresAt={earlyAccessExpiresAt}
               requiresAuth={!isLoggedIn}
               ctaLabel={isLoggedIn ? "Upgrade to Pro" : "Get Pro"}
               onSubscribe={handleSubscribe}

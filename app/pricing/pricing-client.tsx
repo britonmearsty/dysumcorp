@@ -158,15 +158,26 @@ export function PricingClient() {
             <PricingCardFree
               plan={FREE_PLAN}
               variant="landing"
-              ctaLabel="Get started free"
-              onSubscribe={() => router.push("/auth")}
+              ctaLabel={
+                !isLoggedIn
+                  ? "Get started free"
+                  : isPro || hasEarlyAccess
+                    ? "Go to dashboard"
+                    : "Your current plan"
+              }
+              onSubscribe={() =>
+                isLoggedIn
+                  ? router.push("/dashboard")
+                  : router.push("/auth")
+              }
             />
 
             {/* Pro Plan */}
             <PricingCard
               billingCycle={billingCycle}
-              ctaLabel="Upgrade to Pro"
+              ctaLabel={isLoggedIn ? "Upgrade to Pro" : "Get Pro"}
               currentPlan={currentPlan}
+              currentStatus={currentStatus}
               earlyAccessAvailability={earlyAccessAvailability}
               hasEarlyAccess={hasEarlyAccess}
               earlyAccessExpiresAt={earlyAccessExpiresAt}

@@ -24,6 +24,12 @@ export const authClient = createAuthClient({
         portalLogo: {
           type: "string",
         },
+        earlyAccess: {
+          type: "boolean",
+        },
+        earlyAccessExpiresAt: {
+          type: "string",
+        },
       },
     }),
   ],
