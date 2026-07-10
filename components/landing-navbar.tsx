@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Menu } from "lucide-react";
+import { ArrowRight, LayoutDashboard, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -17,15 +17,8 @@ const navigationItems = [
 ];
 
 export function LandingNavbar() {
-  const { data: session } = useSession();
-
-  const handleSignUp = () => {
-    if (session?.user) {
-      window.location.href = "/dashboard";
-    } else {
-      window.location.href = "/auth";
-    }
-  };
+  const { data: session, isPending } = useSession();
+  const isLoggedIn = !!session?.user;
 
   return (
     <nav className="sticky top-0 z-50 bg-[#fafaf9] border-b border-stone-200">
@@ -43,6 +36,7 @@ export function LandingNavbar() {
           </span>
         </Link>
 
+        {/* Desktop nav */}
         <div className="hidden lg:flex items-center gap-8">
           {navigationItems.map((item) => (
             <Link
@@ -53,14 +47,29 @@ export function LandingNavbar() {
               {item.title}
             </Link>
           ))}
-          <Button
-            className="bg-[#1c1917] text-stone-50 px-7 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-stone-800 transition-all"
-            onClick={handleSignUp}
-          >
-            Sign in
-          </Button>
+
+          {isLoggedIn ? (
+            <Link
+              className="flex items-center gap-2 bg-[#1c1917] text-stone-50 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-stone-800 transition-all"
+              href="/dashboard"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              Dashboard
+            </Link>
+          ) : isPending ? (
+            // Invisible placeholder — same size as the button — prevents layout shift
+            <div className="w-[88px] h-[42px] rounded-full bg-transparent" aria-hidden />
+          ) : (
+            <Link
+              className="bg-[#1c1917] text-stone-50 px-7 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-stone-800 transition-all"
+              href="/auth"
+            >
+              Sign in
+            </Link>
+          )}
         </div>
 
+        {/* Mobile hamburger */}
         <Sheet>
           <SheetTrigger asChild>
             <Button className="lg:hidden" size="icon" variant="ghost">
@@ -93,13 +102,26 @@ export function LandingNavbar() {
                 ))}
               </nav>
               <div className="pt-6 border-t border-stone-200 mt-auto">
-                <Button
-                  className="w-full bg-[#1c1917] text-stone-50 py-6"
-                  onClick={handleSignUp}
-                >
-                  Sign in
-                  <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
+                {isLoggedIn ? (
+                  <Link
+                    className="flex items-center justify-center gap-2 w-full bg-[#1c1917] text-stone-50 py-4 rounded-xl font-bold"
+                    href="/dashboard"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                ) : isPending ? (
+                  <div className="w-full h-[52px] rounded-xl bg-stone-100 animate-pulse" aria-hidden />
+                ) : (
+                  <Link
+                    className="flex items-center justify-center gap-2 w-full bg-[#1c1917] text-stone-50 py-4 rounded-xl font-bold"
+                    href="/auth"
+                  >
+                    Sign in
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                )}
               </div>
             </div>
           </SheetContent>

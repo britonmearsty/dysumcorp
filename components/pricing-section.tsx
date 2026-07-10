@@ -1,33 +1,60 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Tabs, Tab } from "@heroui/tabs";
-import { Rocket } from "lucide-react";
 
 import { FadeIn, Stagger, StaggerItem } from "./animations";
 import { PricingCard } from "./pricing-card";
 import { PricingCardFree } from "./pricing-card-free";
 import { PRICING_PLANS, FREE_PLAN } from "@/config/pricing";
+import { useSession } from "@/lib/auth-client";
 import type { EarlyAccessAvailability } from "@/lib/early-access";
 
-export default function PricingSection() {
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
-  const [earlyAccessAvailability, setEarlyAccessAvailability] =
-    useState<EarlyAccessAvailability | null>(null);
+interface PricingSectionProps {
+  /** Pre-fetched at server render time — no client fetch needed on load */
+  initialAvailability?: EarlyAccessAvailability | null;
+}
 
-  useEffect(() => {
+export default function PricingSection({ initialAvailability = null }: PricingSectionProps) {
+  const { data: session } = useSession();
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
+  // Start with server-provided value — no loading flash
+  const [earlyAccessAvailability, setEarlyAccessAvailability] =
+    useState<EarlyAccessAvailability | null>(initialAvailability);
+
+  // Derive user state from session
+  const user = session?.user as any;
+  const currentPlan: string = user?.subscriptionPlan || "free";
+  const currentStatus: string = user?.subscriptionStatus || "active";
+  const hasEarlyAccess: boolean = user?.earlyAccess === true;
+  const isLoggedIn = !!session?.user;
+  const isPro = currentPlan === "pro";
+
+  // Only re-fetch after a successful claim to update the counter.
+  // No useEffect on mount — initialAvailability covers that case.
+  const refreshAvailability = () => {
     fetch("/api/early-access/availability")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => data && setEarlyAccessAvailability(data))
       .catch(() => {});
-  }, []);
-
-  const handleSubscribe = (_planId: string, _isAnnual: boolean) => {
-    window.location.href = "/auth";
   };
 
-  const isLaunchOfferActive =
-    earlyAccessAvailability !== null && earlyAccessAvailability.remaining > 0;
+  // Banner logic:
+  // - Pro users: no banner
+  // - EA users: no banner (they already claimed)
+  // - Free users + spots available: show launch offer banner
+  // - Free users + no spots: no banner
+  // - Visitors (not logged in) + spots available: show launch offer banner
+  const spotsRemain = (earlyAccessAvailability?.remaining ?? 0) > 0;
+  const showLaunchBanner = spotsRemain && !isPro && !hasEarlyAccess;
+
+  const handleSubscribe = (planId: string, isAnnual: boolean) => {
+    if (!isLoggedIn) {
+      window.location.href = "/auth?redirect=/dashboard/billing?tab=plans";
+    } else {
+      window.location.href = "/dashboard/billing?tab=plans";
+    }
+  };
 
   return (
     <section
@@ -50,8 +77,8 @@ export default function PricingSection() {
           </div>
         </FadeIn>
 
-        {/* Launch offer banner — visible to all visitors while spots remain */}
-        {isLaunchOfferActive && (
+        {/* Launch offer banner — only for visitors and eligible free users */}
+        {showLaunchBanner && (
           <FadeIn delay={0.05}>
             <div className="max-w-3xl mx-auto mb-10">
               <div className="rounded-2xl bg-gradient-to-r from-indigo-50 via-violet-50 to-indigo-50 border border-indigo-200 px-6 py-5 text-center">
@@ -111,25 +138,30 @@ export default function PricingSection() {
             <PricingCardFree
               plan={FREE_PLAN}
               variant="landing"
-              ctaLabel="Get started free"
-              onSubscribe={() => (window.location.href = "/auth")}
+              ctaLabel={isLoggedIn ? "Your current plan" : "Get started free"}
+              onSubscribe={() =>
+                isLoggedIn
+                  ? (window.location.href = "/dashboard")
+                  : (window.location.href = "/auth")
+              }
             />
           </StaggerItem>
 
-          {/* Pro Plan — shows launch offer callout + EA button when slots remain */}
+          {/* Pro Plan */}
           <StaggerItem>
             <PricingCard
               plan={PRICING_PLANS.pro}
               billingCycle={billingCycle}
-              ctaLabel="Get Pro"
               variant="landing"
+              currentPlan={currentPlan}
+              currentStatus={currentStatus}
               earlyAccessAvailability={earlyAccessAvailability}
-              requiresAuth
+              hasEarlyAccess={hasEarlyAccess}
+              // Visitors must sign up before claiming; logged-in free users can claim directly
+              requiresAuth={!isLoggedIn}
+              ctaLabel={isLoggedIn ? "Upgrade to Pro" : "Get Pro"}
               onSubscribe={handleSubscribe}
-              // Visitors aren't logged in; clicking EA button redirects to /auth
-              onClaimSuccess={() => {
-                window.location.href = "/auth";
-              }}
+              onClaimSuccess={refreshAvailability}
             />
           </StaggerItem>
         </Stagger>

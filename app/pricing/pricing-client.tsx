@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Tabs, Tab } from "@heroui/tabs";
 import { useRouter } from "next/navigation";
-import { Rocket } from "lucide-react";
 
 import { PRICING_PLANS, FREE_PLAN } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
@@ -43,8 +42,15 @@ const faqItems = [
 export function PricingClient() {
   const router = useRouter();
   const { data: session } = useSession();
-  const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
-  const hasEarlyAccess = (session?.user as any)?.earlyAccess === true;
+  const user = session?.user as any;
+  const currentPlan: string = user?.subscriptionPlan || "free";
+  const currentStatus: string = user?.subscriptionStatus || "active";
+  const hasEarlyAccess: boolean = user?.earlyAccess === true;
+  const earlyAccessExpiresAt: Date | null = user?.earlyAccessExpiresAt
+    ? new Date(user.earlyAccessExpiresAt)
+    : null;
+  const isLoggedIn = !!session?.user;
+  const isPro = currentPlan === "pro";
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const [earlyAccessAvailability, setEarlyAccessAvailability] = useState<EarlyAccessAvailability | null>(null);
 
@@ -56,7 +62,7 @@ export function PricingClient() {
   }, []);
 
   const handleSubscribe = (planId: string, isAnnual: boolean) => {
-    if (!session?.user) {
+    if (!isLoggedIn) {
       router.push("/auth?redirect=/dashboard/billing?tab=plans");
       return;
     }
@@ -74,7 +80,8 @@ export function PricingClient() {
   const isLaunchOfferActive =
     earlyAccessAvailability !== null &&
     earlyAccessAvailability.remaining > 0 &&
-    !hasEarlyAccess;
+    !hasEarlyAccess &&
+    !isPro;
 
   return (
     <div className="min-h-screen bg-[#fafaf9] selection:bg-stone-200">
@@ -162,8 +169,10 @@ export function PricingClient() {
               currentPlan={currentPlan}
               earlyAccessAvailability={earlyAccessAvailability}
               hasEarlyAccess={hasEarlyAccess}
+              earlyAccessExpiresAt={earlyAccessExpiresAt}
               plan={PRICING_PLANS.pro}
               variant="landing"
+              requiresAuth={!isLoggedIn}
               onClaimSuccess={handleClaimSuccess}
               onSubscribe={handleSubscribe}
             />
