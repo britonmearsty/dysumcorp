@@ -608,7 +608,13 @@ export default function PublicPortalPage() {
       <Toaster
         position="top-center"
         toastOptions={{
-          style: { background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" },
+          style: {
+            background: `${portal.cardBackgroundColor}CC`,
+            border: `1px solid ${portal.primaryColor}20`,
+            color: portal.textColor,
+            boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+            backdropFilter: "blur(8px)",
+          },
         }}
       />
 
@@ -641,13 +647,7 @@ export default function PublicPortalPage() {
             />
           ) : (
             <>
-              <div
-                className="w-full text-center mb-8 sm:mb-10 rounded-xl border backdrop-blur-md p-6 sm:p-8"
-                style={{
-                  backgroundColor: `${portal.cardBackgroundColor}B3`,
-                  borderColor: `${portal.primaryColor}15`,
-                }}
-              >
+              <div className="w-full text-center mb-8 sm:mb-10">
                 <h1
                   className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
                   style={{ color: portal.textColor }}
