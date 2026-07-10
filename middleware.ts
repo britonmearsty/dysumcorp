@@ -48,7 +48,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/api/portals/r2-presign") ||
     pathname.startsWith("/api/portals/r2-worker-context") ||
     pathname.startsWith("/api/portals/r2-confirm") ||
-    pathname.startsWith("/api/portals/r2-status");
+    pathname.startsWith("/api/portals/r2-status") ||
+    pathname.startsWith("/api/early-access/availability") ||
+    pathname.startsWith("/api/health");
 
   if (isDashboardRoute && !isAuthenticated) {
     return NextResponse.redirect(new URL("/auth", request.url));
