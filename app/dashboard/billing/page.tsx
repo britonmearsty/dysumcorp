@@ -21,9 +21,11 @@ import { SubscriptionManager } from "@/components/subscription-manager";
 import { PricingCard } from "@/components/pricing-card";
 import { PricingCardFree } from "@/components/pricing-card-free";
 import { UsageDashboard } from "@/components/usage-dashboard";
+import { EarlyAccessBanner } from "@/components/early-access-banner";
 import { PRICING_PLANS, FREE_PLAN } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
 import { useToast } from "@/lib/toast";
+import type { EarlyAccessAvailability } from "@/lib/early-access";
 
 export default function BillingPage() {
   const { data: session, refetch } = useSession();
@@ -45,6 +47,7 @@ export default function BillingPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showCanceled, setShowCanceled] = useState(false);
   const [access, setAccess] = useState<AccessResult | null>(null);
+  const [earlyAccessAvailability, setEarlyAccessAvailability] = useState<EarlyAccessAvailability | null>(null);
   const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
   const currentStatus = (session?.user as any)?.subscriptionStatus || "active";
   const { showToast } = useToast();
@@ -76,6 +79,13 @@ export default function BillingPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data) setAccess(data);
+      })
+      .catch(() => {});
+
+    fetch("/api/early-access/availability")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setEarlyAccessAvailability(data);
       })
       .catch(() => {});
   }, [session]);
@@ -287,6 +297,11 @@ export default function BillingPage() {
                         </div>
                       )}
 
+                      {/* Early Access */}
+                      {access?.reason === "early_access" && (
+                        <EarlyAccessBanner expiresAt={new Date(access.expiresAt!)} />
+                      )}
+
                       <div className="grid gap-6 md:grid-cols-2">
                         <SubscriptionStatus />
                         <SubscriptionManager
@@ -355,6 +370,14 @@ export default function BillingPage() {
                           plan={PRICING_PLANS.pro}
                           variant="dashboard"
                           onSubscribe={handleSubscribe}
+                          earlyAccessAvailability={earlyAccessAvailability}
+                          hasEarlyAccess={access?.reason === "early_access"}
+                          onClaimSuccess={() => {
+                            refetch();
+                            fetch("/api/early-access/availability")
+                              .then((r) => (r.ok ? r.json() : null))
+                              .then((d) => d && setEarlyAccessAvailability(d));
+                          }}
                         />
                       </div>
                     </div>

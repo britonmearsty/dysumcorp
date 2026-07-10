@@ -65,6 +65,16 @@ export const auth = betterAuth({
         defaultValue: null,
         input: false,
       },
+      earlyAccess: {
+        type: "boolean",
+        defaultValue: false,
+        input: false,
+      },
+      earlyAccessExpiresAt: {
+        type: "string",
+        defaultValue: null,
+        input: false,
+      },
     },
   },
   socialProviders: {

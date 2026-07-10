@@ -47,6 +47,11 @@ model User {
   // REVERSIBILITY: Can be safely removed if trial feature is discontinued
   hasCreatedTrialPortal Boolean @default(false)
 
+  // Early access promotion
+  earlyAccess             Boolean   @default(false)
+  earlyAccessExpiresAt    DateTime?
+  earlyAccessReminderSent Boolean   @default(false)
+
   @@map("user")
 }
 

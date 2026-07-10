@@ -9,6 +9,7 @@ import { PricingPlan } from "@/config/pricing";
 import { formatPrice } from "@/config/pricing";
 // REMOVABLE: DISCOUNT - Remove this import to disable discount promo
 import { getDiscount, calculateDiscountedPrice } from "@/config/discounts";
+import { EarlyAccessAvailability } from "@/lib/early-access";
 
 // Custom styles to match landing page theme - overriding HeroUI dark defaults
 // REVERSIBILITY: Remove variant param to revert
@@ -64,6 +65,9 @@ interface PricingCardProps {
   onSubscribe?: (planId: string, isAnnual: boolean) => void;
   variant?: "landing" | "dashboard";
   ctaLabel?: string;
+  earlyAccessAvailability?: EarlyAccessAvailability | null;
+  hasEarlyAccess?: boolean;
+  onClaimSuccess?: () => void;
 }
 
 // REVERSIBILITY: Remove variant param to revert
@@ -75,9 +79,14 @@ export function PricingCard({
   onSubscribe,
   variant = "landing",
   ctaLabel,
+  earlyAccessAvailability,
+  hasEarlyAccess,
+  onClaimSuccess,
 }: PricingCardProps) {
   const isCurrentPlan = currentPlan === plan.id;
   const isCancelledGrace = isCurrentPlan && currentStatus === "cancelled";
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const [isClaiming, setIsClaiming] = useState(false);
   
   // REMOVABLE: DISCOUNT - Remove this entire block to disable discount promo
   const [copied, setCopied] = useState(false);
@@ -86,8 +95,8 @@ export function PricingCard({
   const originalTotal = billingCycle === "annual" ? plan.priceAnnual : plan.price;
   const discountedPrice = calculateDiscountedPrice(originalPrice, discount.percent);
   const discountedTotal = calculateDiscountedPrice(originalTotal, discount.percent);
-  const price = discountedPrice;
-  const totalPrice = discountedTotal;
+  const price = discount.active ? discountedPrice : originalPrice;
+  const totalPrice = discount.active ? discountedTotal : originalTotal;
   // END REMOVABLE: DISCOUNT
   
   const savings =
@@ -100,6 +109,24 @@ export function PricingCard({
     setTimeout(() => setCopied(false), 2000);
   };
   // END REMOVABLE: DISCOUNT
+
+  const handleClaimEarlyAccess = async () => {
+    setClaimError(null);
+    setIsClaiming(true);
+    try {
+      const res = await fetch("/api/early-access/claim", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setClaimError(data.error || "Failed to claim early access");
+        return;
+      }
+      onClaimSuccess?.();
+    } catch (err) {
+      setClaimError("Failed to claim early access");
+    } finally {
+      setIsClaiming(false);
+    }
+  };
 
   // REVERSIBILITY: Remove this line to revert
   const cardStyles = getCardStyles(variant);
@@ -124,6 +151,7 @@ export function PricingCard({
           </p>
 
           {/* REMOVABLE: DISCOUNT - Remove this entire promo block to disable */}
+          {discount.active && (
           <div className="mt-4">
             <div 
               className={`cursor-pointer rounded-lg border-2 border-dashed px-3 py-2 transition-all hover:opacity-80 ${
@@ -158,14 +186,17 @@ export function PricingCard({
               </div>
             </div>
           </div>
+          )}
           {/* END REMOVABLE: DISCOUNT */}
 
           <div className="mt-4">
             <div className="flex items-baseline gap-2">
               {/* REMOVABLE: DISCOUNT - Remove strikethrough price */}
+              {discount.active && (
               <span className={`text-lg line-through ${cardStyles.textMuted}`}>
                 {formatPrice(originalPrice)}
               </span>
+              )}
               {/* END REMOVABLE: DISCOUNT */}
               <span className={`text-5xl font-bold ${cardStyles.textTitle} tracking-tight`}>
                 {formatPrice(price)}
@@ -176,12 +207,12 @@ export function PricingCard({
               <div className="mt-2">
                 <p className={`text-xs ${cardStyles.textMuted} font-bold uppercase tracking-wider`}>
                   {/* REMOVABLE: DISCOUNT - Remove strikethrough total */}
-                  <span className="line-through">{formatPrice(originalTotal)}</span>
-                  {" → "}
+                  {discount.active && <span className="line-through">{formatPrice(originalTotal)}</span>}
+                  {discount.active && " → "}
                   {/* END REMOVABLE: DISCOUNT */}
                   {formatPrice(totalPrice)} billed annually
                 </p>
-                {savings > 0 && (
+                {savings > 0 && discount.active && (
                   <p className={`text-xs font-bold mt-1 ${cardStyles.savingsBadge} inline-block px-2 py-0.5 rounded-full uppercase tracking-wider`}>
                     Save {formatPrice(savings + (originalTotal - discountedTotal))}/year
                   </p>
@@ -189,7 +220,7 @@ export function PricingCard({
               </div>
             )}
             {/* REMOVABLE: DISCOUNT - Remove monthly savings badge */}
-            {billingCycle === "monthly" && (
+            {billingCycle === "monthly" && discount.active && (
               <p className={`text-xs font-bold mt-1 ${cardStyles.savingsBadge} inline-block px-2 py-0.5 rounded-full uppercase tracking-wider`}>
                 Save {discount.percent}% on your first month
               </p>
@@ -225,6 +256,21 @@ export function PricingCard({
                 ? "Current Plan"
                 : ctaLabel || "Subscribe"}
           </Button>
+
+          {earlyAccessAvailability && earlyAccessAvailability.remaining > 0 && !hasEarlyAccess && !isCurrentPlan && (
+            <div className="mt-3">
+              <Button
+                className="w-full py-4 rounded-xl font-bold text-sm transition-all bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:text-white dark:hover:bg-indigo-600"
+                isDisabled={isClaiming}
+                onClick={handleClaimEarlyAccess}
+              >
+                {isClaiming ? "Claiming..." : "Claim 2 Free Months"}
+              </Button>
+              {claimError && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-center">{claimError}</p>
+              )}
+            </div>
+          )}
         </CardBody>
       </Card>
     </div>

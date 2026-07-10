@@ -137,7 +137,7 @@ describe("Property 5 — presign rejects oversized files", () => {
   it("fileSize > maxFileSize always produces a 400 response", async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.bigInt({ min: 1n, max: 1_000_000_000n }),
+        fc.bigInt({ min: BigInt(1), max: BigInt(1000000000) }),
         async (maxFileSize) => {
           // fileSize is always strictly greater than maxFileSize
           const fileSize = Number(maxFileSize) + 1;

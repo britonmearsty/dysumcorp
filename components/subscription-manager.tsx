@@ -31,7 +31,7 @@ export function SubscriptionManager({
 
   // REMOVABLE: DISCOUNT - Remove this block to disable discount display
   const discount = getDiscount("monthly");
-  const displayPrice = calculateDiscountedPrice(PRICING_PLANS.pro.price, discount.percent);
+  const displayPrice = discount.active ? calculateDiscountedPrice(PRICING_PLANS.pro.price, discount.percent) : PRICING_PLANS.pro.price;
   // END REMOVABLE: DISCOUNT
 
   const handleSubscribe = () => {

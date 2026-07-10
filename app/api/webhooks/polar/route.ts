@@ -30,6 +30,8 @@ export const POST = Webhooks({
         polarCurrentPeriodEnd: sub.currentPeriodEnd
           ? new Date(sub.currentPeriodEnd)
           : null,
+        earlyAccess: false,
+        earlyAccessExpiresAt: null,
       },
     });
 
@@ -164,6 +166,8 @@ export const POST = Webhooks({
           polarCurrentPeriodEnd: sub.currentPeriodEnd
             ? new Date(sub.currentPeriodEnd)
             : null,
+          earlyAccess: false,
+          earlyAccessExpiresAt: null,
         },
       });
     }

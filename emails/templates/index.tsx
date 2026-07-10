@@ -611,3 +611,53 @@ export function WeeklyReportEmail({
     </EmailLayout>
   );
 }
+
+interface EarlyAccessExpiryEmailProps {
+  userName: string;
+  expiresAt: string;
+  billingUrl: string;
+}
+
+export function EarlyAccessExpiryEmail({
+  userName,
+  expiresAt,
+  billingUrl,
+}: EarlyAccessExpiryEmailProps) {
+  const previewText = "Your Early Access period ends soon — subscribe to keep Pro";
+
+  return (
+    <EmailLayout previewText={previewText}>
+      <Heading className="text-center text-2xl font-bold text-gray-800">
+        ⏰ Your Early Access Period is Ending Soon
+      </Heading>
+      <Text className="text-base text-gray-600">Hi {userName},</Text>
+      <Text className="text-base text-gray-600">
+        Your Early Access to Pro features will end on{" "}
+        <strong>{expiresAt}</strong>.
+      </Text>
+      <Text className="text-base text-gray-600">
+        After this date, your Pro access will expire and you&apos;ll revert to
+        the free plan. To continue enjoying unlimited portals, advanced
+        features, and priority support, please subscribe before your Early
+        Access period ends.
+      </Text>
+      <Section className="my-6 text-center">
+        <Button
+          className="rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white no-underline"
+          href={billingUrl}
+        >
+          Subscribe to Pro
+        </Button>
+      </Section>
+      <Text className="text-base text-gray-600">
+        If you have any questions or need assistance, our support team is here
+        to help.
+      </Text>
+      <Text className="text-base text-gray-600">
+        Best regards,
+        <br />
+        The DysumCorp Team
+      </Text>
+    </EmailLayout>
+  );
+}

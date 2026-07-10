@@ -198,8 +198,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // REVERSIBILITY: Remove this block to revert trial feature
-    // Mark free users as having used their trial portal
+    // Mark free users as having used their trial portal. NOTE: planType === "pro" for early access users (via getUserPlanType), so this block is naturally skipped for them — no extra check needed.
     if (planType === "free") {
       await prisma.user.update({
         where: { id: userId },

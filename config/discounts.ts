@@ -7,16 +7,24 @@ export const DISCOUNT_CONFIG = {
   monthly: {
     code: "5MVH04XL",
     percent: 50,
+    active: false,
   },
   yearly: {
     code: "ZRED2R2I",
     percent: 25,
+    active: false,
   },
 } as const;
 
 export type BillingCycle = "monthly" | "annual";
 
-export function getDiscount(billingCycle: BillingCycle) {
+export type Discount = {
+  code: string;
+  percent: number;
+  active: boolean;
+};
+
+export function getDiscount(billingCycle: BillingCycle): Discount {
   return billingCycle === "monthly" ? DISCOUNT_CONFIG.monthly : DISCOUNT_CONFIG.yearly;
 }
 

@@ -12,6 +12,7 @@ import {
   StorageWarningEmail,
   SupportRequestEmail,
   WeeklyReportEmail,
+  EarlyAccessExpiryEmail,
 } from "@/emails/templates";
 
 let resend: Resend | null = null;
@@ -484,6 +485,30 @@ export async function sendWeeklyReport({
   return sendEmailInternal({
     to,
     subject: `📊 Your Weekly Activity Report - ${weekStart} to ${weekEnd}`,
+    html,
+  });
+}
+
+export async function sendEarlyAccessExpiryWarning({
+  to,
+  userName,
+  expiresAt,
+}: {
+  to: string;
+  userName: string;
+  expiresAt: Date;
+}): Promise<EmailResult> {
+  const billingUrl = `${APP_URL}/dashboard/billing`;
+  const email = EarlyAccessExpiryEmail({
+    userName,
+    expiresAt: expiresAt.toLocaleDateString(),
+    billingUrl,
+  });
+  const html = await render(email);
+
+  return sendEmailInternal({
+    to,
+    subject: "Your Early Access period ends soon — subscribe to keep Pro",
     html,
   });
 }
