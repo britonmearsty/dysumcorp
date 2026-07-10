@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, Tab } from "@heroui/tabs";
-import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Rocket } from "lucide-react";
 
 import { PRICING_PLANS, FREE_PLAN } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
 import { LandingNavbar } from "@/components/landing-navbar";
 import { PricingCard } from "@/components/pricing-card";
 import { PricingCardFree } from "@/components/pricing-card-free";
 import { FadeIn } from "@/components/animations";
+import { EarlyAccessAvailability } from "@/lib/early-access";
 
 const faqItems = [
   {
@@ -44,9 +44,16 @@ export function PricingClient() {
   const router = useRouter();
   const { data: session } = useSession();
   const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
-    "monthly",
-  );
+  const hasEarlyAccess = (session?.user as any)?.earlyAccess === true;
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
+  const [earlyAccessAvailability, setEarlyAccessAvailability] = useState<EarlyAccessAvailability | null>(null);
+
+  useEffect(() => {
+    fetch("/api/early-access/availability")
+      .then((r) => r.json())
+      .then((data) => setEarlyAccessAvailability(data))
+      .catch(() => {});
+  }, []);
 
   const handleSubscribe = (planId: string, isAnnual: boolean) => {
     if (!session?.user) {
@@ -55,6 +62,19 @@ export function PricingClient() {
     }
     router.push("/dashboard/billing?tab=plans");
   };
+
+  const handleClaimSuccess = () => {
+    // Refresh availability after a successful claim
+    fetch("/api/early-access/availability")
+      .then((r) => r.json())
+      .then((data) => setEarlyAccessAvailability(data))
+      .catch(() => {});
+  };
+
+  const isLaunchOfferActive =
+    earlyAccessAvailability !== null &&
+    earlyAccessAvailability.remaining > 0 &&
+    !hasEarlyAccess;
 
   return (
     <div className="min-h-screen bg-[#fafaf9] selection:bg-stone-200">
@@ -77,14 +97,33 @@ export function PricingClient() {
             </FadeIn>
           </div>
 
+          {/* Launch offer banner — only shown while spots remain */}
+          {isLaunchOfferActive && (
+            <FadeIn delay={0.05}>
+              <div className="max-w-3xl mx-auto mb-10 px-4">
+                <div className="rounded-2xl bg-gradient-to-r from-indigo-50 via-violet-50 to-indigo-50 border border-indigo-200 px-6 py-5 text-center">
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-indigo-500 mb-1">
+                    Founding Users Launch Offer
+                  </p>
+                  <p className="text-base font-bold text-indigo-900">
+                    🚀 Get 2 months of Pro FREE — no credit card required.
+                  </p>
+                  <p className="text-sm text-indigo-700 mt-1 font-medium">
+                    Limited to the first 20 users. We&apos;re asking for your feedback
+                    while we build Dysumcorp.
+                  </p>
+                </div>
+              </div>
+            </FadeIn>
+          )}
+
           <div className="flex justify-center mb-8">
             <Tabs
               classNames={{
                 tabList: "bg-white border border-stone-200 rounded-full p-1",
                 cursor: "bg-[#1c1917]",
                 tab: "text-stone-600 data-[selected=true]:text-stone-50",
-                tabContent:
-                  "group-data-[selected=true]:text-stone-50 font-bold",
+                tabContent: "group-data-[selected=true]:text-stone-50 font-bold",
               }}
               selectedKey={billingCycle}
               size="lg"
@@ -107,12 +146,12 @@ export function PricingClient() {
             </Tabs>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2 max-w-3xl mx-auto mb-16 px-4">
+          <div className="grid gap-8 md:grid-cols-2 max-w-3xl mx-auto mb-16 px-4 items-start">
             {/* Free Plan */}
             <PricingCardFree
               plan={FREE_PLAN}
               variant="landing"
-              ctaLabel="Create free portal"
+              ctaLabel="Get started free"
               onSubscribe={() => router.push("/auth")}
             />
 
@@ -121,8 +160,11 @@ export function PricingClient() {
               billingCycle={billingCycle}
               ctaLabel="Upgrade to Pro"
               currentPlan={currentPlan}
+              earlyAccessAvailability={earlyAccessAvailability}
+              hasEarlyAccess={hasEarlyAccess}
               plan={PRICING_PLANS.pro}
               variant="landing"
+              onClaimSuccess={handleClaimSuccess}
               onSubscribe={handleSubscribe}
             />
           </div>

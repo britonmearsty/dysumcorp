@@ -1,22 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, Tab } from "@heroui/tabs";
+import { Rocket } from "lucide-react";
 
 import { FadeIn, Stagger, StaggerItem } from "./animations";
-
 import { PricingCard } from "./pricing-card";
 import { PricingCardFree } from "./pricing-card-free";
 import { PRICING_PLANS, FREE_PLAN } from "@/config/pricing";
+import type { EarlyAccessAvailability } from "@/lib/early-access";
 
 export default function PricingSection() {
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
-    "monthly",
-  );
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
+  const [earlyAccessAvailability, setEarlyAccessAvailability] =
+    useState<EarlyAccessAvailability | null>(null);
 
-  const handleSubscribe = (planId: string, isAnnual: boolean) => {
+  useEffect(() => {
+    fetch("/api/early-access/availability")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => data && setEarlyAccessAvailability(data))
+      .catch(() => {});
+  }, []);
+
+  const handleSubscribe = (_planId: string, _isAnnual: boolean) => {
     window.location.href = "/auth";
   };
+
+  const isLaunchOfferActive =
+    earlyAccessAvailability !== null && earlyAccessAvailability.remaining > 0;
 
   return (
     <section
@@ -25,7 +36,7 @@ export default function PricingSection() {
     >
       <div className="max-w-7xl mx-auto">
         <FadeIn>
-          <div className="text-center mb-12 sm:mb-20">
+          <div className="text-center mb-12 sm:mb-16">
             <span className="text-stone-500 font-bold tracking-[0.3em] uppercase text-xs">
               Pricing Plans
             </span>
@@ -38,6 +49,26 @@ export default function PricingSection() {
             </p>
           </div>
         </FadeIn>
+
+        {/* Launch offer banner — visible to all visitors while spots remain */}
+        {isLaunchOfferActive && (
+          <FadeIn delay={0.05}>
+            <div className="max-w-3xl mx-auto mb-10">
+              <div className="rounded-2xl bg-gradient-to-r from-indigo-50 via-violet-50 to-indigo-50 border border-indigo-200 px-6 py-5 text-center">
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-indigo-500 mb-1">
+                  Founding Users Launch Offer
+                </p>
+                <p className="text-base font-bold text-indigo-900">
+                  🚀 Get 2 months of Pro FREE — no credit card required.
+                </p>
+                <p className="text-sm text-indigo-700 mt-1 font-medium">
+                  Limited to the first 20 users. We&apos;re asking for your
+                  feedback while we build Dysumcorp.
+                </p>
+              </div>
+            </div>
+          </FadeIn>
+        )}
 
         <FadeIn delay={0.1}>
           <div className="flex justify-center mb-8">
@@ -72,7 +103,7 @@ export default function PricingSection() {
         </FadeIn>
 
         <Stagger
-          className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-3xl mx-auto"
+          className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-3xl mx-auto items-start"
           delay={0.15}
         >
           {/* Free Plan */}
@@ -80,19 +111,25 @@ export default function PricingSection() {
             <PricingCardFree
               plan={FREE_PLAN}
               variant="landing"
-              ctaLabel="Create free portal"
-              onSubscribe={() => window.location.href = "/auth"}
+              ctaLabel="Get started free"
+              onSubscribe={() => (window.location.href = "/auth")}
             />
           </StaggerItem>
 
-          {/* Pro Plan */}
+          {/* Pro Plan — shows launch offer callout + EA button when slots remain */}
           <StaggerItem>
             <PricingCard
               plan={PRICING_PLANS.pro}
               billingCycle={billingCycle}
-              ctaLabel="Upgrade to Pro"
+              ctaLabel="Get Pro"
               variant="landing"
+              earlyAccessAvailability={earlyAccessAvailability}
+              requiresAuth
               onSubscribe={handleSubscribe}
+              // Visitors aren't logged in; clicking EA button redirects to /auth
+              onClaimSuccess={() => {
+                window.location.href = "/auth";
+              }}
             />
           </StaggerItem>
         </Stagger>

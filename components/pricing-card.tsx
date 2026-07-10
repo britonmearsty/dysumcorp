@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Check, Copy, CheckCheck } from "lucide-react";
+import { Check, Copy, CheckCheck, Rocket } from "lucide-react";
 
 import { PricingPlan } from "@/config/pricing";
 import { formatPrice } from "@/config/pricing";
@@ -26,6 +26,9 @@ const getCardStyles = (variant: "landing" | "dashboard" = "landing") => {
     borderPopular: isDashboard
       ? "border-primary dark:border-primary"
       : "border-[#1c1917]",
+    borderLaunch: isDashboard
+      ? "border-indigo-500 dark:border-indigo-400"
+      : "border-indigo-400",
     textTitle: isDashboard
       ? "text-foreground dark:text-foreground"
       : "text-[#1c1917]",
@@ -47,12 +50,27 @@ const getCardStyles = (variant: "landing" | "dashboard" = "landing") => {
     popularBadge: isDashboard
       ? "bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground"
       : "bg-[#1c1917] text-stone-50",
+    launchBadge: isDashboard
+      ? "bg-indigo-600 text-white dark:bg-indigo-500 dark:text-white"
+      : "bg-indigo-600 text-white",
     divider: isDashboard
       ? "border-border dark:border-border"
       : "border-stone-200",
     savingsBadge: isDashboard
       ? "bg-muted text-foreground dark:bg-muted dark:text-foreground"
       : "bg-stone-100 text-[#1c1917]",
+    launchCallout: isDashboard
+      ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-700"
+      : "bg-indigo-50 border-indigo-200",
+    launchCalloutText: isDashboard
+      ? "text-indigo-900 dark:text-indigo-100"
+      : "text-indigo-900",
+    launchCalloutMuted: isDashboard
+      ? "text-indigo-700 dark:text-indigo-300"
+      : "text-indigo-700",
+    launchCalloutCheck: isDashboard
+      ? "text-indigo-600 dark:text-indigo-400"
+      : "text-indigo-600",
   };
 };
 
@@ -68,6 +86,8 @@ interface PricingCardProps {
   earlyAccessAvailability?: EarlyAccessAvailability | null;
   hasEarlyAccess?: boolean;
   onClaimSuccess?: () => void;
+  /** When true, clicking Claim Early Access redirects to /auth instead of calling the API */
+  requiresAuth?: boolean;
 }
 
 // REVERSIBILITY: Remove variant param to revert
@@ -82,12 +102,13 @@ export function PricingCard({
   earlyAccessAvailability,
   hasEarlyAccess,
   onClaimSuccess,
+  requiresAuth = false,
 }: PricingCardProps) {
   const isCurrentPlan = currentPlan === plan.id;
   const isCancelledGrace = isCurrentPlan && currentStatus === "cancelled";
   const [claimError, setClaimError] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
-  
+
   // REMOVABLE: DISCOUNT - Remove this entire block to disable discount promo
   const [copied, setCopied] = useState(false);
   const discount = getDiscount(billingCycle);
@@ -98,9 +119,16 @@ export function PricingCard({
   const price = discount.active ? discountedPrice : originalPrice;
   const totalPrice = discount.active ? discountedTotal : originalTotal;
   // END REMOVABLE: DISCOUNT
-  
+
   const savings =
     billingCycle === "annual" ? plan.price * 12 - plan.priceAnnual : 0;
+
+  // Whether the launch offer callout should show inside this card
+  const showLaunchOffer =
+    !!earlyAccessAvailability &&
+    earlyAccessAvailability.remaining > 0 &&
+    !hasEarlyAccess &&
+    !isCurrentPlan;
 
   // REMOVABLE: DISCOUNT - Copy handler for discount code
   const handleCopyCode = async () => {
@@ -111,6 +139,11 @@ export function PricingCard({
   // END REMOVABLE: DISCOUNT
 
   const handleClaimEarlyAccess = async () => {
+    // Unauthenticated visitors (landing page) — send to sign-up first
+    if (requiresAuth) {
+      window.location.href = "/auth?redirect=/dashboard/billing?tab=plans";
+      return;
+    }
     setClaimError(null);
     setIsClaiming(true);
     try {
@@ -121,7 +154,7 @@ export function PricingCard({
         return;
       }
       onClaimSuccess?.();
-    } catch (err) {
+    } catch {
       setClaimError("Failed to claim early access");
     } finally {
       setIsClaiming(false);
@@ -131,17 +164,34 @@ export function PricingCard({
   // REVERSIBILITY: Remove this line to revert
   const cardStyles = getCardStyles(variant);
 
+  // Pick border: launch offer > popular > default
+  const borderClass = showLaunchOffer
+    ? cardStyles.borderLaunch
+    : plan.popular
+      ? cardStyles.borderPopular
+      : cardStyles.border;
+
+  // Glow shadow when launch offer is active
+  const glowClass = showLaunchOffer
+    ? "shadow-[0_0_0_1px_#6366f1,0_4px_24px_0_rgba(99,102,241,0.15)]"
+    : "";
+
   return (
-    <div className="relative pt-4">
-      {plan.popular && (
-        <div className={`absolute -top-0 left-1/2 -translate-x-1/2 ${cardStyles.popularBadge} px-4 py-1 rounded-full text-sm font-semibold z-10`}>
+    <div className={`relative ${showLaunchOffer ? "scale-[1.02]" : ""} transition-transform duration-300`}>
+      {/* Badge — launch offer takes precedence over "Most Popular" */}
+      {showLaunchOffer ? (
+        <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 ${cardStyles.launchBadge} px-4 py-1 rounded-full text-xs font-bold z-10 flex items-center gap-1.5 whitespace-nowrap`}>
+          <Rocket className="w-3 h-3" />
+          Launch Offer
+        </div>
+      ) : plan.popular ? (
+        <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 ${cardStyles.popularBadge} px-4 py-1 rounded-full text-sm font-semibold z-10`}>
           Most Popular
         </div>
-      )}
+      ) : null}
+
       <Card
-        className={`${cardStyles.background} border-2 rounded-xl ${
-          plan.popular ? cardStyles.borderPopular : cardStyles.border
-        }`}
+        className={`${cardStyles.background} border-2 rounded-xl ${borderClass} ${glowClass}`}
         shadow="none"
       >
         <CardHeader className={`flex flex-col items-start gap-2 pb-6 border-b ${cardStyles.divider} bg-transparent`}>
@@ -152,40 +202,40 @@ export function PricingCard({
 
           {/* REMOVABLE: DISCOUNT - Remove this entire promo block to disable */}
           {discount.active && (
-          <div className="mt-4">
-            <div 
-              className={`cursor-pointer rounded-lg border-2 border-dashed px-3 py-2 transition-all hover:opacity-80 ${
-                variant === "dashboard" 
-                  ? "bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700" 
-                  : "bg-amber-50 border-amber-300"
-              }`}
-              onClick={handleCopyCode}
-            >
-              <div className="flex items-center gap-2">
-                <div className="flex-1">
-                  <p className={`text-[10px] font-bold uppercase tracking-wider ${
-                    variant === "dashboard" ? "text-amber-600 dark:text-amber-400" : "text-amber-600"
-                  }`}>
-                    First subscription only — click to copy
-                  </p>
-                  <p className={`text-sm font-bold ${
-                    variant === "dashboard" ? "text-amber-800 dark:text-amber-200" : "text-amber-800"
-                  }`}>
-                    {discount.percent}% OFF • Code: <span className="font-mono">{discount.code}</span>
-                  </p>
+            <div className="mt-4">
+              <div
+                className={`cursor-pointer rounded-lg border-2 border-dashed px-3 py-2 transition-all hover:opacity-80 ${
+                  variant === "dashboard"
+                    ? "bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700"
+                    : "bg-amber-50 border-amber-300"
+                }`}
+                onClick={handleCopyCode}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <p className={`text-[10px] font-bold uppercase tracking-wider ${
+                      variant === "dashboard" ? "text-amber-600 dark:text-amber-400" : "text-amber-600"
+                    }`}>
+                      First subscription only — click to copy
+                    </p>
+                    <p className={`text-sm font-bold ${
+                      variant === "dashboard" ? "text-amber-800 dark:text-amber-200" : "text-amber-800"
+                    }`}>
+                      {discount.percent}% OFF • Code: <span className="font-mono">{discount.code}</span>
+                    </p>
+                  </div>
+                  {copied ? (
+                    <CheckCheck className={`w-4 h-4 ${
+                      variant === "dashboard" ? "text-green-600 dark:text-green-400" : "text-green-600"
+                    }`} />
+                  ) : (
+                    <Copy className={`w-4 h-4 ${
+                      variant === "dashboard" ? "text-amber-600 dark:text-amber-400" : "text-amber-600"
+                    }`} />
+                  )}
                 </div>
-                {copied ? (
-                  <CheckCheck className={`w-4 h-4 ${
-                    variant === "dashboard" ? "text-green-600 dark:text-green-400" : "text-green-600"
-                  }`} />
-                ) : (
-                  <Copy className={`w-4 h-4 ${
-                    variant === "dashboard" ? "text-amber-600 dark:text-amber-400" : "text-amber-600"
-                  }`} />
-                )}
               </div>
             </div>
-          </div>
           )}
           {/* END REMOVABLE: DISCOUNT */}
 
@@ -193,9 +243,9 @@ export function PricingCard({
             <div className="flex items-baseline gap-2">
               {/* REMOVABLE: DISCOUNT - Remove strikethrough price */}
               {discount.active && (
-              <span className={`text-lg line-through ${cardStyles.textMuted}`}>
-                {formatPrice(originalPrice)}
-              </span>
+                <span className={`text-lg line-through ${cardStyles.textMuted}`}>
+                  {formatPrice(originalPrice)}
+                </span>
               )}
               {/* END REMOVABLE: DISCOUNT */}
               <span className={`text-5xl font-bold ${cardStyles.textTitle} tracking-tight`}>
@@ -229,8 +279,8 @@ export function PricingCard({
           </div>
         </CardHeader>
 
-        <CardBody className="pt-8 px-2">
-          <ul className="space-y-4 mb-10">
+        <CardBody className="pt-6 px-2">
+          <ul className="space-y-4 mb-6">
             {plan.features.map((feature, index) => (
               <li key={index} className="flex items-start gap-3">
                 <Check className={`w-5 h-5 ${cardStyles.checkIcon} flex-shrink-0 mt-0.5`} />
@@ -241,35 +291,77 @@ export function PricingCard({
             ))}
           </ul>
 
-          <Button
-            className={`w-full py-6 rounded-xl font-bold text-sm transition-all ${
-              plan.popular
-                ? cardStyles.buttonPopular
-                : cardStyles.buttonDefault
-            }`}
-            isDisabled={isCurrentPlan}
-            onClick={() => onSubscribe?.(plan.id, billingCycle === "annual")}
-          >
-            {isCancelledGrace
-              ? "Cancelling at Period End"
-              : isCurrentPlan
-                ? "Current Plan"
-                : ctaLabel || "Subscribe"}
-          </Button>
+          {/* Launch offer callout — sits above the action buttons */}
+          {showLaunchOffer && (
+            <div className={`rounded-xl border px-4 py-3 mb-5 ${cardStyles.launchCallout}`}>
+              <p className={`text-xs font-bold uppercase tracking-wider ${cardStyles.launchCalloutMuted} mb-1.5`}>
+                🎉 Limited-Time Launch Offer
+              </p>
+              <p className={`text-sm font-bold ${cardStyles.launchCalloutText} mb-2`}>
+                Claim 2 months of Pro FREE
+              </p>
+              <ul className="space-y-1">
+                {["No credit card required", "Instant access", "Ends after the first 20 users"].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <Check className={`w-3.5 h-3.5 flex-shrink-0 ${cardStyles.launchCalloutCheck}`} />
+                    <span className={`text-xs font-medium ${cardStyles.launchCalloutMuted}`}>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-          {earlyAccessAvailability && earlyAccessAvailability.remaining > 0 && !hasEarlyAccess && !isCurrentPlan && (
-            <div className="mt-3">
+          {/* Action buttons */}
+          {showLaunchOffer ? (
+            <div className="space-y-2">
+              {/* Primary: Early Access */}
               <Button
-                className="w-full py-4 rounded-xl font-bold text-sm transition-all bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:text-white dark:hover:bg-indigo-600"
+                className="w-full py-6 rounded-xl font-bold text-sm transition-all bg-indigo-600 text-white hover:bg-indigo-700 flex items-center justify-center gap-2"
                 isDisabled={isClaiming}
                 onClick={handleClaimEarlyAccess}
               >
-                {isClaiming ? "Claiming..." : "Claim 2 Free Months"}
+                <Rocket className="w-4 h-4" />
+                {isClaiming ? "Claiming..." : "Claim Free Early Access"}
               </Button>
               {claimError && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-center">{claimError}</p>
+                <p className="text-xs text-red-600 dark:text-red-400 text-center">{claimError}</p>
               )}
+              <p className="text-center text-[11px] text-indigo-600 font-semibold">
+                Available during launch only — first 20 users.
+              </p>
+              {/* Secondary: paid options */}
+              <div className="flex gap-2 pt-1">
+                <Button
+                  className={`flex-1 py-4 rounded-xl font-bold text-xs transition-all ${cardStyles.buttonDefault}`}
+                  onClick={() => onSubscribe?.(plan.id, false)}
+                >
+                  Monthly billing
+                </Button>
+                <Button
+                  className={`flex-1 py-4 rounded-xl font-bold text-xs transition-all ${cardStyles.buttonDefault}`}
+                  onClick={() => onSubscribe?.(plan.id, true)}
+                >
+                  Annual billing
+                </Button>
+              </div>
+              <p className={`text-center text-[10px] ${cardStyles.textMuted} font-medium pb-1`}>
+                Normally ${plan.price}/month after the free period.
+              </p>
             </div>
+          ) : (
+            <Button
+              className={`w-full py-6 rounded-xl font-bold text-sm transition-all ${
+                plan.popular ? cardStyles.buttonPopular : cardStyles.buttonDefault
+              }`}
+              isDisabled={isCurrentPlan}
+              onClick={() => onSubscribe?.(plan.id, billingCycle === "annual")}
+            >
+              {isCancelledGrace
+                ? "Cancelling at Period End"
+                : isCurrentPlan
+                  ? "Current Plan"
+                  : ctaLabel || "Subscribe"}
+            </Button>
           )}
         </CardBody>
       </Card>
