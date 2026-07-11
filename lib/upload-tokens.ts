@@ -10,6 +10,8 @@ export interface UploadToken {
   uploaderName: string;
   uploaderNotes?: string;
   stagingKey?: string; // R2 object key — included in HMAC
+  /** Set at presign time to avoid re-querying owner access on confirm legs */
+  ownerAccessAllowed?: boolean;
   expiresAt: number;
   signature: string;
 }
@@ -30,6 +32,7 @@ export function generateUploadToken(data: {
   uploaderName: string;
   uploaderNotes?: string;
   stagingKey?: string;
+  ownerAccessAllowed?: boolean;
 }): string {
   const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
 
@@ -44,6 +47,7 @@ export function generateUploadToken(data: {
     uploaderName: data.uploaderName,
     uploaderNotes: data.uploaderNotes || "",
     stagingKey: data.stagingKey || "",
+    ownerAccessAllowed: data.ownerAccessAllowed ?? false,
     expiresAt,
   };
 
@@ -57,6 +61,7 @@ export function generateUploadToken(data: {
     "uploaderName",
     "uploaderNotes",
     "stagingKey",
+    "ownerAccessAllowed",
     "expiresAt",
   ];
 
@@ -96,6 +101,7 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
       uploaderName: token.uploaderName,
       uploaderNotes: token.uploaderNotes || "",
       stagingKey: token.stagingKey || "",
+      ownerAccessAllowed: token.ownerAccessAllowed ?? false,
       expiresAt: token.expiresAt,
     };
 
@@ -108,6 +114,7 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
       "uploaderName",
       "uploaderNotes",
       "stagingKey",
+      "ownerAccessAllowed",
       "expiresAt",
     ];
 
@@ -118,18 +125,58 @@ export function validateUploadToken(encodedToken: string): UploadToken | null {
       .update(canonicalJson)
       .digest("hex");
 
-    if (token.signature !== expectedSignature) {
-      logger.error("[Upload Token] Invalid signature");
-
-      return null;
+    if (token.signature === expectedSignature) {
+      return {
+        ...token,
+        uploaderNotes: token.uploaderNotes || undefined,
+        stagingKey: token.stagingKey || undefined,
+      };
     }
 
-    // Normalise return: map empty strings back to undefined to match original input in tests
-    return {
-      ...token,
-      uploaderNotes: token.uploaderNotes || undefined,
-      stagingKey: token.stagingKey || undefined,
-    };
+    // Legacy tokens issued before ownerAccessAllowed was added to the payload
+    if (token.ownerAccessAllowed === undefined) {
+      const legacyData = {
+        portalId: token.portalId,
+        fileName: token.fileName,
+        fileSize: token.fileSize,
+        mimeType: token.mimeType,
+        uploaderEmail: token.uploaderEmail,
+        uploaderName: token.uploaderName,
+        uploaderNotes: token.uploaderNotes || "",
+        stagingKey: token.stagingKey || "",
+        expiresAt: token.expiresAt,
+      };
+
+      const legacyKeys = [
+        "portalId",
+        "fileName",
+        "fileSize",
+        "mimeType",
+        "uploaderEmail",
+        "uploaderName",
+        "uploaderNotes",
+        "stagingKey",
+        "expiresAt",
+      ];
+
+      const legacyJson = JSON.stringify(legacyData, legacyKeys);
+      const legacySignature = crypto
+        .createHmac("sha256", SECRET)
+        .update(legacyJson)
+        .digest("hex");
+
+      if (token.signature === legacySignature) {
+        return {
+          ...token,
+          uploaderNotes: token.uploaderNotes || undefined,
+          stagingKey: token.stagingKey || undefined,
+        };
+      }
+    }
+
+    logger.error("[Upload Token] Invalid signature");
+
+    return null;
   } catch (error) {
     logger.error("[Upload Token] Failed to validate token:", error);
 

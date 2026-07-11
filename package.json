@@ -2,7 +2,7 @@
   "name": "next-app-template",
   "version": "0.0.1",
   "private": true,
-  "packageManager": "pnpm@11.10.0",
+  "packageManager": "pnpm@11.11.0",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build",
@@ -64,6 +64,7 @@
     "@heroui/user": "2.2.25",
     "@polar-sh/nextjs": "^0.9.5",
     "@polar-sh/sdk": "^0.47.0",
+    "@prisma/adapter-neon": "^7.8.0",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "@prisma/client-runtime-utils": "7.4.2",

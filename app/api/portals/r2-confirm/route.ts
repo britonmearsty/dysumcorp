@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { sendFileUploadNotification } from "@/lib/email-service";
-import { checkAccess } from "@/lib/access";
+import { checkAccessFromUser, USER_ACCESS_SELECT, maybeDeactivateFreePortalAtFileLimit } from "@/lib/access";
 import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
@@ -221,25 +221,20 @@ export async function POST(request: NextRequest) {
       // Check if free portal has reached file limit
       const portal = await prisma.portal.findUnique({
         where: { id: portalId },
-        select: { id: true, userId: true, isActive: true },
+        select: {
+          id: true,
+          isActive: true,
+          user: { select: USER_ACCESS_SELECT },
+        },
       });
 
       if (portal?.isActive) {
-        const access = await checkAccess(portal.userId);
-        if (!access.allowed) {
-          const fileCount = await prisma.file.count({
-            where: { portalId: portal.id },
-          });
-          if (fileCount >= 10) {
-            await prisma.portal.update({
-              where: { id: portal.id },
-              data: { isActive: false },
-            });
-            logger.log(
-              `[r2-confirm:${requestId}] Free portal ${portal.id} deactivated: file limit reached (${fileCount}/10)`,
-            );
-          }
-        }
+        const access = checkAccessFromUser(portal.user);
+        await maybeDeactivateFreePortalAtFileLimit(
+          portal.id,
+          access.allowed,
+          `[r2-confirm:${requestId}]`,
+        );
       }
 
       // ── Update staging record with delivery details ─────────────────────────

@@ -33,6 +33,7 @@ const tokenDataArb = fc.record({
   uploaderName: nonEmptyString,
   uploaderNotes: fc.option(nonEmptyString, { nil: undefined }),
   stagingKey: fc.option(stagingKeyArb, { nil: undefined }),
+  ownerAccessAllowed: fc.option(fc.boolean(), { nil: undefined }),
 });
 
 // ── Property 1: Token round-trip preserves all fields ─────────────────────────
@@ -53,6 +54,7 @@ describe("Property 1 — upload token round-trip", () => {
         expect(decoded!.uploaderName).toBe(data.uploaderName);
         expect(decoded!.uploaderNotes).toBe(data.uploaderNotes);
         expect(decoded!.stagingKey).toBe(data.stagingKey);
+        expect(decoded!.ownerAccessAllowed).toBe(data.ownerAccessAllowed ?? false);
       }),
       { numRuns: 100 },
     );

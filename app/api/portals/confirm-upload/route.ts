@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password-utils";
 import { validateUploadToken } from "@/lib/upload-tokens";
-import { checkAccess } from "@/lib/access";
+import { maybeDeactivateFreePortalAtFileLimit } from "@/lib/access";
 import { logger } from "@/lib/logger";
 
 // Helper function to format file size
@@ -51,10 +51,11 @@ export async function POST(request: NextRequest) {
     });
 
     // Validate upload token if provided (new direct upload method)
+    let validatedToken: ReturnType<typeof validateUploadToken> = null;
     if (uploadToken) {
-      const tokenData = validateUploadToken(uploadToken);
+      validatedToken = validateUploadToken(uploadToken);
 
-      if (!tokenData) {
+      if (!validatedToken) {
         logger.error(
           "[Portal Confirm Upload] Invalid or expired upload token",
         );
@@ -67,9 +68,9 @@ export async function POST(request: NextRequest) {
 
       // Verify token data matches request
       if (
-        tokenData.portalId !== portalId ||
-        tokenData.fileName !== fileName ||
-        tokenData.fileSize !== fileSize
+        validatedToken.portalId !== portalId ||
+        validatedToken.fileName !== fileName ||
+        validatedToken.fileSize !== fileSize
       ) {
         logger.error("[Portal Confirm Upload] Token data mismatch");
 
@@ -182,22 +183,13 @@ export async function POST(request: NextRequest) {
     logger.log("[Portal Confirm Upload] File metadata saved:", file.id);
 
     // Check if free portal has reached file limit
-    if (portal?.isActive) {
-      const access = await checkAccess(portal.userId);
-      if (!access.allowed) {
-        const fileCount = await prisma.file.count({
-          where: { portalId: portal.id },
-        });
-        if (fileCount >= 10) {
-          await prisma.portal.update({
-            where: { id: portal.id },
-            data: { isActive: false },
-          });
-          logger.log(
-            `[Portal Confirm Upload] Free portal ${portal.id} deactivated: file limit reached (${fileCount}/10)`,
-          );
-        }
-      }
+    if (portal?.isActive && validatedToken) {
+      const ownerAccessAllowed = validatedToken.ownerAccessAllowed ?? false;
+      await maybeDeactivateFreePortalAtFileLimit(
+        portal.id,
+        ownerAccessAllowed,
+        "[Portal Confirm Upload]",
+      );
     }
 
     return NextResponse.json({

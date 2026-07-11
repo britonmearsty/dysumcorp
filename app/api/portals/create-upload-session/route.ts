@@ -2,7 +2,7 @@ import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/access";
+import { checkAccessFromUser, USER_ACCESS_SELECT } from "@/lib/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,7 +27,14 @@ export async function POST(request: NextRequest) {
     // Verify portal exists and is active
     const portal = await prisma.portal.findUnique({
       where: { id: portalId },
-      select: { id: true, isActive: true, userId: true, expiresAt: true, maxUploads: true, uploadCount: true },
+      select: {
+        id: true,
+        isActive: true,
+        expiresAt: true,
+        maxUploads: true,
+        uploadCount: true,
+        user: { select: USER_ACCESS_SELECT },
+      },
     });
 
     if (!portal) {
@@ -62,7 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check access - allow free users within limits
-    const access = await checkAccess(portal.userId);
+    const access = checkAccessFromUser(portal.user);
 
     if (!access.allowed) {
       // Check file count (max 10 for free)

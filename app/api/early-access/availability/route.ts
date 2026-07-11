@@ -10,7 +10,11 @@ export async function GET(): Promise<NextResponse> {
   try {
     const availability = await getEarlyAccessAvailability();
 
-    return NextResponse.json(availability);
+    return NextResponse.json(availability, {
+      headers: {
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+      },
+    });
   } catch (error) {
     logger.error("[/api/early-access/availability] Error:", error);
 

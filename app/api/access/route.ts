@@ -14,7 +14,11 @@ export async function GET(request: Request) {
 
     const access = await checkAccess(session.user.id);
 
-    return NextResponse.json(access);
+    return NextResponse.json(access, {
+      headers: {
+        "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+      },
+    });
   } catch (error) {
     logger.error("[/api/access] Error:", error);
 

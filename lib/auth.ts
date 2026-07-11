@@ -121,6 +121,12 @@ export const auth = betterAuth({
     useSecureCookies: process.env.NODE_ENV === "production",
     cookiePrefix: "better-auth",
   },
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60,
+    },
+  },
   hooks: {
     after: async (ctx) => {
       const url = ctx.request?.url || "";

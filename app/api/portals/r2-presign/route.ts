@@ -363,6 +363,7 @@ export async function POST(request: NextRequest) {
       uploaderName: uploaderName ?? "",
       uploaderNotes,
       stagingKey,
+      ownerAccessAllowed: access.allowed,
     });
 
     await prisma.r2StagingUpload.create({

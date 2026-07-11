@@ -96,6 +96,7 @@ interface UploadToken {
   uploaderName: string;
   uploaderNotes?: string;
   stagingKey?: string;
+  ownerAccessAllowed?: boolean;
   expiresAt: number;
   signature: string;
 }
@@ -132,21 +133,53 @@ export async function validateUploadToken(
       return null;
     }
 
-    const dataToSign = {
+    const dataToSignNew = {
       portalId: token.portalId,
       fileName: token.fileName,
       fileSize: token.fileSize,
       mimeType: token.mimeType,
       uploaderEmail: token.uploaderEmail,
       uploaderName: token.uploaderName,
-      // Normalise optional fields to "" — must match lib/upload-tokens.ts exactly
+      uploaderNotes: token.uploaderNotes ?? "",
+      stagingKey: token.stagingKey ?? "",
+      ownerAccessAllowed: token.ownerAccessAllowed ?? false,
+      expiresAt: token.expiresAt,
+    };
+
+    const newKeys = [
+      "portalId",
+      "fileName",
+      "fileSize",
+      "mimeType",
+      "uploaderEmail",
+      "uploaderName",
+      "uploaderNotes",
+      "stagingKey",
+      "ownerAccessAllowed",
+      "expiresAt",
+    ];
+
+    const canonicalNew = JSON.stringify(dataToSignNew, newKeys);
+    const expectedNew = await hmacSign(secret, canonicalNew);
+
+    if (token.signature === expectedNew) {
+      return token;
+    }
+
+    // Legacy tokens issued before ownerAccessAllowed was added to the payload
+    const dataToSignLegacy = {
+      portalId: token.portalId,
+      fileName: token.fileName,
+      fileSize: token.fileSize,
+      mimeType: token.mimeType,
+      uploaderEmail: token.uploaderEmail,
+      uploaderName: token.uploaderName,
       uploaderNotes: token.uploaderNotes ?? "",
       stagingKey: token.stagingKey ?? "",
       expiresAt: token.expiresAt,
     };
 
-    // Fixed key order — same as generateUploadToken in lib/upload-tokens.ts
-    const canonicalJson = JSON.stringify(dataToSign, [
+    const legacyKeys = [
       "portalId",
       "fileName",
       "fileSize",
@@ -156,10 +189,12 @@ export async function validateUploadToken(
       "uploaderNotes",
       "stagingKey",
       "expiresAt",
-    ]);
-    const expected = await hmacSign(secret, canonicalJson);
+    ];
 
-    if (token.signature !== expected) {
+    const canonicalLegacy = JSON.stringify(dataToSignLegacy, legacyKeys);
+    const expectedLegacy = await hmacSign(secret, canonicalLegacy);
+
+    if (token.signature !== expectedLegacy) {
       console.error("[token] ❌ signature mismatch");
 
       return null;

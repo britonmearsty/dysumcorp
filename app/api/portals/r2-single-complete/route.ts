@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { validateUploadToken } from "@/lib/upload-tokens";
 import { headR2Object } from "@/lib/r2-client";
 import { applyUploadRateLimit } from "@/lib/rate-limit";
-import { checkAccess } from "@/lib/access";
+import { maybeDeactivateFreePortalAtFileLimit } from "@/lib/access";
 import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
@@ -86,31 +86,12 @@ export async function POST(request: NextRequest) {
     );
 
     // Check if free portal has reached file limit and deactivate if so
-    const portalId = token.portalId;
-    if (portalId) {
-      const portal = await prisma.portal.findUnique({
-        where: { id: portalId },
-        select: { id: true, userId: true, isActive: true },
-      });
-
-      if (portal?.isActive) {
-        const access = await checkAccess(portal.userId);
-        if (!access.allowed) {
-          const fileCount = await prisma.file.count({
-            where: { portalId: portal.id },
-          });
-          if (fileCount >= 10) {
-            await prisma.portal.update({
-              where: { id: portal.id },
-              data: { isActive: false },
-            });
-            logger.log(
-              `[r2-single-complete:${requestId}] Free portal ${portal.id} deactivated: file limit reached (${fileCount}/10)`,
-            );
-          }
-        }
-      }
-    }
+    const ownerAccessAllowed = token.ownerAccessAllowed ?? false;
+    await maybeDeactivateFreePortalAtFileLimit(
+      token.portalId,
+      ownerAccessAllowed,
+      `[r2-single-complete:${requestId}]`,
+    );
 
     return NextResponse.json({ ok: true });
   } catch (error) {

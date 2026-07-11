@@ -1,6 +1,5 @@
 import { logger } from "./logger";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import { PrismaNeon } from "@prisma/adapter-neon";
 import { encrypt, decrypt, isEncrypted } from "./crypto-utils";
 
 import { PrismaClient } from "@/lib/generated/prisma/client";
@@ -87,20 +86,7 @@ const extendPrisma = (client: any) => {
 };
 
 if (connectionString) {
-  const pool = new Pool({
-    connectionString,
-    max: 1, // Limit connections in serverless
-    idleTimeoutMillis: 10000, // Shorter idle timeout
-    connectionTimeoutMillis: 5000, // Shorter connection timeout
-    allowExitOnIdle: true, // Allow pool to close when idle
-  });
-
-  pool.on("error", (err) => {
-    logger.error("Unexpected pg pool error:", err);
-  });
-
-  // Cast to any to avoid @types/pg version conflict between top-level and @prisma/adapter-pg bundled types
-  const adapter = new PrismaPg(pool as any);
+  const adapter = new PrismaNeon({ connectionString });
 
   if (process.env.NODE_ENV === "production") {
     const baseClient = new PrismaClient({

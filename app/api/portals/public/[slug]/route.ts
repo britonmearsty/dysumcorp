@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { applyPublicPortalRateLimit } from "@/lib/rate-limit";
-import { checkAccess } from "@/lib/access";
+import { USER_ACCESS_SELECT } from "@/lib/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -75,6 +75,12 @@ export async function GET(
           },
           orderBy: { sortOrder: "asc" },
         },
+        user: {
+          select: USER_ACCESS_SELECT,
+        },
+        _count: {
+          select: { files: true },
+        },
       },
     });
 
@@ -112,34 +118,17 @@ export async function GET(
       );
     }
 
-    // Check owner's subscription — return generic unavailable
-    const access = await checkAccess(portal.userId);
-
-    if (!access.allowed) {
-      // Free users can still access portals made while free
-      // (file count check is done at upload time)
-    }
-
-    // Determine if owner is a subscriber
-    const user = await prisma.user.findUnique({
-      where: { id: portal.userId },
-      select: {
-        subscriptionPlan: true,
-        subscriptionStatus: true,
-      },
-    });
-
+    // Check owner's subscription (included in portal query — no extra user lookup)
     const isSubscriber =
-      user?.subscriptionPlan === "pro" && user?.subscriptionStatus === "active";
+      portal.user?.subscriptionPlan === "pro" &&
+      portal.user?.subscriptionStatus === "active";
 
-    // Count current files for file limit display
-    const fileCount = await prisma.file.count({
-      where: { portalId: portal.id },
-    });
+    const fileCount = portal._count.files;
     const fileLimit = isSubscriber ? 999999 : 10;
 
-    // Serialize BigInt — strip userId before returning
-    const { userId: _userId, ...portalData } = portal;
+    // Serialize BigInt — strip userId and internal relations before returning
+    const { userId: _userId, user: _user, _count: _fileCountMeta, ...portalData } =
+      portal;
     const serializedPortal = {
       ...portalData,
       maxFileSize: portal.maxFileSize.toString(),

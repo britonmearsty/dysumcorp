@@ -1,3 +1,8 @@
+import {
+  USER_ACCESS_SELECT,
+  UserAccessFields,
+  checkAccessFromUser,
+} from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { PRICING_PLANS, PlanType, PlanLimits } from "@/config/pricing";
 
@@ -169,30 +174,19 @@ export function checkFeatureAccess(
   return { allowed: true, currentPlan: planType };
 }
 
+/** Derive plan type from an already-fetched user row (no DB query). */
+export function getUserPlanTypeFromUser(
+  user: UserAccessFields | null | undefined,
+): PlanType {
+  const access = checkAccessFromUser(user);
+  return access.allowed ? "pro" : "free";
+}
+
 export async function getUserPlanType(userId: string): Promise<PlanType> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: {
-      subscriptionPlan: true,
-      subscriptionStatus: true,
-      polarCurrentPeriodEnd: true,
-      status: true,
-    },
+    select: USER_ACCESS_SELECT,
   });
 
-  if (!user) return "free";
-
-  const plan = user.subscriptionPlan;
-  const status = user.subscriptionStatus;
-
-  if (plan === "pro") {
-    if (status === "active") return "pro";
-
-    // Cancelled but still within the paid period
-    if (status === "cancelled" && user.polarCurrentPeriodEnd) {
-      if (new Date(user.polarCurrentPeriodEnd) > new Date()) return "pro";
-    }
-  }
-
-  return "free";
+  return getUserPlanTypeFromUser(user);
 }

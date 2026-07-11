@@ -14,10 +14,11 @@ export interface EarlyAccessAvailability {
  * Reads directly from the DB — no caching.
  */
 export async function getEarlyAccessAvailability(): Promise<EarlyAccessAvailability> {
+  const claimed = await prisma.user.count({ where: { earlyAccess: true } });
   return {
     total: EARLY_ACCESS_SPOTS,
-    claimed: EARLY_ACCESS_SPOTS,
-    remaining: 0,
+    claimed,
+    remaining: Math.max(0, EARLY_ACCESS_SPOTS - claimed),
   };
 }
 
