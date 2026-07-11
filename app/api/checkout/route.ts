@@ -4,6 +4,7 @@ import { Polar } from "@polar-sh/sdk";
 
 import { auth } from "@/lib/auth-server";
 import { PRICING_PLANS } from "@/config/pricing";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 const polar = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN!,
@@ -91,6 +92,18 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: session.user.id,
+      event: "checkout_session_created",
+      properties: {
+        plan_id: planId,
+        billing_cycle: billingCycle,
+        product_id: productId,
+      },
+    });
+    await posthog.flush();
 
     return NextResponse.json({
       success: true,

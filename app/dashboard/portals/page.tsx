@@ -25,6 +25,7 @@ import { useStorageDeleteBehavior } from "@/lib/use-storage-delete-behavior";
 import { DeleteFileModal } from "@/components/ui/delete-file-modal";
 import { DeletePortalModal } from "@/components/ui/delete-portal-modal";
 import { logger } from "@/lib/logger";
+import posthog from "posthog-js";
 
 interface Portal {
   id: string;
@@ -120,12 +121,17 @@ export default function PortalsPage() {
 
       if (response.ok) {
         setPortals(portals.filter((p) => p.id !== portalToDelete.id));
+        posthog.capture("portal_deleted", {
+          portal_id: portalToDelete.id,
+          delete_from_storage: deleteFromStorage,
+        });
         showToast("Portal deleted successfully", "success");
       } else {
         showToast("Failed to delete portal", "error");
       }
     } catch (error) {
       logger.error("Failed to delete portal:", error);
+      posthog.captureException(error);
       showToast("Failed to delete portal", "error");
     } finally {
       setDeleting(null);
@@ -274,6 +280,10 @@ export default function PortalsPage() {
       });
 
       if (response.ok) {
+        posthog.capture("portal_toggled", {
+          portal_id: portalId,
+          new_status: currentStatus ? "inactive" : "active",
+        });
         await fetchPortals();
       } else {
         const errorData = await response.json();
@@ -327,6 +337,11 @@ export default function PortalsPage() {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        posthog.capture("file_downloaded", {
+          file_id: file.id,
+          file_size: file.size,
+          portal_id: file.portalId,
+        });
       } else if (response.status === 401) {
         showToast("Invalid password. Please try again.", "error");
       } else {
@@ -363,12 +378,17 @@ export default function PortalsPage() {
 
       if (response.ok) {
         setPortalFiles(portalFiles.filter((f) => f.id !== fileToDelete.id));
+        posthog.capture("file_deleted", {
+          file_id: fileToDelete.id,
+          delete_from_storage: deleteFromStorage,
+        });
         showToast("File deleted successfully", "success");
       } else {
         showToast("Failed to delete file", "error");
       }
     } catch (error) {
       logger.error("Failed to delete file:", error);
+      posthog.captureException(error);
       showToast("Failed to delete file", "error");
     } finally {
       setDeletingFile(null);
@@ -531,6 +551,7 @@ export default function PortalsPage() {
                     const url = `${window.location.origin}/portal/${portal.slug}`;
 
                     navigator.clipboard.writeText(url);
+                    posthog.capture("portal_link_copied", { portal_id: portal.id });
                     showToast("Portal link copied to clipboard!", "success");
                   }}
                 >

@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle } from "lucide-react";
+import posthog from "posthog-js";
 
 import { Button } from "@/components/ui/button";
 
@@ -12,8 +13,8 @@ export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // You can track the successful subscription here
     logger.log("Subscription successful");
+    posthog.capture("subscription_success_viewed");
   }, []);
 
   return (

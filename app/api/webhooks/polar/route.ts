@@ -2,6 +2,7 @@ import { logger } from "@/lib/logger";
 import { Webhooks } from "@polar-sh/nextjs";
 
 import { prisma } from "@/lib/prisma";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 export const POST = Webhooks({
   webhookSecret: process.env.POLAR_WEBHOOK_SECRET!,
@@ -40,6 +41,17 @@ export const POST = Webhooks({
       where: { userId },
       data: { isActive: true },
     });
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: userId,
+      event: "subscription_activated",
+      properties: {
+        subscription_id: sub.id,
+        plan: "pro",
+      },
+    });
+    await posthog.flush();
   },
 
   /**
@@ -93,6 +105,17 @@ export const POST = Webhooks({
       },
     });
     // Portals remain active — user keeps access until period end
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: userId,
+      event: "subscription_cancelled",
+      properties: {
+        subscription_id: sub.id,
+        period_end: sub.currentPeriodEnd ?? null,
+      },
+    });
+    await posthog.flush();
   },
 
   /**
@@ -124,6 +147,14 @@ export const POST = Webhooks({
       where: { userId },
       data: { isActive: false },
     });
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: userId,
+      event: "subscription_revoked",
+      properties: { subscription_id: sub.id },
+    });
+    await posthog.flush();
   },
 
   /**

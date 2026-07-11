@@ -5,6 +5,7 @@ import { hashPassword } from "@/lib/password-utils";
 import { validateUploadToken } from "@/lib/upload-tokens";
 import { maybeDeactivateFreePortalAtFileLimit } from "@/lib/access";
 import { logger } from "@/lib/logger";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 // Helper function to format file size
 function formatFileSize(bytes: number): string {
@@ -191,6 +192,21 @@ export async function POST(request: NextRequest) {
         "[Portal Confirm Upload]",
       );
     }
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: portal.userId,
+      event: "file_uploaded",
+      properties: {
+        portal_id: portalId,
+        file_id: file.id,
+        file_size: fileSize,
+        mime_type: mimeType || "application/octet-stream",
+        storage_provider: provider || null,
+        upload_session_id: sessionId,
+      },
+    });
+    await posthog.flush();
 
     return NextResponse.json({
       success: true,

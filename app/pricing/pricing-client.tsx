@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Tabs, Tab } from "@heroui/tabs";
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 
 import { PRICING_PLANS, FREE_PLAN } from "@/config/pricing";
 import { useSession } from "@/lib/auth-client";
@@ -62,6 +63,11 @@ export function PricingClient() {
   }, []);
 
   const handleSubscribe = (planId: string, isAnnual: boolean) => {
+    posthog.capture("checkout_initiated", {
+      plan_id: planId,
+      billing_cycle: isAnnual ? "annual" : "monthly",
+      is_logged_in: isLoggedIn,
+    });
     if (!isLoggedIn) {
       router.push("/auth?redirect=/dashboard/billing?tab=plans");
       return;

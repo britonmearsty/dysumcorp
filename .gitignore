@@ -49,3 +49,4 @@ IMPLEMENTATION_PLAN.md
 *.md
 
 .opencode/.env.local
+.env.local

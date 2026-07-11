@@ -2,6 +2,7 @@ allowBuilds:
   '@heroui/shared-utils': true
   '@prisma/engines': true
   '@tailwindcss/oxide': true
+  core-js: set this to true or false
   esbuild: true
   prisma: true
   sharp: true

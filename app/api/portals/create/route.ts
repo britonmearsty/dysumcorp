@@ -7,6 +7,7 @@ import { hashPassword } from "@/lib/password-utils";
 import { checkAccess } from "@/lib/access";
 import { checkPortalLimit, getUserPlanType } from "@/lib/plan-limits";
 import { sendPortalCreatedNotification } from "@/lib/email-service";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function POST(request: Request) {
   try {
@@ -222,6 +223,21 @@ export async function POST(request: Request) {
         }
       }
     }
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: userId,
+      event: "portal_created",
+      properties: {
+        portal_id: portal.id,
+        plan_type: planType,
+        has_storage: !!storageProvider,
+        storage_provider: storageProvider || null,
+        has_password: !!password,
+        white_labeled: whiteLabeled || false,
+      },
+    });
+    await posthog.flush();
 
     // Convert BigInt to string for JSON serialization
     const portalResponse = {
