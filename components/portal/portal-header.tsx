@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Shield, Building2 } from "lucide-react";
+import { getOptimizedCloudinaryUrl } from "@/lib/cloudinary-url";
 
 interface PortalHeaderProps {
   name: string;
@@ -26,6 +27,11 @@ export function PortalHeader({
 }: PortalHeaderProps) {
   const [logoError, setLogoError] = useState(false);
 
+  const optimizedLogoUrl = useMemo(
+    () => logoUrl ? getOptimizedCloudinaryUrl(logoUrl, { width: 88 }) : null,
+    [logoUrl],
+  );
+
   const gradientStyle =
     gradientEnabled && secondaryColor
       ? `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`
@@ -44,12 +50,29 @@ export function PortalHeader({
           <div
             className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center overflow-hidden shrink-0 bg-white shadow-sm border border-black/5"
           >
-            <img
-              alt={name}
-              className="w-full h-full object-contain p-1"
-              src={logoUrl}
-              onError={() => setLogoError(true)}
-            />
+            {optimizedLogoUrl?.endsWith(".svg") ? (
+              <object
+                className="w-full h-full pointer-events-none"
+                data={optimizedLogoUrl}
+                type="image/svg+xml"
+                aria-label={name}
+                onError={() => setLogoError(true)}
+              >
+                <img
+                  alt={name}
+                  className="w-full h-full object-contain p-1"
+                  src={optimizedLogoUrl}
+                  onError={() => setLogoError(true)}
+                />
+              </object>
+            ) : (
+              <img
+                alt={name}
+                className="w-full h-full object-contain p-1"
+                src={optimizedLogoUrl ?? logoUrl}
+                onError={() => setLogoError(true)}
+              />
+            )}
           </div>
         ) : (
           <div

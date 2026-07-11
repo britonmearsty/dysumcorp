@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Building2 } from "lucide-react";
+import { getOptimizedCloudinaryUrl } from "@/lib/cloudinary-url";
 
 interface LogoDisplayProps {
   logoUrl?: string | null;
@@ -11,6 +12,16 @@ interface LogoDisplayProps {
   className?: string;
   showBackground?: boolean;
   fallbackText?: string;
+}
+
+function getSizePx(size: string): number {
+  switch (size) {
+    case "sm": return 40;
+    case "md": return 64;
+    case "lg": return 80;
+    case "xl": return 96;
+    default: return 64;
+  }
 }
 
 export function LogoDisplay({
@@ -22,6 +33,12 @@ export function LogoDisplay({
   fallbackText,
 }: LogoDisplayProps) {
   const [imgError, setImgError] = useState(false);
+
+  const sizePx = getSizePx(size);
+  const optimizedUrl = useMemo(
+    () => logoUrl ? getOptimizedCloudinaryUrl(logoUrl, { width: sizePx * 2 }) : null,
+    [logoUrl, sizePx],
+  );
 
   const sizeClasses = {
     sm: "w-10 h-10",
@@ -44,12 +61,29 @@ export function LogoDisplay({
       )}
     >
       {logoUrl && !imgError ? (
-        <img
-          alt={alt}
-          className="w-full h-full object-contain p-1.5"
-          src={logoUrl}
-          onError={() => setImgError(true)}
-        />
+        optimizedUrl && optimizedUrl.endsWith(".svg") ? (
+          <object
+            className="w-full h-full pointer-events-none"
+            data={optimizedUrl}
+            type="image/svg+xml"
+            aria-label={alt}
+            onError={() => setImgError(true)}
+          >
+            <img
+              alt={alt}
+              className="w-full h-full object-contain p-1.5"
+              src={optimizedUrl}
+              onError={() => setImgError(true)}
+            />
+          </object>
+        ) : (
+          <img
+            alt={alt}
+            className="w-full h-full object-contain p-1.5"
+            src={optimizedUrl ?? logoUrl}
+            onError={() => setImgError(true)}
+          />
+        )
       ) : (
         <div className="w-full h-full flex items-center justify-center text-stone-400">
           <Building2 className="w-5 h-5" />
