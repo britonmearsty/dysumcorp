@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/shared/[token] - Public file info
+// GET /api/shared/[token] - Public bundle info with file list
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ token: string }> },
@@ -13,19 +13,29 @@ export async function GET(
   try {
     const { token } = await params;
 
-    const file = await prisma.sharedFile.findUnique({
+    const bundle = await prisma.shareBundle.findUnique({
       where: { shareToken: token },
+      include: {
+        files: {
+          select: {
+            id: true,
+            name: true,
+            size: true,
+            mimeType: true,
+          },
+        },
+      },
     });
 
-    if (!file) {
-      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    if (!bundle) {
+      return NextResponse.json({ error: "Bundle not found" }, { status: 404 });
     }
 
-    if (file.expiresAt && file.expiresAt < new Date()) {
-      return NextResponse.json({ error: "File has expired" }, { status: 410 });
+    if (bundle.expiresAt && bundle.expiresAt < new Date()) {
+      return NextResponse.json({ error: "This share link has expired" }, { status: 410 });
     }
 
-    if (file.maxDownloads && file.downloadCount >= file.maxDownloads) {
+    if (bundle.maxDownloads && bundle.downloadCount >= bundle.maxDownloads) {
       return NextResponse.json(
         { error: "Download limit reached" },
         { status: 410 },
@@ -33,18 +43,19 @@ export async function GET(
     }
 
     return NextResponse.json({
-      name: file.name,
-      size: file.size.toString(),
-      mimeType: file.mimeType,
-      hasPassword: !!file.passwordHash,
-      expiresAt: file.expiresAt?.toISOString() || null,
-      maxDownloads: file.maxDownloads || null,
-      downloadCount: file.downloadCount,
+      hasPassword: !!bundle.passwordHash,
+      expiresAt: bundle.expiresAt?.toISOString() || null,
+      maxDownloads: bundle.maxDownloads || null,
+      downloadCount: bundle.downloadCount,
+      files: bundle.files.map((f: any) => ({
+        ...f,
+        size: f.size.toString(),
+      })),
     });
   } catch (error) {
-    logger.error("Error fetching shared file info:", error);
+    logger.error("Error fetching share bundle info:", error);
     return NextResponse.json(
-      { error: "Failed to fetch file info" },
+      { error: "Failed to fetch share info" },
       { status: 500 },
     );
   }

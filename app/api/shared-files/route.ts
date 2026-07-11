@@ -14,7 +14,7 @@ function generateShareToken(): string {
   return crypto.randomBytes(24).toString("hex");
 }
 
-// POST /api/shared-files - Create a presigned upload URL and shared file record
+// POST /api/shared-files - Create a share bundle with presigned upload URLs
 export async function POST(request: Request) {
   try {
     const session = await getSessionFromRequest(request);
@@ -24,12 +24,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, size, mimeType, password, expiresInHours, maxDownloads } =
-      body;
+    const { files, password, expiresInHours, maxDownloads } = body;
 
-    if (!name || !size || !mimeType) {
+    if (!files || !Array.isArray(files) || files.length === 0) {
       return NextResponse.json(
-        { error: "Missing required fields: name, size, mimeType" },
+        { error: "Missing required fields: files (array of {name, size, mimeType})" },
         { status: 400 },
       );
     }
@@ -45,22 +44,9 @@ export async function POST(request: Request) {
     }
 
     const shareToken = generateShareToken();
-    const storageKey = `shared/${session.user.id}/${shareToken}/${name}`;
-
-    const presignedUrl = await getPresignedPutUrl(
-      storageKey,
-      mimeType,
-      3600,
-      Number(size),
-    );
-
-    await prisma.sharedFile.create({
+    const bundle = await prisma.shareBundle.create({
       data: {
         userId: session.user.id,
-        name,
-        size: BigInt(size),
-        mimeType,
-        storageKey,
         shareToken,
         passwordHash,
         expiresAt,
@@ -69,22 +55,46 @@ export async function POST(request: Request) {
       },
     });
 
+    const presignedUrls = await Promise.all(
+      files.map(async (file: { name: string; size: number; mimeType: string }, index: number) => {
+        const storageKey = `shared/${session.user.id}/${shareToken}/${index}_${file.name}`;
+        const presignedUrl = await getPresignedPutUrl(
+          storageKey,
+          file.mimeType,
+          3600,
+          Number(file.size),
+        );
+
+        await prisma.sharedFile.create({
+          data: {
+            bundleId: bundle.id,
+            name: file.name,
+            size: BigInt(file.size),
+            mimeType: file.mimeType,
+            storageKey,
+          },
+        });
+
+        return { name: file.name, storageKey, presignedUrl };
+      }),
+    );
+
     return NextResponse.json({
-      presignedUrl,
-      storageKey,
+      bundleId: bundle.id,
       shareToken,
       shareUrl: `${process.env.NEXT_PUBLIC_APP_URL || request.headers.get("origin")}/share/${shareToken}`,
+      files: presignedUrls,
     });
   } catch (error) {
-    logger.error("Error creating shared file:", error);
+    logger.error("Error creating share bundle:", error);
     return NextResponse.json(
-      { error: "Failed to create shared file" },
+      { error: "Failed to create share bundle" },
       { status: 500 },
     );
   }
 }
 
-// GET /api/shared-files - List user's shared files
+// GET /api/shared-files - List user's share bundles
 export async function GET(request: Request) {
   try {
     const session = await getSessionFromRequest(request);
@@ -93,21 +103,32 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const files = await prisma.sharedFile.findMany({
+    const bundles = await prisma.shareBundle.findMany({
       where: { userId: session.user.id },
+      include: {
+        files: {
+          select: {
+            id: true,
+            name: true,
+            size: true,
+            mimeType: true,
+            createdAt: true,
+          },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({
-      files: files.map((f: any) => ({
-        ...f,
-        size: f.size.toString(),
+      bundles: bundles.map((b: any) => ({
+        ...b,
+        files: b.files.map((f: any) => ({ ...f, size: f.size.toString() })),
       })),
     });
   } catch (error) {
-    logger.error("Error listing shared files:", error);
+    logger.error("Error listing share bundles:", error);
     return NextResponse.json(
-      { error: "Failed to list shared files" },
+      { error: "Failed to list share bundles" },
       { status: 500 },
     );
   }

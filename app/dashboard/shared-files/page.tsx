@@ -3,7 +3,7 @@
 import { logger } from "@/lib/logger";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Upload,
   Link,
@@ -16,23 +16,31 @@ import {
   Lock,
   Plus,
   Loader2,
+  Package,
+  File,
+  Hash,
 } from "lucide-react";
 
 import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
 import { useToast } from "@/lib/toast";
 import { useSession } from "@/lib/auth-client";
 
-interface SharedFile {
+interface SharedFileInfo {
   id: string;
   name: string;
   size: string;
   mimeType: string;
+}
+
+interface ShareBundle {
+  id: string;
   shareToken: string;
-  hasPassword: boolean;
+  passwordHash: string | null;
   expiresAt: string | null;
   maxDownloads: number | null;
   downloadCount: number;
   createdAt: string;
+  files: SharedFileInfo[];
 }
 
 interface UploadItem {
@@ -70,9 +78,9 @@ function formatDate(dateString: string) {
   });
 }
 
-function getExpiryLabel(file: SharedFile): { label: string; color: string } {
-  if (file.expiresAt) {
-    const expiryDate = new Date(file.expiresAt);
+function getExpiryLabel(bundle: ShareBundle): { label: string; color: string } {
+  if (bundle.expiresAt) {
+    const expiryDate = new Date(bundle.expiresAt);
     const now = new Date();
     const diffMs = expiryDate.getTime() - now.getTime();
     if (diffMs <= 0) return { label: "Expired", color: "text-red-500" };
@@ -81,8 +89,8 @@ function getExpiryLabel(file: SharedFile): { label: string; color: string } {
     if (diffDays < 7) return { label: `Expires in ${diffDays}d`, color: "text-yellow-500" };
     return { label: `Expires ${expiryDate.toLocaleDateString()}`, color: "text-muted-foreground" };
   }
-  if (file.maxDownloads) {
-    const remaining = file.maxDownloads - file.downloadCount;
+  if (bundle.maxDownloads) {
+    const remaining = bundle.maxDownloads - bundle.downloadCount;
     if (remaining <= 0) return { label: "Limit reached", color: "text-red-500" };
     if (remaining <= 3) return { label: `${remaining} downloads left`, color: "text-orange-500" };
     return { label: `${remaining} downloads left`, color: "text-muted-foreground" };
@@ -91,7 +99,7 @@ function getExpiryLabel(file: SharedFile): { label: string; color: string } {
 }
 
 export default function SharedFilesPage() {
-  const [files, setFiles] = useState<SharedFile[]>([]);
+  const [bundles, setBundles] = useState<ShareBundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -105,23 +113,23 @@ export default function SharedFilesPage() {
   const [expiresInHours, setExpiresInHours] = useState<number>(0);
   const [maxDownloads, setMaxDownloads] = useState<number>(0);
 
-  const fetchFiles = useCallback(async () => {
+  const fetchBundles = useCallback(async () => {
     try {
       const res = await fetch("/api/shared-files");
       if (res.ok) {
         const data = await res.json();
-        setFiles(data.files || []);
+        setBundles(data.bundles || []);
       }
     } catch (error) {
-      logger.error("Failed to fetch shared files:", error);
+      logger.error("Failed to fetch share bundles:", error);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (session) fetchFiles();
-  }, [session, fetchFiles]);
+    if (session) fetchBundles();
+  }, [session, fetchBundles]);
 
   const handleFilesSelected = (selectedFiles: FileList | null) => {
     if (!selectedFiles || selectedFiles.length === 0) return;
@@ -140,73 +148,62 @@ export default function SharedFilesPage() {
     if (uploadItems.length === 0) return;
     setUploading(true);
 
-    for (let i = 0; i < uploadItems.length; i++) {
-      const item = uploadItems[i];
-      if (item.status === "done") continue;
+    try {
+      const filesPayload = uploadItems.map((item) => ({
+        name: item.file.name,
+        size: item.file.size,
+        mimeType: item.file.type || "application/octet-stream",
+      }));
 
-      setUploadItems((prev) =>
-        prev.map((p, idx) => (idx === i ? { ...p, status: "uploading" } : p)),
-      );
+      const createRes = await fetch("/api/shared-files", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          files: filesPayload,
+          password: password || null,
+          expiresInHours: expiresInHours > 0 ? expiresInHours : null,
+          maxDownloads: maxDownloads > 0 ? maxDownloads : null,
+        }),
+      });
 
-      try {
-        const createRes = await fetch("/api/shared-files", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: item.file.name,
-            size: item.file.size,
-            mimeType: item.file.type || "application/octet-stream",
-            password: password || undefined,
-            expiresInHours: expiresInHours > 0 ? expiresInHours : undefined,
-            maxDownloads: maxDownloads > 0 ? maxDownloads : undefined,
-          }),
-        });
+      if (!createRes.ok) {
+        const err = await createRes.json();
+        throw new Error(err.error || "Failed to create share bundle");
+      }
 
-        if (!createRes.ok) {
-          const err = await createRes.json();
-          throw new Error(err.error || "Failed to create share link");
-        }
+      const data = await createRes.json();
 
-        const { presignedUrl, shareToken, shareUrl } = await createRes.json();
+      for (let i = 0; i < data.files.length; i++) {
+        const { presignedUrl } = data.files[i];
+        const file = uploadItems[i].file;
+
+        setUploadItems((prev) =>
+          prev.map((p, idx) => (idx === i ? { ...p, status: "uploading" } : p)),
+        );
 
         const uploadRes = await fetch(presignedUrl, {
           method: "PUT",
-          body: item.file,
-          headers: { "Content-Type": item.file.type || "application/octet-stream" },
+          body: file,
+          headers: { "Content-Type": file.type || "application/octet-stream" },
         });
 
-        if (!uploadRes.ok) {
-          throw new Error("Failed to upload file");
-        }
+        if (!uploadRes.ok) throw new Error(`Failed to upload ${file.name}`);
 
         setUploadItems((prev) =>
           prev.map((p, idx) =>
             idx === i
-              ? { ...p, status: "done", shareToken, shareUrl }
-              : p,
-          ),
-        );
-      } catch (error: any) {
-        setUploadItems((prev) =>
-          prev.map((p, idx) =>
-            idx === i
-              ? { ...p, status: "error", error: error.message }
+              ? { ...p, status: "done", shareToken: data.shareToken, shareUrl: data.shareUrl }
               : p,
           ),
         );
       }
-    }
 
-    setUploading(false);
-    fetchFiles();
-
-    const allDone = uploadItems.every(
-      (_, i) => uploadItems[i]?.status === "done",
-    );
-    if (allDone) {
-      showToast("All files uploaded and shared successfully", "success");
-    } else {
-      showToast("Some files failed to upload. Check the list for details.", "error");
+      showToast(`Bundle with ${uploadItems.length} file(s) created`, "success");
+      fetchBundles();
+      resetUploadForm();
+    } catch (error: any) {
+      showToast(error.message || "Upload failed", "error");
+      setUploading(false);
     }
   };
 
@@ -222,13 +219,13 @@ export default function SharedFilesPage() {
     try {
       const res = await fetch(`/api/shared-files/${id}`, { method: "DELETE" });
       if (res.ok) {
-        setFiles((prev) => prev.filter((f) => f.id !== id));
-        showToast("File deleted", "success");
+        setBundles((prev) => prev.filter((b) => b.id !== id));
+        showToast("Bundle deleted", "success");
       } else {
-        showToast("Failed to delete file", "error");
+        showToast("Failed to delete bundle", "error");
       }
     } catch {
-      showToast("Failed to delete file", "error");
+      showToast("Failed to delete bundle", "error");
     }
   };
 
@@ -266,7 +263,7 @@ export default function SharedFilesPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Shared Files</h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-lg">
-            Upload files and share them via link with optional password, expiry, and download limits.
+            Upload and share multiple files as a single bundle with optional password, expiry, and download limits.
           </p>
         </div>
         <button
@@ -279,26 +276,25 @@ export default function SharedFilesPage() {
         </button>
       </div>
 
-      <AnimatePresence>
-        {showUpload && (
+      {showUpload && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
           <motion.div
-            animate={{ opacity: 1, height: "auto" }}
-            className="mb-6 bg-bg-card rounded-[14px] border border-border overflow-hidden"
-            exit={{ opacity: 0, height: 0 }}
-            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-card border border-border rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl"
+            initial={{ opacity: 0, scale: 0.95 }}
           >
-            <div className="p-4 sm:p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-foreground">Upload & Share</h2>
-                <button
-                  className="p-1.5 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-                  type="button"
-                  onClick={resetUploadForm}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+            <div className="p-4 sm:p-6 border-b border-border flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground">New Share Bundle</h2>
+              <button
+                className="p-1.5 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                type="button"
+                onClick={resetUploadForm}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
               <div
                 className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-muted-foreground/40 transition-colors"
                 onClick={() => fileInputRef.current?.click()}
@@ -312,7 +308,7 @@ export default function SharedFilesPage() {
                 />
                 <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-foreground font-medium">Click to select files</p>
-                <p className="text-sm text-muted-foreground mt-1">You can select multiple files</p>
+                <p className="text-sm text-muted-foreground mt-1">All files will be bundled into a single share link</p>
               </div>
 
               {uploadItems.length > 0 && (
@@ -410,85 +406,103 @@ export default function SharedFilesPage() {
                   </div>
                 </div>
               )}
+            </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+            <div className="p-4 sm:p-6 border-t border-border flex justify-end gap-3">
+              <button
+                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                type="button"
+                onClick={resetUploadForm}
+              >
+                {hasResults ? "Close" : "Cancel"}
+              </button>
+              {!hasResults && (
                 <button
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="px-6 py-2 bg-foreground text-background rounded-xl font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50"
+                  disabled={uploadItems.length === 0 || uploading}
                   type="button"
-                  onClick={resetUploadForm}
+                  onClick={handleUpload}
                 >
-                  {hasResults ? "Close" : "Cancel"}
+                  {uploading
+                    ? `Uploading...`
+                    : `Upload & Share (${uploadItems.length} file${uploadItems.length !== 1 ? "s" : ""})`}
                 </button>
-                {!hasResults && (
-                  <button
-                    className="px-6 py-2 bg-foreground text-background rounded-xl font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50"
-                    disabled={uploadItems.length === 0 || uploading}
-                    type="button"
-                    onClick={handleUpload}
-                  >
-                    {uploading
-                      ? `Uploading... (${uploadItems.filter((i) => i.status === "done").length + 1}/${uploadItems.length})`
-                      : `Upload & Share (${uploadItems.length} file${uploadItems.length !== 1 ? "s" : ""})`}
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       <div className="bg-bg-card rounded-[14px] border border-border overflow-hidden">
         <div className="p-4 sm:p-6 border-b border-border bg-muted/30">
-          <h2 className="text-lg sm:text-xl font-semibold text-foreground">All Shared Files</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-foreground">All Share Bundles</h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-            {files.length} file{files.length !== 1 ? "s" : ""}
+            {bundles.length} bundle{bundles.length !== 1 ? "s" : ""}
           </p>
         </div>
 
         <div className="p-0">
-          {files.length > 0 ? (
+          {bundles.length > 0 ? (
             <div className="divide-y divide-border">
-              {files.map((file) => {
-                const expiry = getExpiryLabel(file);
+              {bundles.map((bundle) => {
+                const expiry = getExpiryLabel(bundle);
                 return (
                   <div
-                    key={file.id}
-                    className="flex items-center gap-3 sm:gap-4 p-3 sm:p-5 hover:bg-muted/50 transition-colors"
+                    key={bundle.id}
+                    className="p-3 sm:p-5 hover:bg-muted/50 transition-colors"
                   >
-                    <div className={`flex-shrink-0 ${getFileIconColor(file.mimeType)}`}>
-                      {getFileIcon(file.mimeType, "w-5 h-5 sm:w-6 sm:h-6")}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground text-sm sm:text-base truncate">{file.name}</p>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
-                        <span>{formatFileSize(file.size)}</span>
-                        <span>{formatDate(file.createdAt)}</span>
-                        <span className={expiry.color}>{expiry.label}</span>
-                        {file.hasPassword && <Lock className="w-3 h-3" />}
-                        <span>{file.downloadCount} download{file.downloadCount !== 1 ? "s" : ""}</span>
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-5 h-5 text-muted-foreground" />
+                        <span className="font-medium text-foreground text-sm sm:text-base">
+                          {bundle.files.length} file{bundle.files.length !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
+                          title="Copy share link"
+                          type="button"
+                          onClick={() => copyShareLink(bundle.shareToken)}
+                        >
+                          {copiedToken === bundle.shareToken ? (
+                            <Check className="w-4 h-4 text-emerald-500" />
+                          ) : (
+                            <Link className="w-4 h-4" />
+                          )}
+                        </button>
+                        <button
+                          className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
+                          title="Delete"
+                          type="button"
+                          onClick={() => handleDelete(bundle.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        className="p-2 text-muted-foreground hover:text-foreground hover:bg-card rounded-lg transition-all"
-                        title="Copy share link"
-                        type="button"
-                        onClick={() => copyShareLink(file.shareToken)}
-                      >
-                        {copiedToken === file.shareToken ? (
-                          <Check className="w-4 h-4 text-emerald-500" />
-                        ) : (
-                          <Link className="w-4 h-4" />
-                        )}
-                      </button>
-                      <button
-                        className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
-                        title="Delete"
-                        type="button"
-                        onClick={() => handleDelete(file.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {bundle.files.map((f) => (
+                        <span
+                          key={f.id}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted rounded-md text-xs text-muted-foreground"
+                        >
+                          <File className="w-3 h-3" />
+                          {f.name}
+                          <span className="text-muted-foreground/60">({formatFileSize(f.size)})</span>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                      <span>{formatDate(bundle.createdAt)}</span>
+                      <span className={expiry.color}>{expiry.label}</span>
+                      {bundle.passwordHash && <Lock className="w-3 h-3" />}
+                      {bundle.maxDownloads && (
+                        <span className="flex items-center gap-1">
+                          <Download className="w-3 h-3" />
+                          {bundle.downloadCount}/{bundle.maxDownloads}
+                        </span>
+                      )}
                     </div>
                   </div>
                 );
@@ -501,7 +515,7 @@ export default function SharedFilesPage() {
               </div>
               <h4 className="text-foreground font-semibold mb-1">No shared files yet</h4>
               <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                Upload files and get shareable links to send to anyone.
+                Upload files and get a single shareable link to send to anyone.
               </p>
             </div>
           )}

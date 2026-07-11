@@ -163,16 +163,24 @@ export async function deleteR2Object(key: string): Promise<void> {
 /** Generate a presigned GET URL for downloading an object from R2. */
 export async function getPresignedGetUrl(
   key: string,
-  expiresInSeconds: number = 3600,
+  opts?: { expiresInSeconds?: number; filename?: string },
 ): Promise<string> {
   requireEnv();
+
+  const params: any = {
+    Bucket: bucketName!,
+    Key: key,
+  };
+
+  if (opts?.filename) {
+    params.ResponseContentDisposition = `attachment; filename="${opts.filename}"`;
+    params.ResponseContentType = "application/octet-stream";
+  }
+
   return getSignedUrl(
     r2Client,
-    new GetObjectCommand({
-      Bucket: bucketName!,
-      Key: key,
-    }),
-    { expiresIn: expiresInSeconds },
+    new GetObjectCommand(params),
+    { expiresIn: opts?.expiresInSeconds ?? 3600 },
   );
 }
 

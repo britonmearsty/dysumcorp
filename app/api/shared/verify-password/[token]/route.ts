@@ -14,19 +14,19 @@ export async function POST(
   try {
     const { token } = await params;
 
-    const file = await prisma.sharedFile.findUnique({
+    const bundle = await prisma.shareBundle.findUnique({
       where: { shareToken: token },
     });
 
-    if (!file) {
-      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    if (!bundle) {
+      return NextResponse.json({ error: "Bundle not found" }, { status: 404 });
     }
 
-    if (file.expiresAt && file.expiresAt < new Date()) {
-      return NextResponse.json({ error: "File has expired" }, { status: 410 });
+    if (bundle.expiresAt && bundle.expiresAt < new Date()) {
+      return NextResponse.json({ error: "This share link has expired" }, { status: 410 });
     }
 
-    if (file.maxDownloads && file.downloadCount >= file.maxDownloads) {
+    if (bundle.maxDownloads && bundle.downloadCount >= bundle.maxDownloads) {
       return NextResponse.json(
         { error: "Download limit reached" },
         { status: 410 },
@@ -43,14 +43,14 @@ export async function POST(
       );
     }
 
-    if (!file.passwordHash) {
+    if (!bundle.passwordHash) {
       return NextResponse.json(
-        { error: "File is not password protected" },
+        { error: "This share is not password protected" },
         { status: 400 },
       );
     }
 
-    const valid = await verifyPassword(password, file.passwordHash);
+    const valid = await verifyPassword(password, bundle.passwordHash);
 
     if (!valid) {
       return NextResponse.json(

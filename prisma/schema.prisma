@@ -28,7 +28,7 @@ model User {
   deletedAt          DateTime?
   accounts           Account[]
   portals            Portal[]
-  sharedFiles        SharedFile[]
+  sharedFiles        ShareBundle[]
   sessions           Session[]
 
   notifyOnUpload          Boolean @default(true)
@@ -225,24 +225,35 @@ model File {
   @@map("file")
 }
 
-model SharedFile {
-  id            String    @id @default(cuid())
-  userId        String
-  name          String
-  size          BigInt
-  mimeType      String
-  storageKey    String
-  shareToken    String    @unique
-  passwordHash  String?
-  expiresAt     DateTime?
-  maxDownloads  Int?
-  downloadCount Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+model ShareBundle {
+  id             String       @id @default(cuid())
+  userId         String
+  shareToken     String       @unique
+  passwordHash   String?
+  expiresAt      DateTime?
+  maxDownloads   Int?
+  downloadCount  Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files          SharedFile[]
 
   @@index([userId])
   @@index([shareToken])
+  @@map("share_bundle")
+}
+
+model SharedFile {
+  id         String       @id @default(cuid())
+  bundleId   String
+  name       String
+  size       BigInt
+  mimeType   String
+  storageKey String
+  createdAt  DateTime     @default(now())
+  bundle     ShareBundle  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+
+  @@index([bundleId])
   @@map("shared_file")
 }
 

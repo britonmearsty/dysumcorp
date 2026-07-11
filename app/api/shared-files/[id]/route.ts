@@ -8,7 +8,7 @@ import { deleteR2Object } from "@/lib/r2-client";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// DELETE /api/shared-files/[id]
+// DELETE /api/shared-files/[id] - Delete a share bundle
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -21,27 +21,30 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const file = await prisma.sharedFile.findFirst({
+    const bundle = await prisma.shareBundle.findFirst({
       where: { id, userId: session.user.id },
+      include: { files: true },
     });
 
-    if (!file) {
-      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    if (!bundle) {
+      return NextResponse.json({ error: "Bundle not found" }, { status: 404 });
     }
 
-    try {
-      await deleteR2Object(file.storageKey);
-    } catch (e) {
-      logger.error("Failed to delete from R2:", e);
+    for (const file of bundle.files) {
+      try {
+        await deleteR2Object(file.storageKey);
+      } catch (e) {
+        logger.error("Failed to delete from R2:", e);
+      }
     }
 
-    await prisma.sharedFile.delete({ where: { id } });
+    await prisma.shareBundle.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error("Error deleting shared file:", error);
+    logger.error("Error deleting share bundle:", error);
     return NextResponse.json(
-      { error: "Failed to delete shared file" },
+      { error: "Failed to delete share bundle" },
       { status: 500 },
     );
   }
