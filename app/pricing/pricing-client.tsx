@@ -160,16 +160,13 @@ export function PricingClient() {
               variant="landing"
               ctaLabel={
                 !isLoggedIn
-                  ? "Get started free"
-                  : isPro || hasEarlyAccess
-                    ? "Go to dashboard"
-                    : "Your current plan"
+                  ? "Get Started Free"
+                  : !isPro && !hasEarlyAccess
+                    ? "Current Plan"
+                    : "Start for Free"
               }
-              onSubscribe={() =>
-                isLoggedIn
-                  ? router.push("/dashboard")
-                  : router.push("/auth")
-              }
+              ctaDisabled={!isLoggedIn ? false : !isPro && !hasEarlyAccess}
+              onSubscribe={() => (!isLoggedIn ? router.push("/auth") : undefined)}
             />
 
             {/* Pro Plan */}

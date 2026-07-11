@@ -177,7 +177,12 @@ export default function DashboardPage() {
       } else {
         const errorData = await response.json();
 
-        if (
+        if (errorData.code === "FILE_LIMIT_REACHED") {
+          showToast(
+            errorData.error || "File limit reached (10/10). Upgrade to Pro for unlimited uploads.",
+            "error",
+          );
+        } else if (
           response.status === 402 ||
           errorData.code === "SUBSCRIPTION_REQUIRED"
         ) {

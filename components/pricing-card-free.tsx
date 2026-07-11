@@ -46,6 +46,7 @@ interface PricingCardFreeProps {
   plan: PricingPlan;
   variant?: "landing" | "dashboard";
   ctaLabel?: string;
+  ctaDisabled?: boolean;
   onSubscribe?: () => void;
 }
 
@@ -53,6 +54,7 @@ export function PricingCardFree({
   plan,
   variant = "landing",
   ctaLabel,
+  ctaDisabled = false,
   onSubscribe,
 }: PricingCardFreeProps) {
   const cardStyles = getCardStyles(variant);
@@ -100,9 +102,10 @@ export function PricingCardFree({
 
         <Button
           className={`w-full py-6 rounded-xl font-bold text-sm transition-all ${cardStyles.buttonDefault}`}
-          onClick={onSubscribe}
+          isDisabled={ctaDisabled}
+          onClick={!ctaDisabled ? onSubscribe : undefined}
         >
-          {ctaLabel || "Create free portal"}
+          {ctaLabel || "Get Started Free"}
         </Button>
       </CardBody>
     </Card>

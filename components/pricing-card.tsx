@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Check, Copy, CheckCheck, Rocket, Star } from "lucide-react";
-import Link from "next/link";
+import { Check, Copy, CheckCheck, Rocket } from "lucide-react";
 
 import { PricingPlan, formatPrice } from "@/config/pricing";
 // REMOVABLE: DISCOUNT - Remove this import to disable discount promo
@@ -276,26 +275,24 @@ export function PricingCard({
                 <Rocket className={`w-4 h-4 mt-0.5 shrink-0 ${cardStyles.launchCalloutCheck}`} />
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-bold ${cardStyles.launchCalloutText}`}>
-                    Founding User — Pro access active
+                    🚀 Founding User ✓
                   </p>
-                  {earlyAccessExpiresAt && (
+                  {earlyAccessExpiresAt ? (
                     <p className={`text-xs mt-0.5 ${cardStyles.launchCalloutMuted}`}>
-                      Expires{" "}
+                      Pro access included — ends{" "}
                       {new Date(earlyAccessExpiresAt).toLocaleDateString("en-US", {
                         month: "long",
                         day: "numeric",
                         year: "numeric",
                       })}
                     </p>
+                  ) : (
+                    <p className={`text-xs mt-0.5 ${cardStyles.launchCalloutMuted}`}>
+                      Pro access included
+                    </p>
                   )}
                 </div>
               </div>
-              <Link
-                className={`mt-3 block text-center text-xs font-semibold underline ${cardStyles.launchCalloutCheck}`}
-                href="/dashboard/billing"
-              >
-                Manage Plan
-              </Link>
             </div>
           ) : showLaunchOffer ? (
             /* ── Launch offer: EA callout + single primary CTA ── */
@@ -342,19 +339,17 @@ export function PricingCard({
               </p>
             </div>
           ) : (
-            /* ── Default: single subscribe / current plan button ── */
+            /* ── Default: single subscribe / current plan / manage button ── */
             <Button
               className={`w-full py-6 rounded-xl font-bold text-sm transition-all ${
                 plan.popular ? cardStyles.buttonPopular : cardStyles.buttonDefault
               }`}
-              isDisabled={isCurrentPlan && !isCancelledGrace}
+              isDisabled={isCurrentPlan && !isCancelledGrace && ctaLabel !== "Manage Subscription"}
               onClick={() => onSubscribe?.(plan.id, billingCycle === "annual")}
             >
               {isCancelledGrace
                 ? "Cancelling at Period End"
-                : isCurrentPlan
-                  ? "Current Plan"
-                  : ctaLabel || "Subscribe"}
+                : ctaLabel || (isCurrentPlan ? "Current Plan" : "Subscribe")}
             </Button>
           )}
         </CardBody>

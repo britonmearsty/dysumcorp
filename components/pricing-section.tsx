@@ -143,12 +143,13 @@ export default function PricingSection({ initialAvailability = null }: PricingSe
               variant="landing"
               ctaLabel={
                 !isLoggedIn
-                  ? "Get started free"
-                  : isPro || hasEarlyAccess
-                    ? "Go to dashboard"
-                    : "Your current plan"
+                  ? "Get Started Free"
+                  : !isPro && !hasEarlyAccess
+                    ? "Current Plan"
+                    : "Start for Free"
               }
-              onSubscribe={() => (window.location.href = isLoggedIn ? "/dashboard" : "/auth")}
+              ctaDisabled={!isLoggedIn ? false : !isPro && !hasEarlyAccess}
+              onSubscribe={() => (!isLoggedIn ? (window.location.href = "/auth") : undefined)}
             />
           </StaggerItem>
 

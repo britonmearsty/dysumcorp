@@ -50,6 +50,11 @@ export default function BillingPage() {
   const [earlyAccessAvailability, setEarlyAccessAvailability] = useState<EarlyAccessAvailability | null>(null);
   const currentPlan = (session?.user as any)?.subscriptionPlan || "free";
   const currentStatus = (session?.user as any)?.subscriptionStatus || "active";
+  const hasEarlyAccess: boolean = (session?.user as any)?.earlyAccess === true;
+  const earlyAccessExpiresAt: Date | null = (session?.user as any)?.earlyAccessExpiresAt
+    ? new Date((session?.user as any).earlyAccessExpiresAt)
+    : null;
+  const isPro = currentPlan === "pro";
   const { showToast } = useToast();
 
   const tabs = [
@@ -358,8 +363,15 @@ export default function BillingPage() {
                         <PricingCardFree
                           plan={FREE_PLAN}
                           variant="dashboard"
-                          ctaLabel="Current Plan"
-                          onSubscribe={() => {}}
+                          ctaLabel={
+                            isPro
+                              ? "Start for Free"
+                              : hasEarlyAccess
+                                ? "Free after trial"
+                                : "Current Plan"
+                          }
+                          ctaDisabled={!isPro && !hasEarlyAccess}
+                          onSubscribe={undefined}
                         />
 
                         {/* Pro Plan */}
@@ -367,11 +379,13 @@ export default function BillingPage() {
                           billingCycle={billingCycle}
                           currentPlan={currentPlan}
                           currentStatus={currentStatus}
+                          ctaLabel={isPro ? "Manage Subscription" : "Upgrade to Pro"}
                           plan={PRICING_PLANS.pro}
                           variant="dashboard"
-                          onSubscribe={handleSubscribe}
                           earlyAccessAvailability={earlyAccessAvailability}
                           hasEarlyAccess={access?.reason === "early_access"}
+                          earlyAccessExpiresAt={earlyAccessExpiresAt}
+                          onSubscribe={handleSubscribe}
                           onClaimSuccess={() => {
                             refetch();
                             fetch("/api/early-access/availability")
