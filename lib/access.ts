@@ -31,8 +31,6 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
       subscriptionStatus: true,
       polarCurrentPeriodEnd: true,
       status: true,
-      earlyAccess: true,
-      earlyAccessExpiresAt: true,
     },
   });
 
@@ -57,16 +55,6 @@ export async function checkAccess(userId: string): Promise<AccessResult> {
         return { allowed: true, reason: "pro_cancelled_grace", periodEnd };
       }
     }
-  }
-
-  // Priority 3: Early access active — grants Pro-equivalent access.
-  // Reads fresh from DB on every invocation (Requirement 3.6).
-  if (user.earlyAccess === true && user.earlyAccessExpiresAt) {
-    const expiresAt = new Date(user.earlyAccessExpiresAt);
-    if (expiresAt > new Date()) {
-      return { allowed: true, reason: "early_access", expiresAt };
-    }
-    // earlyAccess flag set but period has expired — fall through to free
   }
 
   return { allowed: false, reason: "free" };

@@ -177,8 +177,6 @@ export async function getUserPlanType(userId: string): Promise<PlanType> {
       subscriptionStatus: true,
       polarCurrentPeriodEnd: true,
       status: true,
-      earlyAccess: true,
-      earlyAccessExpiresAt: true,
     },
   });
 
@@ -194,11 +192,6 @@ export async function getUserPlanType(userId: string): Promise<PlanType> {
     if (status === "cancelled" && user.polarCurrentPeriodEnd) {
       if (new Date(user.polarCurrentPeriodEnd) > new Date()) return "pro";
     }
-  }
-
-  // Early access: treat as pro if active, fall through to free if expired
-  if (user.earlyAccess === true && user.earlyAccessExpiresAt) {
-    if (user.earlyAccessExpiresAt > new Date()) return "pro";
   }
 
   return "free";

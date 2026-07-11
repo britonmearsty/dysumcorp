@@ -10,14 +10,12 @@ import {
   Clock,
   Download,
   Trash2,
-  File,
   Copy,
   Check,
   X,
   Lock,
-  EyeOff,
-  Globe,
   Plus,
+  Loader2,
 } from "lucide-react";
 
 import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
@@ -35,6 +33,14 @@ interface SharedFile {
   maxDownloads: number | null;
   downloadCount: number;
   createdAt: string;
+}
+
+interface UploadItem {
+  file: File;
+  status: "pending" | "uploading" | "done" | "error";
+  shareToken?: string;
+  shareUrl?: string;
+  error?: string;
 }
 
 function formatFileSize(bytes: string) {
@@ -94,7 +100,7 @@ export default function SharedFilesPage() {
   const { data: session, isPending } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
   const [password, setPassword] = useState("");
   const [expiresInHours, setExpiresInHours] = useState<number>(0);
   const [maxDownloads, setMaxDownloads] = useState<number>(0);
@@ -117,52 +123,99 @@ export default function SharedFilesPage() {
     if (session) fetchFiles();
   }, [session, fetchFiles]);
 
+  const handleFilesSelected = (selectedFiles: FileList | null) => {
+    if (!selectedFiles || selectedFiles.length === 0) return;
+    const newItems: UploadItem[] = Array.from(selectedFiles).map((f) => ({
+      file: f,
+      status: "pending" as const,
+    }));
+    setUploadItems((prev) => [...prev, ...newItems]);
+  };
+
+  const removeUploadItem = (index: number) => {
+    setUploadItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleUpload = async () => {
-    if (!uploadFile) return;
+    if (uploadItems.length === 0) return;
     setUploading(true);
-    try {
-      const createRes = await fetch("/api/shared-files", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: uploadFile.name,
-          size: uploadFile.size,
-          mimeType: uploadFile.type || "application/octet-stream",
-          password: password || undefined,
-          expiresInHours: expiresInHours > 0 ? expiresInHours : undefined,
-          maxDownloads: maxDownloads > 0 ? maxDownloads : undefined,
-        }),
-      });
 
-      if (!createRes.ok) {
-        const err = await createRes.json();
-        throw new Error(err.error || "Failed to create share link");
+    for (let i = 0; i < uploadItems.length; i++) {
+      const item = uploadItems[i];
+      if (item.status === "done") continue;
+
+      setUploadItems((prev) =>
+        prev.map((p, idx) => (idx === i ? { ...p, status: "uploading" } : p)),
+      );
+
+      try {
+        const createRes = await fetch("/api/shared-files", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: item.file.name,
+            size: item.file.size,
+            mimeType: item.file.type || "application/octet-stream",
+            password: password || undefined,
+            expiresInHours: expiresInHours > 0 ? expiresInHours : undefined,
+            maxDownloads: maxDownloads > 0 ? maxDownloads : undefined,
+          }),
+        });
+
+        if (!createRes.ok) {
+          const err = await createRes.json();
+          throw new Error(err.error || "Failed to create share link");
+        }
+
+        const { presignedUrl, shareToken, shareUrl } = await createRes.json();
+
+        const uploadRes = await fetch(presignedUrl, {
+          method: "PUT",
+          body: item.file,
+          headers: { "Content-Type": item.file.type || "application/octet-stream" },
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error("Failed to upload file");
+        }
+
+        setUploadItems((prev) =>
+          prev.map((p, idx) =>
+            idx === i
+              ? { ...p, status: "done", shareToken, shareUrl }
+              : p,
+          ),
+        );
+      } catch (error: any) {
+        setUploadItems((prev) =>
+          prev.map((p, idx) =>
+            idx === i
+              ? { ...p, status: "error", error: error.message }
+              : p,
+          ),
+        );
       }
-
-      const { presignedUrl } = await createRes.json();
-
-      const uploadRes = await fetch(presignedUrl, {
-        method: "PUT",
-        body: uploadFile,
-        headers: { "Content-Type": uploadFile.type || "application/octet-stream" },
-      });
-
-      if (!uploadRes.ok) {
-        throw new Error("Failed to upload file");
-      }
-
-      showToast("File uploaded and shared successfully", "success");
-      setShowUpload(false);
-      setUploadFile(null);
-      setPassword("");
-      setExpiresInHours(0);
-      setMaxDownloads(0);
-      fetchFiles();
-    } catch (error: any) {
-      showToast(error.message || "Failed to upload file", "error");
-    } finally {
-      setUploading(false);
     }
+
+    setUploading(false);
+    fetchFiles();
+
+    const allDone = uploadItems.every(
+      (_, i) => uploadItems[i]?.status === "done",
+    );
+    if (allDone) {
+      showToast("All files uploaded and shared successfully", "success");
+    } else {
+      showToast("Some files failed to upload. Check the list for details.", "error");
+    }
+  };
+
+  const resetUploadForm = () => {
+    setShowUpload(false);
+    setUploadItems([]);
+    setPassword("");
+    setExpiresInHours(0);
+    setMaxDownloads(0);
   };
 
   const handleDelete = async (id: string) => {
@@ -200,6 +253,13 @@ export default function SharedFilesPage() {
     );
   }
 
+  const pendingCount = uploadItems.filter(
+    (i) => i.status === "pending" || i.status === "uploading",
+  ).length;
+  const hasResults = uploadItems.some(
+    (i) => i.status === "done" || i.status === "error",
+  );
+
   return (
     <div className="w-full overflow-hidden">
       <div className="mb-6 sm:mb-8 lg:mb-10 flex items-center justify-between">
@@ -215,7 +275,7 @@ export default function SharedFilesPage() {
           onClick={() => setShowUpload(!showUpload)}
         >
           <Plus className="w-4 h-4" />
-          Share File
+          Share Files
         </button>
       </div>
 
@@ -233,7 +293,7 @@ export default function SharedFilesPage() {
                 <button
                   className="p-1.5 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors"
                   type="button"
-                  onClick={() => setShowUpload(false)}
+                  onClick={resetUploadForm}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -246,87 +306,131 @@ export default function SharedFilesPage() {
                 <input
                   ref={fileInputRef}
                   className="hidden"
+                  multiple
                   type="file"
-                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                  onChange={(e) => handleFilesSelected(e.target.files)}
                 />
-                {uploadFile ? (
-                  <div className="flex items-center justify-center gap-3">
-                    <span className={getFileIconColor(uploadFile.type || "")}>
-                      {getFileIcon(uploadFile.type || "", "w-8 h-8")}
-                    </span>
-                    <div className="text-left">
-                      <p className="font-semibold text-foreground">{uploadFile.name}</p>
-                      <p className="text-sm text-muted-foreground">{formatFileSize(uploadFile.size.toString())}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-foreground font-medium">Click to select a file</p>
-                  </div>
-                )}
+                <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-foreground font-medium">Click to select files</p>
+                <p className="text-sm text-muted-foreground mt-1">You can select multiple files</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
-                    <Lock className="w-3.5 h-3.5 inline mr-1" />
-                    Password (optional)
-                  </label>
-                  <input
-                    className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:ring-2 focus:ring-ring outline-none"
-                    placeholder="Leave blank for no password"
-                    type="text"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+              {uploadItems.length > 0 && (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {uploadItems.map((item, index) => (
+                    <div
+                      key={`${item.file.name}-${index}`}
+                      className="flex items-center gap-3 p-2.5 bg-muted rounded-lg"
+                    >
+                      <span className={getFileIconColor(item.file.type || "")}>
+                        {getFileIcon(item.file.type || "", "w-5 h-5")}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{item.file.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatFileSize(item.file.size.toString())}</p>
+                      </div>
+                      {item.status === "pending" && (
+                        <button
+                          className="p-1 text-muted-foreground hover:text-foreground rounded"
+                          type="button"
+                          onClick={() => removeUploadItem(index)}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {item.status === "uploading" && (
+                        <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
+                      )}
+                      {item.status === "done" && item.shareUrl && (
+                        <button
+                          className="p-1.5 text-emerald-500 hover:text-emerald-600 rounded"
+                          title="Copy share link"
+                          type="button"
+                          onClick={() => copyShareLink(item.shareToken!)}
+                        >
+                          {copiedToken === item.shareToken ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
+                      {item.status === "error" && (
+                        <span className="text-xs text-red-500" title={item.error}>
+                          Failed
+                        </span>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
-                    <Clock className="w-3.5 h-3.5 inline mr-1" />
-                    Expires in (hours)
-                  </label>
-                  <input
-                    className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:ring-2 focus:ring-ring outline-none"
-                    min="0"
-                    placeholder="0 = no expiry"
-                    type="number"
-                    value={expiresInHours}
-                    onChange={(e) => setExpiresInHours(Number(e.target.value))}
-                  />
+              )}
+
+              {!hasResults && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                      <Lock className="w-3.5 h-3.5 inline mr-1" />
+                      Password (optional)
+                    </label>
+                    <input
+                      className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:ring-2 focus:ring-ring outline-none"
+                      placeholder="Leave blank for no password"
+                      type="text"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                      <Clock className="w-3.5 h-3.5 inline mr-1" />
+                      Expires in (hours)
+                    </label>
+                    <input
+                      className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:ring-2 focus:ring-ring outline-none"
+                      min="0"
+                      placeholder="0 = no expiry"
+                      type="number"
+                      value={expiresInHours}
+                      onChange={(e) => setExpiresInHours(Number(e.target.value))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                      <Download className="w-3.5 h-3.5 inline mr-1" />
+                      Max downloads
+                    </label>
+                    <input
+                      className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:ring-2 focus:ring-ring outline-none"
+                      min="0"
+                      placeholder="0 = unlimited"
+                      type="number"
+                      value={maxDownloads}
+                      onChange={(e) => setMaxDownloads(Number(e.target.value))}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
-                    <Download className="w-3.5 h-3.5 inline mr-1" />
-                    Max downloads
-                  </label>
-                  <input
-                    className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:ring-2 focus:ring-ring outline-none"
-                    min="0"
-                    placeholder="0 = unlimited"
-                    type="number"
-                    value={maxDownloads}
-                    onChange={(e) => setMaxDownloads(Number(e.target.value))}
-                  />
-                </div>
-              </div>
+              )}
 
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                   type="button"
-                  onClick={() => setShowUpload(false)}
+                  onClick={resetUploadForm}
                 >
-                  Cancel
+                  {hasResults ? "Close" : "Cancel"}
                 </button>
-                <button
-                  className="px-6 py-2 bg-foreground text-background rounded-xl font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50"
-                  disabled={!uploadFile || uploading}
-                  type="button"
-                  onClick={handleUpload}
-                >
-                  {uploading ? "Uploading..." : "Upload & Share"}
-                </button>
+                {!hasResults && (
+                  <button
+                    className="px-6 py-2 bg-foreground text-background rounded-xl font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50"
+                    disabled={uploadItems.length === 0 || uploading}
+                    type="button"
+                    onClick={handleUpload}
+                  >
+                    {uploading
+                      ? `Uploading... (${uploadItems.filter((i) => i.status === "done").length + 1}/${uploadItems.length})`
+                      : `Upload & Share (${uploadItems.length} file${uploadItems.length !== 1 ? "s" : ""})`}
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
@@ -397,7 +501,7 @@ export default function SharedFilesPage() {
               </div>
               <h4 className="text-foreground font-semibold mb-1">No shared files yet</h4>
               <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                Upload a file and get a shareable link to send to anyone.
+                Upload files and get shareable links to send to anyone.
               </p>
             </div>
           )}

@@ -8,11 +8,10 @@ import {
   Download,
   Lock,
   Clock,
-  EyeOff,
+  Eye,
   File,
-  Check,
   AlertCircle,
-  Shield,
+  ExternalLink,
 } from "lucide-react";
 
 import { getFileIcon, getFileIconColor } from "@/lib/file-icons";
@@ -24,6 +23,19 @@ function formatFileSize(bytes: string) {
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
   if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(2)} MB`;
   return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+const PREVIEWABLE_TYPES = [
+  "image/",
+  "video/",
+  "audio/",
+  "text/",
+  "application/pdf",
+  "application/json",
+];
+
+function canPreview(mimeType: string): boolean {
+  return PREVIEWABLE_TYPES.some((t) => mimeType.startsWith(t));
 }
 
 export default function SharePage({
@@ -47,8 +59,9 @@ export default function SharePage({
   const [passwordRequired, setPasswordRequired] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
   const [verifyingPassword, setVerifyingPassword] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-  const [passwordVerified, setPasswordVerified] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [fetching, setFetching] = useState(false);
+  const [action, setAction] = useState<"idle" | "opening" | "downloading">("idle");
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -78,6 +91,57 @@ export default function SharePage({
     fetchInfo();
   }, [token]);
 
+  const getDownloadUrl = async () => {
+    if (!token || !fileInfo) return null;
+    const headers: Record<string, string> = {};
+    if (fileInfo.hasPassword && password) {
+      headers["x-file-password"] = password;
+    }
+    const res = await fetch(`/api/shared/download/${token}`, { headers });
+    if (!res.ok) {
+      if (res.status === 401) {
+        setPasswordError(true);
+        showToast("Invalid password", "error");
+      } else if (res.status === 410) {
+        showToast("This file is no longer available", "error");
+      } else {
+        showToast("Failed to access file", "error");
+      }
+      return null;
+    }
+    const data = await res.json();
+    return data.downloadUrl as string;
+  };
+
+  const handleOpen = async () => {
+    if (fetching) return;
+    setFetching(true);
+    setAction("opening");
+    const url = await getDownloadUrl();
+    if (url) {
+      window.open(url, "_blank");
+    }
+    setFetching(false);
+    setAction("idle");
+  };
+
+  const handleDownload = async () => {
+    if (fetching) return;
+    setFetching(true);
+    setAction("downloading");
+    const url = await getDownloadUrl();
+    if (url && fileInfo) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileInfo.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+    setFetching(false);
+    setAction("idle");
+  };
+
   const handleVerifyPassword = async () => {
     if (!token || !password) return;
     setVerifyingPassword(true);
@@ -100,40 +164,7 @@ export default function SharePage({
     }
   };
 
-  const handleDownload = async () => {
-    if (!token || !fileInfo) return;
-    setDownloading(true);
-    try {
-      const headers: Record<string, string> = {};
-      if (fileInfo.hasPassword && password) {
-        headers["x-file-password"] = password;
-      }
-      const res = await fetch(`/api/shared/download/${token}`, { headers });
-      if (!res.ok) {
-        if (res.status === 401) {
-          showToast("Invalid password", "error");
-        } else if (res.status === 410) {
-          showToast("This file is no longer available", "error");
-        } else {
-          showToast("Failed to download file", "error");
-        }
-        return;
-      }
-      const data = await res.json();
-      if (data.downloadUrl) {
-        const a = document.createElement("a");
-        a.href = data.downloadUrl;
-        a.download = fileInfo.name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
-    } catch {
-      showToast("Failed to download file", "error");
-    } finally {
-      setDownloading(false);
-    }
-  };
+  const [passwordVerified, setPasswordVerified] = useState(false);
 
   if (loading) {
     return (
@@ -162,6 +193,9 @@ export default function SharePage({
   }
 
   if (!fileInfo) return null;
+
+  const isPreviewable = canPreview(fileInfo.mimeType);
+  const unlocked = !passwordRequired || passwordVerified;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -209,7 +243,7 @@ export default function SharePage({
                 <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-lg mb-3">
                   <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                   <p className="text-xs text-amber-800 dark:text-amber-200">
-                    This file is password protected. Enter the password to download.
+                    This file is password protected. Enter the password to continue.
                   </p>
                 </div>
                 <input
@@ -232,21 +266,34 @@ export default function SharePage({
                   type="button"
                   onClick={handleVerifyPassword}
                 >
-                  {verifyingPassword ? "Verifying..." : "Unlock & Download"}
+                  {verifyingPassword ? "Verifying..." : "Unlock"}
                 </button>
               </div>
             )}
 
-            {(passwordVerified || !passwordRequired) && (
-              <button
-                className="w-full px-4 py-3 bg-foreground text-background rounded-xl font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                disabled={downloading}
-                type="button"
-                onClick={handleDownload}
-              >
-                <Download className="w-4 h-4" />
-                {downloading ? "Preparing..." : "Download File"}
-              </button>
+            {unlocked && (
+              <div className="flex flex-col gap-3">
+                {isPreviewable && (
+                  <button
+                    className="w-full px-4 py-3 bg-card border border-border rounded-xl font-semibold text-sm hover:bg-muted transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    disabled={fetching}
+                    type="button"
+                    onClick={handleOpen}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    {action === "opening" ? "Opening..." : "Open in Browser"}
+                  </button>
+                )}
+                <button
+                  className="w-full px-4 py-3 bg-foreground text-background rounded-xl font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  disabled={fetching}
+                  type="button"
+                  onClick={handleDownload}
+                >
+                  <Download className="w-4 h-4" />
+                  {action === "downloading" ? "Downloading..." : "Download File"}
+                </button>
+              </div>
             )}
           </div>
         </div>
