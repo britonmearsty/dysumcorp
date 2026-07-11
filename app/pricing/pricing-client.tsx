@@ -172,7 +172,7 @@ export function PricingClient() {
             {/* Pro Plan */}
             <PricingCard
               billingCycle={billingCycle}
-              ctaLabel={isLoggedIn ? "Upgrade to Pro" : "Get Pro"}
+              ctaLabel={isPro ? undefined : isLoggedIn ? "Upgrade to Pro" : "Get Pro"}
               currentPlan={currentPlan}
               currentStatus={currentStatus}
               earlyAccessAvailability={earlyAccessAvailability}

@@ -165,7 +165,7 @@ export default function PricingSection({ initialAvailability = null }: PricingSe
               hasEarlyAccess={hasEarlyAccess}
               earlyAccessExpiresAt={earlyAccessExpiresAt}
               requiresAuth={!isLoggedIn}
-              ctaLabel={isLoggedIn ? "Upgrade to Pro" : "Get Pro"}
+              ctaLabel={isPro ? undefined : isLoggedIn ? "Upgrade to Pro" : "Get Pro"}
               onSubscribe={handleSubscribe}
               onClaimSuccess={refreshAvailability}
             />

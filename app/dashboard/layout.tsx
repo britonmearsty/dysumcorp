@@ -68,13 +68,13 @@ export default function DashboardRootLayout({
     <div className="flex flex-col min-h-screen">
       {/* Launch offer nudge — free users who can still claim */}
       {launchOfferAvailable && (
-        <div className="w-full bg-violet-600 dark:bg-violet-700">
+        <div className="w-full bg-[#10132f]/90 border-b border-[#10132f]">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1800px] py-2.5 flex items-center justify-between gap-4">
-            <p className="text-sm text-white font-medium">
-              🎉 <strong>You&apos;re eligible!</strong> Claim 2 months of Pro FREE — no credit card required.
+            <p className="text-sm text-slate-200 font-medium">
+              🎉 <strong className="text-white">You&apos;re eligible!</strong> Claim 2 months of Pro FREE — no credit card required.
             </p>
             <Link
-              className="shrink-0 flex items-center gap-1.5 text-xs font-bold bg-white text-violet-700 hover:bg-violet-50 px-3 py-1.5 rounded-lg transition-colors"
+              className="shrink-0 flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 border border-white/20 text-white px-3 py-1.5 rounded-lg transition-colors"
               href="/dashboard/billing?tab=plans"
             >
               <Rocket className="w-3 h-3" />
@@ -86,13 +86,13 @@ export default function DashboardRootLayout({
 
       {/* Generic upgrade nudge — free users after spots are gone */}
       {isFreeUser && !launchOfferAvailable && (
-        <div className="w-full bg-violet-600 dark:bg-violet-700">
+        <div className="w-full bg-[#10132f]/90 border-b border-[#10132f]">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1800px] py-2.5 flex items-center justify-between gap-4">
-            <p className="text-sm text-white font-medium">
+            <p className="text-sm text-slate-200 font-medium">
               Subscribe to Pro to create portals and start collecting files.
             </p>
             <Link
-              className="shrink-0 flex items-center gap-1.5 text-xs font-bold bg-white text-violet-700 hover:bg-violet-50 px-3 py-1.5 rounded-lg transition-colors"
+              className="shrink-0 flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 border border-white/20 text-white px-3 py-1.5 rounded-lg transition-colors"
               href="/dashboard/billing?tab=plans"
             >
               <Zap className="w-3 h-3" />
@@ -104,10 +104,10 @@ export default function DashboardRootLayout({
 
       {/* Founding user status bar */}
       {isEarlyAccessUser && access?.expiresAt && (
-        <div className="w-full bg-violet-600 dark:bg-violet-700">
+        <div className="w-full bg-[#10132f]/90 border-b border-[#10132f]">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1800px] py-2.5 flex items-center justify-between gap-4">
-            <p className="text-sm text-white font-medium">
-              🚀 <strong>Founding User</strong> — complimentary Pro access expires{" "}
+            <p className="text-sm text-slate-200 font-medium">
+              🚀 <strong className="text-white">Founding User</strong> — complimentary Pro access expires{" "}
               {new Date(access.expiresAt).toLocaleDateString("en-US", {
                 month: "long",
                 day: "numeric",
@@ -116,7 +116,7 @@ export default function DashboardRootLayout({
               .
             </p>
             <Link
-              className="shrink-0 text-xs font-bold text-white hover:text-violet-200 underline underline-offset-2 transition-colors"
+              className="shrink-0 text-xs font-bold text-slate-300 hover:text-white underline underline-offset-2 transition-colors"
               href="/dashboard/billing?tab=plans"
             >
               Manage Plan
